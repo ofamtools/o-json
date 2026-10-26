@@ -149,7 +149,7 @@ func TestCatalog(t *testing.T) {
 			}
 		}
 	}
-	if cat.Name != "o-json" || strings.Join(verbs, " ") != "get structure table" {
+	if cat.Name != "o-json" || strings.Join(verbs, " ") != "get rows structure table" {
 		t.Fatalf("catalog %s %v", cat.Name, verbs)
 	}
 }
@@ -161,5 +161,27 @@ func TestViewSmokeFromStdin(t *testing.T) {
 		if !strings.Contains(got, "Structure") || !strings.Contains(got, "Fields .") || !strings.Contains(got, "o-json sample") {
 			t.Fatalf("%v\n%s", args, got)
 		}
+	}
+}
+
+// doc rows answers the table's rows as JSON Lines whose data is the item
+// in document order, and --format prints them under the table's columns.
+func TestDocRowsFormats(t *testing.T) {
+	lines := strings.Split(strings.TrimSpace(run(t, "", "doc", "rows", sample, ".items")), "\n")
+	if len(lines) != 4 || lines[1] != `{"noun":"item","id":".items[1]","data":{"id":2,"name":"beta","owner":{"name":"bob"},"tags":[],"archived":true},"cells":["2","beta","{\"name\":\"bob\"}","[]","true",""]}` {
+		t.Fatalf("doc rows JSON Lines\n%s", strings.Join(lines, "\n"))
+	}
+	want := map[string]string{
+		"table":    "id  name   owner                                     tags            archived?  note?\n 1  alpha  {\"name\":\"ann\",\"email\":\"ann@example.com\"}  [\"red\",\"blue\"]\n",
+		"markdown": "| id | name | owner | tags | archived? | note? |\n| ---: | --- | --- | --- | --- | --- |\n| 1 | alpha |",
+		"toon":     "item[4]{id,name,owner,tags,archived?,note?}:\n  1,alpha,",
+	}
+	for format, prefix := range want {
+		if got := run(t, "", "doc", "rows", sample, ".items", "--format", format); !strings.HasPrefix(got, prefix) {
+			t.Errorf("--format %s\n%s", format, got)
+		}
+	}
+	if got := run(t, "", "doc", "rows", sample, ".items[].owner", "--format", "table"); got != "name  email?\nann   ann@example.com\nbob\ncy    null\ndee\n" {
+		t.Errorf("a [] path\n%s", got)
 	}
 }

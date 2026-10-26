@@ -84,6 +84,19 @@ dee
 
 `o-json doc structure|table|get FILE [PATH]` gives the same answers as JSON through ochazuke's `cli.Shell`, and `o-json catalog` describes the noun, so `o-nabe extension register json` can mount it. A value keeps the document's key order.
 
+`o-json doc rows FILE [PATH]` is `doc table`'s rows for a host and for the formats: JSON Lines `{noun: "item", id: PATH, data: ITEM, cells}`, the item in document order and one cell per table column. `--format table|markdown|toon` prints them as a table under `doc table`'s columns (an optional column's title ends in `?`, numbers are right-aligned, and on a narrow terminal the optional columns drop first):
+
+```
+$ o-json doc rows testdata/sample.json '.items[].owner' --format table
+name  email?
+ann   ann@example.com
+bob
+cy    null
+dee
+```
+
+`doc get` of an array of objects prints under `--format` too (its fields as columns). `doc structure` and `doc table` answer one object, so `--format` other than json prints their JSON with a note on stderr.
+
 ## The viewer
 
 The viewer has a breadcrumb line and then two panels. The breadcrumb shows the file, the selected path with its types and presence, the selected row's own path when the data panel holds the focus, and the active filters.
