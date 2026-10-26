@@ -114,7 +114,7 @@ The file is read off the event loop (`viewer.load`), and the screen says `loadin
 | `t` | tree, data | type filter: string, number, bool, null, object, array, then off |
 | `esc` | tree, data | clear the search and the type filter |
 | `v` | tree, data | show the selected path's values as indented JSON (toggle; cut at 4 MB) |
-| `y` | anywhere | copy: the path on the tree, the row or value as JSON in the data and the detail. The copy goes to the ochazuke registers (`"a y` names one) and to the system clipboard (pbcopy, wl-copy, xclip or xsel, whichever is on PATH) |
+| `y` | anywhere | copy: the path on the tree, the row or value as JSON in the data and the detail. The copy goes to the ochazuke registers (`"a y` names one) and to the system clipboard (pbcopy, wl-copy, xclip or xsel, whichever is on PATH). The status line says what was copied; a clipboard tool that fails is a footer notice, and the registers still hold the copy |
 | `R` | tree, data | read the file again |
 | `:` | anywhere | the command palette: every verb, by name |
 | `q`, `ctrl+c` | tree, data | quit |

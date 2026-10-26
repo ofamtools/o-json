@@ -107,7 +107,7 @@ func (a *App) registerVerbs() {
 			if s == nil {
 				return ochazuke.Failed(errors.New("not a path"))
 			}
-			return a.copyText(s.Path, ochazuke.StringArg(c.Args, "register", ""))
+			return a.copyText(c, s.Path, s.Path)
 		}, "Copy the structure path into the registers and the system clipboard")
 
 	// rows.move is the windowed tables' motion: the list holds only the
@@ -165,7 +165,7 @@ func (a *App) registerVerbs() {
 		if n.IsContainer() {
 			text = Pretty(n)
 		}
-		return a.copyText(text, ochazuke.StringArg(c.Args, "register", ""))
+		return a.copyText(c, text, n.Path())
 	}
 	open := func(c ochazuke.Ctx) ochazuke.Result { return done(a.openDetail(nodeAt(c.Instance))) }
 	r.Define("item").
@@ -181,7 +181,7 @@ func (a *App) registerVerbs() {
 	r.Define("line").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {
 			line, _ := c.Instance.Data.(string)
-			return a.copyText(line, ochazuke.StringArg(c.Args, "register", ""))
+			return a.copyText(c, line, "the line")
 		}, "Copy the JSON line into the registers and the system clipboard")
 }
 
@@ -196,18 +196,33 @@ func (a *App) rowsOf(inst *ochazuke.Instance) *rowsView {
 	return nil
 }
 
-// copyText stores text in the registers and copies it to the system
-// clipboard off the loop (from o-csv).
-func (a *App) copyText(text, register string) ochazuke.Result {
+// copyText stores text in the registers (the request's register, else
+// the active or unnamed one) and copies it to the system clipboard off the
+// loop (from o-csv). The status line names what was copied; a clipboard
+// failure is a notice, since the registers still hold the text.
+func (a *App) copyText(c ochazuke.Ctx, text, what string) ochazuke.Result {
+	register := ochazuke.StringArg(c.Args, "register", "")
 	y := ochazuke.Yank{Text: text}
 	if err := a.r.StoreYank(y, register, false); err != nil {
 		return ochazuke.Failed(err)
 	}
+	said := "copied " + what
+	if register != "" {
+		said += " into register " + register
+	}
 	clip := a.Clipboard
 	if clip == nil {
+		c.Status(said)
 		return ochazuke.Done(y)
 	}
-	return ochazuke.Pending(func(context.Context) (any, error) { return y, clip(text) })
+	return ochazuke.Pending(func(context.Context) (any, error) { return y, clip(text) }).
+		Then(func(c ochazuke.Ctx, _ any, err error) {
+			if err != nil {
+				c.Notify("clipboard: " + err.Error() + " (the registers have " + what + ")")
+				return
+			}
+			c.Status(said)
+		})
 }
 
 // search sets the query, filters the tree and jumps to the first match.

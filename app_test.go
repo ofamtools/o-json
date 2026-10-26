@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -29,12 +30,13 @@ func open(t *testing.T, path string, width, height int) *App {
 
 func view(a *App) string { return ansi.Strip(a.m.View().Content) }
 
-// press sends keys one by one, failing on the first error the model shows.
+// press sends keys one by one, failing on the first error the model
+// shows. A yank's "copied ..." status is not an error.
 func press(t *testing.T, a *App, keys ...string) {
 	t.Helper()
 	for _, key := range keys {
 		Press(a.m, key)
-		if a.m.Status != "" {
+		if a.m.Status != "" && !strings.HasPrefix(a.m.Status, "copied ") {
 			t.Fatalf("key %q: %s", key, a.m.Status)
 		}
 		view(a)
@@ -250,30 +252,7 @@ func TestStartupLoadThroughTheModel(t *testing.T) {
 		t.Fatalf("loading %q", a.Loading)
 	}
 	_, cmd := a.m.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
-	var run func(tea.Cmd)
-	run = func(cmd tea.Cmd) {
-		if cmd == nil {
-			return
-		}
-		got := make(chan tea.Msg, 1)
-		go func() { got <- cmd() }()
-		var m tea.Msg
-		select {
-		case m = <-got:
-		case <-time.After(200 * time.Millisecond):
-			return // a timer (the jobs ticker's linger)
-		}
-		switch msg := m.(type) {
-		case tea.BatchMsg:
-			for _, c := range msg {
-				run(c)
-			}
-		case ochazuke.Completion:
-			_, next := a.m.Update(msg)
-			run(next)
-		}
-	}
-	run(cmd)
+	finish(a, cmd)
 	if a.Doc == nil || a.Loading != "" || !strings.Contains(view(a), "Fields .") {
 		t.Fatalf("startup load: loading %q err %v\n%s", a.Loading, a.LoadErr, view(a))
 	}
@@ -363,5 +342,47 @@ func TestReadOnlyViewsTakeNoMarks(t *testing.T) {
 			t.Fatalf("%s: the tree took a mark %v", panel, marked)
 		}
 		press(t, a, "tab")
+	}
+}
+
+// A yank says what it copied on the status line; a clipboard that fails is
+// a notice, and the registers still hold the text.
+func TestYankTellsTheUser(t *testing.T) {
+	a := open(t, sample, 100, 30)
+	selectPath(t, a, ".items[].owner.email")
+	press(t, a, "y")
+	if a.m.Status != "copied .items[].owner.email" {
+		t.Fatalf("status after y: %q", a.m.Status)
+	}
+	a.Clipboard = func(string) error { return errors.New("no clipboard tool") }
+	finish(a, Press(a.m, "y"))
+	if got := strings.Join(a.m.Notices, "\n"); !strings.Contains(got, "clipboard: no clipboard tool") {
+		t.Fatalf("notices: %q", got)
+	}
+	if y, _ := a.r.ReadYank(""); y.Text != ".items[].owner.email" {
+		t.Fatalf("register: %q", y.Text)
+	}
+}
+
+// finish runs a key's commands and hands their completions to the model,
+// as Bubble Tea would (timers aside).
+func finish(a *App, cmd tea.Cmd) {
+	if cmd == nil {
+		return
+	}
+	got := make(chan tea.Msg, 1)
+	go func() { got <- cmd() }()
+	select {
+	case msg := <-got:
+		switch msg := msg.(type) {
+		case tea.BatchMsg:
+			for _, c := range msg {
+				finish(a, c)
+			}
+		case ochazuke.Completion:
+			_, next := a.m.Update(msg)
+			finish(a, next)
+		}
+	case <-time.After(200 * time.Millisecond):
 	}
 }
