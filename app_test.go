@@ -438,27 +438,94 @@ func TestPaneKeysResizeTheSplit(t *testing.T) {
 	}
 }
 
-// . never repeats a yank, as in Vim: y j . copies nothing, in the tree and
-// the table.
-func TestDotNeverRepeatsAYank(t *testing.T) {
+// . after a yank yanks again at the focus: each yank reads the focused row
+// and the repeat records no value, so y j . copies the next row, in the
+// tree, the table, an object's fields, the detail and the raw lines.
+func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	var clip []string
 	a.Clipboard = func(s string) error { clip = append(clip, s); return nil }
-	key := func(k string) { finish(a, Press(a.m, k)); view(a) }
+	key := func(keys ...string) {
+		t.Helper()
+		for _, k := range keys {
+			if cmd := Press(a.m, k); k == "y" || k == "." {
+				finish(a, cmd) // the clipboard copy
+			}
+			if s := a.m.Status; s != "" && !strings.HasPrefix(s, "copied ") {
+				t.Fatalf("key %q: %s", k, s)
+			}
+			view(a)
+		}
+	}
+	yanked := func(label, want string) {
+		t.Helper()
+		if y, _ := a.r.ReadYank(""); y.Text != want || len(clip) == 0 || clip[len(clip)-1] != want {
+			t.Fatalf("%s: register %q, clipboard %q, want %q", label, y.Text, clip, want)
+		}
+	}
 	selectPath(t, a, ".name")
-	key("y")
-	key("j")
-	if key("."); a.m.Status != "nothing to repeat" {
-		t.Fatalf("y j . in the tree: status %q", a.m.Status)
-	}
-	if y, _ := a.r.ReadYank(""); y.Text != ".name" || len(clip) != 1 || clip[0] != ".name" {
-		t.Fatalf("y j . in the tree: register %q, clipboard %q", y.Text, clip)
-	}
+	key("y", "j", ".")
+	yanked("tree", ".version")
 	selectPath(t, a, ".items")
-	for _, k := range []string{"tab", "y", "j", "."} {
-		key(k)
+	key("tab", "y", "j", ".")
+	if y, _ := a.r.ReadYank(""); !strings.Contains(y.Text, `"name": "beta"`) {
+		t.Fatalf("table: register %q", y.Text)
 	}
-	if a.m.Status != "nothing to repeat" || len(clip) != 2 {
-		t.Fatalf("y j . in the table: status %q, clipboard %q", a.m.Status, clip)
+	key("enter", "y", "j", ".")
+	yanked("detail", "beta")
+	key("esc", "tab")
+	selectPath(t, a, ".meta")
+	key("tab", "y", "j", ".")
+	yanked("fields", "4")
+	key("tab")
+	selectPath(t, a, ".items[].owner")
+	key("v", "tab", "y", "j", ".")
+	yanked("raw lines", "  {")
+	for _, e := range a.r.HistoryOf(0, ochazuke.HistoryChange) {
+		if strings.HasSuffix(e.Request.Key(), ".yank") && len(e.Request.Args) != 0 {
+			t.Fatalf("%s recorded arguments %v", e.Request.Key(), e.Request.Args)
+		}
+	}
+}
+
+// A repeat runs the same verb, so a tree yank repeated on a table row
+// finds no path there and fails, leaving the register as it was.
+func TestDotAcrossPanelsFailsCleanly(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	selectPath(t, a, ".items")
+	press(t, a, "y", "tab")
+	Press(a.m, ".")
+	if a.m.Status != "not a path" {
+		t.Fatalf(". on a table row after a tree yank: status %q", a.m.Status)
+	}
+	if y, _ := a.r.ReadYank(""); y.Text != ".items" {
+		t.Fatalf("register %q", y.Text)
+	}
+}
+
+// Dot repeats the last repeatable change: after a yank and an edit in the
+// search prompt, the edit; after another yank, the yank.
+func TestDotRepeatsTheLastChange(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	selectPath(t, a, ".name")
+	press(t, a, "y", "/")
+	for _, q := range []ochazuke.Request{{Noun: "input", Verb: "insert", Args: ochazuke.Arguments{"text": "o"}}, {Noun: "history", Verb: "repeat"}} {
+		if _, err := a.r.Execute(q); err != nil {
+			t.Fatalf("%s: %v", q.Key(), err)
+		}
+	}
+	if got := string(a.in.Text); got != "oo" {
+		t.Fatalf("the repeat after an insert: prompt %q", got)
+	}
+	if y, _ := a.r.ReadYank(""); y.Text != ".name" {
+		t.Fatalf("the repeat after an insert yanked: %q", y.Text)
+	}
+	press(t, a, "esc")
+	if a.r.TopModal() != "" {
+		t.Fatal("esc closes the prompt")
+	}
+	press(t, a, "y", "j", ".")
+	if y, _ := a.r.ReadYank(""); y.Text != ".version" {
+		t.Fatalf("y j .: register %q", y.Text)
 	}
 }
