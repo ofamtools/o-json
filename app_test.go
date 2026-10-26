@@ -329,3 +329,21 @@ func TestBindingRowsAreAtomic(t *testing.T) {
 		}
 	}
 }
+
+func TestYankToNamedRegister(t *testing.T) {
+	a := open(t, sample, 100, 30)
+	selectPath(t, a, ".items[].owner.email")
+	press(t, a, "\"", "a", "y")
+	if y, _ := a.r.ReadYank("a"); y.Text != ".items[].owner.email" {
+		t.Fatalf(`"a y on the tree stored %q`, y.Text)
+	}
+	selectPath(t, a, ".items")
+	press(t, a, "tab", "2", "G", "y")
+	if y, _ := a.r.ReadYank(""); !strings.Contains(y.Text, `"name": "beta"`) {
+		t.Fatalf("y on row 2 stored %q", y.Text)
+	}
+	press(t, a, "enter", "esc")
+	if a.r.TopModal() != "" {
+		t.Fatal("esc closes the detail")
+	}
+}
