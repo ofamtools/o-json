@@ -1,1 +1,4 @@
 .DS_Store
+/o-json
+go.work
+go.work.sum

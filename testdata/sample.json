@@ -1,0 +1,11 @@
+{
+  "name": "o-json sample",
+  "version": 2,
+  "items": [
+    {"id": 1, "name": "alpha", "owner": {"name": "ann", "email": "ann@example.com"}, "tags": ["red", "blue"]},
+    {"id": 2, "name": "beta", "owner": {"name": "bob"}, "tags": [], "archived": true},
+    {"id": 3, "name": "gamma", "owner": {"name": "cy", "email": null}, "tags": ["green"], "note": "third"},
+    {"id": 4, "name": "delta", "owner": {"name": "dee"}, "tags": ["red"]}
+  ],
+  "meta": {"generated": "2026-10-25", "count": 4, "source": null}
+}

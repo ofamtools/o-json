@@ -1,0 +1,18 @@
+.               object         1
+  name          string       1/1
+  version       number       1/1
+  items         array        1/1  4 items
+    []          object         4
+      id        number       4/4
+      name      string       4/4
+      owner     object       4/4
+        name    string       4/4
+        email   string|null  2/4  optional
+      tags      array        4/4  0..2 items
+        []      string         4
+      archived  bool         1/4  optional
+      note      string       1/4  optional
+  meta          object       1/1
+    generated   string       1/1
+    count       number       1/1
+    source      null         1/1
