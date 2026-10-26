@@ -190,9 +190,6 @@ func (a *App) registerVerbs() {
 	setHistory(r, ochazuke.HistoryAction, "item.open", "field.open", "entry.open", "entry.up")
 	// A yank writes the registers and the clipboard, as input.yank does.
 	setHistory(r, ochazuke.HistoryChange, "shape.yank", "item.yank", "field.yank", "entry.yank", "line.yank")
-	// . yanks again at the focus: each yank reads the focused row, and the
-	// repeat keeps only the register.
-	setRepeatable(r, "shape.yank", "item.yank", "field.yank", "entry.yank", "line.yank")
 }
 
 // rowsOf is the windowed table an instance belongs to (the list itself or
@@ -337,20 +334,6 @@ func setHistory(r *ochazuke.Runtime, kind string, keys ...string) {
 			panic("setHistory: no operation " + key)
 		}
 		op.HistoryKind = kind
-		r.Operations[key] = op
-	}
-}
-
-// setRepeatable marks each named verb Operation.Repeatable, so dot-repeat
-// (history.repeat, .) runs it again at the current focus. The builder has
-// no method for it either; an unknown key panics, as in setHistory.
-func setRepeatable(r *ochazuke.Runtime, keys ...string) {
-	for _, key := range keys {
-		op, ok := r.Operations[key]
-		if !ok {
-			panic("setRepeatable: no operation " + key)
-		}
-		op.Repeatable = true
 		r.Operations[key] = op
 	}
 }

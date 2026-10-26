@@ -36,7 +36,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 - The data panel and the detail are `rowsView`s. Their ochazuke list holds the rows on screen and nothing more, and row IDs are positions in the window. Do not give a list one item per array element: ochazuke's List measures every row each frame and removes rows one instance scan at a time. Motions in those tables are `rows.move`, not `list.move`.
 - The tree is the structure (one node per shape), never the document, so its size is the number of distinct paths. Keep the `maxFields` cap: ochazuke's tree is quadratic in its node count.
 - The panel's data follows the tree's selection in `render` (`sync`). Every way of moving the tree (keys, search, `tree.Select`) is covered by that, so do not add per-motion hooks.
-- Every verb declares its history kind: `.Fetch()` on a read (`viewer.state`, the `doc` verbs), `setHistory(r, ochazuke.HistoryChange|HistoryFetch|HistoryAction, keys...)` for the rest (yanks are changes, moves and filters actions), so none falls to ochazuke's default. `TestEveryVerbDeclaresItsHistory` fails on a verb that declares none. The yanks are also `Operation.Repeatable` (`setRepeatable`), so `.` copies again at the focus.
+- Every verb declares its history kind: `.Fetch()` on a read (`viewer.state`, the `doc` verbs), `setHistory(r, ochazuke.HistoryChange|HistoryFetch|HistoryAction, keys...)` for the rest (yanks are changes, moves and filters actions), so none falls to ochazuke's default. `TestEveryVerbDeclaresItsHistory` fails on a verb that declares none.
 
 ## Checks
 
