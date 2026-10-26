@@ -45,6 +45,8 @@ func (a *App) registerPrompt() {
 		Mode("insert").
 		Bind("enter", ochazuke.Do("query.commit")).
 		Bind("esc", ochazuke.Do("query.cancel"))
+	// The prompt asks only for a search, so committing it is a view move.
+	setHistory(r, ochazuke.HistoryAction, "query.commit", "query.cancel")
 	a.in = ochazuke.NewInput(fieldID, "", false)
 	a.m.ModalViews[promptFrame] = ochazuke.ModalView{Title: "Prompt", Render: func(r *ochazuke.Runtime, body *ochazuke.Instance, w, h int) ochazuke.Block {
 		field := ochazuke.InputBlock(a.in, max(1, w), 1)

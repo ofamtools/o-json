@@ -43,10 +43,10 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 	r.Define("doc").
 		Verb("structure", func(c ochazuke.Ctx) ochazuke.Result {
 			return pending(c, func(d *Doc, _ string) (any, error) { return d.Shape, nil })
-		}, "the document's shape as a tree of {key, path, count, of, types, min_items, max_items, optional, children}; fields most common first, optional ones last").Quiet().Positional("file").
+		}, "the document's shape as a tree of {key, path, count, of, types, min_items, max_items, optional, children}; fields most common first, optional ones last").Quiet().Positional("file").Fetch().
 		Verb("table", func(c ochazuke.Ctx) ochazuke.Result {
 			return pending(c, func(d *Doc, path string) (any, error) { return tableAt(d, path) })
-		}, "an array (or the values a [] path names) as {path, columns: [{name, count, optional, types, self}], rows}; columns most common first, optional ones last, rows as in the document").Quiet().Positional("file", "path").
+		}, "an array (or the values a [] path names) as {path, columns: [{name, count, optional, types, self}], rows}; columns most common first, optional ones last, rows as in the document").Quiet().Positional("file", "path").Fetch().
 		Verb("get", func(c ochazuke.Ctx) ochazuke.Result {
 			return pending(c, func(d *Doc, path string) (any, error) {
 				values, fanned, err := Select(d.Root, path)
@@ -60,7 +60,7 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 				}
 				return values[0], nil
 			})
-		}, "the value at a path, keys in document order; a [] path answers an array of every value it names").Quiet().Positional("file", "path").
+		}, "the value at a path, keys in document order; a [] path answers an array of every value it names").Quiet().Positional("file", "path").Fetch().
 		Verb("rows", func(c ochazuke.Ctx) ochazuke.Result {
 			// The item noun's columns are the table's, known only once the
 			// file is read: the work keeps them for Then, on the loop,
@@ -74,7 +74,7 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 				cols = rowColumns(t)
 				return tableRows(t), nil
 			}).Then(func(ochazuke.Ctx, any, error) { r.Define("item").Columns(cols...) })
-		}, "doc table's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc table column; --format table, markdown and toon print them as a table").Quiet().Positional("file", "path").Rows("item")
+		}, "doc table's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc table column; --format table, markdown and toon print them as a table").Quiet().Positional("file", "path").Rows("item").Fetch()
 	file := ochazuke.Parameter{Type: "string", Required: true, Description: "the JSON file; - reads stdin"}
 	params := map[string]map[string]ochazuke.Parameter{
 		"doc.structure": {"file": file},

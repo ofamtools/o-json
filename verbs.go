@@ -96,10 +96,13 @@ func (a *App) registerVerbs() {
 			a.Query, a.Kind = "", ""
 			return done(a.refilter())
 		}, "Clear the search and the type filter").
-		Verb("state", func(ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.state()) }, "The viewer's file, selected path, filters and row")
+		Verb("state", func(ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.state()) }, "The viewer's file, selected path, filters and row").Fetch()
 	params("viewer.load", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the JSON file; - reads stdin"}})
 	params("viewer.search", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "omit to be asked in a prompt"}})
 	params("viewer.type", map[string]ochazuke.Parameter{"kind": {Type: "string", Enum: []string{"string", "number", "bool", "null", "object", "array", ""}, Description: "omit to step to the next type"}})
+	// load reads the file and shows it: a fetch, as the framework's reloads are.
+	setHistory(r, ochazuke.HistoryFetch, "viewer.load")
+	setHistory(r, ochazuke.HistoryAction, "viewer.search", "viewer.next", "viewer.previous", "viewer.type", "viewer.raw", "viewer.clear")
 
 	r.Define("shape").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {
@@ -155,6 +158,7 @@ func (a *App) registerVerbs() {
 		"steps":  {Type: "integer", Description: "repeat count (default 1)"},
 		"line":   {Type: "integer", Description: "1-based row for top and bottom"},
 	})
+	setHistory(r, ochazuke.HistoryAction, "rows.move")
 
 	yankNode := func(c ochazuke.Ctx) ochazuke.Result {
 		n := nodeAt(c.Instance)
@@ -183,6 +187,9 @@ func (a *App) registerVerbs() {
 			line, _ := c.Instance.Data.(string)
 			return a.copyText(c, line, "the line")
 		}, "Copy the JSON line into the registers and the system clipboard")
+	setHistory(r, ochazuke.HistoryAction, "item.open", "field.open", "entry.open", "entry.up")
+	// A yank writes the registers and the clipboard, as input.yank does.
+	setHistory(r, ochazuke.HistoryChange, "shape.yank", "item.yank", "field.yank", "entry.yank", "line.yank")
 }
 
 // rowsOf is the windowed table an instance belongs to (the list itself or
@@ -314,4 +321,19 @@ func (a *App) jumpFrom(cur, dir int) error {
 		return err
 	}
 	return a.sync()
+}
+
+// setHistory declares the history kind (Operation.HistoryKind) of each
+// named verb, so none is left to the default: NounBuilder.Fetch marks a
+// read where it is declared, and the builder has no method for a change or
+// an action. An unknown key panics, so a renamed verb is renamed here too.
+func setHistory(r *ochazuke.Runtime, kind string, keys ...string) {
+	for _, key := range keys {
+		op, ok := r.Operations[key]
+		if !ok {
+			panic("setHistory: no operation " + key)
+		}
+		op.HistoryKind = kind
+		r.Operations[key] = op
+	}
 }
