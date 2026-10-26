@@ -82,7 +82,7 @@ dee
 
 ## For a host: the doc noun and the catalog
 
-`o-json doc structure|table|get FILE [PATH]` gives the same answers as JSON through ochazuke's `cli.Shell`, and `o-json catalog` describes the noun, so `o-nabe extension register json` can mount it. The doc verbs read the file as pending work, so a value keeps the document's key order.
+`o-json doc structure|table|get FILE [PATH]` gives the same answers as JSON through ochazuke's `cli.Shell`, and `o-json catalog` describes the noun, so `o-nabe extension register json` can mount it. A value keeps the document's key order.
 
 ## The viewer
 

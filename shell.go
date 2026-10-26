@@ -18,9 +18,12 @@ import (
 // newShell is the NOUN VERB shell over a runtime holding the doc noun.
 func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 	r := ochazuke.NewRuntime()
-	// Each verb reads the file as pending work: off the loop, and its value
-	// reaches the shell as is (a synchronous result is round-tripped
-	// through a JSON map, which would sort the document's keys).
+	// Each verb reads the file as pending work. Key order no longer needs
+	// it (the shell keeps an immediate result's keys in document order),
+	// but the output does: an immediate array prints one compact element
+	// per line (doc get of an array or a [] path would change shape), and
+	// a failure as an immediate result loses its "job #N doc.VERB failed"
+	// stderr line.
 	pending := func(c ochazuke.Ctx, fn func(*Doc, string) (any, error)) ochazuke.Result {
 		file := ochazuke.StringArg(c.Args, "file", "")
 		path := ochazuke.StringArg(c.Args, "path", ".")
