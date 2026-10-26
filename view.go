@@ -11,7 +11,14 @@ import (
 // The page: a breadcrumb line, then two panels side by side (stacked
 // below stackWidth columns): the structure tree on the left, the selected
 // shape's data on the right. The panel holding the focus has the accent
-// border.
+// border. The divider follows the page's pane keys (> and < move it, =
+// resets it, remembered per page) through PaneLayout and Divide: the
+// default split below is the first argument, and the framework moves it.
+//
+// Layout.SplitFocusBlock is not used: it sizes the split from the whole
+// viewport (BodySize less the page chrome) and stacks below 72 columns,
+// while this renderer gets the page body, draws a breadcrumb line above
+// the panels and gives the tree its natural width.
 
 // stackWidth is the page width below which the panels stack.
 const stackWidth = 60
@@ -21,7 +28,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 		a.LoadErr = err
 	}
 	s := ochazuke.NewStyles(*a.m.Appearance)
-	l := ochazuke.Layout{Width: width, Height: height, Styles: s}
+	l := a.r.PaneLayout(pageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.breadcrumb(), width, "…"))
 	bh := max(0, height-1)
 	if bh < 3 || width < 8 {
@@ -35,12 +42,12 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth
 	if stacked {
-		lw, lh = width, bh*2/5
+		lw, lh = width, l.Divide(bh*2/5, bh, ochazuke.PaneMinHeight)
 		rw, rh = width, bh-lh
 	} else {
 		// The tree takes its natural width (plus the panel's border and
 		// padding), between 24 cells and two fifths of the page.
-		lw = min(max(24, a.treeWidth+4), width*2/5)
+		lw = l.Divide(min(max(24, a.treeWidth+4), width*2/5), width-1, ochazuke.PaneMinWidth)
 		lh, rw, rh = bh, width-lw-1, bh
 	}
 	cw, ch := ochazuke.PanelContentSize(lw, lh)

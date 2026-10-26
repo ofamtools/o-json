@@ -386,3 +386,54 @@ func finish(a *App, cmd tea.Cmd) {
 	case <-time.After(200 * time.Millisecond):
 	}
 }
+
+// > and < move the divider between the tree and the data panel, = puts it
+// back; stacked, they move it between the panels' heights.
+func TestPaneKeysResizeTheSplit(t *testing.T) {
+	// divider is the column the data panel starts at, side by side.
+	divider := func(a *App) int {
+		for _, line := range strings.Split(view(a), "\n") {
+			if first := strings.Index(line, "╭"); first >= 0 {
+				if second := strings.Index(line[first+1:], "╭"); second >= 0 {
+					return len([]rune(line[:first+1+second]))
+				}
+			}
+		}
+		t.Fatalf("no split\n%s", view(a))
+		return 0
+	}
+	a := open(t, sample, 120, 24)
+	start := divider(a)
+	press(t, a, ">")
+	if grown := divider(a); grown <= start {
+		t.Fatalf("> left the tree at %d (was %d)\n%s", grown, start, view(a))
+	}
+	press(t, a, "=")
+	if reset := divider(a); reset != start {
+		t.Fatalf("= put the divider at %d, want %d", reset, start)
+	}
+	press(t, a, "<")
+	if shrunk := divider(a); shrunk >= start {
+		t.Fatalf("< left the tree at %d (was %d)", shrunk, start)
+	}
+
+	// top is the line the data panel starts on, stacked.
+	top := func(a *App) int {
+		seen := 0
+		for i, line := range strings.Split(view(a), "\n") {
+			if strings.Contains(line, "╭") {
+				if seen++; seen == 2 {
+					return i
+				}
+			}
+		}
+		t.Fatalf("no stacked split\n%s", view(a))
+		return 0
+	}
+	a = open(t, sample, 50, 30)
+	start = top(a)
+	press(t, a, "3", ">")
+	if grown := top(a); grown <= start {
+		t.Fatalf("3> left the data panel at line %d (was %d)\n%s", grown, start, view(a))
+	}
+}

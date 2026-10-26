@@ -92,7 +92,7 @@ The viewer has a breadcrumb line and then two panels. The breadcrumb shows the f
 - **Right: the selected path's data.** One array, or the values of a `[]` path, is a table with a `#` column, columns in frequency order and optional ones last. One object is labeled `field  type  value` rows, and one scalar is shown as is. Column widths come from the first 2,000 rows, so they hold still while you scroll. On a narrow screen the widest columns narrow first, and after that columns drop from the right, so the optional columns go first. Only the rows on screen are in the table, so a 100,000-row array costs one screen per key.
 - **Detail**: `enter` on a table row, or on a field that holds an object or an array, opens it in a modal as labeled rows. `enter` (or `l`) on a nested object or array steps into it, and `h` or `backspace` steps back out.
 
-The file is read off the event loop (`viewer.load`), and the screen says `loading …` until it is done. A parse error gives the line and column. The panels sit side by side from 60 columns up and stack below that.
+The file is read off the event loop (`viewer.load`), and the screen says `loading …` until it is done. A parse error gives the line and column. The panels sit side by side from 60 columns up and stack below that. `>` and `<` move the divider (the tree's width, or its height when stacked) and `=` puts it back; the divider is remembered in `~/.local/state/o-json/panes.json`.
 
 ### Keys
 
@@ -104,6 +104,7 @@ The file is read off the event loop (`viewer.load`), and the screen says `loadin
 | `l` / `h` | tree | expand, or step onto the first child / collapse, or step onto the parent |
 | `enter` | tree | expand or collapse |
 | `tab` / `shift+tab` | anywhere | the other panel |
+| `>` / `<`, `=` | tree, data | grow / shrink the tree panel (counts work: `3>`), reset the divider |
 | `g g` / `G`, `home` / `end` | data, detail | first / last row (`12G` goes to row 12) |
 | `ctrl+d` `ctrl+u` / `ctrl+f` `ctrl+b`, `pgdown` `pgup` | data, detail | half a screen / a screen |
 | `enter` | data | open the row's item (or the field's object or array) in the detail |
