@@ -240,7 +240,14 @@ func Pretty(n *Node) string {
 	return sb.String()
 }
 
-func writePretty(sb *strings.Builder, n *Node, ind int) {
+func writePretty(sb *strings.Builder, n *Node, ind int) { writePrettyLimit(sb, n, ind, 0) }
+
+// writePrettyLimit is writePretty that stops (false) once sb is past limit
+// bytes (0: no limit), so a view of a huge value builds only its start.
+func writePrettyLimit(sb *strings.Builder, n *Node, ind, limit int) bool {
+	if limit > 0 && sb.Len() > limit {
+		return false
+	}
 	pad := strings.Repeat("  ", ind)
 	switch n.Kind {
 	case KObject, KArray:
@@ -250,7 +257,7 @@ func writePretty(sb *strings.Builder, n *Node, ind int) {
 		}
 		if len(n.Children) == 0 {
 			sb.WriteString(open + cls)
-			return
+			return true
 		}
 		sb.WriteString(open + "\n")
 		for i, c := range n.Children {
@@ -258,7 +265,9 @@ func writePretty(sb *strings.Builder, n *Node, ind int) {
 			if n.Kind == KObject {
 				sb.WriteString(quote(c.Key) + ": ")
 			}
-			writePretty(sb, c, ind+1)
+			if !writePrettyLimit(sb, c, ind+1, limit) {
+				return false
+			}
 			if i < len(n.Children)-1 {
 				sb.WriteString(",")
 			}
@@ -268,6 +277,7 @@ func writePretty(sb *strings.Builder, n *Node, ind int) {
 	default:
 		sb.WriteString(n.Scalar())
 	}
+	return true
 }
 
 // Compact is the node as one line of JSON, cut with "…" once it passes

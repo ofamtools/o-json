@@ -1,5 +1,6 @@
 // Command o-json is the family's JSON structure and table viewer.
 //
+//	o-json [view] [--smoke] FILE|-              (the viewer)
 //	o-json structure [--format text|json] FILE|-
 //	o-json table [--format text|json|markdown] FILE|- [PATH]
 //	o-json get [--raw] [--format json] FILE|- PATH
@@ -33,11 +34,24 @@ func progName() string {
 	return "o-json"
 }
 
-// Main runs one invocation: oden resolves the command words.
+// Main runs one invocation. A first word that is an existing file opens it
+// in the viewer even when it shadows a command name; otherwise oden
+// resolves the command words, and anything it does not know (flags, -, a
+// path) reaches the viewer.
 func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
-	app := oden.New("o-json", bareJSON(args), oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr))
+	if len(args) > 0 && isFile(args[0]) {
+		return runTUI(args, stdin, stdout, stderr)
+	}
+	app := oden.New("o-json", bareJSON(args), oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
+		oden.WithDefault(func(_ context.Context, args []string) error {
+			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !strings.ContainsAny(args[0], "./") {
+				return oden.ErrNotFound
+			}
+			return runTUI(args, stdin, stdout, stderr)
+		}))
 	ocli.Mount(app, newShell(stdin, stdout, stderr))
 	app.Add(textCommands(stdin, stdout, stderr)...)
+	app.Add(viewCommand(stdin, stdout, stderr))
 	// Mount's help note says every result is JSON, which is true of the doc
 	// noun only; structure, table and get print text.
 	app.HelpText = `Files:

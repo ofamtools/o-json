@@ -153,3 +153,13 @@ func TestCatalog(t *testing.T) {
 		t.Fatalf("catalog %s %v", cat.Name, verbs)
 	}
 }
+
+// The viewer reads stdin too: --smoke renders one frame of it.
+func TestViewSmokeFromStdin(t *testing.T) {
+	for _, args := range [][]string{{"--smoke", "-"}, {"view", "--smoke", "--width", "120"}, {"--smoke", sample}} {
+		got := run(t, sampleText(t), args...)
+		if !strings.Contains(got, "Structure") || !strings.Contains(got, "Fields .") || !strings.Contains(got, "o-json sample") {
+			t.Fatalf("%v\n%s", args, got)
+		}
+	}
+}
