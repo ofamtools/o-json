@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/unixsuperhero/ochazuke"
 	ocli "github.com/unixsuperhero/ochazuke/cli"
@@ -39,10 +38,10 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 	r.Define("doc").
 		Verb("structure", func(c ochazuke.Ctx) ochazuke.Result {
 			return pending(c, func(d *Doc, _ string) (any, error) { return d.Shape, nil })
-		}, "the document's shape as a tree of {key, path, count, of, types, min_items, max_items, optional, children}; fields most common first, optional ones last").Positional("file").
+		}, "the document's shape as a tree of {key, path, count, of, types, min_items, max_items, optional, children}; fields most common first, optional ones last").Quiet().Positional("file").
 		Verb("table", func(c ochazuke.Ctx) ochazuke.Result {
 			return pending(c, func(d *Doc, path string) (any, error) { return tableAt(d, path) })
-		}, "an array (or the values a [] path names) as {path, columns: [{name, count, optional, types, self}], rows}; columns most common first, optional ones last, rows as in the document").Positional("file", "path").
+		}, "an array (or the values a [] path names) as {path, columns: [{name, count, optional, types, self}], rows}; columns most common first, optional ones last, rows as in the document").Quiet().Positional("file", "path").
 		Verb("get", func(c ochazuke.Ctx) ochazuke.Result {
 			return pending(c, func(d *Doc, path string) (any, error) {
 				values, fanned, err := Select(d.Root, path)
@@ -56,7 +55,7 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 				}
 				return values[0], nil
 			})
-		}, "the value at a path, keys in document order; a [] path answers an array of every value it names").Positional("file", "path")
+		}, "the value at a path, keys in document order; a [] path answers an array of every value it names").Quiet().Positional("file", "path")
 	file := ochazuke.Parameter{Type: "string", Required: true, Description: "the JSON file; - reads stdin"}
 	params := map[string]map[string]ochazuke.Parameter{
 		"doc.structure": {"file": file},
@@ -70,7 +69,7 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 		op.Result = results[key]
 		r.Operations[key] = op
 	}
-	sh := ocli.New(r, "o-json", stdin, stdout, quietJobs{stderr})
+	sh := ocli.New(r, "o-json", stdin, stdout, stderr)
 	sh.Usage = ocli.DefaultUsage("o-json")
 	return sh
 }
@@ -83,18 +82,4 @@ func writeIndented(w io.Writer, v any) error {
 	}
 	_, err = fmt.Fprintf(w, "%s\n", data)
 	return err
-}
-
-// quietJobs is the shell's stderr minus its "job #N VERB done" lines.
-// ochazuke/cli's Shell.Run (cli/shell.go, v0.1.1 line 188) prints one per
-// job a command started, and every doc verb is pending work; the
-// operation's Quiet flag does not reach that line. (o-csv has the same
-// filter.) A failed job's line passes through.
-type quietJobs struct{ w io.Writer }
-
-func (q quietJobs) Write(p []byte) (int, error) {
-	if line := string(p); strings.HasPrefix(line, "job #") && strings.HasSuffix(line, " done\n") {
-		return len(p), nil
-	}
-	return q.w.Write(p)
 }
