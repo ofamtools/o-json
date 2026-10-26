@@ -42,7 +42,7 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	if len(args) > 0 && isFile(args[0]) {
 		return runTUI(args, stdin, stdout, stderr)
 	}
-	app := oden.New("o-json", bareJSON(args), oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
+	app := oden.New("o-json", args, oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
 		oden.WithDefault(func(_ context.Context, args []string) error {
 			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !strings.ContainsAny(args[0], "./") {
 				return oden.ErrNotFound
@@ -60,18 +60,4 @@ Output:
   structure, table and get print text (--format json for JSON).
   doc VERB prints JSON for a host: the same answers, keys in document order.`
 	return app.Run(context.Background())
-}
-
-// bareJSON drops a --json given without a value (from o-csv): the shell's
-// --json takes arguments as JSON, and its output is always JSON, so
-// o-json doc get FILE .a --json means what it says.
-func bareJSON(args []string) []string {
-	out := make([]string, 0, len(args))
-	for i, arg := range args {
-		if arg == "--json" && (i+1 == len(args) || strings.HasPrefix(args[i+1], "--")) {
-			continue
-		}
-		out = append(out, arg)
-	}
-	return out
 }
