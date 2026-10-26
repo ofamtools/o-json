@@ -41,10 +41,7 @@ func (a *App) bind() {
 
 	r.Define("shape").Mode("normal").
 		Bind("enter", ochazuke.Do("outline.fold")).
-		Bind("y", ochazuke.Do("shape.yank")).
-		// The tree is read-only and has nothing to mark: space would run
-		// the list's list.mark.
-		Bind("space", ochazuke.Do("key.ignore").Hide())
+		Bind("y", ochazuke.Do("shape.yank"))
 	r.Define("item").Mode("normal").
 		Bind("enter", ochazuke.Do("item.open")).
 		Bind("y", ochazuke.Do("item.yank"))

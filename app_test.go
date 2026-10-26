@@ -347,3 +347,21 @@ func TestYankToNamedRegister(t *testing.T) {
 		t.Fatal("esc closes the detail")
 	}
 }
+
+// The tree and the table are read-only: space marks nothing in either,
+// and no hint offers list.mark.
+func TestReadOnlyViewsTakeNoMarks(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	selectPath(t, a, ".items")
+	for _, panel := range []string{"tree", "table"} {
+		Press(a.m, "space")
+		frame := view(a)
+		if marked := a.data.list.Marked(); len(marked) != 0 || strings.Contains(frame, "list.mark") {
+			t.Fatalf("%s: space marked %v\n%s", panel, marked, frame)
+		}
+		if marked := a.tree.List().Marked(); len(marked) != 0 {
+			t.Fatalf("%s: the tree took a mark %v", panel, marked)
+		}
+		press(t, a, "tab")
+	}
+}

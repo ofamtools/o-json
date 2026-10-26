@@ -47,7 +47,7 @@ const defaultRowsHeight = 20
 const scrolloff = 2
 
 func newRowsView(r *ochazuke.Runtime, id, parent string) (*rowsView, error) {
-	list, err := r.AddList(id, nil, ochazuke.Parent(parent), ochazuke.NoSpill(), ochazuke.Kind("rows"))
+	list, err := r.AddList(id, nil, ochazuke.Parent(parent), ochazuke.NoSpill(), ochazuke.NoMarks(), ochazuke.Kind("rows"))
 	if err != nil {
 		return nil, err
 	}

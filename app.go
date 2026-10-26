@@ -73,7 +73,7 @@ func New() (*App, error) {
 	a.m.Title = "o-json"
 	r.Instance(pageID, ochazuke.Kind("viewer"))
 	a.registerNouns()
-	tree, err := r.AddTree(treeID, nil, ochazuke.Parent(pageID), ochazuke.NoSpill(),
+	tree, err := r.AddTree(treeID, nil, ochazuke.Parent(pageID), ochazuke.NoSpill(), ochazuke.NoMarks(),
 		ochazuke.Columns(ochazuke.Column{Title: "path", Min: 8}, ochazuke.Column{Title: "type", Priority: 2}, ochazuke.Column{Title: "count", Align: ochazuke.AlignRight, Priority: 1}))
 	if err != nil {
 		return nil, err
