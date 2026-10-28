@@ -92,7 +92,7 @@ func TestVerbHistoryKinds(t *testing.T) {
 		"shape.yank": ochazuke.HistoryChange, "item.yank": ochazuke.HistoryChange,
 		"rows.move": ochazuke.HistoryAction, "viewer.search": ochazuke.HistoryAction, "entry.open": ochazuke.HistoryAction, "query.commit": ochazuke.HistoryAction,
 	} {
-		if got := a.r.Operations[key].HistoryKind; got != want {
+		if got := a.r.Operations[a.r.CanonicalKey(key)].HistoryKind; got != want {
 			t.Errorf("%s: %q, want %q", key, got, want)
 		}
 	}

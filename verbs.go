@@ -36,9 +36,9 @@ func (a *App) registerNouns() {
 func (a *App) registerVerbs() {
 	r := a.r
 	params := func(key string, p map[string]ochazuke.Parameter) {
-		op := r.Operations[key]
+		op := r.Operations[r.CanonicalKey(key)]
 		op.Parameters = p
-		r.Operations[key] = op
+		r.Operations[r.CanonicalKey(key)] = op
 	}
 	done := func(err error) ochazuke.Result {
 		if err != nil {
@@ -332,12 +332,12 @@ func (a *App) jumpFrom(cur, dir int) error {
 // an action. An unknown key panics, so a renamed verb is renamed here too.
 func setHistory(r *ochazuke.Runtime, kind string, keys ...string) {
 	for _, key := range keys {
-		op, ok := r.Operations[key]
+		op, ok := r.Operations[r.CanonicalKey(key)]
 		if !ok {
 			panic("setHistory: no operation " + key)
 		}
 		op.HistoryKind = kind
-		r.Operations[key] = op
+		r.Operations[r.CanonicalKey(key)] = op
 	}
 }
 
@@ -346,11 +346,11 @@ func setHistory(r *ochazuke.Runtime, kind string, keys ...string) {
 // no method for it either; an unknown key panics, as in setHistory.
 func setRepeatable(r *ochazuke.Runtime, keys ...string) {
 	for _, key := range keys {
-		op, ok := r.Operations[key]
+		op, ok := r.Operations[r.CanonicalKey(key)]
 		if !ok {
 			panic("setRepeatable: no operation " + key)
 		}
 		op.Repeatable = true
-		r.Operations[key] = op
+		r.Operations[r.CanonicalKey(key)] = op
 	}
 }

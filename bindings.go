@@ -27,6 +27,30 @@ func (a *App) bind() {
 		Bind("ctrl+b", move("page-up")).Bind("pgup", move("page-up")).
 		Bind("g g", line("top")).Bind("home", line("top")).
 		Bind("G", line("bottom")).Bind("end", line("bottom"))
+	// The rows tables are cell tables (CellSelect), but a list of its own
+	// noun answers only to that noun's rows, so the framework's cell keys
+	// are bound here, to its list verbs: h/l and the arrows move the
+	// current column (clamped: the panels are NoSpill), 0/^ and $ go to the
+	// first and last, N| to column N, g c chooses one, z >/z </z = size
+	// them and z p pins one. home and end stay the rows' top and bottom.
+	column := func(delta int) ochazuke.Binding {
+		return ochazuke.Do("ochazuke.list.column", ochazuke.Arguments{"delta": delta}).FromPayload("steps", ochazuke.SourceCount).Guard("table-cells")
+	}
+	to := func(end string) ochazuke.Binding {
+		return ochazuke.Do("ochazuke.list.column", ochazuke.Arguments{"to": end}).Guard("table-cells")
+	}
+	resize := func(delta int) ochazuke.Binding {
+		return ochazuke.Do("ochazuke.list.resize-column", ochazuke.Arguments{"delta": delta}).FromPayload("steps", ochazuke.SourceCount).Guard("table-cells").Hide()
+	}
+	r.Define("rows").Mode("normal").
+		Bind("h", column(-1)).Bind("left", column(-1)).
+		Bind("l", column(1)).Bind("right", column(1)).
+		Bind("0", to("first").Guard("no-count")).Bind("^", to("first")).Bind("$", to("last")).
+		Bind("|", ochazuke.Do("ochazuke.list.column").FromPayload("index", ochazuke.SourceCount).Guard("table-cells")).
+		Bind("g c", ochazuke.Do("ochazuke.list.choose-column").Guard("table-cells")).
+		Bind("z >", resize(1)).Bind("z <", resize(-1)).
+		Bind("z =", ochazuke.Do("ochazuke.list.reset-columns").Guard("table-cells").Hide()).
+		Bind("z p", ochazuke.Do("ochazuke.list.toggle-pin-column").Guard("table-cells").Hide())
 	r.Define("rows").Mode("count_pending").Extends("normal")
 
 	r.Define("viewer").Mode("normal").

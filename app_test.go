@@ -529,3 +529,36 @@ func TestDotRepeatsTheLastChange(t *testing.T) {
 		t.Fatalf("y j .: register %q", y.Text)
 	}
 }
+
+// The data table is a cell table: l and h move the current column, j keeps
+// it, and $ goes to the last; an entry row's own h and l still win in the
+// detail (TestEnterOnRowShowsItemFields); z > gives a column a width and
+// z = takes it back.
+func TestDataTableMovesByCell(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	selectPath(t, a, ".items")
+	press(t, a, "tab", "l", "l")
+	if got := a.data.list.Column(); got != 2 {
+		t.Fatalf("l l: column %d, want 2", got)
+	}
+	press(t, a, "j")
+	if got, row := a.data.list.Column(), a.data.Selected(); got != 2 || row != 1 {
+		t.Fatalf("j: column %d row %d, want column 2 row 1", got, row)
+	}
+	press(t, a, "h")
+	if got := a.data.list.Column(); got != 1 {
+		t.Fatalf("h: column %d, want 1", got)
+	}
+	press(t, a, "$")
+	if got, last := a.data.list.Column(), len(a.data.list.Columns())-1; got != last {
+		t.Fatalf("$: column %d, want %d", got, last)
+	}
+	press(t, a, "0", "l", "z", ">")
+	if got := a.data.list.ColumnWidths()[1]; got == 0 {
+		t.Fatalf("z >: no width given to column 1: %v", a.data.list.ColumnWidths())
+	}
+	press(t, a, "z", "=")
+	if got := a.data.list.ColumnWidths(); len(got) != 0 {
+		t.Fatalf("z =: widths %v, want none", got)
+	}
+}

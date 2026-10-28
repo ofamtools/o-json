@@ -121,6 +121,8 @@ The file is read off the event loop (`viewer.load`), and the screen says `loadin
 | `g g` / `G`, `home` / `end` | data, detail | first / last row (`12G` goes to row 12) |
 | `ctrl+d` `ctrl+u` / `ctrl+f` `ctrl+b`, `pgdown` `pgup` | data, detail | half a screen / a screen |
 | `enter` | data | open the row's item (or the field's object or array) in the detail |
+| `h` `l`, `left` `right`, `0` `^` / `$`, `N\|`, `g c` | data, detail | move the current cell's column: one left / right (in the detail `h` and `l` are the entry's), first / last, column N, choose one |
+| `z >` / `z <`, `z =`, `z p` | data, detail | widen / narrow the current column, make every column automatic, pin the current column |
 | `enter` `l` / `h` `backspace` | detail | step into the nested value / back out (at the top, close) |
 | `q`, `esc` | detail | close |
 | `/` | tree, data | search the paths: the tree keeps the paths whose key or path contains the text, with their ancestors, and the first match is selected |
