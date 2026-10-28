@@ -31,12 +31,12 @@ func open(t *testing.T, path string, width, height int) *App {
 func view(a *App) string { return ansi.Strip(a.m.View().Content) }
 
 // press sends keys one by one, failing on the first error the model
-// shows. A yank's "copied ..." status is not an error.
+// shows. A yank's "copied ..." is the plain tone (Model.Info), not an error.
 func press(t *testing.T, a *App, keys ...string) {
 	t.Helper()
 	for _, key := range keys {
 		Press(a.m, key)
-		if a.m.Status != "" && !strings.HasPrefix(a.m.Status, "copied ") {
+		if a.m.Status != "" {
 			t.Fatalf("key %q: %s", key, a.m.Status)
 		}
 		view(a)
@@ -351,8 +351,11 @@ func TestYankTellsTheUser(t *testing.T) {
 	a := open(t, sample, 100, 30)
 	selectPath(t, a, ".items[].owner.email")
 	press(t, a, "y")
-	if a.m.Status != "copied .items[].owner.email" {
-		t.Fatalf("status after y: %q", a.m.Status)
+	if a.m.Info != "copied .items[].owner.email" || a.m.Status != "" {
+		t.Fatalf("status after y: info %q, error %q", a.m.Info, a.m.Status)
+	}
+	if v := view(a); !strings.Contains(v, "copied .items[].owner.email") || strings.Contains(v, "Error:") {
+		t.Fatalf("a yank reads as an error:\n%s", v)
 	}
 	a.Clipboard = func(string) error { return errors.New("no clipboard tool") }
 	finish(a, Press(a.m, "y"))
@@ -451,7 +454,7 @@ func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 			if cmd := Press(a.m, k); k == "y" || k == "." {
 				finish(a, cmd) // the clipboard copy
 			}
-			if s := a.m.Status; s != "" && !strings.HasPrefix(s, "copied ") {
+			if s := a.m.Status; s != "" {
 				t.Fatalf("key %q: %s", k, s)
 			}
 			view(a)

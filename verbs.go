@@ -222,7 +222,7 @@ func (a *App) copyText(c ochazuke.Ctx, text, what string) ochazuke.Result {
 	}
 	clip := a.Clipboard
 	if clip == nil {
-		c.Status(said)
+		c.Info(said)
 		return ochazuke.Done(y)
 	}
 	return ochazuke.Pending(func(context.Context) (any, error) { return y, clip(text) }).
@@ -231,7 +231,7 @@ func (a *App) copyText(c ochazuke.Ctx, text, what string) ochazuke.Result {
 				c.Notify("clipboard: " + err.Error() + " (the registers have " + what + ")")
 				return
 			}
-			c.Status(said)
+			c.Info(said)
 		})
 }
 
