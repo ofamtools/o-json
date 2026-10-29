@@ -342,7 +342,34 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		Verb("write", func(c ochazuke.Ctx) ochazuke.Result { return a.writeDoc(c, writeNewFile) },
 			"Write the shown document as indented JSON to a new file; an existing file asks first (viewer.overwrite), the source never. A document of no file is then that file").When("viewer-document").
 		Verb("overwrite", func(c ochazuke.Ctx) ochazuke.Result { return a.writeDoc(c, writeReplace) },
-			"Replace an existing file with the shown document (never the source)").Confirm("Replace {{path}} with the shown document?").When("viewer-document")
+			"Replace an existing file with the shown document (never the source)").Confirm("Replace {{path}} with the shown document?").When("viewer-document").
+		Verb("save", func(c ochazuke.Ctx) ochazuke.Result {
+			if strings.TrimSpace(ochazuke.StringArg(c.Args, "path", "")) == "" {
+				// Workaround: path is optional here only because ochazuke
+				// checks an alias's preset args as a whole request (a
+				// required path refuses w! {force}); ask for it as a
+				// missing required one would be asked.
+				q := ochazuke.Request{Noun: "viewer", Verb: "save", Args: c.Args}
+				if _, err := r.OpenArgsForm(q, func(q ochazuke.Request) error { _, err := r.Execute(q); return err }); err != nil {
+					return ochazuke.Failed(err)
+				}
+				return ochazuke.Done(nil)
+			}
+			force := c.Args["force"] == true
+			switch {
+			case r.Page != pageID || a.editedShown():
+				if force {
+					return a.write(c, writeForce)
+				}
+				return a.write(c, writeNewFile)
+			case force:
+				return a.writeDoc(c, writeReplace)
+			}
+			return a.writeDoc(c, writeNewFile)
+		}, "Write what w writes where the focus is: the restructured document while the edited one is shown or on the restructure page (restructure.write), else the shown document (viewer.write). With force an existing file is replaced without asking (the source only through W's confirm); with quit, quit once written (the :w, :w!, :wq and :x aliases)").When("viewer-saveable")
+	r.DefineGuard("viewer-saveable", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
+		return a.Doc != nil || r.Page != pageID || a.editedShown()
+	})
 	path := ochazuke.Parameter{Type: "string", Required: true, Description: "the file to write, e.g. NAME.json"}
 	params("viewer.open", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Source: "viewer.files", Free: true,
 		Description: "the JSON file (- is stdin); choices: recent files, then the current folder"}})
@@ -352,15 +379,43 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		"text":  {Type: "string", Description: "with paste, the JSON to paste instead of the clipboard"},
 	})
 	params("viewer.paste", map[string]ochazuke.Parameter{"text": {Type: "string", Description: "the JSON; omit to read the system clipboard"}})
-	params("viewer.write", map[string]ochazuke.Parameter{"path": path})
-	params("viewer.overwrite", map[string]ochazuke.Parameter{"path": path})
+	quit := ochazuke.Parameter{Type: "boolean", Description: "quit once written (:wq); the before-quit check still asks about edits the write did not save"}
+	params("viewer.write", map[string]ochazuke.Parameter{"path": path, "quit": quit})
+	params("viewer.overwrite", map[string]ochazuke.Parameter{"path": path, "quit": quit})
+	params("viewer.save", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the file to write; omit to be asked (a form)"}, "quit": quit,
+		"force": {Type: "boolean", Description: "replace an existing file without asking (:w!)"}})
 	setHistory(r, ochazuke.HistoryFetch, "viewer.open")
-	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite")
+	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite", "viewer.save")
 	setHistory(r, ochazuke.HistoryAction, "viewer.quit")
 	a.registerExportVerbs(params)
 	if err := a.beforeQuit(); err != nil {
 		panic(err) // app.quit is the framework's own verb: always there
 	}
+	if err := a.addAliases(); err != nil {
+		panic(err) // o-json's own rows: a bad one is a bug
+	}
+}
+
+// aliases are o-json's alias rows, vim's ex words: bare names that run a
+// verb with preset arguments from the palette, the CLI and the API. A
+// user's actions.json may add more; aliases.shadow decides a clash.
+var aliases = []ochazuke.ActionAlias{
+	{Alias: "w", Action: "viewer.save", Note: "write (vim :w)"},
+	{Alias: "w!", Action: "viewer.save", Args: ochazuke.Arguments{"force": true}, Note: "write, replacing an existing file (vim :w!)"},
+	{Alias: "wq", Action: "viewer.save", Args: ochazuke.Arguments{"quit": true}, Note: "write, then quit (vim :wq)"},
+	{Alias: "x", Action: "viewer.save", Args: ochazuke.Arguments{"quit": true}, Note: "write, then quit (vim :x)"},
+	{Alias: "e", Action: "viewer.open", Note: "open a file (vim :e)"},
+	{Alias: "q", Action: "app.quit", Note: "quit; asks with edits no write saved (vim :q)"},
+	{Alias: "q!", Action: "app.quit", Args: ochazuke.Arguments{"force": true}, Note: "quit without writing (vim :q!)"},
+}
+
+func (a *App) addAliases() error {
+	for _, al := range aliases {
+		if err := a.r.AddActionAlias(al); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a *App) doneState(err error) ochazuke.Result {

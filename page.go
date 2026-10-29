@@ -1392,10 +1392,11 @@ func (a *App) registerRestructureVerbs() {
 			return a.doneErr(r.Settings().Set(settingLayout, l))
 		}, "Set the restructure page's layout (split or single; without layout, the other one)")
 	path := ochazuke.Parameter{Type: "string", Required: true, Description: "the file to write, e.g. NAME.restructured.json"}
-	params("restructure.write", map[string]ochazuke.Parameter{"path": path,
+	quit := ochazuke.Parameter{Type: "boolean", Description: "quit once written (:wq)"}
+	params("restructure.write", map[string]ochazuke.Parameter{"path": path, "quit": quit,
 		"force": {Type: "boolean", Description: "replace an existing file without asking; the source asks once (W)"}})
-	params("restructure.overwrite", map[string]ochazuke.Parameter{"path": path})
-	params("restructure.overwrite-source", map[string]ochazuke.Parameter{"path": path})
+	params("restructure.overwrite", map[string]ochazuke.Parameter{"path": path, "quit": quit})
+	params("restructure.overwrite-source", map[string]ochazuke.Parameter{"path": path, "quit": quit})
 	params("restructure.jq", map[string]ochazuke.Parameter{
 		"format":  {Type: "string", Enum: []string{"csv", "tsv"}, Description: "end in the export's @csv / @tsv step; omit for the restructure alone"},
 		"of":      {Type: "string", Description: "with format, the array's structure path; omit for the one under the cursor"},
@@ -1550,7 +1551,11 @@ func (a *App) write(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 	}
 	if mode == writeForce && strings.TrimSpace(path) != "" && a.isSource(path) {
 		// The source: ask once, then restructure.overwrite-source writes it.
-		v, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "overwrite-source", Args: ochazuke.Arguments{"path": path}})
+		args := ochazuke.Arguments{"path": path}
+		if c.Args["quit"] == true {
+			args["quit"] = true
+		}
+		v, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "overwrite-source", Args: args})
 		if err != nil {
 			return ochazuke.Failed(err)
 		}
@@ -1591,6 +1596,10 @@ func (a *App) writeFileAsk(c ochazuke.Ctx, path string, data []byte, mode writeM
 	}
 	overwrite := mode != writeNewFile
 	askArgs["path"] = path
+	quit := c.Args["quit"] == true
+	if quit {
+		askArgs["quit"] = true // the confirmed write quits too
+	}
 	return ochazuke.Pending(func(context.Context) (any, error) {
 		if _, err := os.Stat(path); err == nil && !overwrite {
 			return nil, errExists
@@ -1613,6 +1622,13 @@ func (a *App) writeFileAsk(c ochazuke.Ctx, path string, data []byte, mode writeM
 				done(path)
 			}
 			c.Info("wrote " + what + " to " + path)
+			if quit {
+				// app.quit's before-quit check still asks about edits
+				// this write did not save.
+				if _, err := a.r.Execute(ochazuke.Request{Noun: ochazuke.AppNoun, Verb: "quit"}); err != nil {
+					c.Error(err.Error())
+				}
+			}
 		}
 	})
 }
