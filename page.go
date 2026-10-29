@@ -1391,7 +1391,7 @@ func (a *App) registerRestructureVerbs() {
 			}
 			return a.doneErr(r.Settings().Set(settingLayout, l))
 		}, "Set the restructure page's layout (split or single; without layout, the other one)")
-	path := ochazuke.Parameter{Type: "string", Required: true, Description: "the file to write, e.g. NAME.restructured.json"}
+	path := ochazuke.Parameter{Type: ochazuke.PathParameterType, New: true, Required: true, Description: "the file to write, e.g. NAME.restructured.json"}
 	quit := ochazuke.Parameter{Type: "boolean", Description: "quit once written (:wq)"}
 	params("restructure.write", map[string]ochazuke.Parameter{"path": path, "quit": quit,
 		"force": {Type: "boolean", Description: "replace an existing file without asking; the source asks once (W)"}})

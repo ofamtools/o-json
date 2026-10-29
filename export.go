@@ -675,7 +675,7 @@ func (a *App) registerExportVerbs(params func(string, map[string]ochazuke.Parame
 		Verb("export-overwrite", func(c ochazuke.Ctx) ochazuke.Result { return a.export(c, true) },
 			"Replace an existing file with the export (never the source)").Confirm("Replace {{path}} with the export?").When("viewer-document")
 	args := map[string]ochazuke.Parameter{
-		"path":    {Type: "string", Required: true, Description: "the file to write, e.g. NAME.csv (the extension picks the format)"},
+		"path":    {Type: ochazuke.PathParameterType, New: true, Required: true, Description: "the file to write, e.g. NAME.csv (the extension picks the format)"},
 		"format":  {Type: "string", Enum: exportFormatNames(), Description: "csv, tsv, jsonl or md; omit to take it from the path's extension"},
 		"of":      {Type: "string", Description: "the array's structure path, e.g. .items or .items[]; omit for the array under the cursor"},
 		"columns": {Type: "string", Description: "the columns to keep, in order, separated by commas (owner.name for a nested field); omit for all"},

@@ -36,11 +36,13 @@ func (a *App) read(p string) ochazuke.Result {
 	stdin := a.Stdin
 	a.Loading, a.LoadErr = p, nil
 	state, size := a.stateDir(), a.recentSize()
+	var recent []string // written on the read's goroutine, read in Then
 	return ochazuke.Pending(func(context.Context) (any, error) {
 		doc, err := ReadDoc(p, stdin)
 		if err == nil && p != "-" {
 			// A recent list that cannot be written never fails the read.
 			_ = recordRecent(state, p, size)
+			recent = readRecent(state, size)
 		}
 		return doc, err
 	}).
@@ -49,6 +51,9 @@ func (a *App) read(p string) ochazuke.Result {
 			if err != nil {
 				a.Loading, a.LoadErr = "", err
 				return
+			}
+			if recent != nil {
+				a.recent = recent
 			}
 			if err := a.setDoc(p, v.(*Doc)); err != nil {
 				a.LoadErr = err
@@ -189,6 +194,10 @@ func (a *App) stateDir() string {
 
 func (a *App) recentSize() int { return a.r.Settings().Int(settingRecent) }
 
+// LoadRecent reads the recent list for the path chooser; the viewer runs
+// it before the loop starts.
+func (a *App) LoadRecent() { a.recent = readRecent(a.stateDir(), a.recentSize()) }
+
 // readRecent is the recent list, newest first, without the files that are
 // gone and cut to size.
 func readRecent(dir string, size int) []string {
@@ -303,7 +312,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		Verb("files", func(c ochazuke.Ctx) ochazuke.Result {
 			state, size, current := a.stateDir(), a.recentSize(), a.Path
 			return ochazuke.Pending(func(context.Context) (any, error) { return files(state, size, current), nil })
-		}, "The files viewer.open offers: the recent ones (newest first), then the files in the current file's folder").Fetch().
+		}, "The recent files (newest first), then the files in the current file's folder: a choices source for an actions.json row or the palette (viewer.open itself takes a path, through the path chooser)").Fetch().
 		Verb("recent", func(c ochazuke.Ctx) ochazuke.Result {
 			state, size := a.stateDir(), a.recentSize()
 			return ochazuke.Pending(func(context.Context) (any, error) { return readRecent(state, size), nil })
@@ -370,9 +379,19 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	r.DefineGuard("viewer-saveable", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
 		return a.Doc != nil || r.Page != pageID || a.editedShown()
 	})
-	path := ochazuke.Parameter{Type: "string", Required: true, Description: "the file to write, e.g. NAME.json"}
-	params("viewer.open", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Source: "viewer.files", Free: true,
-		Description: "the JSON file (- is stdin); choices: recent files, then the current folder"}})
+	path := ochazuke.Parameter{Type: ochazuke.PathParameterType, New: true, Required: true, Description: "the file to write, e.g. NAME.json"}
+	params("viewer.open", map[string]ochazuke.Parameter{"path": {Type: ochazuke.PathParameterType, Required: true,
+		Description: "the JSON file (- is stdin); the path chooser browses the open file's folder, the recent files and a typed path"}})
+	// The path chooser starts in the open file's folder and offers
+	// o-json's recent list (no I/O: the list read before the loop and
+	// after each read).
+	r.SetPathBase(func(ochazuke.PathPick) string {
+		if a.Path == "" || a.Path == "-" {
+			return ""
+		}
+		return filepath.Dir(a.Path)
+	})
+	r.SetRecentPaths(func(ochazuke.PathPick) []string { return slices.Clone(a.recent) })
 	params("viewer.discard", map[string]ochazuke.Parameter{
 		"path":  {Type: "string", Description: "the file to read once the edits are dropped (- is stdin); omit for an empty document"},
 		"paste": {Type: "boolean", Description: "paste the clipboard (or text) once the edits are dropped, as viewer.paste does"},
@@ -382,7 +401,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	quit := ochazuke.Parameter{Type: "boolean", Description: "quit once written (:wq); the before-quit check still asks about edits the write did not save"}
 	params("viewer.write", map[string]ochazuke.Parameter{"path": path, "quit": quit})
 	params("viewer.overwrite", map[string]ochazuke.Parameter{"path": path, "quit": quit})
-	params("viewer.save", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the file to write; omit to be asked (a form)"}, "quit": quit,
+	params("viewer.save", map[string]ochazuke.Parameter{"path": {Type: ochazuke.PathParameterType, New: true, Description: "the file to write; omit to be asked (a form)"}, "quit": quit,
 		"force": {Type: "boolean", Description: "replace an existing file without asking (:w!)"}})
 	setHistory(r, ochazuke.HistoryFetch, "viewer.open")
 	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite", "viewer.save")

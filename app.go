@@ -29,6 +29,10 @@ type App struct {
 	Path    string // the file being shown or read ("-" is stdin)
 	Loading string // the file being read off the loop, "" when idle
 	LoadErr error
+	// recent is the recent list the path chooser offers (viewer.open's
+	// recent source): read before the loop starts and after each read, on
+	// the read's goroutine, so the chooser does no I/O.
+	recent []string
 
 	// The structure tree's filters: Query keeps shapes whose key or path
 	// contains it (case-insensitive) with their ancestors; Kind keeps

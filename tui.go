@@ -63,6 +63,7 @@ func runTUI(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		_, err := fmt.Fprintln(stdout, ansi.Strip(a.m.View().Content))
 		return err
 	}
+	a.LoadRecent()
 	a.Clipboard = systemClipboard()
 	a.Paste = systemPaste()
 	var opts []tea.ProgramOption

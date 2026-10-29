@@ -100,25 +100,32 @@ func TestOpenWithoutAPathOpensTheForm(t *testing.T) {
 	if a.r.TopModal() != ochazuke.ArgsFormID {
 		t.Fatalf("e: modal %q", a.r.TopModal())
 	}
-	// The field suggests viewer.files's answer (read off the loop).
-	if p := a.r.Operations[a.r.CanonicalKey("viewer.open")].Parameters["path"]; p.Source != "viewer.files" || !p.Free {
+	// The field is a path: the chooser starts in the open file's folder
+	// and its recent source is o-json's recent list (read with the file,
+	// off the loop).
+	if p := a.r.Operations[a.r.CanonicalKey("viewer.open")].Parameters["path"]; p.Type != ochazuke.PathParameterType {
 		t.Fatalf("path parameter %+v", p)
 	}
-	choices := files(a.stateDir(), a.recentSize(), a.Path)
-	abs, _ := filepath.Abs(sample)
-	ids := make([]string, len(choices))
-	for i, c := range choices {
-		ids[i] = c.ID
-	}
-	if len(ids) < 2 || ids[0] != abs || !slices.Contains(ids, filepath.Join("testdata", "restructure.json")) || slices.Contains(ids, sample) {
-		t.Fatalf("choices %v", ids)
+	pick := ochazuke.PathPick{Name: "path"}
+	if got := a.r.PathStart(pick); !strings.HasSuffix(got, "testdata") {
+		t.Fatalf("browse starts in %q", got)
 	}
 	other := filepath.Join("testdata", "duplicate-keys.json")
-	Type(a.m, other)
+	// The field opens the path chooser (path.field picker): typing finds
+	// the file in the open file's folder once the folder is listed.
+	finish(a, Press(a.m, "enter"))
+	settle(a)
+	if a.r.TopModal() != "path-chooser" {
+		t.Fatalf("the path field: modal %q", a.r.TopModal())
+	}
+	Type(a.m, "duplicate-keys")
+	settle(a)
 	view(a)
 	finish(a, Press(a.m, "enter"))
 	settle(a)
-	if a.r.TopModal() != "" || a.Path != other {
+	finish(a, Press(a.m, "enter"))
+	settle(a)
+	if a.r.TopModal() != "" || !strings.HasSuffix(a.Path, other) {
 		t.Fatalf("form: modal %q path %q status %q\n%s", a.r.TopModal(), a.Path, a.m.Status, view(a))
 	}
 }
