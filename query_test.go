@@ -260,23 +260,34 @@ func TestQueryChipsRender(t *testing.T) {
 	if l := line(view(a), "jq .items[]"); !strings.Contains(l, "jq .items[] | .name") {
 		t.Fatalf("query line %q", l)
 	}
-	raw := a.m.View().Content
-	chip := func(focused bool) string {
-		if focused {
-			return "\x1b[7m.items[]\x1b[m"
-		}
-		return "\x1b[7;2m.items[]\x1b[m"
+	st := a.m.Styles()
+	lineOf := func() string {
+		b, _ := a.queryLines(st, 120)
+		return b.Text
 	}
-	if !strings.Contains(raw, chip(false)) || strings.Contains(raw, chip(true)) {
-		t.Fatalf("an unfocused chip is not dimmed reverse video:\n%q", line(raw, "items[]"))
+	dim, bright := st.Tone(ochazuke.ToneChip).Render(".items[]"), st.Tone(ochazuke.ToneChipFocused).Render(".items[]")
+	if dim == bright || dim == ".items[]" {
+		t.Fatalf("the chip tones draw alike: %q %q", dim, bright)
 	}
-	if strings.Contains(raw, "\x1b[7;2m|") || strings.Contains(raw, "\x1b[7m|") {
+	if raw := lineOf(); !strings.Contains(raw, dim) || strings.Contains(raw, bright) {
+		t.Fatalf("an unfocused chip is not on the dim chip background:\n%q", raw)
+	}
+	if raw := lineOf(); strings.Contains(raw, st.Tone(ochazuke.ToneChip).Render("|")) {
 		t.Fatal("a pipe is drawn as a chip")
 	}
+	// Focused, the chip under the cursor is bright (query.chip-focus
+	// cursor); the others stay dim. With line, every chip is bright.
 	press(t, a, "/")
-	if raw := a.m.View().Content; !strings.Contains(raw, chip(true)) {
-		t.Fatalf("a focused chip is not bright:\n%q", line(raw, "items[]"))
+	if raw := lineOf(); strings.Contains(raw, bright) || !strings.Contains(raw, st.Tone(ochazuke.ToneChipFocused).Render(".name")) {
+		t.Fatalf("the chip under the cursor is not the bright one:\n%q", raw)
 	}
+	if err := a.r.Settings().Set(settingChipFocus, "line"); err != nil {
+		t.Fatal(err)
+	}
+	if raw := lineOf(); !strings.Contains(raw, bright) {
+		t.Fatalf("query.chip-focus line: a focused line's chips are not bright:\n%q", raw)
+	}
+	_ = a.r.Settings().Set(settingChipFocus, "cursor")
 	// An error points at its column on the line below.
 	press(t, a, "esc")
 	query(t, a, ".items[] |")

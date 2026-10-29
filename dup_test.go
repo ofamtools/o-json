@@ -92,9 +92,24 @@ func TestViewerShowsDuplicateKey(t *testing.T) {
 	}
 	nodes := a.tree.Nodes()
 	at := slices.IndexFunc(nodes, func(n ochazuke.TreeNode) bool { return n.ID == "s:.items[].id" })
-	if at < 0 || !slices.Equal(nodes[at].Tones, []ochazuke.ToneSpan{ochazuke.CellTone(0, toneDuplicateKey)}) {
+	if at < 0 || !slices.Equal(nodes[at].Tones, []ochazuke.ToneSpan{ochazuke.CellTone(0, ochazuke.ToneError)}) {
 		t.Fatalf("id tones %+v", nodes)
 	}
+	// json.duplicate-tone foreground: the error colour, no background.
+	if err := a.r.Settings().Set(settingDuplicateTone, "foreground"); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.rebuild(); err != nil {
+		t.Fatal(err)
+	}
+	if got := a.tree.Nodes()[at].Tones; !slices.Equal(got, []ochazuke.ToneSpan{ochazuke.CellTone(0, ochazuke.ToneErrored)}) {
+		t.Fatalf("foreground tones %+v", got)
+	}
+	_ = a.r.Settings().Set(settingDuplicateTone, "background")
+	if err := a.rebuild(); err != nil {
+		t.Fatal(err)
+	}
+	nodes = a.tree.Nodes()
 	if name := nodes[slices.IndexFunc(nodes, func(n ochazuke.TreeNode) bool { return n.ID == "s:.items[].name" })]; len(name.Tones) != 0 {
 		t.Errorf("name tones %+v", name.Tones)
 	}

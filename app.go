@@ -202,18 +202,32 @@ const bigStructure = 150
 
 func shapeID(s *Shape) string { return "s:" + s.Path }
 
-// toneDuplicateKey tones the label of a field some objects repeat. It is
-// the built-in errored tone, the scheme's error role as the foreground;
-// a background tone of its own (json.duplicate-key) waits for the library
-// to draw backgrounds.
-const toneDuplicateKey = ochazuke.ToneErrored
+// A field some objects repeat has its label toned (json.duplicate-tone):
+// background, the built-in error tone (bold on the error background), or
+// foreground, the errored tone (the scheme's error role as the colour).
+const settingDuplicateTone = "json.duplicate-tone"
+
+func declareToneSettings(r *ochazuke.Runtime) error {
+	return r.DeclareSetting(ochazuke.Setting{
+		Name: settingDuplicateTone, Type: ochazuke.SettingString, Default: "background", Enum: []string{"background", "foreground"},
+		Description: "How a key some objects repeat (jq keeps the last value) is marked in the structure trees: background puts its label on the error background; foreground colours it in the error colour",
+	})
+}
+
+// duplicateTone is the tone of a repeated key's label cell.
+func (a *App) duplicateTone() ochazuke.ToneSpan {
+	if a.r.Settings().String(settingDuplicateTone) == "foreground" {
+		return ochazuke.CellTone(0, ochazuke.ToneErrored)
+	}
+	return ochazuke.CellTone(0, ochazuke.ToneError)
+}
 
 // rebuild sets the tree's nodes from the shapes the filters keep.
 func (a *App) rebuild() error {
 	if a.Doc == nil {
 		return a.tree.SetNodes(nil)
 	}
-	nodes, width := shapeNodes(a.Doc.Shape, a.keep(), "")
+	nodes, width := shapeNodes(a.Doc.Shape, a.keep(), "", a.duplicateTone())
 	a.treeWidth = width
 	return a.tree.SetNodes(nodes)
 }
@@ -221,7 +235,7 @@ func (a *App) rebuild() error {
 // shapeNodes is a structure tree's nodes (ids prefix+"s:"+path, noun
 // shape, cells path, type, count) for the shapes keep holds (nil: all),
 // and the tree's natural width.
-func shapeNodes(root *Shape, keep map[*Shape]bool, prefix string) ([]ochazuke.TreeNode, int) {
+func shapeNodes(root *Shape, keep map[*Shape]bool, prefix string, dup ochazuke.ToneSpan) ([]ochazuke.TreeNode, int) {
 	var nodes []ochazuke.TreeNode
 	var add func(s *Shape, parent string)
 	add = func(s *Shape, parent string) {
@@ -235,7 +249,7 @@ func shapeNodes(root *Shape, keep map[*Shape]bool, prefix string) ([]ochazuke.Tr
 		id := prefix + shapeID(s)
 		var tones []ochazuke.ToneSpan
 		if s.Duplicates != nil {
-			tones = []ochazuke.ToneSpan{ochazuke.CellTone(0, toneDuplicateKey)}
+			tones = []ochazuke.ToneSpan{dup}
 		}
 		nodes = append(nodes, ochazuke.TreeNode{ID: id, Parent: parent, Label: name, Noun: "shape", Data: s,
 			Cells: []string{name, s.Types(), s.Presence()}, Tones: tones})

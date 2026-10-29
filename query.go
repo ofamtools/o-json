@@ -33,6 +33,7 @@ const (
 	jqRunID   = "jq-run"   // the runner
 
 	settingQueryLine = "query.line"
+	settingChipFocus = "query.chip-focus"
 
 	// jqDebounce is the pause after the last change before a run.
 	jqDebounce = 150 * time.Millisecond
@@ -42,6 +43,9 @@ func declareQuerySettings(r *ochazuke.Runtime) error {
 	return r.DeclareSetting(ochazuke.Setting{
 		Name: settingQueryLine, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "The jq query line above the structure pane (/ focuses it) and the structure pane's query mode; off, / is the path search (viewer.search) and the data pane follows the tree alone",
+	}, ochazuke.Setting{
+		Name: settingChipFocus, Type: ochazuke.SettingString, Default: "cursor", Enum: []string{"cursor", "line"},
+		Description: "The query line's field chips sit on a dim background; while the line is focused, cursor brightens the chip under the cursor, line brightens every chip",
 	})
 }
 

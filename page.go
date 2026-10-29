@@ -99,6 +99,9 @@ func declareSettings(r *ochazuke.Runtime) error {
 	if err := declarePutSettings(r); err != nil {
 		return err
 	}
+	if err := declareToneSettings(r); err != nil {
+		return err
+	}
 	return r.DeclareSetting(ochazuke.Setting{
 		Name: settingLayout, Type: ochazuke.SettingString, Default: "split", Enum: []string{"split", "single"},
 		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, tab swaps them",
@@ -182,7 +185,7 @@ func (a *App) setOriginal() error {
 	if a.Doc == nil {
 		return a.rs.orig.SetNodes(nil)
 	}
-	nodes, _ := shapeNodes(a.Doc.Shape, nil, "o:")
+	nodes, _ := shapeNodes(a.Doc.Shape, nil, "o:", a.duplicateTone())
 	a.rs.origTones = map[string][]ochazuke.ToneSpan{}
 	for _, n := range nodes {
 		a.rs.origTones[n.ID] = n.Tones
@@ -1012,7 +1015,7 @@ func (a *App) highlight() {
 	// A node from a shape whose objects repeat a key keeps the warning.
 	mark(a.rs.tree, func(id string) []ochazuke.ToneSpan {
 		if s := a.shapeAt(a.rs.meta[id].from); s != nil && s.Duplicates != nil {
-			return []ochazuke.ToneSpan{ochazuke.CellTone(0, toneDuplicateKey)}
+			return []ochazuke.ToneSpan{a.duplicateTone()}
 		}
 		return nil
 	}, func(id string) bool { return newLit[id] })

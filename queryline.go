@@ -15,9 +15,10 @@ import (
 // are plain; each field reference (.a, .a.b[], ."odd key", .[0]) is one
 // chip, and an empty argument slot of a function (□) an empty chip.
 //
-// A chip is drawn in the select style (reverse video): dimmed while the
-// line is not focused, bright while it is. ochazuke has no background
-// tone yet (ToneStyle.Bg), so reverse video is the chip's background.
+// A chip is drawn on the chip tone's dim background (ochazuke.ToneChip)
+// and the focused chip bright (ToneChipFocused): the chip under the
+// cursor while the line is focused, or every chip then
+// (query.chip-focus cursor | line).
 // Chips change no cells: the line maps rune for rune onto the input's
 // text, so the cursor is the input's.
 
@@ -179,7 +180,7 @@ func (a *App) queryLines(s ochazuke.Styles, width int) (ochazuke.Block, int) {
 			errPos = len(in.Text)
 		}
 	}
-	line, cx := chipLine(s, in, a.queryTokens(), focused, errPos, avail)
+	line, cx := chipLine(s, in, a.queryTokens(), focused, a.r.Settings().String(settingChipFocus) == "line", errPos, avail)
 	block := ochazuke.Text(s.Muted.Render(prompt) + line)
 	if focused {
 		block.Cursor = &ochazuke.Pos{X: pw + cx}
@@ -230,12 +231,10 @@ func cellsOf(text []rune, from, to int) int {
 
 // chipLine draws the query's text in avail cells with its chips, the
 // visual selection and the error's rune, and returns the cursor's cell.
-func chipLine(s ochazuke.Styles, in *ochazuke.Input, toks []jqTok, focused bool, errPos, avail int) (string, int) {
+// whole brightens every chip while the line is focused, not only the one
+// under the cursor.
+func chipLine(s ochazuke.Styles, in *ochazuke.Input, toks []jqTok, focused, whole bool, errPos, avail int) (string, int) {
 	text := in.Text
-	chip := lipgloss.NewStyle().Reverse(true)
-	if !focused {
-		chip = chip.Faint(true)
-	}
 	selLo, selHi := -1, -1
 	if focused && strings.HasPrefix(in.Mode, "visual") {
 		selLo, selHi = min(in.Anchor, in.Cursor), max(in.Anchor, in.Cursor)+1
@@ -244,9 +243,11 @@ func chipLine(s ochazuke.Styles, in *ochazuke.Input, toks []jqTok, focused bool,
 		selLo, selHi = lo, hi
 	}
 	kind := make([]jqKind, len(text))
+	lit := make([]bool, len(text))
 	for _, t := range toks {
+		on := focused && (whole || in.Cursor >= t.Start && in.Cursor <= t.End)
 		for i := t.Start; i < t.End && i < len(kind); i++ {
-			kind[i] = t.Kind
+			kind[i], lit[i] = t.Kind, on
 		}
 	}
 	start := viewStart(in, avail)
@@ -255,7 +256,7 @@ func chipLine(s ochazuke.Styles, in *ochazuke.Input, toks []jqTok, focused bool,
 	// Runes of one look are drawn as one run.
 	var run []rune
 	look, runLook := 0, -1
-	looks := []lipgloss.Style{lipgloss.NewStyle(), chip, lipgloss.NewStyle().Reverse(true).Underline(true), s.Error.Underline(true)}
+	looks := []lipgloss.Style{lipgloss.NewStyle(), s.Tone(ochazuke.ToneChip), lipgloss.NewStyle().Reverse(true).Underline(true), s.Error.Underline(true), s.Tone(ochazuke.ToneChipFocused)}
 	flush := func() {
 		if len(run) > 0 {
 			b.WriteString(looks[runLook].Render(string(run)))
@@ -271,6 +272,9 @@ func chipLine(s ochazuke.Styles, in *ochazuke.Input, toks []jqTok, focused bool,
 		look = 0
 		if kind[i] == tokPath || kind[i] == tokSlot {
 			look = 1
+			if lit[i] {
+				look = 4
+			}
 		}
 		if i >= selLo && i < selHi {
 			look = 2
