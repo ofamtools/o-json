@@ -47,11 +47,25 @@ func TestAliases(t *testing.T) {
 	if err := do(a, "w!", ochazuke.Arguments{"path": out}); err != nil || a.r.TopModal() != "" || a.unsaved() {
 		t.Fatalf("w! asked or did not write: %v modal %q", err, a.r.TopModal())
 	}
-	// w with no path asks for it in a form.
-	if err := do(a, "w", nil); err != nil || a.r.TopModal() == "" {
-		t.Fatalf("w with no path: %v modal %q", err, a.r.TopModal())
+	// w and w! with no path: the API names it (path is required); the
+	// palette asks for it in the args form, w! keeping its force.
+	for _, word := range []string{"w", "w!"} {
+		if err := do(a, word, nil); err == nil || !strings.Contains(err.Error(), "path is required") || a.r.TopModal() != "" {
+			t.Fatalf("%s with no path: %v modal %q", word, err, a.r.TopModal())
+		}
 	}
-	press(t, a, "esc", "esc")
+	press(t, a, ":")
+	for _, ch := range "w!" {
+		press(t, a, string(ch))
+	}
+	press(t, a, "enter")
+	if a.r.TopModal() != ochazuke.ArgsFormID || a.r.Focus != ochazuke.ArgsFormID+"/path" {
+		t.Fatalf(":w! with no path: modal %q focus %q", a.r.TopModal(), a.r.Focus)
+	}
+	if ed := a.r.RecordEditor(ochazuke.ArgsFormID); ed == nil || ed.Values()["force"] != "true" {
+		t.Fatalf(":w! form lost its preset force")
+	}
+	press(t, a, "esc", "esc", "esc")
 	// wq and x write, then quit.
 	for _, word := range []string{"wq", "x"} {
 		a := open(t, sample, 120, 30)

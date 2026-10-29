@@ -353,17 +353,6 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		Verb("overwrite", func(c ochazuke.Ctx) ochazuke.Result { return a.writeDoc(c, writeReplace) },
 			"Replace an existing file with the shown document (never the source)").Confirm("Replace {{path}} with the shown document?").When("viewer-document").
 		Verb("save", func(c ochazuke.Ctx) ochazuke.Result {
-			if strings.TrimSpace(ochazuke.StringArg(c.Args, "path", "")) == "" {
-				// Workaround: path is optional here only because ochazuke
-				// checks an alias's preset args as a whole request (a
-				// required path refuses w! {force}); ask for it as a
-				// missing required one would be asked.
-				q := ochazuke.Request{Noun: "viewer", Verb: "save", Args: c.Args}
-				if _, err := r.OpenArgsForm(q, func(q ochazuke.Request) error { _, err := r.Execute(q); return err }); err != nil {
-					return ochazuke.Failed(err)
-				}
-				return ochazuke.Done(nil)
-			}
 			force := c.Args["force"] == true
 			switch {
 			case r.Page != pageID || a.editedShown():
@@ -401,7 +390,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	quit := ochazuke.Parameter{Type: "boolean", Description: "quit once written (:wq); the before-quit check still asks about edits the write did not save"}
 	params("viewer.write", map[string]ochazuke.Parameter{"path": path, "quit": quit})
 	params("viewer.overwrite", map[string]ochazuke.Parameter{"path": path, "quit": quit})
-	params("viewer.save", map[string]ochazuke.Parameter{"path": {Type: ochazuke.PathParameterType, New: true, Description: "the file to write; omit to be asked (a form)"}, "quit": quit,
+	params("viewer.save", map[string]ochazuke.Parameter{"path": path, "quit": quit,
 		"force": {Type: "boolean", Description: "replace an existing file without asking (:w!)"}})
 	setHistory(r, ochazuke.HistoryFetch, "viewer.open")
 	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite", "viewer.save")
