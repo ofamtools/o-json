@@ -1,8 +1,13 @@
 package main
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/unixsuperhero/ochazuke"
 )
 
 // A bracketed paste on the edited structure tree is node.paste, decided
@@ -85,5 +90,129 @@ func TestPastedKeysNestByIndent(t *testing.T) {
 	press(t, a, "u")
 	if hasKey(a, "outer") || hasKey(a, "inner") || hasKey(a, "next") || a.unsaved() {
 		t.Fatalf("u left pasted keys (unsaved %v)", a.unsaved())
+	}
+}
+
+// pasteDoc opens a small document on the edited tree under
+// paste.text-on-tree mode.
+func pasteDoc(t *testing.T, mode string) *App {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "paste.json")
+	if err := os.WriteFile(path, []byte(`{"list": ["p"], "obj": {"k": 1}, "n": 5, "rows": [{"a": 1}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a := open(t, path, 120, 30)
+	if err := a.r.Settings().Set(settingPasteText, mode); err != nil {
+		t.Fatal(err)
+	}
+	return a
+}
+
+// pasteOn runs node.paste {text} on the restructured tree's node at
+// path (by its label path).
+func pasteOn(a *App, path, text string) error {
+	id := ""
+	for nid, p := range nodePaths(a.rs.tree.Nodes(), a.rs.meta) {
+		if p == path {
+			id = nid
+		}
+	}
+	if id == "" {
+		return errors.New("no node at " + path)
+	}
+	_, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "paste", Target: id, Args: ochazuke.Arguments{"text": text}})
+	return err
+}
+
+// docAt is the restructured document's value at path, compact.
+func docAt(t *testing.T, a *App, path string) string {
+	t.Helper()
+	n, err := Get(a.restructuredDoc().root, path)
+	if err != nil {
+		return "<" + err.Error() + ">"
+	}
+	return Compact(n, 0)
+}
+
+// paste.text-on-tree keys (the default): the lines are keys, nested by
+// indent, one undo step.
+func TestPasteTextOnTreeKeys(t *testing.T) {
+	a := pasteDoc(t, pasteTextKeys)
+	if err := pasteOn(a, ".obj", "outer\n  inner"); err != nil {
+		t.Fatal(err)
+	}
+	if !hasKey(a, "outer") || !hasKey(a, "inner") || len(a.rs.patches) != 0 {
+		t.Fatalf("keys not added (patches %v)", a.rs.patches)
+	}
+	press(t, a, "u")
+	if hasKey(a, "outer") || hasKey(a, "inner") || a.unsaved() {
+		t.Fatal("u left pasted keys")
+	}
+}
+
+// paste.text-on-tree values: each line a string value, as patches: an
+// array of them under a new placeholder key inside an object (below a
+// plain value), items appended to an array; one undo step; a node under
+// [] (every item) refuses.
+func TestPasteTextOnTreeValues(t *testing.T) {
+	for _, tc := range []struct {
+		node, at, want, errText string
+	}{
+		{".obj", ".obj", `{"k":1,"new-key":["one","two"]}`, ""},
+		{".list", ".list", `["p","one","two"]`, ""},
+		{".n", ".new-key", `["one","two"]`, ""},
+		{".", ".new-key", `["one","two"]`, ""},
+		{".rows[].a", "", "", "every item"},
+	} {
+		t.Run(tc.node, func(t *testing.T) {
+			a := pasteDoc(t, pasteTextValues)
+			before := docAt(t, a, ".")
+			err := pasteOn(a, tc.node, "one\n  two\n\n")
+			if tc.errText != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.errText) || a.unsaved() {
+					t.Fatalf("want error %q, nothing changed: %v (unsaved %v)", tc.errText, err, a.unsaved())
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := docAt(t, a, tc.at); got != tc.want {
+				t.Fatalf("%s = %s, want %s", tc.at, got, tc.want)
+			}
+			for _, s := range a.patchList() {
+				if s.Orphaned {
+					t.Fatalf("orphaned %+v", s)
+				}
+			}
+			press(t, a, "u")
+			if got := docAt(t, a, "."); got != before || a.unsaved() {
+				t.Fatalf("u: %s, want %s (unsaved %v)", got, before, a.unsaved())
+			}
+		})
+	}
+}
+
+// paste.text-on-tree ignore: nothing pasted, a plain notice.
+func TestPasteTextOnTreeIgnore(t *testing.T) {
+	a := pasteDoc(t, pasteTextIgnore)
+	before := docAt(t, a, ".")
+	if err := pasteOn(a, ".obj", "one\ntwo"); err != nil {
+		t.Fatal(err)
+	}
+	if got := docAt(t, a, "."); got != before || a.unsaved() || hasKey(a, "one") {
+		t.Fatalf("pasted: %s", got)
+	}
+	if a.m.Info != "not JSON; nothing pasted" || a.m.Status != "" {
+		t.Fatalf("info %q status %q", a.m.Info, a.m.Status)
+	}
+	// Valid JSON still loads under paste.on-tree json.
+	a.Paste = nil
+	if err := pasteOn(a, ".obj", `{"loaded": true}`); err != nil {
+		t.Fatal(err)
+	}
+	settle(a)
+	if a.Doc == nil || a.Doc.Shape.Find(".loaded") == nil {
+		t.Fatal("valid JSON did not load")
 	}
 }
