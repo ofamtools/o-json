@@ -104,7 +104,8 @@ func (a *App) copyShape(e *edit, s *Shape, parent string) {
 
 // startState makes the restructure state the one a new document starts
 // with: a copy of its shape (structure.editable), as one undo step so u
-// brings back what it replaced. It is the base unsaved compares with.
+// brings back the edits it replaced; with none replaced it is the floor
+// (F6). It is the base unsaved compares with.
 func (a *App) startState() error {
 	a.rs.startedEmpty = false
 	if !a.editable() {
@@ -113,8 +114,12 @@ func (a *App) startState() error {
 		return nil
 	}
 	a.original = false
+	// The copy is the floor of the undo stack (u there does nothing,
+	// undo.at-start) unless it replaced edits: then u brings them back,
+	// as viewer.discard promises (e, R and viewer new over edits).
+	floor := a.rs.base == "" || !a.edited()
 	e := a.identity()
-	if err := a.commitStep("open", rsRootID, e, nil, true); err != nil {
+	if err := a.commitStep("open", rsRootID, e, nil, floor); err != nil {
 		return err
 	}
 	a.rs.base, a.rs.saved = mappingKey(a.Mapping()), ""

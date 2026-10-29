@@ -422,3 +422,25 @@ func TestUndoAtStartIsTheFloor(t *testing.T) {
 		}
 	}
 }
+
+// The floor is only where nothing was replaced: R over edits (after its
+// confirm) starts a new copy, and u brings the dropped edits back, as
+// viewer.discard says.
+func TestUndoAfterDiscardBringsEditsBack(t *testing.T) {
+	a := open(t, nestDoc, 120, 30)
+	a.on(t, ".z")
+	press(t, a, "d", "d")
+	edited := output(t, a)
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "discard", Target: pageID, Args: ochazuke.Arguments{"path": nestDoc}, Confirmed: true}); err != nil {
+		t.Fatal(err)
+	}
+	settle(a)
+	view(a)
+	if a.unsaved() {
+		t.Fatal("the reload kept the edits")
+	}
+	press(t, a, "u")
+	if got := output(t, a); got != edited {
+		t.Fatalf("u after the reload: %s, want %s", got, edited)
+	}
+}
