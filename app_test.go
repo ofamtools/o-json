@@ -420,7 +420,7 @@ func finish(a *App, cmd tea.Cmd) {
 			for _, c := range msg {
 				finish(a, c)
 			}
-		case ochazuke.Completion:
+		case ochazuke.Completion, ochazuke.ForegroundMsg:
 			_, next := a.m.Update(msg)
 			finish(a, next)
 		}

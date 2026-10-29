@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -682,6 +683,85 @@ func (a *App) registerExportVerbs(params func(string, map[string]ochazuke.Parame
 	params("viewer.export", args)
 	params("viewer.export-overwrite", args)
 	setHistory(r, ochazuke.HistoryChange, "viewer.export", "viewer.export-overwrite")
+	a.registerOpenIn(params)
+}
+
+// openInApps are the programs viewer.open-in hands the current table to,
+// in the order it tries them, each with the export format it reads.
+var openInApps = []struct{ name, format string }{
+	{"o-csv", "csv"},
+}
+
+// lookPath finds a program on PATH (a test replaces it).
+var lookPath = exec.LookPath
+
+// openInApp is the program viewer.open-in runs for name ("" the first on
+// PATH): its entry and its path, ok false when none is there.
+func openInApp(name string) (app, format, bin string, ok bool) {
+	for _, o := range openInApps {
+		if name != "" && o.name != name {
+			continue
+		}
+		if p, err := lookPath(o.name); err == nil {
+			return o.name, o.format, p, true
+		}
+	}
+	return "", "", "", false
+}
+
+// registerOpenIn adds viewer.open-in: the table the export would write,
+// in a temporary file (removed once the program exits), opened by a
+// program that takes the terminal (ochazuke.Foreground) until it exits.
+func (a *App) registerOpenIn(params func(string, map[string]ochazuke.Parameter)) {
+	r := a.r
+	r.DefineGuard("viewer-opens-in", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		_, _, _, ok := openInApp(ochazuke.StringArg(ev.Args, "app", ""))
+		return ok && a.Doc != nil
+	})
+	r.Define("viewer").
+		Verb("open-in", func(c ochazuke.Ctx) ochazuke.Result {
+			name, format, bin, ok := openInApp(ochazuke.StringArg(c.Args, "app", ""))
+			if !ok {
+				return ochazuke.Failed(errors.New("no program to open the table in is on PATH (o-csv)"))
+			}
+			f, err := formatNamed(format)
+			if err != nil {
+				return ochazuke.Failed(err)
+			}
+			root, err := a.shownRoot()
+			if err != nil {
+				return ochazuke.Failed(err)
+			}
+			data, err := exportBytes(root, f, a.exportOptions(ochazuke.StringArg(c.Args, "of", ""), splitColumns(ochazuke.StringArg(c.Args, "columns", ""))))
+			if err != nil {
+				return ochazuke.Failed(err)
+			}
+			dir, err := os.MkdirTemp("", "o-json-open-in-")
+			if err != nil {
+				return ochazuke.Failed(err)
+			}
+			base := strings.TrimSuffix(filepath.Base(a.Path), filepath.Ext(a.Path))
+			if base == "" || base == "." || base == "-" {
+				base = "o-json"
+			}
+			file := filepath.Join(dir, base+"."+f.name)
+			if err := os.WriteFile(file, data, 0o600); err != nil {
+				_ = os.RemoveAll(dir)
+				return ochazuke.Failed(err)
+			}
+			return ochazuke.Foreground(exec.Command(bin, file)).Label(name + " " + filepath.Base(file)).
+				Then(func(ochazuke.Ctx, any, error) { _ = os.RemoveAll(dir) })
+		}, "Open the table the export would write (the array under the cursor, else the data pane's; of and columns as viewer.export takes them) in another program, o-csv first: a temporary csv it reads, removed once it exits. The program has the terminal until it exits. Available when one is on PATH").When("viewer-opens-in")
+	names := make([]string, 0, len(openInApps))
+	for _, o := range openInApps {
+		names = append(names, o.name)
+	}
+	params("viewer.open-in", map[string]ochazuke.Parameter{
+		"app":     {Type: "string", Enum: names, Description: "the program; omit for the first on PATH"},
+		"of":      {Type: "string", Description: "the array's structure path; omit for the one under the cursor"},
+		"columns": {Type: "string", Description: "the columns to keep, in order, separated by commas"},
+	})
+	setHistory(r, ochazuke.HistoryAction, "viewer.open-in")
 }
 
 // --- the command line ---
