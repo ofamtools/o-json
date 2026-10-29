@@ -1,0 +1,6 @@
+[
+  {"id": 1, "name": "Ada", "tags": ["eu", "beta"], "meta": {"source": "web", "score": 3},
+   "orders": [{"sku": "a1", "lines": [{"qty": 2, "price": 1.5}]}]},
+  {"id": 2, "name": "Bo", "tags": [], "meta": {"source": "app", "score": 5},
+   "orders": [{"sku": "b2", "lines": [{"qty": 1, "price": 9}]}, {"sku": "b3", "lines": []}]}
+]

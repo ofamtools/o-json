@@ -365,8 +365,12 @@ func (a *App) editedShape() (*Shape, string) {
 	}
 	e := a.current()
 	path := nodePaths(e.nodes, e.meta)[n.ID]
-	if s := d.shape.Find(path); s != nil {
-		return s, ""
+	// The node's path is written as jq writes it (".[]"), a shape's
+	// canonically ("[]" under the document): look the shape up by its steps.
+	if steps, err := parsePath(path); err == nil {
+		if s := d.shape.Find(stepsPath(steps)); s != nil {
+			return s, ""
+		}
 	}
 	return nil, fmt.Sprintf("no values at %s in the restructured document", path)
 }
