@@ -243,7 +243,7 @@ The viewer holds one document, like a vim buffer.
 | `z +` / `z -` / `z 0` | tree | zoom into the node, a breadcrumb line naming the hidden ancestors / out a level / every level |
 | `p` | tree, data (original) | paste JSON from the clipboard into the buffer (on the edited tree `p` puts nodes, in the edited data pane a value) |
 | bracketed paste | tree (original), data | the pasted JSON becomes the buffer (`viewer.paste {text}`, no clipboard tool needed) |
-| bracketed paste | tree (edited) | `node.paste {text}`, by the setting `paste.on-tree`: `json` (default) loads valid JSON as the buffer and adds other text as keys below the node (one per line, nested by indent); `outline` always adds keys; `viewer` always loads |
+| bracketed paste | tree (edited) | `node.paste {text}`, by the setting `paste.on-tree`: `json` (default) loads valid JSON as the buffer and does with other text what `paste.text-on-tree` says (`keys`, the default: keys below the node, one per line, nested by indent; `values`: string values; `ignore`: nothing); `outline` always adds keys; `viewer` always loads (the outline's own raw paste is not used: it adds rows the restructure does not track) |
 | `r`, `i` | data (edited) | edit the value in place: inline input, value selected; `enter` or `esc` sets it, the type read from the text (`"…"` forces a string) |
 | `d d` | data (edited) | delete the field or item (a table cell: that field of that row) |
 | `o` / `O` | data, detail (edited) | add a key (name, then value) or an item after / before this one |
@@ -260,6 +260,33 @@ The viewer holds one document, like a vim buffer.
 | `Q` | tree, data, restructure page | quit without writing and without asking (`app.quit {force: true}`, vim's `:q!`) |
 
 No function keys are bound.
+
+### Settings
+
+Every setting o-json declares (`: settings`, or `settings.json`), the default first. A choice between ways of doing one thing is a setting with every way built.
+
+| Setting | Values | What it decides |
+|---|---|---|
+| `structure.editable` | `true`, `false` | the viewer's structure pane is the restructure editor (`T` shows the original); off, the viewer is read-only and only `M` edits. Next document |
+| `data.editable` | `true`, `false` | the edited view's data pane edits single values (`r`, `d d`, `o`, `K`, `p`) as value patches; off, read-only |
+| `rebuild.value-edit` | `current`, `queue`, `previous` | a value edit made while a large document's restructure is rebuilt off the loop (the data pane still shows the previous result). `current`: the rebuild finishes on the loop, then the edit acts on the row at the cursor in the current document. `queue`: no wait; the edit is recorded against the shown row's path and applied when the rebuild lands, the path resolved in the new document (gone, it is reported and kept as an orphaned patch). `previous`: the edit acts at once on the shown row, a patch by path the next rebuild resolves (orphaned if gone); the row at the cursor may not be the one the current document has there |
+| `undo.at-start` | `info`, `silent` | `u` at the copy a document starts with says `already at oldest change`, or nothing |
+| `paste.on-tree` | `json`, `outline`, `viewer` | a bracketed paste on the edited tree: valid JSON loads as the buffer and other text follows `paste.text-on-tree`; always keys; always load |
+| `paste.text-on-tree` | `keys`, `values`, `ignore` | text that is not JSON pasted on the edited tree under `paste.on-tree json`. `keys`: each line a key below the node, nested by indent. `values`: each line a string value, as value patches: appended as items to an array, or as an array of them under a new placeholder key (`restructure.new-key`) inside an object (below a plain value); a node under `[]` stands for every item and refuses. `ignore`: nothing, a plain notice (`not JSON; nothing pasted`). One undo step |
+| `recent.size` | integer, `10` | how many recently opened files are remembered; 0 keeps none |
+| `json.duplicate-tone` | `background`, `foreground` | how a repeated key is marked in the structure trees |
+| `query.line` | `true`, `false` | the jq query line above the structure pane (`/`) and query mode; off, `/` is the path search |
+| `query.chip-focus` | `cursor`, `line` | while the query line is focused, brighten the chip under the cursor, or every chip |
+| `query.complete-paths` | `false`, `true` | `.` in the query line offers the field keys there; off, it just types a dot |
+| `restructure.layout` | `split`, `single` | the restructure page draws both trees, or one (`tab` swaps) |
+| `restructure.new-key` | text, `new-key` | the placeholder key a new key gets (`-2`, `-3`, ... past its siblings') |
+| `restructure.visual-put` | `replace`, `below` | `p` over a `V` selection replaces it (Vim's `V p`), or puts after it |
+| `restructure.visual-wrap` | `together`, `each` | `S` over a `V` selection wraps the siblings in one object, or each in its own |
+| `visual.at-edge` | `end`, `stay` | `>` `<` `g >` over a `V` selection with nothing to act on end the selection, or keep it |
+| `repeat.scope` | `put`, `edit` | what `.` repeats on the edited tree: the last put, or the last structure edit |
+| `export.arrays` | `join`, `json`, `rows` | how an export writes an array in a cell |
+| `export.join` | text, `;` | the separator between joined array items |
+| `export.null` | `empty`, `null` | how an export writes null |
 
 ## The restructure page
 
