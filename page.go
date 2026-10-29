@@ -155,6 +155,7 @@ func (a *App) registerRestructure() error {
 	tree.NewID = a.newNodeID
 	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, shown: rsOrigID, dirty: true, base: mappingKey(&Mapping{Map: []MapEntry{}})}
 	a.registerRestructureVerbs()
+	a.registerRepeat()
 	if err := tree.SetNodes([]ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node", Fixed: rootFixed}}); err != nil {
 		return err
 	}

@@ -269,10 +269,12 @@ func (a *App) selected() []string {
 	return ids
 }
 
-// Settings for a key over a V selection on the restructured tree.
+// Settings for a key over a V selection on the restructured tree, and
+// what dot-repeat (.) runs again on it.
 const (
-	settingVisualPut  = "restructure.visual-put"
-	settingVisualWrap = "restructure.visual-wrap"
+	settingRepeatScope = "repeat.scope"
+	settingVisualPut   = "restructure.visual-put"
+	settingVisualWrap  = "restructure.visual-wrap"
 )
 
 func declarePutSettings(r *ochazuke.Runtime) error {
@@ -282,7 +284,29 @@ func declarePutSettings(r *ochazuke.Runtime) error {
 	}, ochazuke.Setting{
 		Name: settingVisualWrap, Type: ochazuke.SettingString, Default: "together", Enum: []string{"together", "each"},
 		Description: "S over a V selection on the restructured tree: together wraps the selected siblings in one new object (nodes under different parents are each wrapped); each wraps every node in its own",
+	}, ochazuke.Setting{
+		Name: settingRepeatScope, Type: ochazuke.SettingString, Default: "put", Enum: []string{"put", "edit"},
+		Description: "What . runs again on the restructured tree, at the cursor: put, the last put (p / P); edit, the last structure edit of any kind (a put, nest, out, wrap, array/object, delete, rename to a key, a new key)",
 	})
+}
+
+// repeatEdits are the restructure edits . may run again: node.put always,
+// the rest with repeat.scope edit.
+var repeatEdits = []string{"node.indent", "node.dedent", "node.wrap", "node.array", "node.object", "node.delete", "node.rename", "restructure.add-key"}
+
+// applyRepeatScope marks the restructure edits repeatable as
+// repeat.scope says (dot-repeat reads Operation.Repeatable when . runs).
+func (a *App) applyRepeatScope() {
+	edit := a.r.Settings().String(settingRepeatScope) == "edit"
+	for _, key := range append([]string{"node.put"}, repeatEdits...) {
+		k := a.r.CanonicalKey(key)
+		op, ok := a.r.Operations[k]
+		if !ok {
+			panic("applyRepeatScope: no operation " + key)
+		}
+		op.Repeatable = key == "node.put" || edit
+		a.r.Operations[k] = op
+	}
 }
 
 // putNodes is node.put: the register's nodes put at at (one subject), or
@@ -383,4 +407,11 @@ func (a *App) registerPutVerbs() {
 	op.Parameters = map[string]ochazuke.Parameter{"before": {Type: "boolean", Description: "put above (P): the previous sibling; on the root, its first child"}}
 	r.Operations[r.CanonicalKey("node.put")] = op
 	setHistory(r, ochazuke.HistoryChange, "node.yank", "node.put", "restructure.delete", "restructure.yank")
+}
+
+// registerRepeat applies repeat.scope now and whenever it changes; it
+// runs once every restructure verb is registered.
+func (a *App) registerRepeat() {
+	a.applyRepeatScope()
+	a.r.Settings().Observe(settingRepeatScope, func(string, any) { a.applyRepeatScope() })
 }

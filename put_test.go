@@ -415,3 +415,31 @@ func TestVisualLineWrap(t *testing.T) {
 		t.Fatalf("one undo step: %s", got)
 	}
 }
+
+// . runs the last put again at the cursor (repeat.scope put, the
+// default), even after another edit; with edit it runs the last edit of
+// any kind.
+func TestDotRepeatsThePut(t *testing.T) {
+	a := openPut(t)
+	a.on(t, ".a")
+	press(t, a, "y", "y")
+	a.on(t, ".y")
+	press(t, a, "p")
+	a.on(t, ".x.b")
+	press(t, a, "<", "<") // an edit between: . still puts
+	a.on(t, ".x.c")
+	press(t, a, ".")
+	if got := agreesWith(t, a, nestDoc); got != `{"a":1,"b":2,"x":{"c":3,"a":1},"y":4,"a-2":1}` {
+		t.Fatalf(". after p: %s", got)
+	}
+	if err := a.r.Settings().Set(settingRepeatScope, "edit"); err != nil {
+		t.Fatal(err)
+	}
+	a.on(t, ".y")
+	press(t, a, ">", ">")
+	selectIn(t, a, a.rs.tree, func(n ochazuke.TreeNode) bool { return n.Label == "a-2" })
+	press(t, a, ".")
+	if got := agreesWith(t, a, nestDoc); got != `{"a":1,"b":2,"x":{"c":3,"a":1,"y":4,"a-2":1}}` {
+		t.Fatalf(". after > > (repeat.scope edit): %s", got)
+	}
+}
