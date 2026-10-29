@@ -1665,7 +1665,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 				say += "; left empty, the viewer keeps its copy"
 			}
 			hint := wrap(say, cw)
-			body = strings.TrimRight(t.View(cw, 1), "\n") + "\n\n" + hint
+			body = strings.TrimRight(t.View(cw, t.Height()), "\n") + "\n\n" + hint
 		default:
 			body = t.View(cw, ch)
 		}
