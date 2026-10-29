@@ -355,7 +355,10 @@ func (a *App) wrapSelection(open string) error {
 		return fmt.Errorf("no bracket %q: [, { or (", open)
 	}
 	in := a.q.in
-	lo, hi := min(in.Anchor, in.Cursor), min(max(in.Anchor, in.Cursor)+1, len(in.Text))
+	lo, hi, ok := in.Selection()
+	if !ok {
+		return errors.New("no selection to wrap: ctrl+v selects")
+	}
 	inner := string(in.Text[lo:hi])
 	if err := in.Replace(lo, hi, open+inner+cls); err != nil {
 		return err

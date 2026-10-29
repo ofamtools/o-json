@@ -236,8 +236,8 @@ func cellsOf(text []rune, from, to int) int {
 func chipLine(s ochazuke.Styles, in *ochazuke.Input, toks []jqTok, focused, whole bool, errPos, avail int) (string, int) {
 	text := in.Text
 	selLo, selHi := -1, -1
-	if focused && strings.HasPrefix(in.Mode, "visual") {
-		selLo, selHi = min(in.Anchor, in.Cursor), max(in.Anchor, in.Cursor)+1
+	if lo, hi, ok := in.Selection(); ok && focused {
+		selLo, selHi = lo, hi
 	}
 	if lo, hi, ok := in.SelectedText(); ok && focused {
 		selLo, selHi = lo, hi
