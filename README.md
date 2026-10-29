@@ -243,6 +243,7 @@ The viewer holds one document, like a vim buffer.
 | `z +` / `z -` / `z 0` | tree | zoom into the node, a breadcrumb line naming the hidden ancestors / out a level / every level |
 | `p` | tree, data (original) | paste JSON from the clipboard into the buffer (on the edited tree `p` puts nodes, in the edited data pane a value) |
 | bracketed paste | tree (original), data | the pasted JSON becomes the buffer (`viewer.paste {text}`, no clipboard tool needed) |
+| bracketed paste | tree (edited) | `node.paste {text}`, by the setting `paste.on-tree`: `json` (default) loads valid JSON as the buffer and adds other text as keys below the node (one per line, nested by indent); `outline` always adds keys; `viewer` always loads |
 | `r`, `i` | data (edited) | edit the value in place: inline input, value selected; `enter` or `esc` sets it, the type read from the text (`"…"` forces a string) |
 | `d d` | data (edited) | delete the field or item (a table cell: that field of that row) |
 | `o` / `O` | data, detail (edited) | add a key (name, then value) or an item after / before this one |

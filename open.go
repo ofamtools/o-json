@@ -26,6 +26,12 @@ const (
 	noFile        = "[no file]"
 	recentFile    = "recent.json"
 	settingRecent = "recent.size"
+	// settingPasteOnTree says what a bracketed paste on the restructured
+	// tree runs (node.paste): pasteOnJSON, pasteOnOutline or pasteOnViewer.
+	settingPasteOnTree = "paste.on-tree"
+	pasteOnJSON        = "json"
+	pasteOnOutline     = "outline"
+	pasteOnViewer      = "viewer"
 	// maxFolderFiles caps the folder listing viewer.files adds.
 	maxFolderFiles = 200
 )
@@ -387,6 +393,19 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		"text":  {Type: "string", Description: "with paste, the JSON to paste instead of the clipboard"},
 	})
 	params("viewer.paste", map[string]ochazuke.Parameter{"text": {Type: "string", Description: "the JSON; omit to read the system clipboard"}})
+	r.Define("node").
+		Verb("paste", func(c ochazuke.Ctx) ochazuke.Result {
+			text := ochazuke.StringArg(c.Args, "text", "")
+			if !pasteLoads(r.Settings().String(settingPasteOnTree), text) {
+				return a.pasteKeys(c, text)
+			}
+			v, err := r.Execute(ochazuke.Request{Noun: "viewer", Verb: "paste", Target: pageID, Args: ochazuke.Arguments{"text": text}})
+			if err != nil {
+				return ochazuke.Failed(err)
+			}
+			return ochazuke.Done(v)
+		}, "A bracketed paste on the restructured tree, decided by paste.on-tree: json (the default) loads valid JSON as the buffer (viewer.paste, asking first with edits no write saved) and adds anything else as keys, the outline's paste in restructure terms (one key per line below the node, nested by indent, one undo step); outline always adds keys; viewer always loads (invalid JSON is an error, the buffer kept)")
+	params("node.paste", map[string]ochazuke.Parameter{"text": {Type: "string", Required: true, Description: "the pasted text"}})
 	quit := ochazuke.Parameter{Type: "boolean", Description: "quit once written (:wq); the before-quit check still asks about edits the write did not save"}
 	params("viewer.write", map[string]ochazuke.Parameter{"path": path, "quit": quit})
 	params("viewer.overwrite", map[string]ochazuke.Parameter{"path": path, "quit": quit})
@@ -394,7 +413,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		"force": {Type: "boolean", Description: "replace an existing file without asking (:w!)"}})
 	setHistory(r, ochazuke.HistoryFetch, "viewer.open")
 	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite", "viewer.save")
-	setHistory(r, ochazuke.HistoryAction, "viewer.quit")
+	setHistory(r, ochazuke.HistoryAction, "viewer.quit", "node.paste")
 	a.registerExportVerbs(params)
 	if err := a.beforeQuit(); err != nil {
 		panic(err) // app.quit is the framework's own verb: always there
@@ -461,10 +480,76 @@ func (a *App) writeDoc(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 		})
 }
 
-// declareOpenSettings declares recent.size.
+// pasteKeys adds the pasted lines as keys below the focused node of the
+// restructured tree, one per non-blank line, a line indented deeper than
+// the one above nesting under it (the outline's paste, through the
+// restructure's own edit, as o is restructure.add-key): one undo step,
+// refused when a key does not go there (into an array).
+func (a *App) pasteKeys(c ochazuke.Ctx, text string) ochazuke.Result {
+	e := a.current()
+	at := a.focusedNode(c.Instance.ID)
+	type level struct {
+		indent int
+		id     string
+	}
+	var stack []level
+	last, top := "", at
+	for _, line := range strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n") {
+		key := strings.TrimSpace(line)
+		if key == "" {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		for len(stack) > 0 && stack[len(stack)-1].indent >= indent {
+			stack = stack[:len(stack)-1]
+		}
+		var err error
+		var id string
+		if len(stack) == 0 {
+			e, id, err = a.addKey(e, top, "below", key)
+			top = id
+		} else {
+			e, id, err = a.addKey(e, stack[len(stack)-1].id, "child", key)
+		}
+		if err != nil {
+			return ochazuke.Failed(err)
+		}
+		stack = append(stack, level{indent, id})
+		last = id
+	}
+	if last == "" {
+		return ochazuke.Done(nil)
+	}
+	if !a.valid(e.nodes, e.meta) && a.valid(a.rs.tree.Nodes(), a.rs.meta) {
+		return ochazuke.Failed(errors.New("a key does not go here: an array takes only its [] item"))
+	}
+	if err := a.commit("paste keys", last, e); err != nil {
+		return ochazuke.Failed(err)
+	}
+	a.refocus(last)
+	return ochazuke.Done(a.Mapping())
+}
+
+// pasteLoads reports whether a paste on the restructured tree loads the
+// text as the buffer (viewer.paste) under paste.on-tree mode, rather
+// than adding it as nodes (ochazuke.outline.paste).
+func pasteLoads(mode, text string) bool {
+	switch mode {
+	case pasteOnViewer:
+		return true
+	case pasteOnOutline:
+		return false
+	}
+	return json.Valid([]byte(text))
+}
+
+// declareOpenSettings declares recent.size and paste.on-tree.
 func declareOpenSettings(r *ochazuke.Runtime) error {
 	return r.DeclareSetting(ochazuke.Setting{
 		Name: settingRecent, Type: ochazuke.SettingInteger, Default: 10,
 		Description: "How many recently opened files o-json remembers (viewer.open's first choices); 0 keeps none",
+	}, ochazuke.Setting{
+		Name: settingPasteOnTree, Type: ochazuke.SettingString, Default: pasteOnJSON, Enum: []string{pasteOnJSON, pasteOnOutline, pasteOnViewer},
+		Description: "A bracketed paste on the restructured tree: json loads valid JSON as the buffer, as on the viewer, and adds anything else as keys below the node, one per line, nested by indent; outline always adds keys; viewer always loads (invalid JSON is an error)",
 	})
 }
