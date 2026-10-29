@@ -211,6 +211,10 @@ func (a *App) restructuredDoc() *restructured {
 	out := buildRestructured(a.Doc, p, err, key)
 	a.rb.slow = time.Since(start) > rebuildOnLoop
 	a.ed = &editedCache{restructured: out, doc: a.Doc}
+	if len(a.queued) > 0 { // their patches change the mapping: build again
+		a.flushQueued()
+		return a.restructuredDoc()
+	}
 	return &a.ed.restructured
 }
 
@@ -247,15 +251,21 @@ func (a *App) shownDoc() *restructured {
 	return a.restructuredDoc()
 }
 
+// staleShown reports the data pane showing the previous restructured
+// document while a slow rebuild of the current one runs off the loop.
+func (a *App) staleShown() bool {
+	return a.rb.slow && a.Doc != nil && a.ed != nil && a.ed.doc == a.Doc && a.ed.key != mappingKey(a.Mapping())
+}
+
 // settleEdited makes the shown restructured document the current one
-// before a value edit acts on it. While a slow rebuild runs off the loop
-// the data pane shows the previous result, and a patch must never name
-// a path of that one: the rebuild is done on the loop now (the job
-// cancelled), the data pane and the detail follow, and the edit acts on
-// the row at the cursor in the current document. Only a value edit made
-// in that window waits; a structure edit never does.
+// before a value edit acts on it (rebuild.value-edit current). While a
+// slow rebuild runs off the loop the data pane shows the previous result:
+// the rebuild is done on the loop now (the job cancelled), the data pane
+// and the detail follow, and the edit acts on the row at the cursor in
+// the current document. Only a value edit made in that window waits; a
+// structure edit never does.
 func (a *App) settleEdited() error {
-	if !a.rb.slow || a.Doc == nil || a.ed == nil || a.ed.doc != a.Doc || a.ed.key == mappingKey(a.Mapping()) {
+	if !a.staleShown() {
 		return nil
 	}
 	a.rb.cancel()
@@ -334,6 +344,7 @@ func (b *rebuilder) HandleMessage(msg tea.Msg) bool {
 		a := b.a
 		if out.doc == a.Doc && out.key == mappingKey(a.Mapping()) {
 			a.ed = &editedCache{restructured: out.restructured, doc: out.doc}
+			a.flushQueued()
 		}
 	}
 	return true

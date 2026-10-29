@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/unixsuperhero/ochazuke"
 )
 
@@ -53,7 +54,9 @@ func TestLargeEditStaysFast(t *testing.T) {
 	}
 }
 
-// waitRebuilt drains the rebuild job until the shown result is current.
+// waitRebuilt drains the rebuild job until the shown result is current,
+// waiting for each job as long as it runs (settle's 200 ms would drop a
+// slow rebuild's command, and with it the job).
 func waitRebuilt(t *testing.T, a *App) {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
@@ -62,16 +65,20 @@ func waitRebuilt(t *testing.T, a *App) {
 		if a.ed != nil && a.ed.key == mappingKey(a.Mapping()) && a.ed.doc == a.Doc {
 			return
 		}
-		settle(a)
+		_, cmd := a.m.Update(tea.WindowSizeMsg{Width: a.m.Width, Height: a.m.Height})
+		finishWithin(a, cmd, 10*time.Second)
 	}
 	t.Fatal("the restructured document was never rebuilt")
 }
 
-// F7 follow-up: a value edit made while the restructured document is
-// rebuilt off the loop acts on the current document, never on the rows
-// of the previous result: the rebuild is settled first, so the patch
-// names a path of the document the mapping now makes.
-func TestValueEditDuringRebuildActsOnTheCurrentDocument(t *testing.T) {
+// inRebuildWindow opens a 60k document under rebuild.value-edit mode,
+// focuses the data pane's first row on column col (1 is id, 2 name) and
+// deletes the id key from the structure: its rebuild runs off the loop,
+// and until it lands the table still shows the id column.
+// pre are value edits made before (they make the edit's answer read
+// the patches' orphans, which must not wait for the rebuild).
+func inRebuildWindow(t *testing.T, mode string, col int, pre ...Patch) *App {
+	t.Helper()
 	if testing.Short() {
 		t.Skip("a 60k document")
 	}
@@ -80,6 +87,14 @@ func TestValueEditDuringRebuildActsOnTheCurrentDocument(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := open(t, path, 120, 30)
+	if err := a.r.Settings().Set(settingRebuildValueEdit, mode); err != nil {
+		t.Fatal(err)
+	}
+	if len(pre) > 0 {
+		if err := a.commitPatches("pre", pre); err != nil {
+			t.Fatal(err)
+		}
+	}
 	waitRebuilt(t, a)
 	if !a.rb.slow {
 		t.Skip("the rebuild ran on the loop: nothing to race")
@@ -93,12 +108,10 @@ func TestValueEditDuringRebuildActsOnTheCurrentDocument(t *testing.T) {
 	if err := a.data.to(0); err != nil {
 		t.Fatal(err)
 	}
-	a.data.list.SetColumn(1)
+	a.data.list.SetColumn(col)
 	if c := a.tab.Columns[0]; c.Name != "id" {
 		t.Fatalf("first column %q", c.Name)
 	}
-	// A structure edit drops id: its rebuild runs off the loop, and
-	// until it lands the table still shows the id column.
 	var idNode string
 	for _, n := range a.rs.tree.Nodes() {
 		if a.rs.meta[n.ID].from == "[].id" {
@@ -108,32 +121,108 @@ func TestValueEditDuringRebuildActsOnTheCurrentDocument(t *testing.T) {
 	if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "delete", Target: idNode}); err != nil {
 		t.Fatal(err)
 	}
-	if a.ed.key == mappingKey(a.Mapping()) || a.tab == nil || a.tab.Columns[0].Name != "id" {
-		t.Fatalf("not in the rebuild window (stale %v)", a.ed.key != mappingKey(a.Mapping()))
+	if !a.staleShown() || a.tab == nil || a.tab.Columns[0].Name != "id" {
+		t.Fatalf("not in the rebuild window (stale %v)", a.staleShown())
 	}
-	// The value edit on the cell the cursor is on (column 1).
+	return a
+}
+
+// editCell is value.edit {text: "edited"} on the cell at the cursor.
+func editCell(t *testing.T, a *App) {
+	t.Helper()
 	if _, err := a.r.Execute(ochazuke.Request{Noun: "value", Verb: "edit", Target: a.r.Focus, Args: ochazuke.Arguments{"text": "edited"}}); err != nil {
 		t.Fatal(err)
 	}
-	if len(a.rs.patches) != 1 {
-		t.Fatalf("patches %v", a.rs.patches)
+}
+
+// onePatch checks one value edit at path, orphaned or applied ("edited"
+// there in the current document), and that id stayed gone.
+func onePatch(t *testing.T, a *App, path string, orphaned bool) {
+	t.Helper()
+	n := len(a.rs.patches)
+	if n == 0 || a.rs.patches[n-1].Path != path {
+		t.Fatalf("patches %+v, want the last at %s", a.rs.patches, path)
 	}
-	p := a.rs.patches[0]
-	if strings.HasSuffix(p.Path, ".id") {
-		t.Fatalf("the patch names the previous result's id column: %s", p.Path)
+	if s := a.patchList(); s[n-1].Orphaned != orphaned {
+		t.Fatalf("patch %+v, want orphaned %v", s[n-1], orphaned)
 	}
-	for _, s := range a.patchList() {
-		if s.Orphaned {
-			t.Fatalf("orphaned patch %+v", s)
-		}
-	}
-	waitRebuilt(t, a)
 	d := a.restructuredDoc()
-	got, err := Get(d.root, p.Path)
-	if err != nil || Compact(got, 0) != `"edited"` {
-		t.Fatalf("%s in the current document: %v %v", p.Path, got, err)
-	}
 	if item, _ := Get(d.root, "[0]"); item == nil || item.Field("id") != nil {
 		t.Fatal("id came back")
+	}
+	if orphaned {
+		return
+	}
+	if got, err := Get(d.root, path); err != nil || Compact(got, 0) != `"edited"` {
+		t.Fatalf("%s in the current document: %v %v", path, got, err)
+	}
+}
+
+// rebuild.value-edit current (the default; F7 follow-up): a value edit
+// made while the restructured document is rebuilt off the loop acts on
+// the current document, never on the rows of the previous result: the
+// rebuild is settled first, so the patch names a path of the document
+// the mapping now makes (the cursor's column 1 is name there).
+func TestValueEditDuringRebuildActsOnTheCurrentDocument(t *testing.T) {
+	a := inRebuildWindow(t, rebuildEditCurrent, 1)
+	editCell(t, a)
+	if strings.HasSuffix(a.rs.patches[0].Path, ".id") {
+		t.Fatalf("the patch names the previous result's id column: %s", a.rs.patches[0].Path)
+	}
+	onePatch(t, a, "[0].name", false)
+	waitRebuilt(t, a)
+	onePatch(t, a, "[0].name", false)
+}
+
+// rebuild.value-edit queue: the edit does not wait; it is recorded
+// against the shown row's path and applied when the rebuild lands, the
+// path resolved in the new document. A path the new document lacks (the
+// id just deleted) is reported and kept as an orphaned patch.
+func TestValueEditDuringRebuildQueues(t *testing.T) {
+	for _, tc := range []struct {
+		col      int
+		path     string
+		orphaned bool
+	}{{2, "[0].name", false}, {1, "[0].id", true}} {
+		t.Run(tc.path, func(t *testing.T) {
+			pre := Patch{Op: opSet, Path: "[1].score", Value: []byte("7")}
+			a := inRebuildWindow(t, rebuildEditQueue, tc.col, pre)
+			editCell(t, a)
+			if len(a.rs.patches) != 1 || len(a.queued) != 1 || !a.staleShown() {
+				t.Fatalf("not queued: patches %v queued %d stale %v", a.rs.patches, len(a.queued), a.staleShown())
+			}
+			if !strings.Contains(a.m.Info, "queued") {
+				t.Fatalf("info %q", a.m.Info)
+			}
+			waitRebuilt(t, a)
+			if len(a.queued) != 0 {
+				t.Fatal("still queued after the rebuild landed")
+			}
+			onePatch(t, a, tc.path, tc.orphaned)
+			if tc.orphaned && !strings.Contains(a.m.Status, "orphaned") {
+				t.Fatalf("no error notice: status %q", a.m.Status)
+			}
+		})
+	}
+}
+
+// rebuild.value-edit previous: the edit acts at once on the shown
+// (previous) result's row, a patch by path the next rebuild resolves:
+// applied where the path is still there, orphaned where it is gone.
+func TestValueEditDuringRebuildActsOnThePreviousResult(t *testing.T) {
+	for _, tc := range []struct {
+		col      int
+		path     string
+		orphaned bool
+	}{{2, "[0].name", false}, {1, "[0].id", true}} {
+		t.Run(tc.path, func(t *testing.T) {
+			a := inRebuildWindow(t, rebuildEditPrevious, tc.col)
+			editCell(t, a)
+			if len(a.rs.patches) != 1 || a.rs.patches[0].Path != tc.path || len(a.queued) != 0 {
+				t.Fatalf("patches %+v, want one at %s at once", a.rs.patches, tc.path)
+			}
+			waitRebuilt(t, a)
+			onePatch(t, a, tc.path, tc.orphaned)
+		})
 	}
 }

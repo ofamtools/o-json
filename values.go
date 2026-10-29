@@ -37,7 +37,14 @@ import (
 
 const (
 	settingDataEditable = "data.editable"
-	valueInputID        = "data/value-input"
+	// settingRebuildValueEdit says what a value edit made while a slow
+	// rebuild runs off the loop acts on: rebuildEditCurrent,
+	// rebuildEditQueue or rebuildEditPrevious.
+	settingRebuildValueEdit = "rebuild.value-edit"
+	rebuildEditCurrent      = "current"
+	rebuildEditQueue        = "queue"
+	rebuildEditPrevious     = "previous"
+	valueInputID            = "data/value-input"
 	// valueShape marks a register holding a value yanked from the data
 	// pane, valueShape+":"+its kind, so a put keeps its type.
 	valueShape = "o-json.value"
@@ -47,10 +54,92 @@ func declareValueSettings(r *ochazuke.Runtime) error {
 	return r.DeclareSetting(ochazuke.Setting{
 		Name: settingDataEditable, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "In the viewer's edited view the data pane edits single values (r, d d, o, K, p), as value patches applied after the restructure; off keeps the data pane read-only",
+	}, ochazuke.Setting{
+		Name: settingRebuildValueEdit, Type: ochazuke.SettingString, Default: rebuildEditCurrent, Enum: []string{rebuildEditCurrent, rebuildEditQueue, rebuildEditPrevious},
+		Description: "A value edit made while a large document's restructure is rebuilt off the loop: current finishes the rebuild on the loop and acts on the row at the cursor in the current document; queue does not wait, records the edit against the shown row's path and applies it when the rebuild lands (the path resolved in the new document; gone, the edit is kept as an orphaned patch); previous acts at once on the shown (previous) result's row, a patch by path the next rebuild resolves (orphaned if gone; the row at the cursor may not be the current document's)",
 	})
 }
 
 func (a *App) dataEditable() bool { return a.r.Settings().Bool(settingDataEditable) }
+
+// valueEditMode is rebuild.value-edit.
+func (a *App) valueEditMode() string {
+	switch m := a.r.Settings().String(settingRebuildValueEdit); m {
+	case rebuildEditQueue, rebuildEditPrevious:
+		return m
+	}
+	return rebuildEditCurrent
+}
+
+// queuedEdit is a value edit recorded while the data pane showed the
+// previous restructured document (rebuild.value-edit queue): at is the
+// value as shown, path its path there, do the edit.
+type queuedEdit struct {
+	doc  *Doc
+	at   valueAt
+	path string
+	do   func(valueAt) error
+}
+
+// onValue makes the edit do on v: at once, or, under rebuild.value-edit
+// queue while a rebuild runs off the loop, recorded against v's path
+// for flushQueued. Every value edit that makes a patch goes through it.
+func (a *App) onValue(v valueAt, do func(valueAt) error) error {
+	if a.valueEditMode() != rebuildEditQueue || !a.staleShown() {
+		return do(v)
+	}
+	a.queued = append(a.queued, queuedEdit{doc: a.Doc, at: v, path: v.path(), do: do})
+	ochazuke.Ctx{Runtime: a.r}.Info(fmt.Sprintf("value edit at %s queued: it applies when the rebuild lands", v.path()))
+	return nil
+}
+
+// flushQueued applies the queued value edits to the current restructured
+// document (a.ed, just built), in the order they were made: each one's
+// path resolved there, or, gone, the edit made on the value as it was
+// shown, so its patch follows the orphan rule (kept, skipped).
+func (a *App) flushQueued() {
+	q := a.queued
+	a.queued = nil
+	ctx := ochazuke.Ctx{Runtime: a.r}
+	for _, e := range q {
+		if e.doc != a.Doc {
+			continue
+		}
+		v, ok := a.resolveQueued(e)
+		if !ok {
+			v = e.at
+			ctx.Error(fmt.Sprintf("queued value edit at %s: not in the new document; kept as an orphaned patch", e.path))
+		}
+		if err := e.do(v); err != nil {
+			ctx.Error(fmt.Sprintf("queued value edit at %s: %v", e.path, err))
+		}
+	}
+}
+
+// resolveQueued is a queued edit's value in the current restructured
+// document, found by its path: the value there, or for a cell the row
+// lacked, its object (the key still missing or there now).
+func (a *App) resolveQueued(e queuedEdit) (valueAt, bool) {
+	if a.ed == nil || a.ed.root == nil {
+		return valueAt{}, false
+	}
+	root := a.ed.root
+	if e.at.node == nil {
+		p, err := Get(root, e.at.parent.Path())
+		if err != nil || p.Kind != KObject {
+			return valueAt{}, false
+		}
+		if f := p.Field(e.at.key); f != nil {
+			return valueAt{node: f, parent: p, key: f.Key}, true
+		}
+		return valueAt{parent: p, key: e.at.key}, true
+	}
+	n, err := Get(root, e.path)
+	if err != nil {
+		return valueAt{}, false
+	}
+	return valueAt{node: n, parent: n.Parent, key: n.Key}, true
+}
 
 // valueAt is one value of the data pane: node in its container parent
 // (nil for the document), or a table cell the row lacks (node nil, key
@@ -337,7 +426,7 @@ func (a *App) accept() error {
 			return nil
 		}
 		raw, _ := inferValue(text)
-		return a.setValue(ve.at, raw)
+		return a.onValue(ve.at, func(v valueAt) error { return a.setValue(v, raw) })
 	case "key":
 		key := text
 		taken := map[string]bool{}
@@ -351,9 +440,10 @@ func (a *App) accept() error {
 		return a.openInput(&valueEdit{what: "add", at: ve.at, key: key, insert: true, above: ve.above, view: ve.view}, "null", true)
 	case "add":
 		raw, _ := inferValue(text)
-		return a.addPatch(addBeside(ve.at, ve.key, raw, ve.above))
+		key, above := ve.key, ve.above
+		return a.onValue(ve.at, func(v valueAt) error { return a.addPatch(addBeside(v, key, raw, above)) })
 	case "rename":
-		return a.renameValue(ve.at, text)
+		return a.onValue(ve.at, func(v valueAt) error { return a.renameValue(v, text) })
 	}
 	return nil
 }
@@ -464,11 +554,18 @@ func (a *App) registerValueVerbs() {
 		if err != nil {
 			return ochazuke.Failed(err)
 		}
+		if a.valueEditMode() != rebuildEditCurrent {
+			// queue and previous never wait: the answer's orphans are
+			// the shown result's while a rebuild runs off the loop.
+			return ochazuke.Done(a.patchListIn(a.shownDoc))
+		}
 		return ochazuke.Done(a.patchList())
 	}
 	target := func(c ochazuke.Ctx) (valueAt, error) {
-		if err := a.settleEdited(); err != nil {
-			return valueAt{}, err
+		if a.valueEditMode() == rebuildEditCurrent {
+			if err := a.settleEdited(); err != nil {
+				return valueAt{}, err
+			}
 		}
 		v, ok := a.editableValue(c.Instance.ID)
 		if !ok {
@@ -484,7 +581,7 @@ func (a *App) registerValueVerbs() {
 			}
 			if text, ok := c.Args["text"].(string); ok {
 				raw, _ := inferValue(text)
-				return done(a.setValue(v, raw))
+				return done(a.onValue(v, func(v valueAt) error { return a.setValue(v, raw) }))
 			}
 			sel := a.r.RenameSelect()
 			if b, ok := c.Args["select"].(bool); ok {
@@ -497,7 +594,7 @@ func (a *App) registerValueVerbs() {
 			if err != nil {
 				return ochazuke.Failed(err)
 			}
-			return done(a.addPatch(Patch{Op: opDelete, Path: v.path()}))
+			return done(a.onValue(v, func(v valueAt) error { return a.addPatch(Patch{Op: opDelete, Path: v.path()}) }))
 		}, "Delete the field or item from its object or array (one value, a value patch)").When("value-in-container").
 		Verb("add", func(c ochazuke.Ctx) ochazuke.Result {
 			v, err := target(c)
@@ -512,7 +609,7 @@ func (a *App) registerValueVerbs() {
 			}
 			if v.parent.Kind == KArray {
 				if hasText {
-					return done(a.addPatch(addBeside(v, "", raw, before)))
+					return done(a.onValue(v, func(v valueAt) error { return a.addPatch(addBeside(v, "", raw, before)) }))
 				}
 				return done(a.openInput(&valueEdit{what: "add", at: v, insert: true, above: before}, "null", true))
 			}
@@ -522,7 +619,12 @@ func (a *App) registerValueVerbs() {
 				if v.parent.Field(key) != nil {
 					return ochazuke.Failed(fmt.Errorf("this object has a key %q already", key))
 				}
-				return done(a.addPatch(addBeside(v, key, raw, before)))
+				return done(a.onValue(v, func(v valueAt) error {
+					if v.parent.Field(key) != nil {
+						return fmt.Errorf("this object has a key %q already", key)
+					}
+					return a.addPatch(addBeside(v, key, raw, before))
+				}))
 			case hasKey:
 				if v.parent.Field(key) != nil {
 					return ochazuke.Failed(fmt.Errorf("this object has a key %q already", key))
@@ -537,7 +639,7 @@ func (a *App) registerValueVerbs() {
 				return ochazuke.Failed(err)
 			}
 			if key, ok := c.Args["key"].(string); ok {
-				return done(a.renameValue(v, key))
+				return done(a.onValue(v, func(v valueAt) error { return a.renameValue(v, key) }))
 			}
 			return done(a.openInput(&valueEdit{what: "rename", at: v}, v.key, a.r.RenameSelect()))
 		}, "Rename this key in this one object (the structure's keys stay): an inline input, the key selected; with key, at once").When("value-renamable").
@@ -555,7 +657,7 @@ func (a *App) registerValueVerbs() {
 			if err != nil {
 				return ochazuke.Failed(err)
 			}
-			return done(a.setValue(v, raw))
+			return done(a.onValue(v, func(v valueAt) error { return a.setValue(v, raw) }))
 		}, "Put the register's value (\"a p from a) over this one: a value yanked with y keeps its type, other text reads as typed text does").When("value-editable").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result { return a.yankValue(c) },
 			"Copy the value (a table row's cell under the cursor, or the row on #) into the registers, its type kept for p, and the system clipboard").When("value-yankable").
@@ -633,8 +735,11 @@ func (a *App) orphansIn(doc func() *restructured) []int {
 	return d.orphans
 }
 
-func (a *App) patchList() []patchStatus {
-	orphans := a.orphans()
+func (a *App) patchList() []patchStatus { return a.patchListIn(a.restructuredDoc) }
+
+// patchListIn is patchList with the orphans of doc's result.
+func (a *App) patchListIn(doc func() *restructured) []patchStatus {
+	orphans := a.orphansIn(doc)
 	out := make([]patchStatus, 0, len(a.rs.patches))
 	for i, p := range a.rs.patches {
 		out = append(out, patchStatus{Patch: p, Orphaned: slices.Contains(orphans, i)})

@@ -407,7 +407,10 @@ func TestYankTellsTheUser(t *testing.T) {
 
 // finish runs a key's commands and hands their completions to the model,
 // as Bubble Tea would (timers aside).
-func finish(a *App, cmd tea.Cmd) {
+func finish(a *App, cmd tea.Cmd) { finishWithin(a, cmd, 200*time.Millisecond) }
+
+// finishWithin is finish waiting up to d for each command.
+func finishWithin(a *App, cmd tea.Cmd, d time.Duration) {
 	if cmd == nil {
 		return
 	}
@@ -418,13 +421,13 @@ func finish(a *App, cmd tea.Cmd) {
 		switch msg := msg.(type) {
 		case tea.BatchMsg:
 			for _, c := range msg {
-				finish(a, c)
+				finishWithin(a, c, d)
 			}
 		case ochazuke.Completion, ochazuke.ForegroundMsg:
 			_, next := a.m.Update(msg)
-			finish(a, next)
+			finishWithin(a, next, d)
 		}
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(d):
 	}
 }
 

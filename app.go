@@ -82,6 +82,9 @@ type App struct {
 	carry    *rowCarry    // the data pane's row and column the next show keeps (T)
 
 	vedit *valueEdit // the data pane's open inline input (values.go)
+	// queued are the value edits made while a rebuild ran off the loop,
+	// under rebuild.value-edit queue: applied when it lands (values.go).
+	queued []queuedEdit
 
 	q queryState // the live jq query (query.go)
 }
