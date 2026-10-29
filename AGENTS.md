@@ -28,7 +28,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | Verbs | `verbs.go` |
 | Key rows: `bindings.json` (embedded, one row per line; the only place a default key is written), loaded by `bindings.go` | `bindings.json`, `bindings.go` |
 | The detail modal (drill in and out) | `detail.go` |
-| The restructure page: its two trees, node meta (origin by node id), the edits (send, indent, dedent, rename, delete) as one undo step each, the live mapping, write | `page.go` |
+| The restructure page: its two trees, node meta (origin by node id), the edits (send, indent, dedent, wrap, add-key, array/object, rename, delete) as one undo step each, new keys opened selected with a placeholder, the origin highlight, the live mapping, write | `page.go` |
 | The search prompt, the system clipboard | `prompt.go`, `clipboard.go` |
 
 ## Invariants
