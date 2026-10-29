@@ -24,11 +24,20 @@ func suggest(t *testing.T, a *App, text string) []string {
 	return out
 }
 
+// completeOn turns query.complete-paths on (it is off by default).
+func completeOn(t *testing.T, a *App) {
+	t.Helper()
+	if err := a.r.Settings().Set(settingCompletePaths, true); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // "." completes the keys of the shape the query reads where it is typed:
 // the document at the start, a stage's input after |, a path's keys after
 // its ".", each item inside map(.
 func TestQueryCompletesPathsAfterDot(t *testing.T) {
 	a := openQuery(t, sample)
+	completeOn(t, a)
 	if trig := a.r.CompletionTriggers(jqFieldID); len(trig) != 1 || trig[0].Trigger != "." || trig[0].Boundaries != "|()," {
 		t.Fatalf("triggers %+v", trig)
 	}
@@ -57,12 +66,34 @@ func TestQueryCompletesPathsAfterDot(t *testing.T) {
 	if a.qc.shape.Load() != nil {
 		t.Fatal("completion off still snapshots a shape")
 	}
+	if trig := a.r.CompletionTriggers(jqFieldID); len(trig) != 0 {
+		t.Fatalf("completion off keeps triggers %+v", trig)
+	}
+}
+
+// By default (query.complete-paths off) "." in the query line just types a
+// dot: no trigger, nothing opens, not even an empty list.
+func TestQueryDotJustTypes(t *testing.T) {
+	a := openQuery(t, sample)
+	press(t, a, "/")
+	view(a)
+	Type(a.m, ".items[] | .")
+	c := a.r.Completer()
+	if msg, ok := c.DebounceTick(); ok {
+		_, cmd := a.m.Update(msg)
+		finish(a, cmd)
+	}
+	finish(a, c.PendingCommand())
+	if c.Open() || string(a.q.in.Text) != ".items[] | ." {
+		t.Fatalf("open %v, text %q", c.Open(), string(a.q.in.Text))
+	}
 }
 
 // Typed in the focused line, "." opens the suggestions; accepting one
 // puts the key after the ".".
 func TestQueryDotOpensSuggestions(t *testing.T) {
 	a := openQuery(t, sample)
+	completeOn(t, a)
 	press(t, a, "/")
 	view(a)
 	Type(a.m, ".items[] | .ow")

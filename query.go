@@ -219,9 +219,11 @@ func (a *App) registerQuery() error {
 	if err := declareCompleteSettings(r); err != nil {
 		return err
 	}
-	if err := r.AddInput(a.q.in, ochazuke.Parent(pageID), ochazuke.Kind("jq-input"), ochazuke.Completions(a.pathTrigger())); err != nil {
+	if err := r.AddInput(a.q.in, ochazuke.Parent(pageID), ochazuke.Kind("jq-input")); err != nil {
 		return err
 	}
+	a.applyCompletePaths()
+	r.Settings().Observe(settingCompletePaths, func(string, any) { a.applyCompletePaths() })
 	// The query line is focused only by / (jq.focus): it is no focus stop
 	// of the page's tab ring.
 	r.Instances[jqFieldID].Unfocusable = true

@@ -8,13 +8,15 @@ import (
 	"github.com/unixsuperhero/ochazuke"
 )
 
-// Path completion in the query line: typing "." (at the start, or right
-// after | ( ) or , ) offers the field keys of the shape the query reads at
+// Path completion in the query line, opt-in (query.complete-paths, default
+// off: by the owner's decision "." just types a dot). On, typing "." (at
+// the start, or right after | ( ) or , ) offers the field keys of the shape the query reads at
 // that point (jqContextAt): after ".items[] | ." the keys of .items[], and
 // after ".owner." in that stage the keys of .items[].owner. An array field
 // is offered as itself and with [] (each item). Accepting replaces the
-// token after the ".", as one undoable edit. query.complete-paths off
-// offers nothing.
+// token after the ".", as one undoable edit. Off, the line has no trigger
+// at all (applyCompletePaths), so "." opens nothing, not even an empty
+// list.
 //
 // The search runs off the loop, so it reads a snapshot: the shape of the
 // document the query runs on, stored while the line is drawn focused
@@ -24,9 +26,21 @@ const settingCompletePaths = "query.complete-paths"
 
 func declareCompleteSettings(r *ochazuke.Runtime) error {
 	return r.DeclareSetting(ochazuke.Setting{
-		Name: settingCompletePaths, Type: ochazuke.SettingBoolean, Default: true,
-		Description: "Typing . in the jq query line offers the field keys of the shape the query reads there (after | the stage's input, after .a. the keys of .a); off, . is typed with no suggestions",
+		Name: settingCompletePaths, Type: ochazuke.SettingBoolean, Default: false,
+		Description: "On, typing . in the jq query line offers the field keys of the shape the query reads there (after | the stage's input, after .a. the keys of .a); off (the default), . just types a dot and nothing opens",
 	})
+}
+
+// applyCompletePaths gives the query line its "." trigger while
+// query.complete-paths is on, and none while it is off.
+func (a *App) applyCompletePaths() {
+	if a.q.in == nil {
+		return
+	}
+	a.q.in.Completions = nil
+	if a.r.Settings().Bool(settingCompletePaths) {
+		a.q.in.Completions = []ochazuke.CompletionTrigger{a.pathTrigger()}
+	}
 }
 
 // completion is the query line's completion snapshot.
