@@ -52,10 +52,13 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 			}
 			return runTUI(args, stdin, stdout, stderr)
 		}))
-	ocli.Mount(app, newShell(stdin, stdout, stderr))
+	// o-json's own commands are added before Mount: oden gives a name to
+	// the first command that claims it, so view stays the viewer and not
+	// the framework's short name for ochazuke.view (v0.50.0).
 	app.Add(textCommands(stdin, stdout, stderr)...)
 	app.Add(exportCommand(stdin, stdout, stderr))
 	app.Add(viewCommand(stdin, stdout, stderr))
+	ocli.Mount(app, newShell(stdin, stdout, stderr))
 	// Mount's help note says every result is JSON, which is true of the doc
 	// noun only; structure, table and get print text.
 	app.HelpText = `Files:

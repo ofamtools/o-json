@@ -251,8 +251,8 @@ func TestRestructureHintsFollowAvailability(t *testing.T) {
 }
 
 // F6: on the restructured tree > and < are prefixes that do nothing alone
-// (never the divider); ctrl+w > < = move it there, counts work, and > <
-// still move it on the original tree.
+// (never the divider); ctrl+w > < = move it there, counts work, and from
+// the original tree too.
 func TestNodePrefixNeverResizes(t *testing.T) {
 	a := openNest(t, "testdata/sample.json", ".items[].id")
 	start := divider(t, a)
@@ -286,13 +286,13 @@ func TestNodePrefixNeverResizes(t *testing.T) {
 		t.Fatalf("ctrl+w <: %d, was %d", got, start)
 	}
 	press(t, a, "ctrl+w", "=")
-	// The original tree keeps > and <.
+	// ctrl+w > works from the original tree too.
 	if err := a.rs.orig.Focus(); err != nil {
 		t.Fatal(err)
 	}
-	press(t, a, ">")
+	press(t, a, "ctrl+w", ">")
 	if got := divider(t, a); got <= start {
-		t.Fatalf("> on the original: %d, was %d", got, start)
+		t.Fatalf("ctrl+w > on the original: %d, was %d", got, start)
 	}
 }
 

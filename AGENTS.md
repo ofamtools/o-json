@@ -28,7 +28,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | The empty document, `viewer.open`/`new`/`discard`/`paste`/`write`/`save`/`files`/`recent`, the recent list (`recent.json` in `Config.StateDirectory`, `recent.size`; the path chooser's copy `App.recent`), the before-quit check, the alias rows (`aliases`: `w` `w!` `wq` `x` `e` `q` `q!`) | `open.go` |
 | `App` state, `New`, `Load`/`setDoc`, the tree's nodes and filters, what the data panel shows | `app.go` |
 | The windowed table (the list holds only the rows on screen), `rows.move`, column fitting | `rows.go` |
-| The page: breadcrumb, panels, the divider (`PaneLayout` + `Divide`, so `>` `<` `=` resize) | `view.go` |
+| The page: breadcrumb, panels, the divider (`PaneLayout` + `Divide`, so `ctrl+w >` `<` `=` resize) | `view.go` |
 | Verbs | `verbs.go` |
 | Key rows: `bindings.json` (embedded, one row per line; the only place a default key is written), loaded by `bindings.go` | `bindings.json`, `bindings.go` |
 | The detail modal (drill in and out) | `detail.go` |

@@ -431,8 +431,9 @@ func finishWithin(a *App, cmd tea.Cmd, d time.Duration) {
 	}
 }
 
-// > and < move the divider between the tree and the data panel, = puts it
-// back; stacked, they move it between the panels' heights.
+// ctrl+w > and ctrl+w < move the divider between the tree and the data
+// panel, ctrl+w = puts it back; stacked, they move it between the panels'
+// heights. (The bare > < = left the framework in ochazuke v0.50.0.)
 func TestPaneKeysResizeTheSplit(t *testing.T) {
 	// divider is the column the data panel starts at, side by side.
 	divider := func(a *App) int {
@@ -448,17 +449,17 @@ func TestPaneKeysResizeTheSplit(t *testing.T) {
 	}
 	a := openOriginal(t, sample, 120, 24)
 	start := divider(a)
-	press(t, a, ">")
+	press(t, a, "ctrl+w", ">")
 	if grown := divider(a); grown <= start {
-		t.Fatalf("> left the tree at %d (was %d)\n%s", grown, start, view(a))
+		t.Fatalf("ctrl+w > left the tree at %d (was %d)\n%s", grown, start, view(a))
 	}
-	press(t, a, "=")
+	press(t, a, "ctrl+w", "=")
 	if reset := divider(a); reset != start {
-		t.Fatalf("= put the divider at %d, want %d", reset, start)
+		t.Fatalf("ctrl+w = put the divider at %d, want %d", reset, start)
 	}
-	press(t, a, "<")
+	press(t, a, "ctrl+w", "<")
 	if shrunk := divider(a); shrunk >= start {
-		t.Fatalf("< left the tree at %d (was %d)", shrunk, start)
+		t.Fatalf("ctrl+w < left the tree at %d (was %d)", shrunk, start)
 	}
 
 	// top is the line the data panel starts on, stacked.
@@ -476,9 +477,9 @@ func TestPaneKeysResizeTheSplit(t *testing.T) {
 	}
 	a = openOriginal(t, sample, 50, 30)
 	start = top(a)
-	press(t, a, "3", ">")
+	press(t, a, "3", "ctrl+w", ">")
 	if grown := top(a); grown <= start {
-		t.Fatalf("3> left the data panel at line %d (was %d)\n%s", grown, start, view(a))
+		t.Fatalf("3 ctrl+w > left the data panel at line %d (was %d)\n%s", grown, start, view(a))
 	}
 }
 

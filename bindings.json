@@ -110,6 +110,7 @@
       {"key": "> >", "action": "node.indent", "args": {"into": "previous"}, "hint": "nest", "hidden": true},
       {"key": "> >", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "< <", "action": "node.dedent", "hint": "out"},
+      {"key": "< <", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "g >", "action": "node.indent", "args": {"into": "next"}, "hint": "nest below", "hidden": true},
       {"key": "g >", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "S", "action": "node.wrap", "hint": "wrap"},
