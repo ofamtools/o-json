@@ -30,9 +30,14 @@ import (
 // name is numbered, key-2, key-3, as the placeholder rule numbers new keys:
 // two siblings with one key would not check (a to path mapped twice).
 //
-// V ... d and V ... y (restructure.delete, restructure.yank) act on the V
-// selection as one undo step; while a selection is on, d d and y y are not
-// available, so d and y answer at once.
+// Over a V selection (visual-line, node/visual-line in bindings.json) one
+// key acts on every selected node as one undo step: d (node.delete), y
+// (node.yank), p (node.put: restructure.visual-put says whether it
+// replaces the selection, as Vim's V p does, or puts below it), > and <
+// (node.indent, node.dedent) and S (node.wrap: restructure.visual-wrap
+// says whether the nodes go into one new object or each into its own).
+// restructure.delete and restructure.yank, the selection's delete and yank
+// before visual was a mode, stay as palette verbs.
 
 // nodesShape is the yank shape of restructure nodes in a register.
 const nodesShape = "o-json.nodes"
@@ -192,6 +197,24 @@ func (a *App) check(e edit) error {
 	return err
 }
 
+// tops is ids without the document node and without any id inside
+// another of them, in tree order.
+func (e edit) tops(ids []string) []string {
+	set := map[string]bool{}
+	for _, id := range ids {
+		if e.parent(id) != "" {
+			set[id] = true
+		}
+	}
+	var out []string
+	for _, n := range e.nodes {
+		if set[n.ID] && !slices.ContainsFunc(ids, func(o string) bool { return set[o] && e.under(n.ID, o) }) {
+			out = append(out, n.ID)
+		}
+	}
+	return out
+}
+
 // selecting reports a V selection on the restructured tree.
 func (a *App) selecting() bool {
 	return a.rs.tree != nil && a.rs.tree.List().Visual()
@@ -240,17 +263,97 @@ func (a *App) selected() []string {
 		ids = append(ids, it.ID)
 	}
 	l.EndVisual()
+	if a.r.SelectionShape(a.r.BaseMode()) == ochazuke.SelectionLine {
+		_ = a.r.SetMode("normal")
+	}
 	return ids
+}
+
+// Settings for a key over a V selection on the restructured tree.
+const (
+	settingVisualPut  = "restructure.visual-put"
+	settingVisualWrap = "restructure.visual-wrap"
+)
+
+func declarePutSettings(r *ochazuke.Runtime) error {
+	return r.DeclareSetting(ochazuke.Setting{
+		Name: settingVisualPut, Type: ochazuke.SettingString, Default: "replace", Enum: []string{"replace", "below"},
+		Description: "p over a V selection on the restructured tree: replace deletes the selected nodes into the register and puts what it held in their place (Vim's V p); below puts after the last selected node and keeps them",
+	}, ochazuke.Setting{
+		Name: settingVisualWrap, Type: ochazuke.SettingString, Default: "together", Enum: []string{"together", "each"},
+		Description: "S over a V selection on the restructured tree: together wraps the selected siblings in one new object (nodes under different parents are each wrapped); each wraps every node in its own",
+	})
+}
+
+// putNodes is node.put: the register's nodes put at at (one subject), or
+// over several selected nodes (restructure.visual-put).
+func (a *App) putNodes(c ochazuke.Ctx, ids []string, before bool) ochazuke.Result {
+	y, err := a.r.ReadYank("")
+	a.r.Registers().Active = ""
+	if err != nil {
+		return ochazuke.Failed(err)
+	}
+	blocks, err := clipBlocks(y.Text)
+	if err != nil {
+		c.Info(err.Error())
+		return ochazuke.Done(a.Mapping())
+	}
+	now := a.current()
+	var e edit
+	var parent, first string
+	tops := now.tops(ids)
+	switch {
+	case len(ids) > 1 && len(tops) > 0 && a.r.Settings().String(settingVisualPut) != "below":
+		// V p: the selection goes into the register (as V d puts it) and
+		// the register's nodes take the place of the first one.
+		text, _ := clipOf(now, tops)
+		parent = now.parent(tops[0])
+		rest := now.remove(tops)
+		pos := len(rest.nodes)
+		if i, _ := now.span(tops[0]); i >= 0 {
+			pos = i
+		}
+		e, first = a.put(rest, parent, pos, blocks)
+		if err := a.check(e); err != nil && a.check(now) == nil {
+			c.Info("put does not go here: " + err.Error())
+			return ochazuke.Done(a.Mapping())
+		}
+		if err := a.r.StoreYank(ochazuke.Yank{Text: text, Shape: nodesShape}, "", true); err != nil {
+			return ochazuke.Failed(err)
+		}
+	default:
+		at := ids[len(ids)-1]
+		if len(ids) > 1 && len(tops) > 0 {
+			at = tops[len(tops)-1]
+		}
+		var pos int
+		parent, pos = now.putPlace(at, before, a.rs.tree.Collapsed(at))
+		if len(ids) > 1 && !before && now.parent(at) != "" {
+			_, pos = now.span(at) // below the selection: after its last node, never into it
+			parent = now.parent(at)
+		}
+		e, first = a.put(now, parent, pos, blocks)
+		if err := a.check(e); err != nil && a.check(now) == nil {
+			c.Info("put does not go here: " + err.Error())
+			return ochazuke.Done(a.Mapping())
+		}
+	}
+	if err := a.commit("put", first, e); err != nil {
+		return ochazuke.Failed(err)
+	}
+	_ = a.rs.tree.SetCollapsed(parent, false)
+	a.refocus(first)
+	return ochazuke.Done(a.Mapping())
 }
 
 func (a *App) registerPutVerbs() {
 	r := a.r
 	r.DefineGuard("node-yankable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		id := a.focusedNode(ev.Focus)
-		return id != "" && a.current().parent(id) != "" && !a.selecting()
+		return id != "" && a.current().parent(id) != ""
 	})
 	r.DefineGuard("node-puttable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
-		return a.focusedNode(ev.Focus) != "" && !a.selecting()
+		return a.focusedNode(ev.Focus) != ""
 	})
 	r.DefineGuard("restructure-selecting", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.sideOf(ev.Focus) == rsTreeID && a.selecting()
@@ -263,32 +366,8 @@ func (a *App) registerPutVerbs() {
 			return a.yankNodes(c, subjectIDs(c), false)
 		}, "Yank the nodes and their children into the register (\"a y y into a); p puts a copy, the same shapes mapped again").Many().When("node-yankable").
 		Verb("put", func(c ochazuke.Ctx) ochazuke.Result {
-			y, err := a.r.ReadYank("")
-			a.r.Registers().Active = ""
-			if err != nil {
-				return ochazuke.Failed(err)
-			}
-			blocks, err := clipBlocks(y.Text)
-			if err != nil {
-				c.Info(err.Error())
-				return ochazuke.Done(a.Mapping())
-			}
-			at := c.Instance.ID
-			before := c.Args["before"] == true
-			now := a.current()
-			parent, pos := now.putPlace(at, before, a.rs.tree.Collapsed(at))
-			e, first := a.put(now, parent, pos, blocks)
-			if err := a.check(e); err != nil && a.check(a.current()) == nil {
-				c.Info("put does not go here: " + err.Error())
-				return ochazuke.Done(a.Mapping())
-			}
-			if err := a.commit("put", first, e); err != nil {
-				return ochazuke.Failed(err)
-			}
-			_ = a.rs.tree.SetCollapsed(parent, false)
-			a.refocus(first)
-			return ochazuke.Done(a.Mapping())
-		}, "Put the register's nodes (\"a p from a) where the cursor is, at the level they land on: p below as the next sibling, or as the first child of a node whose children are shown (the document's first child on the root); P above as the previous sibling (on the root, its first child too). A put whose mapping does not check (a key into an array) is refused. Nodes that were deleted come back as they were (a move); a yank is put as a copy").When("node-puttable")
+			return a.putNodes(c, subjectIDs(c), c.Args["before"] == true)
+		}, "Put the register's nodes (\"a p from a) where the cursor is, at the level they land on: p below as the next sibling, or as the first child of a node whose children are shown (the document's first child on the root); P above as the previous sibling (on the root, its first child too). A put whose mapping does not check (a key into an array) is refused. Nodes that were deleted come back as they were (a move); a yank is put as a copy. Over a V selection (p), restructure.visual-put: replace (the selection into the register, the put in its place) or below").Many().When("node-puttable")
 	r.Define("restructure").
 		Verb("delete", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.yankNodes(c, a.selected(), true)

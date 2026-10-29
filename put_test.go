@@ -206,15 +206,15 @@ func TestMarkedDeletePutOneUndoStep(t *testing.T) {
 	if got := agreesWith(t, a, nestDoc); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"a-2":1,"x-2":{"b":2,"c":3}}` {
 		t.Fatalf("put of the yank %s", got)
 	}
-	// While a selection is on, d d and y y are not available, so d and y
-	// answer at once; without one, d and y alone are not.
-	press(t, a, "V")
-	if a.available("node", "delete") || a.available("node", "yank") || !a.available("restructure", "delete") {
-		t.Fatal("in V: node.delete / node.yank should stand aside for restructure.delete")
+	// In visual-line the single keys are node.delete and node.yank: a
+	// lone y acts at once (it does not wait on y y).
+	a.on(t, ".a")
+	press(t, a, "V", "y")
+	if a.rs.tree.List().Visual() || a.r.BaseMode() != "normal" {
+		t.Fatalf("V y left visual on (mode %s)", a.r.BaseMode())
 	}
-	press(t, a, "esc")
-	if !a.available("node", "delete") || a.available("restructure", "delete") || a.available("restructure", "yank") {
-		t.Fatal("out of V: d d and y y answer, d and y alone do not")
+	if y, err := a.r.ReadYank(""); err != nil || !strings.Contains(y.Text, nodesShape) {
+		t.Fatalf("V y did not yank nodes: %v %v", y, err)
 	}
 }
 
@@ -331,7 +331,87 @@ func TestPutKeysOnEveryNode(t *testing.T) {
 		}
 		expect(k.name, normal)
 		press(t, a, "V")
-		expect(k.name+" in V", map[string]string{"d": "restructure.delete", "y": "restructure.yank", "d d": "", "y y": ""})
+		inV := map[string]string{"d": "node.delete", "y": "node.yank", "p": "node.put", "d d": "", "y y": ""}
+		if k.name == "root" {
+			inV["d"], inV["y"] = "", "ochazuke.list.yank"
+		}
+		expect(k.name+" in V", inV)
 		press(t, a, "esc")
+	}
+}
+
+// V j d deletes two nodes and V j y then p copies them: single keys in
+// visual-line, one undo step each.
+func TestVisualLineDeleteYankPut(t *testing.T) {
+	a := openPut(t)
+	a.on(t, ".a")
+	press(t, a, "V", "j", "d")
+	if got := output(t, a); got != `{"y":4}` {
+		t.Fatalf("V j d %s", got)
+	}
+	press(t, a, "u")
+	a.on(t, ".a")
+	press(t, a, "V", "j", "y")
+	a.on(t, ".y")
+	press(t, a, "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"a-2":1,"x-2":{"b":2,"c":3}}` {
+		t.Fatalf("V j y, p %s", got)
+	}
+}
+
+// p over a selection: replace (the default, Vim's V p) puts the register
+// in the selection's place and the selection into the register; below
+// puts after the selection and keeps it.
+func TestVisualLinePut(t *testing.T) {
+	a := openPut(t)
+	a.on(t, ".y")
+	press(t, a, "y", "y")
+	a.on(t, ".a")
+	press(t, a, "V", "j", "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"y-2":4,"y":4}` {
+		t.Fatalf("V j p (replace) %s", got)
+	}
+	a.on(t, ".y")
+	press(t, a, "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"y-2":4,"a":1,"x":{"b":2,"c":3},"y":4}` {
+		t.Fatalf("p after V p puts the replaced nodes: %s", got)
+	}
+	press(t, a, "u", "u")
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4}` {
+		t.Fatalf("V p is one undo step: %s", got)
+	}
+	if err := a.r.Settings().Set(settingVisualPut, "below"); err != nil {
+		t.Fatal(err)
+	}
+	a.on(t, ".y")
+	press(t, a, "y", "y")
+	a.on(t, ".a")
+	press(t, a, "V", "j", "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"a":1,"x":{"b":2,"c":3},"y-2":4,"y":4}` {
+		t.Fatalf("V j p (below) %s", got)
+	}
+}
+
+// S over a selection: together wraps the siblings in one new object;
+// each wraps every node in its own.
+func TestVisualLineWrap(t *testing.T) {
+	a := openPut(t)
+	a.on(t, ".a")
+	press(t, a, "V", "j", "S")
+	if got := agreesWith(t, a, nestDoc); got != `{"new-key":{"a":1,"x":{"b":2,"c":3}},"y":4}` {
+		t.Fatalf("V j S (together) %s", got)
+	}
+	press(t, a, "esc", "u")
+	if err := a.r.Settings().Set(settingVisualWrap, "each"); err != nil {
+		t.Fatal(err)
+	}
+	a.on(t, ".a")
+	press(t, a, "V", "j", "S")
+	if got := agreesWith(t, a, nestDoc); got != `{"new-key":{"a":1},"new-key-2":{"x":{"b":2,"c":3}},"y":4}` {
+		t.Fatalf("V j S (each) %s", got)
+	}
+	press(t, a, "u")
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4}` {
+		t.Fatalf("one undo step: %s", got)
 	}
 }

@@ -96,6 +96,9 @@ type restructureState struct {
 }
 
 func declareSettings(r *ochazuke.Runtime) error {
+	if err := declarePutSettings(r); err != nil {
+		return err
+	}
 	return r.DeclareSetting(ochazuke.Setting{
 		Name: settingLayout, Type: ochazuke.SettingString, Default: "split", Enum: []string{"split", "single"},
 		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, tab swaps them",
@@ -546,6 +549,75 @@ func (a *App) wrap(e edit, id, key string) (edit, string, bool) {
 	e.nodes[i+1].Parent = w
 	e.meta[w] = nodeMeta{}
 	return e, w, true
+}
+
+// wrapNodes wraps the nodes ids (V S): together, the siblings among
+// them go into one new object at the first one's place (nodes of other
+// parents each into their own); otherwise each node into its own. An
+// array item is not wrapped. It reports the new objects' ids.
+func (a *App) wrapNodes(e edit, ids []string, key string, together bool) (edit, []string) {
+	var ws []string
+	tops := slices.DeleteFunc(e.tops(ids), func(id string) bool { return e.meta[id].item })
+	groups := map[string][]string{}
+	var order []string
+	for _, id := range tops {
+		p := e.parent(id)
+		if !together {
+			p = id
+		}
+		if groups[p] == nil {
+			order = append(order, p)
+		}
+		groups[p] = append(groups[p], id)
+	}
+	for n, g := range order {
+		k := key
+		if k != "" && n > 0 {
+			k = fmt.Sprintf("%s-%d", key, n+1)
+		}
+		var w string
+		e, w = a.wrapTogether(e, groups[g], k)
+		if w != "" {
+			ws = append(ws, w)
+		}
+	}
+	return e, ws
+}
+
+// wrapTogether puts siblings ids (in tree order) in one new object at the
+// first one's place, the others' siblings between them after it.
+func (a *App) wrapTogether(e edit, ids []string, key string) (edit, string) {
+	if len(ids) == 0 {
+		return e, ""
+	}
+	parent := e.parent(ids[0])
+	first := e.at(ids[0])
+	if key == "" {
+		key = a.placeholder(e, parent, ids[0])
+	}
+	w := a.newNodeID()
+	in := map[string]bool{}
+	var moved []ochazuke.TreeNode
+	for _, id := range ids {
+		i, end := e.span(id)
+		for _, n := range e.nodes[i:end] {
+			if n.ID == id {
+				n.Parent = w
+			}
+			in[n.ID] = true
+			moved = append(moved, n)
+		}
+	}
+	var rest []ochazuke.TreeNode
+	for _, n := range e.nodes {
+		if !in[n.ID] {
+			rest = append(rest, n)
+		}
+	}
+	block := append([]ochazuke.TreeNode{{ID: w, Parent: parent, Label: key, Noun: "node"}}, moved...)
+	e.nodes = slices.Insert(rest, first, block...)
+	e.meta[w] = nodeMeta{}
+	return e, w
 }
 
 // addKey adds an empty object key (a wrapper) below or above at, or as
@@ -1098,12 +1170,23 @@ func (a *App) registerRestructureVerbs() {
 	r.Define("node").
 		Verb("wrap", func(c ochazuke.Ctx) ochazuke.Result {
 			key := ochazuke.StringArg(c.Args, "key", "")
-			e, w, ok := a.wrap(a.current(), c.Instance.ID, key)
-			if !ok || !a.valid(e.nodes, e.meta) && a.valid(a.rs.tree.Nodes(), a.rs.meta) {
+			now := a.current()
+			ids := subjectIDs(c)
+			var e edit
+			var ws []string
+			if len(ids) > 1 {
+				e, ws = a.wrapNodes(now, ids, key, a.r.Settings().String(settingVisualWrap) != "each")
+			} else if after, w, ok := a.wrap(now, c.Instance.ID, key); ok {
+				e, ws = after, []string{w}
+			}
+			if len(ws) == 0 || !a.valid(e.nodes, e.meta) && a.valid(now.nodes, now.meta) {
 				return ochazuke.Failed(errors.New("wrap does not apply here"))
 			}
-			return created(c, "wrap", e, w, key)
-		}, "Wrap the node in a new object in its place, the new key a placeholder opened selected (typing names it)").When("node-wrappable").
+			if len(ws) > 1 {
+				key = ws[0] // several new keys keep their placeholders: none opens
+			}
+			return created(c, "wrap", e, ws[0], key)
+		}, "Wrap the node in a new object in its place, the new key a placeholder opened selected (typing names it). Over a V selection (S), restructure.visual-wrap: together puts the selected siblings in one new object, each wraps every node in its own").Many().When("node-wrappable").
 		Verb("array", toggle("to-array", a.toArray), "Turn the key into an array of itself: its value, or its keys, become the array's item; the document holding keys becomes [ {keys} ]").When("node-to-array").
 		Verb("object", func(c ochazuke.Ctx) ochazuke.Result {
 			e, key, ok := a.toObjectKey(a.current(), c.Instance.ID)

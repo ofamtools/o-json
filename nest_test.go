@@ -166,23 +166,23 @@ func TestIndentTwoNodes(t *testing.T) {
 	}
 }
 
-// V selects rows (marks, in normal mode), and > > and < < act on every
-// selected node as one undo step.
+// V enters visual-line, where > and < act on every selected node as one
+// undo step and end the selection.
 func TestVisualNestsAndDedentsSeveral(t *testing.T) {
 	a := openNest(t, nestDoc, ".a", ".x", ".y", ".z")
 	a.on(t, ".y")
-	press(t, a, "V", "j", ">", ">")
+	press(t, a, "V", "j", ">")
 	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3,"y":4,"z":5}}` {
-		t.Fatalf("V j > >: %s", got)
+		t.Fatalf("V j >: %s", got)
 	}
 	press(t, a, "u")
 	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"z":5}` {
 		t.Fatalf("one undo step: %s", got)
 	}
 	a.on(t, ".x.b")
-	press(t, a, "V", "j", "<", "<")
+	press(t, a, "V", "j", "<")
 	if got := output(t, a); got != `{"a":1,"b":2,"c":3,"x":{},"y":4,"z":5}` {
-		t.Fatalf("V j < <: %s", got)
+		t.Fatalf("V j <: %s", got)
 	}
 }
 
