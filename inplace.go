@@ -459,6 +459,21 @@ func (a *App) shownName() string {
 	return "edited"
 }
 
+// viewLabel names the shown view in the structure pane's title: original
+// after T; edited once the restructure (its structure or its value edits)
+// differs from the copy the document opened with; unchanged before that,
+// so a document just opened never reads as edited. shownName stays the
+// side's name (viewer.state's view, restructure.show's side).
+func (a *App) viewLabel() string {
+	switch {
+	case a.original:
+		return "original"
+	case a.edited():
+		return "edited"
+	}
+	return "unchanged"
+}
+
 // dirtyMark is vim's [+]: restructure edits no write saved.
 func (a *App) dirtyMark() string {
 	if a.unsaved() {

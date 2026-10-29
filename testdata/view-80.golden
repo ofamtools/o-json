@@ -2,7 +2,7 @@
    › testdata/sample.json  Restructure                                          
   ────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)                                   
-  ╭━ Structure · edited ━━━━━━━╮ ╭─ Table .items  1/4 ───────────────────────╮  
+  ╭━ Structure · unchanged ━━━━╮ ╭─ Table .items  1/4 ───────────────────────╮  
   ┃ jq / to query              ┃ │ #      id  name   owner   tags         2› │  
   ┃ key                     2› ┃ │ 0      1   alpha  {"nam…  ["red…          │  
   ┃ ▾ . (root)                 ┃ │ 1      2   beta   {"nam…  []              │  

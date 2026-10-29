@@ -169,13 +169,14 @@ func (a *App) breadcrumb() string {
 	return strings.Join(parts, "  ·  ")
 }
 
-// treeTitle is the structure pane's title: "Structure · edited [+]"; in
+// treeTitle is the structure pane's title: "Structure · unchanged" as a
+// document opens, "Structure · edited [+]" once edited (viewLabel); in
 // query mode the highlighted field's term first, then "query" and the
-// view (".email · query · edited"), so the path survives a narrow pane.
+// view (".email · query · unchanged"), so the path survives a narrow pane.
 func (a *App) treeTitle() string {
 	title, view := "Structure", ""
 	if a.editable() && a.Doc != nil {
-		view = a.shownName() + a.dirtyMark()
+		view = a.viewLabel() + a.dirtyMark()
 	}
 	if a.queryModeOn() {
 		title = "query"

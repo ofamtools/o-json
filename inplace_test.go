@@ -60,12 +60,64 @@ func TestIdentityStart(t *testing.T) {
 			if !a.editedShown() || a.sideOf(a.r.Focus) != rsTreeID {
 				t.Fatalf("not the edited view: focus %q", a.r.Focus)
 			}
-			if !strings.Contains(view(a), "Structure · edited") {
+			if !strings.Contains(view(a), "Structure · unchanged") {
 				t.Fatalf("title\n%s", view(a))
 			}
 			identical(t, a)
 			agreesWith(t, a, path)
 		})
+	}
+}
+
+// A document just opened reads as unchanged, not edited: the title says
+// "unchanged" with no [+] (in the pane or the breadcrumb), nothing is
+// unsaved, and q quits without asking. One edit, a structure move or a
+// value edit, turns the title to "edited [+]" and q asks; undoing it
+// back to the copy reads unchanged again.
+func TestOpenedDocumentIsNotEdited(t *testing.T) {
+	for _, path := range []string{sample, "testdata/top-array.json"} {
+		t.Run(filepath.Base(path), func(t *testing.T) {
+			a := open(t, path, 120, 30)
+			frame := view(a)
+			if !strings.Contains(frame, "Structure · unchanged ") || strings.Contains(frame, "edited") || strings.Contains(frame, "[+]") || a.unsaved() {
+				t.Fatalf("opened as edited: unsaved %v\n%s", a.unsaved(), frame)
+			}
+			press(t, a, "q")
+			if !a.r.Quit || a.r.TopModal() != "" {
+				t.Fatalf("q on a document just opened asked: modal %q", a.r.TopModal())
+			}
+		})
+	}
+	// A structure edit.
+	a := open(t, sample, 120, 30)
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<")
+	if frame := view(a); !strings.Contains(frame, "Structure · edited [+]") || strings.Contains(frame, "unchanged") {
+		t.Fatalf("a move does not read edited\n%s", frame)
+	}
+	press(t, a, "u")
+	if frame := view(a); !strings.Contains(frame, "Structure · unchanged ") || strings.Contains(frame, "[+]") {
+		t.Fatalf("undone to the copy does not read unchanged\n%s", frame)
+	}
+	// A value edit on the top-level array.
+	a = open(t, "testdata/top-array.json", 120, 30)
+	press(t, a, "q")
+	if !a.r.Quit {
+		t.Fatal("q on the array document asked")
+	}
+	a = open(t, "testdata/top-array.json", 120, 30)
+	onRoot(t, a)
+	view(a)
+	if err := a.data.list.Focus(); err != nil {
+		t.Fatal(err)
+	}
+	valueDo(t, a, "delete", nil) // the first item
+	if frame := view(a); !strings.Contains(frame, "Structure · edited [+]") || !a.unsaved() {
+		t.Fatalf("a value edit does not read edited\n%s", frame)
+	}
+	press(t, a, "q")
+	if a.r.Quit || !strings.Contains(view(a), "Quit without writing?") {
+		t.Fatalf("q after a value edit did not ask\n%s", view(a))
 	}
 }
 
