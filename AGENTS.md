@@ -29,7 +29,8 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | Verbs | `verbs.go` |
 | Key rows: `bindings.json` (embedded, one row per line; the only place a default key is written), loaded by `bindings.go` | `bindings.json`, `bindings.go` |
 | The detail modal (drill in and out) | `detail.go` |
-| The restructure page: its two trees, node meta (origin by node id), the edits (send, indent, dedent, wrap, add-key, array/object, rename, delete) as one undo step each, new keys opened selected with a placeholder, the origin highlight, the live mapping, write | `page.go` |
+| The restructure page: its two trees, node meta (origin by node id), the edits (send, indent, dedent, wrap, add-key, array/object, rename) as one undo step each, new keys opened selected with a placeholder, the origin highlight, the live mapping, write | `page.go` |
+| Yank, delete and put on the restructured tree through ochazuke's registers (nodes as `o-json.nodes` text; a put keeps ids that are free, so delete + put is a move and yank + put a copy), where a put lands (`putPlace`), the V selection's `d`/`y` | `put.go` |
 | The search prompt, the system clipboard | `prompt.go`, `clipboard.go` |
 
 ## Invariants
