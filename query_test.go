@@ -429,3 +429,53 @@ func TestQueryModeOnTheOriginalAndBack(t *testing.T) {
 		t.Fatalf("back: mode %q query %q", a.r.BaseMode(), a.queryText())
 	}
 }
+
+// ctrl+f picks a builtin; one of arity 2 lays out 2 slots, the first
+// selected so typing fills it, tab the next; the query runs once filled.
+// A slot holds a nested call.
+func TestQueryFunctionSlots(t *testing.T) {
+	a := openQuery(t, writeDoc(t, peopleDoc))
+	press(t, a, "/")
+	Type(a.m, ".b | ")
+	press(t, a, "ctrl+f")
+	c := a.r.Chooser(jqFuncChooser)
+	if c == nil {
+		t.Fatal("ctrl+f opened no picker")
+	}
+	Type(a.m, "sub(f; f)")
+	if row, ok := c.Highlighted(); !ok || row.ID != "sub/2" {
+		t.Fatalf("highlighted %v", row)
+	}
+	press(t, a, "enter")
+	if got := a.queryText(); got != ".b | sub(□; □)" {
+		t.Fatalf("slots %q", got)
+	}
+	if n := strings.Count(a.queryText(), "□"); n != 2 {
+		t.Fatalf("%d slots", n)
+	}
+	if a.r.Focus != jqFieldID || a.q.in.Mode != "insert" {
+		t.Fatalf("back in the line: focus %q mode %q", a.r.Focus, a.q.in.Mode)
+	}
+	Type(a.m, `"t"`)
+	press(t, a, "tab")
+	// The second slot holds a nested call: tostring is arity 0.
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "jq", Verb: "function", Args: ochazuke.Arguments{"name": "tostring"}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := a.queryText(); got != `.b | sub("t"; tostring)` {
+		t.Fatalf("filled %q", got)
+	}
+	settle(a)
+	view(a)
+	if st := a.queryState(); st["error"] != nil || st["results"] != 1 {
+		t.Fatalf("the filled call does not run: %v", st)
+	}
+	// The slot chips: an empty slot draws as a chip, and the query does
+	// not run while one is left.
+	if out := queryDoc(context.Background(), mustRoot(t), "sub(□; □)"); out.Err == nil || out.Pos != 4 {
+		t.Fatalf("a slot left: %+v", out)
+	}
+	if toks := jqTokens([]rune("sub(□; □)")); toks[2].Kind != tokSlot {
+		t.Fatalf("slot token %+v", toks)
+	}
+}

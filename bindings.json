@@ -86,6 +86,7 @@
       {"key": "backspace", "action": "jq.erase", "hint": "erase"},
       {"key": "u", "action": "jq.undo", "hidden": true},
       {"key": "ctrl+r", "action": "jq.redo", "hidden": true},
+      {"key": "ctrl+f", "action": "jq.function", "hint": "function"},
       {"key": "enter", "action": "outline.fold", "hidden": true}
     ]},
     {"context": "restructure/normal", "bindings": [
@@ -134,7 +135,8 @@
       {"key": "a", "action": "jq.anchor", "hint": "anchor"},
       {"key": "backspace", "action": "jq.erase", "hint": "erase"},
       {"key": "u", "action": "jq.undo", "hidden": true},
-      {"key": "ctrl+r", "action": "jq.redo", "hidden": true}
+      {"key": "ctrl+r", "action": "jq.redo", "hidden": true},
+      {"key": "ctrl+f", "action": "jq.function", "hint": "function"}
     ]},
     {"context": "ochazuke.outline/query", "bindings": [
       {"key": "h", "action": "ochazuke.outline.collapse"},
@@ -187,7 +189,9 @@
     {"context": "jq-input/insert", "bindings": [
       {"key": "esc", "action": "jq.leave", "hint": "leave"},
       {"key": "enter", "action": "jq.leave", "hidden": true},
-      {"key": "ctrl+v", "action": "ochazuke.input.select", "args": {"shape": "char"}, "hint": "select"}
+      {"key": "ctrl+v", "action": "ochazuke.input.select", "args": {"shape": "char"}, "hint": "select"},
+      {"key": "ctrl+f", "action": "jq.function", "hint": "function"},
+      {"key": "tab", "action": "jq.next-slot", "hint": "next slot"}
     ]},
     {"context": "jq-input/normal", "bindings": [
       {"key": "esc", "action": "jq.leave", "hint": "leave"}

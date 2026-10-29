@@ -294,13 +294,19 @@ func jqBuiltins() []jqFunc {
 			if !ok {
 				break
 			}
-			s, _ := v.(string)
-			name, arity, ok := strings.Cut(s, "/")
-			n, err := strconv.Atoi(arity)
-			if !ok || err != nil || strings.HasPrefix(name, "_") {
-				continue
+			names, _ := v.([]any) // gojq answers one array, jq a stream
+			if s, ok := v.(string); ok {
+				names = []any{s}
 			}
-			builtinList = append(builtinList, jqFunc{Name: name, Arity: n})
+			for _, x := range names {
+				s, _ := x.(string)
+				name, arity, ok := strings.Cut(s, "/")
+				n, err := strconv.Atoi(arity)
+				if !ok || err != nil || strings.HasPrefix(name, "_") {
+					continue
+				}
+				builtinList = append(builtinList, jqFunc{Name: name, Arity: n})
+			}
 		}
 		slices.SortFunc(builtinList, func(a, b jqFunc) int {
 			if c := strings.Compare(a.Name, b.Name); c != 0 {

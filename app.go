@@ -107,6 +107,7 @@ func New() (*App, error) {
 	if err := a.registerQueryMode(); err != nil {
 		return nil, err
 	}
+	a.registerQueryFunctions()
 	if err := declareSettings(r); err != nil {
 		return nil, err
 	}
