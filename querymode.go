@@ -520,19 +520,20 @@ func (a *App) registerQueryMode() error {
 // queryModeOn reports the structure pane in query mode.
 func (a *App) queryModeOn() bool { return a.r.BaseMode() == queryMode }
 
-// queryModeTitle is the structure pane's title part in query mode: the
-// mode and how the highlighted field would be written at the anchor.
-func (a *App) queryModeTitle() string {
+// queryModeTerm is how the highlighted field would be written at the
+// anchor, for the structure pane's title in query mode ("" outside it).
+// It leads the title, so a narrow pane cuts the fixed words, not the path.
+func (a *App) queryModeTerm() string {
 	if !a.queryModeOn() {
 		return ""
 	}
 	p, err := a.highlighted()
 	if err != nil {
-		return " · query"
+		return ""
 	}
 	term := strings.TrimPrefix(fieldTerm(a.queryContext(), p), ", ")
 	if term == "" {
-		term = "(at the anchor)"
+		term = "(anchor)"
 	}
-	return " · query · " + term
+	return term
 }

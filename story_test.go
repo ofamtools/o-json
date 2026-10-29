@@ -12,7 +12,8 @@ import (
 // real viewer. A story's page id picks the session (the story format asks
 // for a page): "o-json" is o-json's runtime and model on the nest
 // document's restructure page, the focus on the restructured tree's .y;
-// "o-json-viewer" is a fresh viewer on the nest document, as it opens.
+// "o-json-viewer" is a fresh viewer on the nest document, as it opens;
+// "o-json-empty" the viewer with no document (o-json alone).
 // The story's script and expectations run against it as o-story runs its
 // own; a story with a skip ("gap: ...") runs but cannot fail.
 func TestStories(t *testing.T) {
@@ -26,9 +27,12 @@ func TestStories(t *testing.T) {
 	for _, s := range stories {
 		t.Run(s.Area+"/"+story.Slug(s.Name), func(t *testing.T) {
 			var a *App
-			if s.Page != nil && s.Page.ID == "o-json-viewer" {
+			switch {
+			case s.Page != nil && s.Page.ID == "o-json-viewer":
 				a = open(t, nestDoc, 120, 30)
-			} else {
+			case s.Page != nil && s.Page.ID == "o-json-empty":
+				a = empty(t)
+			default:
 				a = openNest(t, nestDoc, ".a", ".x", ".y", ".z")
 				a.on(t, ".y")
 			}

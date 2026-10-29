@@ -333,7 +333,7 @@ const peopleDoc = `{"a":1,"b":"two","people":[{"name":"ann","email":"a@x"},{"nam
 func TestQueryModeKeysBuildAQuery(t *testing.T) {
 	a := openQuery(t, writeDoc(t, peopleDoc))
 	press(t, a, "m")
-	if !a.queryModeOn() || !strings.Contains(view(a), "· query") {
+	if !a.queryModeOn() || !strings.Contains(view(a), "query · edited") {
 		t.Fatalf("m: mode %q\n%s", a.r.BaseMode(), view(a))
 	}
 	// query extends normal (bindings.json "modes"): the viewer's and the
@@ -347,7 +347,7 @@ func TestQueryModeKeysBuildAQuery(t *testing.T) {
 	selectPath(t, a, ".people[]")
 	press(t, a, "|")
 	selectPath(t, a, ".people[].email")
-	if !strings.Contains(view(a), "· query · .email") {
+	if !strings.Contains(view(a), ".email · query · edited") {
 		t.Fatalf("the title does not show the path relative to the query:\n%s", line(view(a), "Structure"))
 	}
 	finish(a, Press(a.m, "."))

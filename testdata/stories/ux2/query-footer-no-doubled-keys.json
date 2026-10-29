@@ -1,0 +1,11 @@
+{
+  "name": "o-json: the query-mode footer names each key once (. path, not . . path)",
+  "area": "ux2",
+  "width": 160,
+  "height": 20,
+  "page": {"id": "o-json-viewer"},
+  "script": ["m"],
+  "expect": [
+    {"after": 1, "mode": "query", "contains": [". path", "| pipe"], "lacks": [". . path", "| | pipe", "[ [", ", , comma", "] ] each"]}
+  ]
+}

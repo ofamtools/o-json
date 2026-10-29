@@ -1,0 +1,11 @@
+{
+  "name": "o-json: with no document the focused structure panel has the heavy (focused) border (P5)",
+  "area": "ux2",
+  "width": 110,
+  "height": 20,
+  "page": {"id": "o-json-empty"},
+  "script": ["j"],
+  "expect": [
+    {"after": 1, "contains": ["╭━ Structure"], "lacks": ["╭─ Structure"]}
+  ]
+}

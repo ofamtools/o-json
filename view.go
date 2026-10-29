@@ -46,10 +46,11 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if bh < 3 || width < 8 {
 		return ochazuke.Text(crumb)
 	}
-	treeFocused := a.tree.List().Focused() || a.rs.tree.List().Focused()
+	// An empty tree (no document) holds the focus itself, not its list.
+	treeFocused := a.tree.List().Focused() || a.rs.tree.List().Focused() || r.Focus == treeID || r.Focus == rsTreeID
 	// Under a modal the page is drawn with the focus it opened over, so
 	// the panel the modal came from keeps its border.
-	dataFocused := a.data.list.Focused() || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
+	dataFocused := a.data.list.Focused() || r.Focus == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
 	var left, right ochazuke.Block
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth
@@ -168,15 +169,26 @@ func (a *App) breadcrumb() string {
 	return strings.Join(parts, "  ·  ")
 }
 
+// treeTitle is the structure pane's title: "Structure · edited [+]"; in
+// query mode the highlighted field's term first, then "query" and the
+// view (".email · query · edited"), so the path survives a narrow pane.
 func (a *App) treeTitle() string {
-	title := "Structure"
+	title, view := "Structure", ""
 	if a.editable() && a.Doc != nil {
-		title += " · " + a.shownName() + a.dirtyMark()
+		view = a.shownName() + a.dirtyMark()
+	}
+	if a.queryModeOn() {
+		title = "query"
+		if term := a.queryModeTerm(); term != "" {
+			title = term + " · query"
+		}
+	}
+	if view != "" {
+		title += " · " + view
 	}
 	if (a.Query != "" || a.Kind != "") && !a.editedShown() {
 		title += " (filtered)"
 	}
-	title += a.queryModeTitle()
 	return title
 }
 
