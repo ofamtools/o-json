@@ -10,7 +10,7 @@ import (
 )
 
 // wrapped opens the page with .name and .version sent, the focus on
-// .version (under .name, a string, where > cannot nest).
+// .version (under .name, a string, where it cannot nest).
 func wrapped(t *testing.T) *App {
 	t.Helper()
 	a := openRestructure(t, 120, 30)
@@ -33,11 +33,11 @@ func placeholderSelected(t *testing.T, a *App, text string) {
 	}
 }
 
-// > under a plain value wraps the node in a new key, opened selected:
+// S wraps the node in a new key, opened selected:
 // typing names it, and the mapping gains a wrapper (no from).
 func TestWrapUnderAValueThenType(t *testing.T) {
 	a := wrapped(t)
-	press(t, a, ">")
+	press(t, a, "S")
 	placeholderSelected(t, a, "new-key")
 	Type(a.m, "meta")
 	press(t, a, "esc")
@@ -62,7 +62,7 @@ func TestWrapUnderAValueThenType(t *testing.T) {
 // it back.
 func TestWrapEscKeepsThePlaceholder(t *testing.T) {
 	a := wrapped(t)
-	press(t, a, ">")
+	press(t, a, "S")
 	press(t, a, "esc")
 	want := []string{".name>.name", ">.[\"new-key\"]", ".version>.[\"new-key\"].version"}
 	if got := entries(a.Mapping()); !slices.Equal(got, want) {
@@ -87,7 +87,7 @@ func TestWrapEscKeepsThePlaceholder(t *testing.T) {
 // the setting names it.
 func TestPlaceholderIsUnique(t *testing.T) {
 	a := wrapped(t)
-	press(t, a, ">", "esc")
+	press(t, a, "S", "esc")
 	press(t, a, "o", "esc")
 	press(t, a, "O", "esc")
 	var keys []string

@@ -26,6 +26,12 @@ import "embed"
 //go:embed bindings.json
 var bindingsFS embed.FS
 
+// The divider's verbs answer only while the page draws a split (the
+// framework guards its own > < = rows; o-json's ctrl+w rows get it as the
+// verbs' availability, so the rows carry no guard).
 func (a *App) bind() error {
+	for _, verb := range []string{"ochazuke.pane.grow", "ochazuke.pane.shrink", "ochazuke.pane.reset"} {
+		a.r.SetAvailability(verb, "pane-split")
+	}
 	return a.r.LoadDefaultBindingsFS(bindingsFS, "bindings.json")
 }

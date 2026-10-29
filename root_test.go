@@ -26,6 +26,12 @@ func (a *App) available(noun, verb string) bool {
 // it returns the output.
 func agrees(t *testing.T, a *App) string {
 	t.Helper()
+	return agreesWith(t, a, sample)
+}
+
+// agreesWith is agrees for the document at path.
+func agreesWith(t *testing.T, a *App, path string) string {
+	t.Helper()
 	p, err := a.plan()
 	if err != nil {
 		t.Fatalf("plan: %v (%v)", err, entries(a.Mapping()))
@@ -35,7 +41,7 @@ func agrees(t *testing.T, a *App) string {
 	file := writeMap(t, string(spec))
 	for _, args := range [][]string{nil, {"--mapping"}} {
 		var b strings.Builder
-		if err := Main(append([]string{"restructure", sample, "--map", file}, args...), nil, &b, &b); err != nil {
+		if err := Main(append([]string{"restructure", path, "--map", file}, args...), nil, &b, &b); err != nil {
 			t.Fatalf("restructure %v: %v", args, err)
 		}
 		want := Pretty(p.Apply(a.Doc.Root)) + "\n"
@@ -81,7 +87,7 @@ func TestRootIsTheDocument(t *testing.T) {
 	if a.r.Input(a.r.Focus) != nil {
 		t.Fatal("r opened a line on the root")
 	}
-	press(t, a, "<")
+	press(t, a, "<", "<")
 	if nodes := a.rs.tree.Nodes(); len(nodes) != 1 || nodes[0].ID != rsRootID {
 		t.Fatalf("after d d, r, <: %+v", nodes)
 	}
@@ -105,10 +111,10 @@ func TestRootIsTheDocument(t *testing.T) {
 	if a.available("node", "dedent") || !a.available("node", "wrap") {
 		t.Errorf("top-level key: dedent %v wrap %v", a.available("node", "dedent"), a.available("node", "wrap"))
 	}
-	// With keys of its own (not one array) the root cannot become an array.
+	// With keys of its own the root becomes an array of itself (T2).
 	onRoot(t, a)
-	if a.available("node", "array") {
-		t.Error("node.array on a root holding a plain key")
+	if !a.available("node", "array") {
+		t.Error("node.array not available on a root holding a plain key")
 	}
 }
 

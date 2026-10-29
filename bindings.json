@@ -1,6 +1,11 @@
-// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers, and an unavailable one passes the key on (> on a restructure node nests where the JSON rules allow, else wraps the node in a new key, and on an item resizes the divider; t turns a key into an array, or an array back into a key, where the mapping still checks). The outline's tab, shift+tab, i and d d are unbound (d d deletes through node.delete, which keeps the document node): nesting goes through the JSON rules (> <) and renaming through r; o, O and a add a key with a placeholder opened selected (restructure.add-key). w writes a new file; W (restructure.write {force}) replaces an existing one without asking, and the source after one confirm. A user's bindings.json overrides them.
+// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers, and an unavailable one passes the key on (t turns a key into an array, or an array back into a key, where the mapping still checks). On a restructure node > and < are prefixes only (> > and g > nest, < < moves out, > j and > k nest two nodes, S wraps); alone they do nothing, so they never reach the divider there: ctrl+w > < = resize it on both pages (> < = still do on the original tree and the viewer). The outline's tab, shift+tab, i and d d are unbound (d d deletes through node.delete, which keeps the document node): nesting goes through the JSON rules (> > and < <) and renaming through r; o, O and a add a key with a placeholder opened selected (restructure.add-key). w writes a new file; W (restructure.write {force}) replaces an existing one without asking, and the source after one confirm. A user's bindings.json overrides them.
 {
   "bindings": [
+    {"context": "app/normal", "bindings": [
+      {"key": "ctrl+w >", "action": "ochazuke.pane.grow", "hint": "ctrl+w >/< resize", "from": {"steps": "count"}},
+      {"key": "ctrl+w <", "action": "ochazuke.pane.shrink", "from": {"steps": "count"}, "hidden": true},
+      {"key": "ctrl+w =", "action": "ochazuke.pane.reset", "hidden": true}
+    ]},
     {"context": "rows/normal", "bindings": [
       {"key": "j", "action": "rows.move", "args": {"motion": "down"}, "from": {"steps": "count"}},
       {"key": "down", "action": "rows.move", "args": {"motion": "down"}, "from": {"steps": "count"}},
@@ -60,11 +65,16 @@
       {"key": "q", "action": "restructure.close", "hint": "back"}
     ]},
     {"context": "node/normal", "bindings": [
-      {"key": ">", "action": "node.indent", "hint": ">/< nest"},
-      {"key": ">", "action": "node.wrap", "hidden": true},
-      {"key": "<", "action": "node.dedent", "hidden": true},
-      {"key": "t", "action": "node.array", "hint": "array/object"},
-      {"key": "t", "action": "node.object", "hidden": true},
+      {"key": "> >", "action": "node.indent", "args": {"into": "previous"}, "hint": "nest"},
+      {"key": "< <", "action": "node.dedent", "hint": "out"},
+      {"key": "g >", "action": "node.indent", "args": {"into": "next"}, "hint": "nest below"},
+      {"key": "S", "action": "node.wrap", "hint": "wrap"},
+      {"key": "> j", "action": "node.indent", "args": {"into": "previous", "with": "next"}, "hint": "nest +next"},
+      {"key": "> k", "action": "node.indent", "args": {"into": "previous", "with": "previous"}, "hint": "nest +previous"},
+      {"key": ">", "action": "ochazuke.key.ignore", "hint": "prefix", "hidden": true},
+      {"key": "<", "action": "ochazuke.key.ignore", "hint": "prefix", "hidden": true},
+      {"key": "t", "action": "node.array", "hint": "array"},
+      {"key": "t", "action": "node.object", "hint": "object"},
       {"key": "r", "action": "node.rename", "hint": "rename"},
       {"key": "d d", "action": "node.delete", "hint": "delete"}
     ]},

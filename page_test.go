@@ -145,33 +145,34 @@ func TestIndentAndDedent(t *testing.T) {
 	if a.sideOf(a.r.Focus) != rsTreeID {
 		t.Fatalf("tab: focus %q", a.r.Focus)
 	}
-	// email follows owner out of it, then nests back.
+	// email moves out of owner, just before it, then g > nests it back
+	// into owner (the object below), as its first key.
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].owner.email"))
-	press(t, a, "<")
-	if got := entries(a.Mapping())[4]; got != ".items[].owner.email>.items[].email" {
-		t.Fatalf("< %v", entries(a.Mapping()))
+	press(t, a, "<", "<")
+	if got := entries(a.Mapping())[2]; got != ".items[].owner.email>.items[].email" {
+		t.Fatalf("< < %v", entries(a.Mapping()))
 	}
-	press(t, a, ">")
-	if got := entries(a.Mapping())[4]; got != ".items[].owner.email>.items[].owner.email" {
-		t.Fatalf("> %v", entries(a.Mapping()))
+	press(t, a, "g", ">")
+	if got := entries(a.Mapping())[3]; got != ".items[].owner.email>.items[].owner.email" {
+		t.Fatalf("g > %v", entries(a.Mapping()))
 	}
-	// > on an item neither nests nor wraps, so it resizes.
+	// > > on an item neither nests nor wraps, and never resizes.
 	selectIn(t, a, a.rs.tree, func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].item })
 	before := strings.Index(line(view(a), "Restructured"), "Restructured")
 	mapped := entries(a.Mapping())
-	press(t, a, ">")
+	press(t, a, ">", ">")
 	if got := entries(a.Mapping()); !slices.Equal(got, mapped) {
-		t.Fatalf("> on an item: %v", got)
+		t.Fatalf("> > on an item: %v", got)
 	}
-	if after := strings.Index(line(view(a), "Restructured"), "Restructured"); after <= before {
-		t.Errorf("> fell through to the divider: %d then %d", before, after)
+	if after := strings.Index(line(view(a), "Restructured"), "Restructured"); after != before {
+		t.Errorf("> > moved the divider: %d then %d", before, after)
 	}
 	// name out of the item collects every name.
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].owner.name"))
-	press(t, a, "<", "<")
-	// The first < leaves owner for the item; the second would collect
+	press(t, a, "<", "<", "<", "<")
+	// The first < < leaves owner for the item; the second would collect
 	// the names into a top-level name, which the root already has, so it
-	// is not available (the key resized the divider).
+	// is not available (and does nothing).
 	got := entries(a.Mapping())
 	if !slices.Contains(got, ".items[].owner.name>.items[].name") {
 		t.Fatalf("after < <: %v", got)
@@ -198,8 +199,8 @@ func TestDedentOutOfAnItemCollects(t *testing.T) {
 	sendPaths(t, a, ".items[].id")
 	press(t, a, "tab")
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].id"))
-	press(t, a, "<")
-	want := []string{".items>.items", ".items[]>.items[]", ">.id", ".items[].id>.id[]"}
+	press(t, a, "<", "<")
+	want := []string{">.id", ".items[].id>.id[]", ".items>.items", ".items[]>.items[]"}
 	if got := entries(a.Mapping()); !slices.Equal(got, want) {
 		t.Fatalf("mapping %v", got)
 	}
@@ -209,7 +210,7 @@ func TestDedentOutOfAnItemCollects(t *testing.T) {
 	}
 	// The item left without children copies each item whole, as a
 	// leaf does.
-	if got := Compact(p.Apply(a.Doc.Root), 0); !strings.HasPrefix(got, `{"items":[{"id":1,"name":"alpha"`) || !strings.HasSuffix(got, `"id":[1,2,3,4]}`) {
+	if got := Compact(p.Apply(a.Doc.Root), 0); !strings.HasPrefix(got, `{"id":[1,2,3,4],"items":[{"id":1,"name":"alpha"`) {
 		t.Errorf("apply %s", got)
 	}
 	// An item's key cannot move out of the root's item: < is not there
@@ -313,7 +314,7 @@ func TestLiveMappingIsWhatRestructureRuns(t *testing.T) {
 	sendPaths(t, a, ".items[].owner", ".name")
 	press(t, a, "tab")
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].owner.name"))
-	press(t, a, "<")
+	press(t, a, "<", "<")
 	shown, err := a.mappingText()
 	if err != nil {
 		t.Fatal(err)

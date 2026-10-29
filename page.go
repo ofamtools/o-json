@@ -25,13 +25,13 @@ import (
 // tree, {from: origin, to: the path the node now has}.
 //
 // The tree is ochazuke's outline (OnChange set, so u and ctrl+r undo,
-// J and K move). o-json's own edits (send, > and <, wrap, a new key,
-// array and object, rename with a key, delete) replace the nodes and go
-// on the same undo stack as one TreeAction each, holding the nodes and meta before and
-// after. > and < follow the JSON rules as availability: where they cannot
-// apply the key passes on (to the divider's resize). A new key (> where
-// a node cannot nest, o O a) opens with a placeholder selected: typing
-// names it, esc keeps it.
+// J and K move). o-json's own edits (send, indent and dedent, wrap, a new
+// key, array and object, rename with a key, delete) replace the nodes and
+// go on the same undo stack as one TreeAction each, holding the nodes and
+// meta before and after. Indent (> >, g >, > j, > k) and dedent (< <)
+// follow the JSON rules as availability; alone > and < are prefixes that
+// do nothing here (the divider is ctrl+w > < =). A new key (S, o O a)
+// opens with a placeholder selected: typing names it, esc keeps it.
 //
 // Two layouts, one mechanism, setting restructure.layout: split draws
 // the original beside the restructured tree; single draws one of them,
@@ -58,11 +58,15 @@ const (
 )
 
 // nodeMeta is what o-json keeps for a restructure node beside the tree:
-// the shape path its value comes from ("" for a wrapper object) and
-// whether it is an array's "[]" item.
+// the shape path its value comes from ("" for a wrapper object), whether
+// it is an array's "[]" item, and built: the kind ("object" or "array")
+// the node was built as once it first had children. A built node left
+// with no children is an empty object in the mapping (a wrapper), not a
+// copy of its origin; the origin stays for the from column and undo.
 type nodeMeta struct {
-	from string
-	item bool
+	from  string
+	item  bool
+	built string
 }
 
 type restructureState struct {
@@ -88,7 +92,7 @@ func declareSettings(r *ochazuke.Runtime) error {
 		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, tab swaps them",
 	}, ochazuke.Setting{
 		Name: settingNewKey, Type: ochazuke.SettingString, Default: "new-key",
-		Description: "The placeholder key a new object key gets on the restructure page (> wrapping a value, o and O): opened selected, typing replaces it; a sibling with it already gives new-key-2, -3, ...",
+		Description: "The placeholder key a new object key gets on the restructure page (S wrapping a node, o and O): opened selected, typing replaces it; a sibling with it already gives new-key-2, -3, ...",
 	})
 }
 
@@ -213,13 +217,33 @@ func mappingOf(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) *Mapping {
 	}
 	for _, n := range nodes {
 		md := meta[n.ID]
-		if md.from == "" && (n.Parent == "" || md.item && !parents[n.ID]) {
+		from := md.from
+		if md.built != "" && !md.item && !parents[n.ID] {
+			from = "" // emptied: an empty object, not a copy of the origin
+		}
+		if from == "" && (n.Parent == "" || md.item && !parents[n.ID]) {
 			continue
 		}
 		to := paths[n.ID]
-		m.Map = append(m.Map, MapEntry{From: md.from, To: &to})
+		m.Map = append(m.Map, MapEntry{From: from, To: &to})
 	}
 	return m
+}
+
+// markBuilt records, on every node that has children, the kind it is
+// built as (nodeMeta.built).
+func (e edit) markBuilt() {
+	for _, n := range e.nodes {
+		if n.Parent == "" {
+			continue
+		}
+		md := e.meta[n.Parent]
+		md.built = "object"
+		if e.hasItem(n.Parent) {
+			md.built = "array"
+		}
+		e.meta[n.Parent] = md
+	}
 }
 
 // Mapping is the page's mapping now.
@@ -328,7 +352,7 @@ func (a *App) objectLike(e edit, id string) bool {
 	if md.item || e.hasItem(id) {
 		return false
 	}
-	if md.from == "" || len(e.siblings(id)) > 0 {
+	if md.from == "" || md.built != "" || len(e.siblings(id)) > 0 {
 		return true
 	}
 	s := a.shapeAt(md.from)
@@ -342,26 +366,98 @@ func (a *App) shapeAt(path string) *Shape {
 	return a.Doc.Shape.Find(path)
 }
 
-// indent nests id under its previous sibling, as its last child. JSON
-// rule: the sibling takes keys (objectLike) and id is not an item.
-func (a *App) indent(e edit, id string) (edit, bool) {
+// span is id's subtree in the flat list, [i, end).
+func (e edit) span(id string) (int, int) {
 	i := e.at(id)
-	if i < 0 || e.meta[id].item {
+	if i < 0 {
+		return -1, -1
+	}
+	end := i + 1
+	for end < len(e.nodes) && e.under(e.nodes[end].ID, id) {
+		end++
+	}
+	return i, end
+}
+
+// place moves id's subtree in the flat list: just before anchor, as
+// anchor's first child (right after it) or as its last (after its
+// subtree). The caller sets id's parent.
+func (e edit) place(id, anchor, where string) edit {
+	i, end := e.span(id)
+	block := slices.Clone(e.nodes[i:end])
+	rest := edit{nodes: slices.Delete(slices.Clone(e.nodes), i, end), meta: e.meta}
+	var pos int
+	switch where {
+	case "before":
+		pos = rest.at(anchor)
+	case "first":
+		pos = rest.at(anchor) + 1
+	default:
+		_, pos = rest.span(anchor)
+	}
+	e.nodes = slices.Insert(rest.nodes, pos, block...)
+	return e
+}
+
+// indent nests id into its nearest sibling that takes keys (objectLike):
+// into "previous", the nearest above, as its last child; into "next", the
+// nearest below, as its first. Plain siblings between are skipped. JSON
+// rule: id is not an item.
+func (a *App) indent(e edit, id, into string) (edit, bool) {
+	i := e.at(id)
+	if i < 0 || e.meta[id].item || e.nodes[i].Parent == "" {
 		return e, false
 	}
 	kids := e.siblings(e.nodes[i].Parent)
 	pos := slices.Index(kids, id)
-	if pos <= 0 || !a.objectLike(e, kids[pos-1]) {
-		return e, false
+	step, where := -1, "last"
+	if into == "next" {
+		step, where = 1, "first"
 	}
-	// id follows its previous sibling's subtree in the flat list, so it
-	// becomes that sibling's last child.
-	e.nodes[i].Parent = kids[pos-1]
-	return e, true
+	for k := pos + step; k >= 0 && k < len(kids); k += step {
+		if a.objectLike(e, kids[k]) {
+			e.nodes = slices.Clone(e.nodes)
+			e.nodes[i].Parent = kids[k]
+			return e.place(id, kids[k], where), true
+		}
+	}
+	return e, false
 }
 
-// dedent moves id out to follow its parent. Out of an array item it moves
-// out of the array (an item takes no siblings) and collects: the node
+// indentAll indents ids in turn (into as indent takes it); it reports
+// how many moved.
+func (a *App) indentAll(e edit, ids []string, into string) (edit, int) {
+	n := 0
+	for _, id := range ids {
+		var ok bool
+		if e, ok = a.indent(e, id, into); ok {
+			n++
+		}
+	}
+	return e, n
+}
+
+// indentSubjects is what node.indent works on: the selection (else the
+// node), and with "with" (next or previous) the node beside it in the
+// tree too, as vim's >j and >k take this line and the next.
+func (a *App) indentSubjects(e edit, ids []string, with string) []string {
+	if len(ids) != 1 || with == "" {
+		return ids
+	}
+	i := e.at(ids[0])
+	switch {
+	case with == "next" && i >= 0 && i+1 < len(e.nodes):
+		return []string{ids[0], e.nodes[i+1].ID}
+	case with == "previous" && i > 0:
+		return []string{e.nodes[i-1].ID, ids[0]}
+	}
+	return ids
+}
+
+// dedent moves id out to its parent's level, just before the parent (so
+// dedenting a parent's children one by one stacks them before it, in
+// order). Out of an array item it moves out of the array (an item takes
+// no siblings), just before the array's key, and collects: the node
 // becomes a key holding an array of its values, a new "[]" item that
 // keeps its origin (.items[].id dedented gives .id[] from .items[].id).
 func (a *App) dedent(e edit, id string) (edit, bool) {
@@ -376,8 +472,9 @@ func (a *App) dedent(e edit, id string) (edit, bool) {
 		return e, false
 	}
 	if !e.meta[parent].item {
+		e.nodes = slices.Clone(e.nodes)
 		e.nodes[i].Parent = e.parent(parent)
-		return e, true
+		return e.place(id, parent, "before"), true
 	}
 	array := e.parent(parent)
 	if e.parent(array) == "" {
@@ -388,6 +485,7 @@ func (a *App) dedent(e edit, id string) (edit, bool) {
 		return e, false // a wrapper has no values to collect
 	}
 	item := a.newNodeID()
+	e.nodes = slices.Clone(e.nodes)
 	e.nodes[i].Parent = e.nodes[e.at(array)].Parent
 	for j := range e.nodes {
 		if e.nodes[j].Parent == id {
@@ -395,9 +493,9 @@ func (a *App) dedent(e edit, id string) (edit, bool) {
 		}
 	}
 	e.nodes = slices.Insert(e.nodes, i+1, ochazuke.TreeNode{ID: item, Parent: id, Label: "[]", Noun: "node"})
-	e.meta[item] = nodeMeta{from: md.from, item: true}
+	e.meta[item] = nodeMeta{from: md.from, item: true, built: md.built}
 	e.meta[id] = nodeMeta{}
-	return e, true
+	return e.place(id, array, "before"), true
 }
 
 // remove deletes ids and their subtrees.
@@ -504,7 +602,8 @@ func (e edit) under(id, anc string) bool {
 // A node without an origin (a wrapper, the document) has no values of its
 // own: empty, it becomes an array waiting for its item (s on the original
 // fills the document's); holding one key that is an array, it becomes
-// that array (the key goes, its item moves up).
+// that array (the key goes, its item moves up). The document holding keys
+// becomes an array of itself, [ {keys} ]: an item from "." holding them.
 func (a *App) toArray(e edit, id string) (edit, bool) {
 	i := e.at(id)
 	md := e.meta[id]
@@ -527,8 +626,11 @@ func (a *App) toArray(e edit, id string) (edit, bool) {
 			e.nodes = slices.Delete(e.nodes, e.at(key), e.at(key)+1)
 			delete(e.meta, key)
 			return e, true
+		case e.nodes[i].Parent == "":
+			md = nodeMeta{from: "."} // the document's origin is itself
+		default:
+			return e, false
 		}
-		return e, false
 	}
 	item := a.newNodeID()
 	e.nodes = slices.Clone(e.nodes)
@@ -538,7 +640,7 @@ func (a *App) toArray(e edit, id string) (edit, bool) {
 		}
 	}
 	e.nodes = slices.Insert(e.nodes, i+1, ochazuke.TreeNode{ID: item, Parent: id, Label: "[]", Noun: "node"})
-	e.meta[item] = nodeMeta{from: md.from, item: true}
+	e.meta[item] = nodeMeta{from: md.from, item: true, built: md.built}
 	e.meta[id] = nodeMeta{}
 	return e, true
 }
@@ -567,10 +669,19 @@ func (e edit) arrayOf(id string) string {
 // from an array's items, the array goes back under the key it came from
 // (.[] from .items[] becomes .items[]): t undoes t on a node holding one
 // array key.
+//
+// The document's own array (the top level of an array document) has no
+// key to go back under: it goes under a new key, the placeholder, which
+// toObjectKey reports so the verb opens it selected.
 func (a *App) toObject(e edit, id string) (edit, bool) {
+	e, _, ok := a.toObjectKey(e, id)
+	return e, ok
+}
+
+func (a *App) toObjectKey(e edit, id string) (edit, string, bool) {
 	arr := e.arrayOf(id)
 	if arr == "" || e.meta[arr].item {
-		return e, false
+		return e, "", false
 	}
 	item := e.itemOf(arr)
 	plain := edit{nodes: slices.Clone(e.nodes), meta: maps.Clone(e.meta)}
@@ -579,23 +690,31 @@ func (a *App) toObject(e edit, id string) (edit, bool) {
 			plain.nodes[j].Parent = arr
 		}
 	}
-	plain.meta[arr] = nodeMeta{from: e.meta[item].from}
+	from := e.meta[item].from
+	if from == "." && e.parent(arr) == "" {
+		from = "" // the document as its own item: back to the document
+	}
+	plain.meta[arr] = nodeMeta{from: from, built: e.meta[item].built}
 	delete(plain.meta, item)
 	plain.nodes = slices.Delete(plain.nodes, plain.at(item), plain.at(item)+1)
 	if a.valid(plain.nodes, plain.meta) {
-		return plain, true
+		return plain, "", true
 	}
 	s := a.shapeAt(e.meta[item].from)
-	if s == nil || s.Key != "[]" || s.parent == nil || s.parent.parent == nil || e.meta[arr].from != "" {
-		return plain, true // the caller's check refuses it
+	if s == nil || s.Key != "[]" || s.parent == nil || e.meta[arr].from != "" {
+		return plain, "", true // the caller's check refuses it
 	}
+	label, opened := s.parent.Key, ""
 	key := a.newNodeID()
+	if s.parent.parent == nil {
+		label, opened = a.placeholder(e, arr, ""), key
+	}
 	e.nodes = slices.Clone(e.nodes)
 	at := e.at(item)
 	e.nodes[at].Parent = key
-	e.nodes = slices.Insert(e.nodes, at, ochazuke.TreeNode{ID: key, Parent: arr, Label: s.parent.Key, Noun: "node"})
+	e.nodes = slices.Insert(e.nodes, at, ochazuke.TreeNode{ID: key, Parent: arr, Label: label, Noun: "node"})
 	e.meta[key] = nodeMeta{from: s.parent.Path}
-	return e, true
+	return e, opened, true
 }
 
 // send adds shapes: each with the ancestors it needs (a node that came
@@ -664,6 +783,7 @@ func (a *App) send(e edit, shapes []*Shape) (edit, int) {
 // with focus the node selected after undo or redo.
 func (a *App) commit(label, focus string, e edit) error {
 	before := a.current()
+	e.markBuilt()
 	set := func(to edit) func() error {
 		return func() error {
 			a.rs.meta, a.rs.dirty = maps.Clone(to.meta), true
@@ -698,7 +818,7 @@ func (a *App) decorate() {
 			} else {
 				typ = "missing"
 			}
-			if len(e.siblings(n.ID)) > 0 {
+			if len(e.siblings(n.ID)) > 0 || md.built != "" && !md.item {
 				typ = "object"
 				if e.hasItem(n.ID) {
 					typ = "array"
@@ -806,14 +926,23 @@ func (a *App) registerRestructureVerbs() {
 		r.Operations[r.CanonicalKey(key)] = op
 	}
 	r.DefineGuard("node-indent", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
-		return a.moved(a.focusedNode(ev.Focus), a.indent)
+		id := a.focusedNode(ev.Focus)
+		if id == "" {
+			return false
+		}
+		now := a.current()
+		ids := a.indentSubjects(now, []string{id}, ochazuke.StringArg(ev.Args, "with", ""))
+		after, n := a.indentAll(edit{nodes: slices.Clone(now.nodes), meta: maps.Clone(now.meta)}, ids, ochazuke.StringArg(ev.Args, "into", "previous"))
+		return n > 0 && (a.valid(after.nodes, after.meta) || !a.valid(now.nodes, now.meta))
 	})
 	r.DefineGuard("node-dedent", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.moved(a.focusedNode(ev.Focus), a.dedent)
 	})
+	// The probe wraps with the key the real wrap gives (the placeholder),
+	// so a sibling's name never decides it.
 	r.DefineGuard("node-wrappable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.moved(a.focusedNode(ev.Focus), func(e edit, id string) (edit, bool) {
-			e, _, ok := a.wrap(e, id, "x")
+			e, _, ok := a.wrap(e, id, "")
 			return e, ok
 		})
 	})
@@ -848,15 +977,10 @@ func (a *App) registerRestructureVerbs() {
 	})
 	r.DefineGuard("restructure-single", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return a.layout() == "single" })
 
-	move := func(name string, fn func(edit, string) (edit, bool)) ochazuke.AppHandler {
+	// move runs an edit over the verb's subjects, one undo step for all.
+	move := func(name string, fn func(c ochazuke.Ctx, e edit) (edit, int)) ochazuke.AppHandler {
 		return func(c ochazuke.Ctx) ochazuke.Result {
-			e, n := a.current(), 0
-			for _, id := range subjectIDs(c) {
-				var ok bool
-				if e, ok = fn(e, id); ok {
-					n++
-				}
-			}
+			e, n := fn(c, a.current())
 			if n == 0 {
 				return ochazuke.Failed(fmt.Errorf("%s does not apply here", name))
 			}
@@ -869,8 +993,20 @@ func (a *App) registerRestructureVerbs() {
 		}
 	}
 	r.Define("node").
-		Verb("indent", move("indent", a.indent), "Nest the node under the node above it, when that one takes keys (an object or a wrapper)").Many().When("node-indent").
-		Verb("dedent", move("dedent", a.dedent), "Move the node out to follow its parent; out of an array item it collects the values into an array (.items[].id becomes .id[])").Many().When("node-dedent").
+		Verb("indent", move("indent", func(c ochazuke.Ctx, e edit) (edit, int) {
+			ids := a.indentSubjects(e, subjectIDs(c), ochazuke.StringArg(c.Args, "with", ""))
+			return a.indentAll(e, ids, ochazuke.StringArg(c.Args, "into", "previous"))
+		}), "Nest the node into the nearest sibling that takes keys (an object or a wrapper): into previous (the default), the one above, as its last key; into next, the one below, as its first. Plain siblings between are skipped. With with (next or previous) the node beside it in the tree is indented too, as vim's >j and >k take two lines").Many().When("node-indent").
+		Verb("dedent", move("dedent", func(c ochazuke.Ctx, e edit) (edit, int) {
+			n := 0
+			for _, id := range subjectIDs(c) {
+				var ok bool
+				if e, ok = a.dedent(e, id); ok {
+					n++
+				}
+			}
+			return e, n
+		}), "Move the node out to its parent's level, just before the parent (the parent stays, an empty object once nothing is left in it); out of an array item it collects the values into an array placed just before the array's key (.items[].id becomes .id[])").Many().When("node-dedent").
 		Verb("rename", func(c ochazuke.Ctx) ochazuke.Result {
 			id := c.Instance.ID
 			key, ok := c.Args["key"].(string)
@@ -903,7 +1039,7 @@ func (a *App) registerRestructureVerbs() {
 			c.Info(fmt.Sprintf("deleted %d node(s); u brings them back", len(ids)))
 			return ochazuke.Done(a.Mapping())
 		}, "Delete the nodes and their children from the restructure (the document node stays); u brings them back").Many().When("node-deletable")
-	// A new key (a wrapper from >, or o and O) opens selected: typing
+	// A new key (a wrapper from S, or o and O) opens selected: typing
 	// renames it, esc or a motion keeps the placeholder. With key it is
 	// named at once (the palette, the CLI).
 	created := func(c ochazuke.Ctx, label string, e edit, id, key string) ochazuke.Result {
@@ -943,9 +1079,15 @@ func (a *App) registerRestructureVerbs() {
 				return ochazuke.Failed(errors.New("wrap does not apply here"))
 			}
 			return created(c, "wrap", e, w, key)
-		}, "Wrap the node in a new object in its place, the new key a placeholder opened selected (typing names it); > does it where the node cannot nest").When("node-wrappable").
-		Verb("array", toggle("to-array", a.toArray), "Turn the key into an array of itself: its value, or its keys, become the array's item").When("node-to-array").
-		Verb("object", toggle("to-object", a.toObject), "Turn an array (or its item) back into the key its item was, where the mapping still checks").When("node-to-object")
+		}, "Wrap the node in a new object in its place, the new key a placeholder opened selected (typing names it)").When("node-wrappable").
+		Verb("array", toggle("to-array", a.toArray), "Turn the key into an array of itself: its value, or its keys, become the array's item; the document holding keys becomes [ {keys} ]").When("node-to-array").
+		Verb("object", func(c ochazuke.Ctx) ochazuke.Result {
+			e, key, ok := a.toObjectKey(a.current(), c.Instance.ID)
+			if key == "" || !ok || !a.valid(e.nodes, e.meta) {
+				return toggle("to-object", a.toObject)(c)
+			}
+			return created(c, "to-object", e, key, "")
+		}, "Turn an array (or its item) back into the key its item was, where the mapping still checks; an array document's own array goes under a new key, its placeholder opened selected. Not on an array whose item has many values (.items[]): a key holds one value").When("node-to-object")
 	r.Define("restructure").
 		Verb("add-key", func(c ochazuke.Ctx) ochazuke.Result {
 			key := ochazuke.StringArg(c.Args, "key", "")
@@ -968,6 +1110,10 @@ func (a *App) registerRestructureVerbs() {
 			return created(c, "add key", e, id, key)
 		}, "Add an empty object key below or above the node, or as its last child; the key is a placeholder opened selected (typing names it)").When("restructure-tree")
 	params("node.rename", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the new key; omit to edit it in place"}})
+	params("node.indent", map[string]ochazuke.Parameter{
+		"into": {Type: "string", Enum: []string{"previous", "next"}, Description: "the sibling to nest into: the nearest above that takes keys (previous, the default) or below (next)"},
+		"with": {Type: "string", Enum: []string{"next", "previous"}, Description: "also indent the node below (next) or above (previous) in the tree, as vim's >j and >k"},
+	})
 	params("node.wrap", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the wrapper's key; omit for a placeholder opened selected"}})
 	params("restructure.add-key", map[string]ochazuke.Parameter{
 		"where": {Type: "string", Enum: []string{"below", "above", "child"}},
