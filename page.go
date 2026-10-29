@@ -15,7 +15,9 @@ import (
 )
 
 // The restructure page: an editable tree over shapes whose state is a
-// restructure mapping (restructure.go), shown live and runnable. It starts
+// restructure mapping (restructure.go), shown live and runnable. Its first
+// node is the new document, ". (root)", an object or (t) an array; it has
+// no parent, so the edits that need one do not apply to it. It starts
 // empty; s on a shape (here, or in the viewer's structure) sends the shape
 // across, with the ancestors it needs to stay valid and its descendants.
 // Every node keeps the shape path it came from (meta, by node id), so
@@ -38,9 +40,15 @@ import (
 // original either way (focusOriginal).
 
 const (
-	rsPageID      = "restructure"
-	rsOrigID      = "restructure/original"
-	rsTreeID      = "restructure/new"
+	rsPageID = "restructure"
+	rsOrigID = "restructure/original"
+	rsTreeID = "restructure/new"
+	// rsRootID is the restructured tree's first node: the new document
+	// itself, path ".". It is an ordinary node (an object or, with t, an
+	// array); what sets it apart is data, that it has no parent, so the
+	// edits that need one (delete, rename, dedent, wrap, a sibling) do not
+	// apply to it.
+	rsRootID      = "r:root"
 	settingLayout = "restructure.layout"
 	settingNewKey = "restructure.new-key"
 	// toneOrigin marks, on one tree, where the other tree's selected node
@@ -127,8 +135,11 @@ func (a *App) registerRestructure() error {
 	tree.OnChange = func(ochazuke.TreeChange) error { a.rs.dirty = true; return nil }
 	tree.RowNoun = "node"
 	tree.NewID = a.newNodeID
-	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, shown: rsOrigID}
+	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, shown: rsOrigID, dirty: true}
 	a.registerRestructureVerbs()
+	if err := tree.SetNodes([]ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}); err != nil {
+		return err
+	}
 	page, err := r.AddPage(rsPageID, "Restructure", a.renderRestructure, ochazuke.Focus(rsOrigID))
 	if err != nil {
 		return err
@@ -165,23 +176,44 @@ func (a *App) setOriginal() error {
 
 // --- the mapping ---
 
-// mappingOf is the mapping a restructure tree stands for: one entry per
-// node in display order, to its path from the labels, from its origin.
-func mappingOf(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) *Mapping {
-	m := &Mapping{Map: []MapEntry{}}
+// nodePaths is each restructure node's path in the new document, from
+// the labels: a node without a parent is the document, ".", and every
+// path starts with a dot.
+func nodePaths(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) map[string]string {
 	paths := map[string]string{}
 	for _, n := range nodes {
-		md := meta[n.ID]
-		parent := "."
-		if n.Parent != "" {
-			parent = paths[n.Parent]
+		if n.Parent == "" {
+			paths[n.ID] = "."
+			continue
 		}
 		step := "[]"
-		if !md.item {
+		if !meta[n.ID].item {
 			step = keyStep(n.Label)
 		}
-		to := joinPath(parent, step)
-		paths[n.ID] = to
+		paths[n.ID] = dotted(joinPath(paths[n.Parent], step)) // .[], .["odd key"], as jq writes them
+	}
+	return paths
+}
+
+// mappingOf is the mapping a restructure tree stands for: one entry per
+// node in display order, to its path from the labels, from its origin.
+// The document node is in it only with an origin (it is otherwise made
+// from its keys or its item), and so is an item without one (an array
+// waiting for a shape, as t leaves an empty document) only when it has
+// children, where the mapping says why it does not check.
+func mappingOf(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) *Mapping {
+	m := &Mapping{Map: []MapEntry{}}
+	paths := nodePaths(nodes, meta)
+	parents := map[string]bool{}
+	for _, n := range nodes {
+		parents[n.Parent] = true
+	}
+	for _, n := range nodes {
+		md := meta[n.ID]
+		if md.from == "" && (n.Parent == "" || md.item && !parents[n.ID]) {
+			continue
+		}
+		to := paths[n.ID]
 		m.Map = append(m.Map, MapEntry{From: md.from, To: &to})
 	}
 	return m
@@ -204,10 +236,11 @@ func (a *App) plan() (*Plan, error) {
 
 // valid reports a node list whose mapping checks (an empty one does).
 func (a *App) valid(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) bool {
-	if len(nodes) == 0 || a.Doc == nil {
+	m := mappingOf(nodes, meta)
+	if len(m.Map) == 0 || a.Doc == nil {
 		return true
 	}
-	_, err := NewPlan(mappingOf(nodes, meta), a.Doc.Shape)
+	_, err := NewPlan(m, a.Doc.Shape)
 	return err == nil
 }
 
@@ -245,6 +278,34 @@ func (e edit) siblings(parent string) []string {
 		}
 	}
 	return out
+}
+
+// parent is id's parent, "" for the document node (and an unknown id).
+func (e edit) parent(id string) string {
+	if i := e.at(id); i >= 0 {
+		return e.nodes[i].Parent
+	}
+	return ""
+}
+
+// root is the document node: the one without a parent.
+func (e edit) root() string {
+	for _, n := range e.nodes {
+		if n.Parent == "" {
+			return n.ID
+		}
+	}
+	return ""
+}
+
+// itemOf is the "[]" item of the array id, "" when id holds none.
+func (e edit) itemOf(id string) string {
+	for _, n := range e.nodes {
+		if n.Parent == id && e.meta[n.ID].item {
+			return n.ID
+		}
+	}
+	return ""
 }
 
 func (e edit) hasItem(id string) bool {
@@ -305,17 +366,19 @@ func (a *App) dedent(e edit, id string) (edit, bool) {
 	if i < 0 || e.meta[id].item {
 		return e, false
 	}
+	// Nothing goes beside the document node: a node moves out only to a
+	// parent that has one.
 	parent := e.nodes[i].Parent
-	if parent == "" {
+	if e.parent(parent) == "" {
 		return e, false
 	}
 	if !e.meta[parent].item {
-		e.nodes[i].Parent = e.nodes[e.at(parent)].Parent
+		e.nodes[i].Parent = e.parent(parent)
 		return e, true
 	}
-	array := e.nodes[e.at(parent)].Parent
-	if array == "" {
-		return e, false // the root's item: there is nothing to follow
+	array := e.parent(parent)
+	if e.parent(array) == "" {
+		return e, false // the document's item: there is nothing to follow
 	}
 	md := e.meta[id]
 	if md.from == "" {
@@ -358,8 +421,8 @@ func (e edit) remove(ids []string) edit {
 // array's item has no key). It reports the wrapper's id.
 func (a *App) wrap(e edit, id, key string) (edit, string, bool) {
 	i := e.at(id)
-	if i < 0 || e.meta[id].item {
-		return e, "", false
+	if i < 0 || e.meta[id].item || e.nodes[i].Parent == "" {
+		return e, "", false // an item has no key; the document has no place
 	}
 	parent := e.nodes[i].Parent
 	if key == "" {
@@ -373,25 +436,38 @@ func (a *App) wrap(e edit, id, key string) (edit, string, bool) {
 }
 
 // addKey adds an empty object key (a wrapper) below or above at, or as
-// at's last child; with no at, as the last top-level key. It reports the
-// new node's id.
-func (a *App) addKey(e edit, at, where, key string) (edit, string, bool) {
-	parent, pos := "", len(e.nodes)
-	if i := e.at(at); i >= 0 {
-		end := i + 1
-		for end < len(e.nodes) && e.under(e.nodes[end].ID, at) {
-			end++
+// at's last child; with no at, as the document's last key. Below the
+// document node is its first key (nothing goes beside it, so above it is
+// refused). It reports the new node's id.
+func (a *App) addKey(e edit, at, where, key string) (edit, string, error) {
+	if e.at(at) < 0 {
+		at, where = e.root(), "child"
+	}
+	i := e.at(at)
+	if i < 0 {
+		return e, "", errors.New("no restructure tree")
+	}
+	end := i + 1
+	for end < len(e.nodes) && e.under(e.nodes[end].ID, at) {
+		end++
+	}
+	var parent string
+	var pos int
+	switch where {
+	case "above":
+		parent, pos = e.nodes[i].Parent, i
+	case "child":
+		parent, pos = at, end
+	case "below", "":
+		parent, pos = e.nodes[i].Parent, end
+		if parent == "" {
+			parent, pos = at, i+1
 		}
-		switch where {
-		case "above":
-			parent, pos = e.nodes[i].Parent, i
-		case "child":
-			parent, pos = at, end
-		case "below", "":
-			parent, pos = e.nodes[i].Parent, end
-		default:
-			return e, "", false
-		}
+	default:
+		return e, "", errors.New("where is below, above or child")
+	}
+	if parent == "" {
+		return e, "", errors.New("nothing goes beside the document: a adds a key inside it")
 	}
 	if key == "" {
 		key = a.placeholder(e, parent, "")
@@ -399,7 +475,7 @@ func (a *App) addKey(e edit, at, where, key string) (edit, string, bool) {
 	id := a.newNodeID()
 	e.nodes = slices.Insert(slices.Clone(e.nodes), pos, ochazuke.TreeNode{ID: id, Parent: parent, Label: key, Noun: "node"})
 	e.meta[id] = nodeMeta{}
-	return e, id, true
+	return e, id, nil
 }
 
 // under reports a node inside the subtree of anc (not anc itself).
@@ -421,10 +497,34 @@ func (e edit) under(id, anc string) bool {
 // the key's origin and its children, the key left a wrapper (as dedent
 // collects). JSON rule: a key with an origin, not an item, not an array
 // already.
+//
+// A node without an origin (a wrapper, the document) has no values of its
+// own: empty, it becomes an array waiting for its item (s on the original
+// fills the document's); holding one key that is an array, it becomes
+// that array (the key goes, its item moves up).
 func (a *App) toArray(e edit, id string) (edit, bool) {
 	i := e.at(id)
 	md := e.meta[id]
-	if i < 0 || md.item || md.from == "" || e.hasItem(id) {
+	if i < 0 || md.item || e.hasItem(id) {
+		return e, false
+	}
+	if md.from == "" {
+		kids := e.siblings(id)
+		switch {
+		case len(kids) == 0:
+			item := a.newNodeID()
+			e.nodes = slices.Insert(slices.Clone(e.nodes), i+1, ochazuke.TreeNode{ID: item, Parent: id, Label: "[]", Noun: "node"})
+			e.meta[item] = nodeMeta{item: true}
+			return e, true
+		case len(kids) == 1 && e.hasItem(kids[0]):
+			key := kids[0]
+			item := e.itemOf(key)
+			e.nodes = slices.Clone(e.nodes)
+			e.nodes[e.at(item)].Parent = id
+			e.nodes = slices.Delete(e.nodes, e.at(key), e.at(key)+1)
+			delete(e.meta, key)
+			return e, true
+		}
 		return e, false
 	}
 	item := a.newNodeID()
@@ -458,25 +558,40 @@ func (e edit) arrayOf(id string) string {
 // toObject turns an array back into the key its item was: the item goes,
 // its children and its origin pass to the array's key. JSON rule: an
 // array that is a key (not the root, not an item).
+//
+// Where that does not check (an item that fans out, as .items[] does,
+// cannot be one key's value) and the array is a wrapper whose item comes
+// from an array's items, the array goes back under the key it came from
+// (.[] from .items[] becomes .items[]): t undoes t on a node holding one
+// array key.
 func (a *App) toObject(e edit, id string) (edit, bool) {
 	arr := e.arrayOf(id)
 	if arr == "" || e.meta[arr].item {
 		return e, false
 	}
-	var item string
-	for _, n := range e.nodes {
-		if n.Parent == arr && e.meta[n.ID].item {
-			item = n.ID
+	item := e.itemOf(arr)
+	plain := edit{nodes: slices.Clone(e.nodes), meta: maps.Clone(e.meta)}
+	for j := range plain.nodes {
+		if plain.nodes[j].Parent == item {
+			plain.nodes[j].Parent = arr
 		}
 	}
+	plain.meta[arr] = nodeMeta{from: e.meta[item].from}
+	delete(plain.meta, item)
+	plain.nodes = slices.Delete(plain.nodes, plain.at(item), plain.at(item)+1)
+	if a.valid(plain.nodes, plain.meta) {
+		return plain, true
+	}
+	s := a.shapeAt(e.meta[item].from)
+	if s == nil || s.Key != "[]" || s.parent == nil || s.parent.parent == nil || e.meta[arr].from != "" {
+		return plain, true // the caller's check refuses it
+	}
+	key := a.newNodeID()
 	e.nodes = slices.Clone(e.nodes)
-	for j := range e.nodes {
-		if e.nodes[j].Parent == item {
-			e.nodes[j].Parent = arr
-		}
-	}
-	e.meta[arr] = nodeMeta{from: e.meta[item].from}
-	e.nodes = slices.Delete(e.nodes, e.at(item), e.at(item)+1)
+	at := e.at(item)
+	e.nodes[at].Parent = key
+	e.nodes = slices.Insert(e.nodes, at, ochazuke.TreeNode{ID: key, Parent: arr, Label: s.parent.Key, Noun: "node"})
+	e.meta[key] = nodeMeta{from: s.parent.Path}
 	return e, true
 }
 
@@ -492,10 +607,25 @@ func (a *App) send(e edit, shapes []*Shape) (edit, int) {
 		}
 	}
 	added := 0
+	// An array document waiting for its item takes the first shape sent:
+	// the array it is in (.items[] for .items[].id), else the shape.
+	root := e.root()
+	if item := e.itemOf(root); item != "" && e.meta[item].from == "" && len(shapes) > 0 {
+		anchor := shapes[0]
+		for at := anchor; at.parent != nil; at = at.parent {
+			if at.Key == "[]" {
+				anchor = at
+				break
+			}
+		}
+		e.meta[item] = nodeMeta{from: anchor.Path, item: true}
+		byFrom[anchor.Path] = item
+		added++
+	}
 	var ensure func(s *Shape) string
 	ensure = func(s *Shape) string {
 		if s.parent == nil {
-			return ""
+			return root
 		}
 		if id, ok := byFrom[s.Path]; ok {
 			return id
@@ -575,7 +705,10 @@ func (a *App) decorate() {
 			typ = "array"
 		}
 		label := n.Label
-		if md.item {
+		switch {
+		case n.Parent == "":
+			label = ". (root)"
+		case md.item:
 			label = "[]"
 		}
 		nodes[i].Noun, nodes[i].Cells = "node", []string{label, typ, md.from}
@@ -692,9 +825,15 @@ func (a *App) registerRestructureVerbs() {
 	r.DefineGuard("restructure-tree", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.sideOf(ev.Focus) == rsTreeID
 	})
+	// Renaming and deleting need a node with a parent: the document node
+	// has no key and is always there.
 	r.DefineGuard("node-renamable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		id := a.focusedNode(ev.Focus)
-		return id != "" && !a.rs.meta[id].item
+		return id != "" && !a.rs.meta[id].item && a.current().parent(id) != ""
+	})
+	r.DefineGuard("node-deletable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		id := a.focusedNode(ev.Focus)
+		return id != "" && a.current().parent(id) != ""
 	})
 	r.DefineGuard("shape-sendable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		inst := r.Instances[ev.Focus]
@@ -748,8 +887,11 @@ func (a *App) registerRestructureVerbs() {
 			return ochazuke.Done(a.Mapping())
 		}, "Rename the node's key: in place, or to key").When("node-renamable").
 		Verb("delete", func(c ochazuke.Ctx) ochazuke.Result {
-			ids := subjectIDs(c)
 			e := a.current()
+			ids := slices.DeleteFunc(subjectIDs(c), func(id string) bool { return e.parent(id) == "" })
+			if len(ids) == 0 {
+				return ochazuke.Failed(errors.New("the document node stays; d d deletes the nodes in it"))
+			}
 			next := a.nextAfter(e, ids)
 			if err := a.commit("delete", next, e.remove(ids)); err != nil {
 				return ochazuke.Failed(err)
@@ -757,7 +899,7 @@ func (a *App) registerRestructureVerbs() {
 			a.refocus(next)
 			c.Info(fmt.Sprintf("deleted %d node(s); u brings them back", len(ids)))
 			return ochazuke.Done(a.Mapping())
-		}, "Delete the nodes and their children from the restructure; u brings them back").Many()
+		}, "Delete the nodes and their children from the restructure (the document node stays); u brings them back").Many().When("node-deletable")
 	// A new key (a wrapper from >, or o and O) opens selected: typing
 	// renames it, esc or a motion keeps the placeholder. With key it is
 	// named at once (the palette, the CLI).
@@ -810,9 +952,9 @@ func (a *App) registerRestructureVerbs() {
 					at = n.ID
 				}
 			}
-			e, id, ok := a.addKey(a.current(), at, ochazuke.StringArg(c.Args, "where", "below"), key)
-			if !ok {
-				return ochazuke.Failed(errors.New("where is below, above or child"))
+			e, id, err := a.addKey(a.current(), at, ochazuke.StringArg(c.Args, "where", "below"), key)
+			if err != nil {
+				return ochazuke.Failed(err)
 			}
 			if !a.valid(e.nodes, e.meta) && a.valid(a.rs.tree.Nodes(), a.rs.meta) {
 				return ochazuke.Failed(errors.New("a key does not go here: an array takes only its [] item"))
@@ -906,10 +1048,16 @@ func (a *App) registerRestructureVerbs() {
 		Verb("redo", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.outline(c, "redo")
 		}, "Redo the last undone restructure change").
-		Verb("write", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, false) },
-			"Write the restructured document to a new file (e.g. NAME.restructured.json); an existing file asks first, the source never").
-		Verb("overwrite", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, true) },
+		Verb("write", func(c ochazuke.Ctx) ochazuke.Result {
+			if c.Args["force"] == true {
+				return a.write(c, writeForce)
+			}
+			return a.write(c, writeNewFile)
+		}, "Write the restructured document to a new file (e.g. NAME.restructured.json); an existing file asks first, the source never. With force (W) an existing file is replaced without asking, and the source too, after one confirm (restructure.overwrite-source)").
+		Verb("overwrite", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, writeReplace) },
 			"Replace an existing file with the restructured document (never the source)").Confirm("Replace {{path}} with the restructured document?").
+		Verb("overwrite-source", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, writeSource) },
+			"Replace the source document with the restructured one (as o-json restructure --out SOURCE --overwrite does); it always asks first").Confirm("Overwrite the source {{path}} with the restructured document?").
 		Verb("jq", func(c ochazuke.Ctx) ochazuke.Result {
 			p, err := a.plan()
 			if err != nil {
@@ -923,7 +1071,7 @@ func (a *App) registerRestructureVerbs() {
 			if err != nil {
 				return ochazuke.Failed(err)
 			}
-			return a.writeFile(c, path, []byte(text), false, "the mapping", "")
+			return a.writeFile(c, path, []byte(text), writeNewFile, "the mapping", "")
 		}, "Write the mapping (the --mapping form, o-json restructure --map reads it) to a new file").
 		Verb("mapping", func(c ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.Mapping()) }, "The restructure's mapping, {map: [{from, to}]}").Fetch().
 		Verb("layout", func(c ochazuke.Ctx) ochazuke.Result {
@@ -934,15 +1082,17 @@ func (a *App) registerRestructureVerbs() {
 			return a.doneErr(r.Settings().Set(settingLayout, l))
 		}, "Set the restructure page's layout (split or single; without layout, the other one)")
 	path := ochazuke.Parameter{Type: "string", Required: true, Description: "the file to write, e.g. NAME.restructured.json"}
-	params("restructure.write", map[string]ochazuke.Parameter{"path": path})
+	params("restructure.write", map[string]ochazuke.Parameter{"path": path,
+		"force": {Type: "boolean", Description: "replace an existing file without asking; the source asks once (W)"}})
 	params("restructure.overwrite", map[string]ochazuke.Parameter{"path": path})
+	params("restructure.overwrite-source", map[string]ochazuke.Parameter{"path": path})
 	params("restructure.export-map", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "the mapping file to write, e.g. NAME.map.json"}})
 	params("restructure.add", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "a structure path, e.g. .items[].id"}})
 	params("restructure.show", map[string]ochazuke.Parameter{"side": {Type: "string", Enum: []string{"original", "restructured"}}})
 	params("restructure.layout", map[string]ochazuke.Parameter{"layout": {Type: "string", Enum: []string{"split", "single"}}})
 	setHistory(r, ochazuke.HistoryAction, "restructure.open", "restructure.close", "restructure.show")
 	setHistory(r, ochazuke.HistoryChange, "shape.send", "restructure.add", "restructure.undo", "restructure.redo",
-		"restructure.write", "restructure.overwrite", "restructure.jq", "restructure.export-map", "restructure.layout")
+		"restructure.write", "restructure.overwrite", "restructure.overwrite-source", "restructure.jq", "restructure.export-map", "restructure.layout")
 }
 
 func (a *App) doneErr(err error) ochazuke.Result {
@@ -1053,29 +1203,46 @@ func (a *App) isSource(path string) bool {
 // errExists is a write that found its file there.
 var errExists = errors.New("exists")
 
-// write writes the restructured document: a new file, or with overwrite
-// an existing one (restructure.overwrite, which confirms first). A write
-// that finds the file there runs restructure.overwrite, so it asks.
-func (a *App) write(c ochazuke.Ctx, overwrite bool) ochazuke.Result {
+// writeMode is how a write treats a file that is there.
+type writeMode int
+
+const (
+	writeNewFile writeMode = iota // w: an existing file asks (restructure.overwrite), the source is refused
+	writeReplace                  // restructure.overwrite: an existing file is replaced, the source refused
+	writeForce                    // W: an existing file is replaced; the source asks (restructure.overwrite-source)
+	writeSource                   // restructure.overwrite-source: any file, the source too (it has confirmed)
+)
+
+// write writes the restructured document as mode says.
+func (a *App) write(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 	path := ochazuke.StringArg(c.Args, "path", "")
 	p, err := a.plan()
 	if err != nil {
 		return ochazuke.Failed(err)
 	}
-	return a.writeFile(c, path, []byte(Pretty(p.Apply(a.Doc.Root))+"\n"), overwrite, "the restructured document", "restructure.overwrite")
+	if mode == writeForce && strings.TrimSpace(path) != "" && a.isSource(path) {
+		// The source: ask once, then restructure.overwrite-source writes it.
+		v, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "overwrite-source", Args: ochazuke.Arguments{"path": path}})
+		if err != nil {
+			return ochazuke.Failed(err)
+		}
+		return ochazuke.Done(v)
+	}
+	return a.writeFile(c, path, []byte(Pretty(p.Apply(a.Doc.Root))+"\n"), mode, "the restructured document", "restructure.overwrite")
 }
 
-// writeFile writes data to path off the loop through writeNew (never the
-// source; an existing file only with overwrite). Without overwrite a
-// file that exists runs the confirming verb ask with the path (none: the
-// write is refused).
-func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, overwrite bool, what, ask string) ochazuke.Result {
+// writeFile writes data to path off the loop through writeNew. The source
+// only with writeSource; an existing file with writeReplace, writeForce or
+// writeSource. With writeNewFile a file that exists runs the confirming
+// verb ask with the path (none: the write is refused).
+func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, mode writeMode, what, ask string) ochazuke.Result {
 	if strings.TrimSpace(path) == "" {
 		return ochazuke.Failed(errors.New("path is required"))
 	}
-	if a.isSource(path) {
-		return ochazuke.Failed(fmt.Errorf("%s is the source; o-json never overwrites it", path))
+	if a.isSource(path) && mode != writeSource {
+		return ochazuke.Failed(fmt.Errorf("%s is the source; W (restructure.write {force: true}) overwrites it after a confirm", path))
 	}
+	overwrite := mode != writeNewFile
 	return ochazuke.Pending(func(context.Context) (any, error) {
 		if _, err := os.Stat(path); err == nil && !overwrite {
 			return nil, errExists
@@ -1120,14 +1287,14 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		t, title, body := a.rs.orig, "Original", ""
 		if id == rsTreeID {
 			t = a.rs.tree
-			title = fmt.Sprintf("Restructured  %d nodes", len(a.rs.tree.Nodes()))
+			title = fmt.Sprintf("Restructured  %d nodes", len(a.rs.tree.Nodes())-1)
 		}
 		switch {
 		case a.Doc == nil:
 			r.Placed(id)
-		case id == rsTreeID && len(a.rs.tree.Nodes()) == 0:
-			r.Placed(id)
-			body = wrap("empty: s on a shape of the original sends it here", cw)
+		case id == rsTreeID && len(a.rs.tree.Nodes()) == 1 && ch > 2:
+			hint := wrap("empty: s on a shape of the original sends it here", cw)
+			body = strings.TrimRight(t.View(cw, 1), "\n") + "\n\n" + hint
 		default:
 			body = t.View(cw, ch)
 		}
@@ -1189,19 +1356,17 @@ func (a *App) restructureCrumb() string {
 	}
 	parts := []string{"Restructure", a.Doc.Name}
 	if id := a.focusedNode(a.r.Focus); id != "" {
-		m := a.Mapping()
-		for i, n := range a.rs.tree.Nodes() {
-			if n.ID == id {
-				e := m.Map[i]
-				part := *e.To
-				if e.From != "" {
-					part += " ← " + e.From
-				} else {
-					part += " (new object)"
-				}
-				parts = append(parts, part)
-			}
+		e := a.current()
+		part := nodePaths(e.nodes, e.meta)[id]
+		switch from := e.meta[id].from; {
+		case from != "":
+			part += " ← " + from
+		case e.parent(id) == "":
+			part += " (the document)"
+		default:
+			part += " (new object)"
 		}
+		parts = append(parts, part)
 	} else if n, ok := a.rs.orig.Selected(); ok && a.sideOf(a.r.Focus) == rsOrigID {
 		if s, _ := n.Data.(*Shape); s != nil {
 			parts = append(parts, s.Path)

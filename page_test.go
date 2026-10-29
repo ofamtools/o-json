@@ -68,14 +68,15 @@ func sendPaths(t *testing.T, a *App, paths ...string) {
 
 func TestRestructurePageOpensEmpty(t *testing.T) {
 	a := openRestructure(t, 120, 30)
-	if n := len(a.rs.tree.Nodes()); n != 0 {
-		t.Fatalf("%d nodes", n)
+	// The document node is there, and only it.
+	if nodes := a.rs.tree.Nodes(); len(nodes) != 1 || nodes[0].ID != rsRootID || nodes[0].Parent != "" {
+		t.Fatalf("nodes %+v", nodes)
 	}
 	if len(a.Mapping().Map) != 0 {
 		t.Fatalf("mapping %+v", a.Mapping())
 	}
 	frame := view(a)
-	for _, want := range []string{"Original", "Restructured  0 nodes", "empty: s on a shape", "Mapping", "owner", "email?"} {
+	for _, want := range []string{"Original", "Restructured  0 nodes", ". (root)", "empty: s on a shape", "Mapping", "owner", "email?"} {
 		if !strings.Contains(frame, want) {
 			t.Fatalf("no %q\n%s", want, frame)
 		}
@@ -235,7 +236,7 @@ func TestRenameKeepsTheOrigin(t *testing.T) {
 		t.Fatalf("mapping %v", got)
 	}
 	// With a key, through the verb (palette, CLI).
-	id := a.rs.tree.Nodes()[0].ID
+	id := a.rs.tree.Nodes()[1].ID
 	if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "rename", Target: id, Args: ochazuke.Arguments{"key": "label"}}); err != nil {
 		t.Fatal(err)
 	}

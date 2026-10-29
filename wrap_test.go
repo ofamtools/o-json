@@ -49,7 +49,7 @@ func TestWrapUnderAValueThenType(t *testing.T) {
 	}
 	// The typed name undoes first, then the wrap, one step each.
 	press(t, a, "u")
-	if got := entries(a.Mapping()); !slices.Equal(got, []string{".name>.name", ">[\"new-key\"]", ".version>[\"new-key\"].version"}) {
+	if got := entries(a.Mapping()); !slices.Equal(got, []string{".name>.name", ">.[\"new-key\"]", ".version>.[\"new-key\"].version"}) {
 		t.Fatalf("undo the name: %v", got)
 	}
 	press(t, a, "u")
@@ -64,7 +64,7 @@ func TestWrapEscKeepsThePlaceholder(t *testing.T) {
 	a := wrapped(t)
 	press(t, a, ">")
 	press(t, a, "esc")
-	want := []string{".name>.name", ">[\"new-key\"]", ".version>[\"new-key\"].version"}
+	want := []string{".name>.name", ">.[\"new-key\"]", ".version>.[\"new-key\"].version"}
 	if got := entries(a.Mapping()); !slices.Equal(got, want) {
 		t.Fatalf("mapping %v", got)
 	}
@@ -92,7 +92,7 @@ func TestPlaceholderIsUnique(t *testing.T) {
 	press(t, a, "O", "esc")
 	var keys []string
 	for _, n := range a.rs.tree.Nodes() {
-		if n.Parent == "" {
+		if n.Parent == rsRootID {
 			keys = append(keys, n.Label)
 		}
 	}
@@ -105,7 +105,7 @@ func TestPlaceholderIsUnique(t *testing.T) {
 	press(t, a, "o")
 	placeholderSelected(t, a, "field")
 	press(t, a, "esc")
-	if p := a.placeholder(a.current(), "", ""); p != "field-2" {
+	if p := a.placeholder(a.current(), rsRootID, ""); p != "field-2" {
 		t.Fatalf("next placeholder %q", p)
 	}
 }

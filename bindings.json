@@ -1,4 +1,4 @@
-// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers, and an unavailable one passes the key on (> on a restructure node nests where the JSON rules allow, else wraps the node in a new key, and on an item resizes the divider; t turns a key into an array, or an array back into a key, where the mapping still checks). The outline's tab, shift+tab and i are unbound: nesting goes through the JSON rules (> <) and renaming through r; o, O and a add a key with a placeholder opened selected (restructure.add-key). A user's bindings.json overrides them.
+// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers, and an unavailable one passes the key on (> on a restructure node nests where the JSON rules allow, else wraps the node in a new key, and on an item resizes the divider; t turns a key into an array, or an array back into a key, where the mapping still checks). The outline's tab, shift+tab, i and d d are unbound (d d deletes through node.delete, which keeps the document node): nesting goes through the JSON rules (> <) and renaming through r; o, O and a add a key with a placeholder opened selected (restructure.add-key). w writes a new file; W (restructure.write {force}) replaces an existing one without asking, and the source after one confirm. A user's bindings.json overrides them.
 {
   "bindings": [
     {"context": "rows/normal", "bindings": [
@@ -52,7 +52,8 @@
       {"key": "L", "action": "restructure.layout", "hint": "layout"},
       {"key": "u", "action": "restructure.undo"},
       {"key": "ctrl+r", "action": "restructure.redo"},
-      {"key": "w", "action": "restructure.write", "hint": "write"},
+      {"key": "w", "action": "restructure.write", "hint": "w/W write"},
+      {"key": "W", "action": "restructure.write", "args": {"force": true}, "hidden": true},
       {"key": "q", "action": "restructure.close", "hint": "back"}
     ]},
     {"context": "node/normal", "bindings": [
@@ -70,7 +71,8 @@
       {"key": "a", "action": "restructure.add-key", "args": {"where": "child"}, "hidden": true},
       {"key": "tab", "unbind": true},
       {"key": "shift+tab", "unbind": true},
-      {"key": "i", "unbind": true}
+      {"key": "i", "unbind": true},
+      {"key": "d d", "unbind": true}
     ]},
     {"context": "ochazuke.outline-line/insert", "bindings": [
       {"key": "tab", "unbind": true},
