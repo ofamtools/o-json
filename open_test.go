@@ -287,3 +287,15 @@ func TestRecentListOrderAndPruning(t *testing.T) {
 		t.Fatalf("size 1: %v", got)
 	}
 }
+
+// F13: a bracketed paste on the viewer (not in an input) is viewer.paste
+// {text}: the pasted JSON becomes the buffer, no clipboard tool needed.
+func TestBracketedPasteOpensBuffer(t *testing.T) {
+	a := empty(t)
+	a.Paste = nil // the clipboard is not read: the paste carries the text
+	finish(a, Paste(a.m, `{"pasted": [1, 2]}`))
+	view(a)
+	if a.Doc == nil || a.Doc.Shape.Find(".pasted") == nil || a.m.Status != "" {
+		t.Fatalf("paste did not open the buffer (status %q)\n%s", a.m.Status, view(a))
+	}
+}

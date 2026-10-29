@@ -374,3 +374,51 @@ func TestPasteAsksWithEditsPending(t *testing.T) {
 		t.Fatalf("paste text after asking: %v", a.Doc.Root.Kind)
 	}
 }
+
+// F14: T keeps the cursor: the tree's path and the data pane's row.
+func TestFlipKeepsTheRow(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	a.on(t, ".items")
+	view(a)
+	if err := a.data.list.Focus(); err != nil {
+		t.Fatal(err)
+	}
+	press(t, a, "j", "j")
+	if a.data.Selected() != 2 {
+		t.Fatalf("row %d", a.data.Selected())
+	}
+	for _, want := range []bool{true, false} {
+		press(t, a, "T")
+		if a.original != want || a.data.Selected() != 2 {
+			t.Fatalf("T (original %v): row %d, want 2\n%s", a.original, a.data.Selected(), view(a))
+		}
+		if s, _ := a.selectedOriginal(); want && (s == nil || s.Path != ".items") {
+			t.Fatalf("T lost the path: %v", s)
+		}
+	}
+}
+
+// F6: the copy a document starts with is the floor of the undo stack: u
+// there changes nothing and marks nothing edited; undo.at-start says it
+// (info, the default) or stays silent. An edit still undoes to the copy.
+func TestUndoAtStartIsTheFloor(t *testing.T) {
+	for _, setting := range []string{"info", "silent"} {
+		a := open(t, nestDoc, 120, 30)
+		if err := a.r.Settings().Set(settingUndoAtStart, setting); err != nil {
+			t.Fatal(err)
+		}
+		before := output(t, a)
+		press(t, a, "u")
+		if output(t, a) != before || a.unsaved() || strings.Contains(view(a), "[+]") {
+			t.Fatalf("%s: u at the start changed the state: %s", setting, output(t, a))
+		}
+		if said := a.m.Info == "already at oldest change"; said != (setting == "info") {
+			t.Fatalf("%s: info %q", setting, a.m.Info)
+		}
+		a.on(t, ".z")
+		press(t, a, "d", "d", "u", "u")
+		if output(t, a) != before || a.unsaved() {
+			t.Fatalf("%s: an edit's undo: %s", setting, output(t, a))
+		}
+	}
+}

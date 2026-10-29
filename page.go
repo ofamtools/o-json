@@ -275,7 +275,7 @@ func (a *App) plan() (*Plan, error) {
 	}
 	m := a.Mapping()
 	if len(m.Map) == 0 {
-		return nil, errors.New("the restructure is empty: s on a shape sends it here")
+		return nil, fmt.Errorf("the restructure is empty: %s on a shape sends it here", a.sendKey())
 	}
 	return NewPlan(m, a.Doc.Shape)
 }
@@ -1463,6 +1463,22 @@ func (a *App) viewerShape() string {
 	return ""
 }
 
+// sendKey is how a message names shape.send: the key its row on the
+// shape noun's normal table gives it (a user's bindings.json included),
+// else the verb's name. The table, not the focus: the message shows where
+// no shape is focused (the empty restructure).
+func (a *App) sendKey() string {
+	key := a.r.CanonicalKey("shape.send")
+	if n := a.r.Nouns["shape"]; n != nil {
+		for _, b := range n.Bindings["normal"] {
+			if b.Keys != "" && len(b.Request.Args) == 0 && a.r.CanonicalKey(b.Request.Key()) == key {
+				return b.Keys
+			}
+		}
+	}
+	return "shape.send"
+}
+
 // keyFor is the key a binding row on the focus gives a verb (run without
 // arguments), "" when none does.
 func (a *App) keyFor(verb string) string {
@@ -1676,7 +1692,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		case a.Doc == nil:
 			r.Placed(id)
 		case id == rsTreeID && len(a.rs.tree.Nodes()) == 1 && ch > 2:
-			say := "empty: s on a shape of the original sends it here"
+			say := "empty: " + a.sendKey() + " on a shape of the original sends it here"
 			if a.rs.startedEmpty {
 				say += "; left empty, the viewer keeps its copy"
 			}

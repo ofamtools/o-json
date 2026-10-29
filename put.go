@@ -308,6 +308,7 @@ const (
 	settingRepeatScope = "repeat.scope"
 	settingVisualPut   = "restructure.visual-put"
 	settingVisualWrap  = "restructure.visual-wrap"
+	settingVisualEdge  = "visual.at-edge"
 )
 
 func declarePutSettings(r *ochazuke.Runtime) error {
@@ -317,6 +318,9 @@ func declarePutSettings(r *ochazuke.Runtime) error {
 	}, ochazuke.Setting{
 		Name: settingVisualWrap, Type: ochazuke.SettingString, Default: "together", Enum: []string{"together", "each"},
 		Description: "S over a V selection on the restructured tree: together wraps the selected siblings in one new object (nodes under different parents are each wrapped); each wraps every node in its own",
+	}, ochazuke.Setting{
+		Name: settingVisualEdge, Type: ochazuke.SettingString, Default: "end", Enum: []string{"end", "stay"},
+		Description: "> < or g > over a V selection on the restructured tree with nothing to nest into or move out of (restructure.at-edge): end ends the selection, as a done edit does; stay keeps it",
 	}, ochazuke.Setting{
 		Name: settingRepeatScope, Type: ochazuke.SettingString, Default: "put", Enum: []string{"put", "edit"},
 		Description: "What . runs again on the restructured tree, at the cursor: put, the last put (p / P); edit, the last structure edit of any kind (a put, nest, out, wrap, array/object, delete, rename to a key, a new key)",
@@ -439,11 +443,18 @@ func (a *App) registerPutVerbs() {
 		}, "Delete the V selection on the restructured tree into the register (V ... d), as one undo step").When("restructure-selecting").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.yankNodes(c, a.selected(), false)
-		}, "Yank the V selection on the restructured tree into the register (V ... y)").When("restructure-selecting")
+		}, "Yank the V selection on the restructured tree into the register (V ... y)").When("restructure-selecting").
+		Verb("at-edge", func(c ochazuke.Ctx) ochazuke.Result {
+			if a.r.Settings().String(settingVisualEdge) != "stay" {
+				a.selected() // ends the selection
+			}
+			return ochazuke.Done(nil)
+		}, "An edit key over a V selection that has nothing to act on (> < g > with no object to nest into or nothing to move out of): visual.at-edge end ends the selection, stay keeps it").When("restructure-selecting")
 	op := r.Operations[r.CanonicalKey("node.put")]
 	op.Parameters = map[string]ochazuke.Parameter{"before": {Type: "boolean", Description: "put above (P): the previous sibling; on the root, its first child"}}
 	r.Operations[r.CanonicalKey("node.put")] = op
 	setHistory(r, ochazuke.HistoryChange, "node.yank", "node.put", "restructure.delete", "restructure.yank")
+	setHistory(r, ochazuke.HistoryAction, "restructure.at-edge")
 }
 
 // registerRepeat applies repeat.scope now and whenever it changes; it

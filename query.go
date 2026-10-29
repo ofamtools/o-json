@@ -104,7 +104,15 @@ func (a *App) answered(out jqOut) {
 		return
 	}
 	a.q.good = &out
+	// The results panel's title says when the order is gojq's, not the
+	// document's (as the breadcrumb's note does).
 	label := "jq " + strings.TrimSpace(out.Query)
+	switch {
+	case out.Sorted:
+		label += "  keys sorted"
+	case out.Reordered:
+		label += "  not in document order"
+	}
 	s := &Shape{Path: label, Kinds: map[Kind]int{}}
 	for _, v := range out.Values {
 		s.add(v)

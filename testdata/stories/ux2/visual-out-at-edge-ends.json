@@ -1,0 +1,12 @@
+{
+  "name": "o-json: V < on y, a key of the root, has nothing to move out of: the selection ends (visual.at-edge end)",
+  "area": "ux2",
+  "width": 100,
+  "height": 20,
+  "page": {"id": "o-json"},
+  "script": ["V", "<"],
+  "expect": [
+    {"after": 1, "mode": "visual-line"},
+    {"after": 2, "mode": "normal", "lacks": ["VISUAL-LINE", "[+]"]}
+  ]
+}

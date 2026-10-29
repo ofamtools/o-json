@@ -336,7 +336,7 @@ func (a *App) editedShape() (*Shape, string) {
 
 // flip flips the viewer between the original and the edited document,
 // keeping the selection on the same shape: a node's origin, or the first
-// node an original shape went to. The focus moves along when it was in
+// node an original shape went to; the data pane keeps its row and column. The focus moves along when it was in
 // the structure pane.
 func (a *App) flip(side string) error {
 	if !a.editable() || a.Doc == nil {
@@ -365,6 +365,9 @@ func (a *App) flip(side string) error {
 		}
 	}
 	a.original = toOriginal
+	if a.shown != nil && a.lines == nil && !a.Raw {
+		a.carry = &rowCarry{sel: max(0, a.data.Selected()), col: a.data.list.Column()}
+	}
 	a.shown, a.note = nil, ""
 	if inTree {
 		t := a.rs.tree

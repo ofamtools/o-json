@@ -509,3 +509,17 @@ func (a *App) answer(t *testing.T, keys string) string {
 	}
 	return ""
 }
+
+// F12: results in gojq's sorted key order say so in the results title, a
+// path query's (the document's order) does not.
+func TestQueryResultsTitleMarksSortedOrder(t *testing.T) {
+	a := openQuery(t, sample)
+	query(t, a, "{version, name}")
+	if frame := view(a); !strings.Contains(frame, "jq {version, name}  keys sorted") {
+		t.Fatalf("sorted results unmarked\n%s", frame)
+	}
+	query(t, a, ".items[] | .name")
+	if frame := view(a); strings.Contains(line(frame, "jq .items[]"), "keys sorted") {
+		t.Fatalf("a path query marked sorted\n%s", frame)
+	}
+}

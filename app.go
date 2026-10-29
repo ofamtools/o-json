@@ -79,6 +79,7 @@ type App struct {
 	note     string       // why the data panel is empty in the edited view
 	ed       *editedCache // the restructured document the edited view shows
 	rb       *rebuilder   // rebuilds it off the loop once a rebuild is slow
+	carry    *rowCarry    // the data pane's row and column the next show keeps (T)
 
 	vedit *valueEdit // the data pane's open inline input (values.go)
 
@@ -115,10 +116,11 @@ func New() (*App, error) {
 		return nil, err
 	}
 	a.registerQueryFunctions()
-	// The rebuilder's jobs are its instance's (an instance of the
-	// restructure noun, no row or stop).
+	// The rebuilder's jobs are its instance's (a noun of its own, with no
+	// verbs, rows or stop).
 	a.rb = &rebuilder{a: a}
-	r.Instance(rebuildID, ochazuke.Kind("restructure")).Component = a.rb
+	r.Define(rebuildID)
+	r.Instance(rebuildID, ochazuke.Kind(rebuildID)).Component = a.rb
 	if err := declareSettings(r); err != nil {
 		return nil, err
 	}
@@ -401,6 +403,9 @@ func (a *App) show(s *Shape) error {
 	if prev := a.shown; prev != nil && prev.Path == s.Path && a.lines == nil && !a.Raw {
 		sel, col = a.data.Selected(), a.data.list.Column()
 	}
+	if c := a.carry; c != nil {
+		sel, col, a.carry = c.sel, c.col, nil
+	}
 	a.shown, a.tab, a.fields, a.lines, a.scalar = s, nil, nil, nil, nil
 	values := s.Values()
 	set := func(src rowSource) error {
@@ -426,6 +431,10 @@ func (a *App) show(s *Shape) error {
 	a.tab = NewTable(s.Path, values, len(values) != 1)
 	return set(tableSource(a.tab))
 }
+
+// rowCarry is a data pane position carried to the next show: T flips the
+// view and keeps the cursor's row and column (the tree keeps its path).
+type rowCarry struct{ sel, col int }
 
 // tableSource is a table as rows: "#" then the columns, optional titles
 // ending in "?", widths fixed from the first rows.

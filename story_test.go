@@ -15,7 +15,8 @@ import (
 // "o-json-viewer" is a fresh viewer on the nest document, as it opens;
 // "o-json-empty" the viewer with no document (o-json alone).
 // The story's script and expectations run against it as o-story runs its
-// own; a story with a skip ("gap: ...") runs but cannot fail.
+// own; its settings set o-json's (each one's default is the value); a
+// story with a skip ("gap: ...") runs but cannot fail.
 func TestStories(t *testing.T) {
 	stories, err := story.LoadDir(filepath.Join("testdata", "stories"))
 	if err != nil {
@@ -35,6 +36,13 @@ func TestStories(t *testing.T) {
 			default:
 				a = openNest(t, nestDoc, ".a", ".x", ".y", ".z")
 				a.on(t, ".y")
+			}
+			// A story's settings are o-json's own: each one's default is
+			// the value the session runs with.
+			for _, st := range s.Settings {
+				if err := a.r.Settings().Set(st.Name, st.Default); err != nil {
+					t.Fatal(err)
+				}
 			}
 			w, h := s.Size()
 			a.m.Width, a.m.Height = w, h

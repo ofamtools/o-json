@@ -1,0 +1,12 @@
+{
+  "name": "o-json: with visual.at-edge stay, V < with nothing to move out of keeps the selection",
+  "area": "ux2",
+  "width": 100,
+  "height": 20,
+  "page": {"id": "o-json"},
+  "settings": [{"name": "visual.at-edge", "type": "string", "default": "stay", "enum": ["end", "stay"]}],
+  "script": ["V", "<"],
+  "expect": [
+    {"after": 2, "mode": "visual-line", "lacks": ["[+]"]}
+  ]
+}
