@@ -1,0 +1,14 @@
+{"map": [
+  {"from": ".version", "to": ".v"},
+  {"from": ".items[]", "to": ".records[]"},
+  {"from": ".items[].id", "to": ".records[].id"},
+  {"to": ".records[].info"},
+  {"from": ".items[].name", "to": ".records[].info.name"},
+  {"from": ".items[].note", "to": ".records[].info.note"},
+  {"from": ".items[].size", "to": ".records[].size"},
+  {"from": ".items[].owner.name", "to": ".records[].owner"},
+  {"from": ".items[].owner.email", "to": ".records[].contact.email"},
+  {"from": ".items[].tags[].t", "to": ".records[].tag_names[]"},
+  {"from": ".items[].tags[]", "to": ".all_tags[]"},
+  {"from": ".items[].name", "to": ".names[]"}
+]}

@@ -1,6 +1,6 @@
 # o-json: agent guide
 
-`o-json` (so `o json`) is the family's JSON structure and table viewer. It has a command line (`structure`, `table` and `get` print text, and the `doc` noun prints JSON for a host) and a two-panel ochazuke viewer. It is read-only. Usage and keys are in README.md.
+`o-json` (so `o json`) is the family's JSON structure and table viewer. It has a command line (`structure`, `table` and `get` print text, and the `doc` noun prints JSON for a host) and a two-panel ochazuke viewer. It never writes the document it reads: only `restructure --out` writes a file, a new one unless `--overwrite`. Usage and keys are in README.md.
 
 It is an ochazuke application, so ochazuke's rules apply here unchanged. Read `~/proj/ochazuke/AGENTS.md` first, especially "Building an application on ochazuke" and the Invariants: keys are binding rows (no key-name switches), every row is atomic, motions are visual, hints derive from bindings, Bubble Tea v2 idioms only, never bind F1 to F12. `~/proj/o-csv` is the sibling it copies its shape from (dispatch, shell, prompt, clipboard, key test helpers).
 
@@ -18,7 +18,8 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | Tables: `NewTable` (columns by frequency, optional last), text, markdown, JSON | `table.go` |
 | Reading a file or stdin (`ReadDoc`, `splitFile`) | `input.go` |
 | `main`, oden dispatch (a file word opens the viewer), the help note | `main.go` |
-| The text commands `structure`, `table`, `get` | `commands.go` |
+| The text commands `structure`, `table`, `get`, `restructure` | `commands.go` |
+| Restructure: the mapping, `Plan` (check, `Apply`, `JQ`, `Complete`), `Dedupe`, `writeNew`/`writeAtomic` | `restructure.go` |
 | The `doc` noun (JSON; `doc rows` answers rows with cells, so `--format` table, markdown and toon print tables) and `catalog` | `shell.go` |
 | `view`, flags, `--smoke`, the program | `tui.go` |
 | `App` state, `New`, `Load`/`setDoc`, the tree's nodes and filters, what the data panel shows | `app.go` |
@@ -31,7 +32,8 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 
 ## Invariants
 
-- Read-only: no code path writes a file. If one is ever added, write atomically (a temp file beside the target, then rename), as o-csv's `writeAtomic` does. `TestReadOnlyNeverWrites` pins this.
+- The source is never written: the viewer writes nothing, and the one write, `restructure --out`, goes through `writeNew` (an existing file, the source among them, only with `--overwrite`) and `writeAtomic` (a temp file beside the target, then rename; copied from o-csv). `TestViewerNeverWritesTheSource` and `TestRestructureNeverWritesTheSource` pin this.
+- Restructuring maps shapes, not values (`restructure.go`): the Go result and the generated jq program read the document as jq does (`Dedupe`: a repeated key's last value) and must agree; the program never fails on an optional or mixed-type shape. `TestRestructureCasesAgreeWithJQ` runs it through `jq` when it is on PATH.
 - Reads run off the loop: `viewer.load` and every `doc` verb are `Pending`. The `doc` verbs must stay pending: reading a document is I/O, kept off the loop. (Key order is not the reason any more; an immediate array would print one compact element per line and a failure would lose its `job #N doc.VERB failed` line.)
 - The data panel and the detail are `rowsView`s. Their ochazuke list holds the rows on screen and nothing more, and row IDs are positions in the window. Do not give a list one item per array element: ochazuke's List measures every row each frame and removes rows one instance scan at a time. Motions in those tables are `rows.move`, not `list.move`.
 - The tree is the structure (one node per shape), never the document, so its size is the number of distinct paths. Keep the `maxFields` cap: ochazuke's tree is quadratic in its node count.

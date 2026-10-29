@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "items": [
+    {"id": 1, "name": "alpha", "owner": {"name": "ann", "email": "ann@example.com"}, "tags": [{"t": "red"}, {"t": "blue"}], "size": 3},
+    {"id": 2, "name": "beta", "owner": {"name": "bob"}, "tags": [], "size": "large", "note": "second"},
+    {"id": 3, "name": "gamma", "id": 33, "owner": null, "size": null},
+    {"id": 4, "name": "delta", "owner": "dee", "tags": "none"}
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "v": 2,
+  "records": [
+    {
+      "id": 1,
+      "info": {
+        "name": "alpha"
+      },
+      "size": 3,
+      "owner": "ann",
+      "contact": {
+        "email": "ann@example.com"
+      },
+      "tag_names": [
+        "red",
+        "blue"
+      ]
+    },
+    {
+      "id": 2,
+      "info": {
+        "name": "beta",
+        "note": "second"
+      },
+      "size": "large",
+      "owner": "bob",
+      "contact": {},
+      "tag_names": []
+    },
+    {
+      "id": 33,
+      "info": {
+        "name": "gamma"
+      },
+      "size": null,
+      "contact": {},
+      "tag_names": []
+    },
+    {
+      "id": 4,
+      "info": {
+        "name": "delta"
+      },
+      "contact": {},
+      "tag_names": []
+    }
+  ],
+  "all_tags": [
+    {
+      "t": "red"
+    },
+    {
+      "t": "blue"
+    }
+  ],
+  "names": [
+    "alpha",
+    "beta",
+    "gamma",
+    "delta"
+  ]
+}

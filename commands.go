@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/unixsuperhero/oden"
@@ -111,6 +112,63 @@ func textCommands(stdin io.Reader, stdout, stderr io.Writer) []oden.Command {
 					b.WriteByte('\n')
 				}
 				_, err = io.WriteString(stdout, b.String())
+				return err
+			},
+		},
+		{
+			Name: "restructure", Summary: "make a new document from a mapping of shape paths, or print the mapping's jq program",
+			Usage: "FILE|- --map SPEC.json [--jq | --mapping] [--out PATH [--overwrite]]", Source: "o-json",
+			Details: `SPEC is {"map": [{"from": ".items[]", "to": ".records[]"}, {"from": ".items[].owner.name", "to": ".records[].owner"}, ...]}:
+from is a structure path, to the path in the new document; an entry without from is a new object, to null drops from.
+An optional field is copied only where it is present. --jq prints a jq program that does the same and never fails on this
+shape; --mapping prints the mapping with every shape it leaves out as a drop. Output goes to stdout, or with --out to a new
+file; an existing file (the source among them) is replaced only with --overwrite.`,
+			Run: func(_ context.Context, args []string) error {
+				fs := flag.NewFlagSet("o-json restructure", flag.ContinueOnError)
+				fs.SetOutput(stderr)
+				spec := fs.String("map", "", "the mapping file (required)")
+				asJQ := fs.Bool("jq", false, "print the jq program instead of the new document")
+				asMapping := fs.Bool("mapping", false, "print the complete mapping instead of the new document")
+				out := fs.String("out", "", "write to this path instead of stdout")
+				overwrite := fs.Bool("overwrite", false, "with --out, replace an existing file (the source too)")
+				words, err := parseFlags(fs, args)
+				if err != nil {
+					return err
+				}
+				switch {
+				case *spec == "":
+					return errors.New("--map SPEC.json is required")
+				case *asJQ && *asMapping:
+					return errors.New("--jq and --mapping are one or the other")
+				case *overwrite && *out == "":
+					return errors.New("--overwrite needs --out (the file to replace)")
+				}
+				specData, err := os.ReadFile(*spec)
+				if err != nil {
+					return err
+				}
+				m, err := ReadMapping(specData)
+				if err != nil {
+					return err
+				}
+				doc, _, err := readArgs(words, stdin, 0)
+				if err != nil {
+					return err
+				}
+				as := "document"
+				if *asJQ {
+					as = "jq"
+				} else if *asMapping {
+					as = "mapping"
+				}
+				data, err := restructureOutput(doc, m, as)
+				if err != nil {
+					return err
+				}
+				if *out != "" {
+					return writeNew(*out, data, *overwrite)
+				}
+				_, err = stdout.Write(data)
 				return err
 			},
 		},

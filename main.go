@@ -4,6 +4,7 @@
 //	o-json structure [--format text|json] FILE|-
 //	o-json table [--format text|json|markdown] FILE|- [PATH]
 //	o-json get [--raw] [--format json] FILE|- PATH
+//	o-json restructure FILE|- --map SPEC.json [--jq | --mapping] [--out PATH [--overwrite]]
 //	o-json doc structure|table|get FILE [PATH]   (JSON, for a host)
 //	o-json catalog
 //

@@ -1,6 +1,6 @@
 # o-json
 
-A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It is read-only: nothing it does writes a file.
+A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads: the one command that writes, `restructure --out`, makes a new file and replaces an existing one only with `--overwrite`.
 
 ```sh
 o-json data.json                        # open the viewer (also: o-json view data.json)
@@ -8,6 +8,8 @@ curl -s https://... | o-json            # or read stdin (also: o-json -)
 o-json structure data.json              # the shape as a tree
 o-json table data.json .items           # an array as a table, optional columns last
 o-json get data.json '.items[0].owner'  # one value
+o-json restructure data.json --map spec.json        # a new document from a mapping
+o-json restructure data.json --map spec.json --jq   # the same as a jq program
 o-json --smoke data.json                # render one 80x24 frame to stdout and exit
 ```
 
@@ -81,6 +83,43 @@ bob
 cy
 dee
 ```
+
+## restructure
+
+`o-json restructure FILE --map SPEC.json` makes a new document from a mapping of structure paths. It works on shapes: an entry names `.items[].owner.name`, not one item's, so it maps that field of every item.
+
+A mapping is `{"map": [entries]}` and an entry is `{"from": PATH, "to": PATH}`. `from` is a path the structure lists; `to` is the path in the new document, in the same syntax (keys and `[]`, no indexes). An entry without `from` makes a new object (a wrapper), and `"to": null` drops its `from`. The `to` paths make a tree:
+
+- A node with children is built from them: an object from its keys (in the order the mapping first names them), an array from its `[]` item.
+- A node without children copies the value at its `from`, keys in document order.
+- A `[]` item needs a `from`: the values it is made of. Inside it, every `from` lies under the item's own `from`, so `{"from": ".items[]", "to": ".records[]"}` with `{"from": ".items[].owner.name", "to": ".records[].owner"}` makes one record per item. A `[]` item's `from` may fan out further: `{"from": ".items[].tags[]", "to": ".all_tags[]"}` collects every item's tags. A key takes one value, so a key's `from` may not.
+- A field is copied only where it is present. An optional field gives its key to the objects that have it and no others; a step into a value of another type (`.owner.name` where `owner` is sometimes a string) counts as absent, never as an error. A wrapper is always there, even empty.
+
+```json
+{"map": [
+  {"from": ".version", "to": ".v"},
+  {"from": ".items[]", "to": ".records[]"},
+  {"from": ".items[].id", "to": ".records[].id"},
+  {"to": ".records[].info"},
+  {"from": ".items[].name", "to": ".records[].info.name"},
+  {"from": ".items[].note", "to": ".records[].info.note"},
+  {"from": ".items[].owner.name", "to": ".records[].owner"},
+  {"from": ".items[].tags[]", "to": ".all_tags[]"},
+  {"from": ".items[].archived", "to": null}
+]}
+```
+
+`--jq` prints a jq program that makes the same document from any document of this shape, and never fails on it: an iteration is `[]?` (or a type test where the values may be objects), an optional field is copied under `if has("k")`, and a step into a value that may not be an object tests its type first. For `testdata/restructure.json` and `testdata/restructure.map.json`:
+
+```jq
+{"v": .version, "records": [.items[] | {"id": .id, "info": ({"name": .name} + (if has("note") then {"note": .note} else {} end))} + (if has("size") then {"size": .size} else {} end) + (if (.owner | type == "object") then {"owner": .owner.name} else {} end) + {"contact": (if (.owner | type == "object" and has("email")) then {"email": .owner.email} else {} end), "tag_names": [select(has("tags")) | .tags[]?.t]}], "all_tags": [.items[] | select(has("tags")) | .tags[]?], "names": [.items[].name]}
+```
+
+`--mapping` prints the mapping with every shape it leaves out added as a drop (`{"from": ".items[].archived", "to": null}`), so it reads as the whole story of the source; the output is itself a mapping.
+
+A key an object repeats is read as jq reads it: the last value, at the first one's position. The Go result and the jq program therefore agree, though the viewer and `table` show the first value.
+
+Output goes to stdout. `--out PATH` writes it to a new file instead (atomically: a temporary file beside it, then a rename); an existing file, the source among them, is replaced only with `--overwrite`. `--out` takes a value: the flag parser has no optional values, so there is no default `NAME.restructured.json`.
 
 ## For a host: the doc noun and the catalog
 

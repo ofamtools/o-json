@@ -269,7 +269,9 @@ func TestLoadErrorShowsPosition(t *testing.T) {
 
 // Nothing the viewer does writes a file: after a session of every key the
 // directory holds the same file with the same bytes.
-func TestReadOnlyNeverWrites(t *testing.T) {
+// The viewer never writes the source (nor anything else); restructure's
+// own writes are pinned in TestRestructureNeverWritesTheSource.
+func TestViewerNeverWritesTheSource(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "doc.json")
 	data, _ := os.ReadFile(sample)
