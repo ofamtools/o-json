@@ -24,6 +24,9 @@ var patchCases = []struct {
 	{"add a field last and after a key", `{"a":1,"b":2}`,
 		`[{"op":"add","path":".z","value":"last"},{"op":"add","path":".n","value":0,"after":"a"}]`,
 		`{"a":1,"n":0,"b":2,"z":"last"}`, nil},
+	{"add a field before a key (O)", `{"a":1,"b":2}`,
+		`[{"op":"add","path":".n","value":0,"before":"a"},{"op":"add","path":".m","value":9,"before":"b"},{"op":"add","path":".k","value":7,"before":"gone"}]`,
+		`{"n":0,"a":1,"m":9,"b":2,"k":7}`, nil},
 	{"add an item", `{"xs":[1,3]}`,
 		`[{"op":"add","path":".xs[1]","value":2},{"op":"add","path":".xs[3]","value":4}]`,
 		`{"xs":[1,2,3,4]}`, nil},
@@ -79,13 +82,14 @@ func TestPatchesAreChecked(t *testing.T) {
 	root := mustBuild(t, `{"a":[1]}`)
 	doc := &Doc{Root: root, Shape: Infer(root)}
 	for patch, want := range map[string]string{
-		`{"op":"set","path":".a[]","value":1}`:              "has no []",
-		`{"op":"set","path":".a[-1]","value":1}`:            "from the start",
-		`{"op":"move","path":".a"}`:                         "set, delete, add or rename",
-		`{"op":"set","path":".a"}`:                          `"value" is a JSON value`,
-		`{"op":"rename","path":".a"}`:                       `"key" is the new one`,
-		`{"op":"delete","path":"."}`:                        "not the document",
-		`{"op":"add","path":".a[0]","value":1,"after":"x"}`: `"after" names a key`,
+		`{"op":"set","path":".a[]","value":1}`:                        "has no []",
+		`{"op":"set","path":".a[-1]","value":1}`:                      "from the start",
+		`{"op":"move","path":".a"}`:                                   "set, delete, add or rename",
+		`{"op":"set","path":".a"}`:                                    `"value" is a JSON value`,
+		`{"op":"rename","path":".a"}`:                                 `"key" is the new one`,
+		`{"op":"delete","path":"."}`:                                  "not the document",
+		`{"op":"add","path":".a[0]","value":1,"after":"x"}`:           `"after" and "before" name a key`,
+		`{"op":"add","path":".n","value":1,"after":"a","before":"a"}`: "not both",
 	} {
 		m := identityMapping(t, doc)
 		m.Patches = readPatches(t, "["+patch+"]")

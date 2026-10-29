@@ -233,6 +233,37 @@ func TestAddField(t *testing.T) {
 	agrees(t, a)
 }
 
+// O adds before the row: a key placed before the field, an item at the
+// row's index; the input is drawn above the row.
+func TestAddBefore(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	onData(t, a, ".", "version")
+	press(t, a, "O")
+	if sel := selected(a); sel != "new-key" {
+		t.Fatalf("O: %q\n%s", sel, view(a))
+	}
+	frame := view(a)
+	if i, j := strings.Index(frame, "new key: new-key"), strings.Index(frame, "version  "); i < 0 || j < 0 || i > j {
+		t.Fatalf("the input is not above the row:\n%s", frame)
+	}
+	typeText(t, a, "nick")
+	press(t, a, "enter")
+	typeText(t, a, "nj")
+	press(t, a, "enter")
+	if got := field(t, a, "."); !strings.HasPrefix(got, `{"name":"o-json sample","nick":"nj","version":2`) {
+		t.Fatalf("O: %s", got)
+	}
+	if len(a.rs.patches) != 1 || a.rs.patches[0].Before != "version" {
+		t.Fatalf("one add patch before version: %+v", a.rs.patches)
+	}
+	onData(t, a, ".items", ".items[1]")
+	valueDo(t, a, "add", ochazuke.Arguments{"text": `{"id": 9}`, "before": true})
+	if got := field(t, a, ".items[1]"); got != `{"id":9}` {
+		t.Fatalf("item before: %s", got)
+	}
+	agrees(t, a)
+}
+
 // K renames a key in that one object: the other items keep it, and the
 // structure's mapping is unchanged.
 func TestRenameOneKey(t *testing.T) {

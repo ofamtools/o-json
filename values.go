@@ -232,16 +232,27 @@ func (a *App) freeValueKey(obj *Node) string {
 
 // addAfter is the patch adding raw beside v in its container: an item
 // right after it in an array, a key right after it in an object.
-func addAfter(v valueAt, key string, raw json.RawMessage) Patch {
+func addAfter(v valueAt, key string, raw json.RawMessage) Patch { return addBeside(v, key, raw, false) }
+
+// addBeside is addAfter, or with before the patch adding raw just before
+// v (O): the item at v's index, the key placed before v's.
+func addBeside(v valueAt, key string, raw json.RawMessage, before bool) Patch {
 	pp := v.parent.Path()
 	if pp == "." {
 		pp = ""
 	}
 	if v.parent.Kind == KArray {
-		return Patch{Op: opAdd, Path: pp + "[" + strconv.Itoa(v.node.Index+1) + "]", Value: raw}
+		i := v.node.Index + 1
+		if before {
+			i = v.node.Index
+		}
+		return Patch{Op: opAdd, Path: pp + "[" + strconv.Itoa(i) + "]", Value: raw}
 	}
 	p := Patch{Op: opAdd, Path: pp + keyStep(key), Value: raw}
-	if v.node != nil {
+	switch {
+	case v.node != nil && before:
+		p.Before = v.node.Key
+	case v.node != nil:
 		p.After = v.node.Key
 	}
 	return p
@@ -257,6 +268,7 @@ type valueEdit struct {
 	key    string // add: the new key (an object) once named
 	before string // the text it opened with
 	insert bool   // drawn as a new line below the row
+	above  bool   // add: before the row (O), drawn as a new line above it
 }
 
 // openInput opens the inline input on the focused row, text selected
@@ -330,10 +342,10 @@ func (a *App) accept() error {
 			key = a.freeValueKey(ve.at.parent)
 		}
 		key = freeKey(key, taken)
-		return a.openInput(&valueEdit{what: "add", at: ve.at, key: key, insert: true}, "null", true)
+		return a.openInput(&valueEdit{what: "add", at: ve.at, key: key, insert: true, above: ve.above}, "null", true)
 	case "add":
 		raw, _ := inferValue(text)
-		return a.addPatch(addAfter(ve.at, ve.key, raw))
+		return a.addPatch(addBeside(ve.at, ve.key, raw, ve.above))
 	case "rename":
 		return a.renameValue(ve.at, text)
 	}
@@ -396,7 +408,9 @@ func (a *App) inputBlock(body string, w int) ochazuke.Block {
 	text := prefix + field.Text
 	switch {
 	case ve.insert:
-		row = min(row+1, len(lines))
+		if !ve.above {
+			row = min(row+1, len(lines))
+		}
 		lines = slices.Insert(lines, row, text)
 		lines = lines[:max(1, len(lines)-1)]
 	case row < len(lines):
@@ -477,6 +491,7 @@ func (a *App) registerValueVerbs() {
 			if err != nil {
 				return ochazuke.Failed(err)
 			}
+			before := c.Args["before"] == true
 			text, hasText := c.Args["text"].(string)
 			raw := json.RawMessage("null")
 			if hasText {
@@ -484,9 +499,9 @@ func (a *App) registerValueVerbs() {
 			}
 			if v.parent.Kind == KArray {
 				if hasText {
-					return done(a.addPatch(addAfter(v, "", raw)))
+					return done(a.addPatch(addBeside(v, "", raw, before)))
 				}
-				return done(a.openInput(&valueEdit{what: "add", at: v, insert: true}, "null", true))
+				return done(a.openInput(&valueEdit{what: "add", at: v, insert: true, above: before}, "null", true))
 			}
 			key, hasKey := c.Args["key"].(string)
 			switch {
@@ -494,15 +509,15 @@ func (a *App) registerValueVerbs() {
 				if v.parent.Field(key) != nil {
 					return ochazuke.Failed(fmt.Errorf("this object has a key %q already", key))
 				}
-				return done(a.addPatch(addAfter(v, key, raw)))
+				return done(a.addPatch(addBeside(v, key, raw, before)))
 			case hasKey:
 				if v.parent.Field(key) != nil {
 					return ochazuke.Failed(fmt.Errorf("this object has a key %q already", key))
 				}
-				return done(a.openInput(&valueEdit{what: "add", at: v, key: key, insert: true}, "null", true))
+				return done(a.openInput(&valueEdit{what: "add", at: v, key: key, insert: true, above: before}, "null", true))
 			}
-			return done(a.openInput(&valueEdit{what: "key", at: v, insert: true}, a.freeValueKey(v.parent), true))
-		}, "Add a value after this one: in an array an item, in an object a key (its name first, a placeholder selected: typing names it), then its value (null selected). With key and text, at once").When("value-addable").
+			return done(a.openInput(&valueEdit{what: "key", at: v, insert: true, above: before}, a.freeValueKey(v.parent), true))
+		}, "Add a value after this one (o), or before it with before (O): in an array an item, in an object a key (its name first, a placeholder selected: typing names it), then its value (null selected). With key and text, at once").When("value-addable").
 		Verb("rename", func(c ochazuke.Ctx) ochazuke.Result {
 			v, err := target(c)
 			if err != nil {
@@ -556,8 +571,9 @@ func (a *App) registerValueVerbs() {
 		"select": {Type: "boolean", Description: "open the input with the text selected; omitted, the rename.select setting decides"},
 	})
 	params("value.add", map[string]ochazuke.Parameter{
-		"key":  {Type: "string", Description: "in an object, the new key; omit to type it"},
-		"text": {Type: "string", Description: "the value as typed; omit to type it"},
+		"key":    {Type: "string", Description: "in an object, the new key; omit to type it"},
+		"text":   {Type: "string", Description: "the value as typed; omit to type it"},
+		"before": {Type: "boolean", Description: "add before this value (O), not after it"},
 	})
 	params("value.rename", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the new key; omit to edit it in place"}})
 	params("value.drop", map[string]ochazuke.Parameter{"index": {Type: "integer", Required: true, Description: "the value edit, from 1, as value.patches lists them"}})

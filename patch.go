@@ -38,6 +38,9 @@ type Patch struct {
 	Value json.RawMessage `json:"value,omitempty"`
 	Key   string          `json:"key,omitempty"`
 	After string          `json:"after,omitempty"`
+	// Before places an added key just before that key (O), as After
+	// places it just after (o); neither, at the object's end.
+	Before string `json:"before,omitempty"`
 }
 
 // The patch ops.
@@ -82,8 +85,11 @@ func (p Patch) steps() ([]pathStep, error) {
 	last := steps[len(steps)-1]
 	switch p.Op {
 	case opAdd:
-		if p.After != "" && last.kind != 'k' {
-			return nil, fmt.Errorf("add %s: \"after\" names a key, so the path ends in one", p.Path)
+		if (p.After != "" || p.Before != "") && last.kind != 'k' {
+			return nil, fmt.Errorf("add %s: \"after\" and \"before\" name a key, so the path ends in one", p.Path)
+		}
+		if p.After != "" && p.Before != "" {
+			return nil, fmt.Errorf("add %s: \"after\" or \"before\", not both", p.Path)
 		}
 		return steps, needsValue()
 	case opRename:
@@ -187,6 +193,9 @@ func patchNode(n *Node, steps []pathStep, p Patch) (*Node, bool) {
 			if j := slices.IndexFunc(n.Children, func(c *Node) bool { return c.Key == p.After }); p.After != "" && j >= 0 {
 				at = j + 1
 			}
+			if j := slices.IndexFunc(n.Children, func(c *Node) bool { return c.Key == p.Before }); p.Before != "" && j >= 0 {
+				at = j
+			}
 			c.Children = slices.Insert(c.Children, at, valuePatch(p.Value, st.key))
 		case st.kind == 'i' && n.Kind == KArray && st.index <= len(n.Children):
 			c.Children = slices.Insert(c.Children, st.index, valuePatch(p.Value, ""))
@@ -254,13 +263,17 @@ func patchesJQ(patches []Patch) (string, bool) {
 				break
 			}
 			cond := "if _there(" + parent + ") and (getpath(" + parent + ") | type == \"object\" and (has(" + quote(last.key) + ") | not)) then "
-			if p.After == "" {
+			anchor, cut := p.After, "$i + 1"
+			if p.Before != "" {
+				anchor, cut = p.Before, "$i"
+			}
+			if anchor == "" {
 				step = cond + "setpath(" + path + "; " + value + ") else . end"
 				break
 			}
 			entry := "[{\"key\": " + quote(last.key) + ", \"value\": " + value + "}]"
-			step = cond + "setpath(" + parent + "; getpath(" + parent + ") | to_entries | (map(.key) | index(" + quote(p.After) + ")) as $i | if $i == null then . + " + entry +
-				" else .[:$i + 1] + " + entry + " + .[$i + 1:] end | from_entries) else . end"
+			step = cond + "setpath(" + parent + "; getpath(" + parent + ") | to_entries | (map(.key) | index(" + quote(anchor) + ")) as $i | if $i == null then . + " + entry +
+				" else .[:" + cut + "] + " + entry + " + .[" + cut + ":] end | from_entries) else . end"
 		}
 		b.WriteString(" | " + step)
 	}
@@ -289,6 +302,9 @@ func formatPatch(p Patch, str func(string) string) string {
 	}
 	if p.After != "" {
 		fields = append(fields, `"after": `+str(p.After))
+	}
+	if p.Before != "" {
+		fields = append(fields, `"before": `+str(p.Before))
 	}
 	return "{" + strings.Join(fields, ", ") + "}"
 }
