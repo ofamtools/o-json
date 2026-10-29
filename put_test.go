@@ -1,0 +1,337 @@
+package main
+
+import (
+	"slices"
+	"strings"
+	"testing"
+
+	"github.com/unixsuperhero/ochazuke"
+)
+
+// openPut is the nest document's restructure with a, x (b, c) and y sent:
+// {"a":1,"x":{"b":2,"c":3},"y":4}, the focus on the restructured tree.
+func openPut(t *testing.T) *App {
+	t.Helper()
+	a := openNest(t, nestDoc, ".a", ".x", ".y")
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4}` {
+		t.Fatalf("start %s", got)
+	}
+	return a
+}
+
+// idOf is the id of the restructure node that came from path (not an
+// item); with several, the first in tree order.
+func (a *App) idOf(t *testing.T, path string) string {
+	t.Helper()
+	for _, n := range a.rs.tree.Nodes() {
+		if a.fromPath(path)(n) {
+			return n.ID
+		}
+	}
+	t.Fatalf("no node from %s: %v", path, entries(a.Mapping()))
+	return ""
+}
+
+// dd then p is a move: the node comes back with its id, its origin and
+// its subtree, and the mapping is what o-json restructure --map runs (and
+// jq, where it is on PATH).
+func TestDeletePutMovesTheNode(t *testing.T) {
+	a := openPut(t)
+	x, b := a.idOf(t, ".x"), a.idOf(t, ".x.b")
+	a.on(t, ".x")
+	press(t, a, "d", "d")
+	if got := output(t, a); got != `{"a":1,"y":4}` {
+		t.Fatalf("delete %s", got)
+	}
+	if !strings.Contains(a.m.Info, "into the register") {
+		t.Fatalf("info %q", a.m.Info)
+	}
+	a.on(t, ".y")
+	press(t, a, "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"a":1,"y":4,"x":{"b":2,"c":3}}` {
+		t.Fatalf("move %s", got)
+	}
+	if a.idOf(t, ".x") != x || a.idOf(t, ".x.b") != b {
+		t.Fatalf("ids changed: %s %s, want %s %s", a.idOf(t, ".x"), a.idOf(t, ".x.b"), x, b)
+	}
+	if n, _ := a.rs.tree.Selected(); n.ID != x {
+		t.Fatalf("cursor on %s, want the put node %s", n.ID, x)
+	}
+	// The same register again is a copy: the ids are in the tree now.
+	press(t, a, "p")
+	if got := output(t, a); got != `{"a":1,"y":4,"x":{"x":{"b":2,"c":3},"b":2,"c":3}}` {
+		t.Fatalf("second put %s", got)
+	}
+}
+
+// yy then p is a copy: the same shape mapped again under new ids; a key
+// that lands beside a sibling of its name is numbered, as placeholders are.
+func TestYankPutCopies(t *testing.T) {
+	a := openPut(t)
+	orig := a.idOf(t, ".a")
+	a.on(t, ".a")
+	press(t, a, "y", "y")
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4}` {
+		t.Fatalf("yank changed the tree: %s", got)
+	}
+	a.on(t, ".y")
+	press(t, a, "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"a-2":1}` {
+		t.Fatalf("copy %s", got)
+	}
+	var froms []string
+	for _, n := range a.rs.tree.Nodes() {
+		if a.rs.meta[n.ID].from == ".a" {
+			froms = append(froms, n.ID)
+		}
+	}
+	if len(froms) != 2 || froms[0] != orig || froms[1] == orig {
+		t.Fatalf("nodes from .a: %v (original %s)", froms, orig)
+	}
+	if got := entries(a.Mapping()); !slices.Contains(got, ".a>.a") || !slices.Contains(got, `.a>.["a-2"]`) {
+		t.Fatalf("mapping %v", got)
+	}
+}
+
+// A put takes the level of where it lands, for every cursor case.
+func TestPutTakesTheLevelOfWhereItLands(t *testing.T) {
+	cases := []struct {
+		name     string
+		cut, on  string // the shape deleted, the shape the cursor lands on ("" for the root)
+		collapse bool
+		key      string
+		want     string
+	}{
+		{"plain p: next sibling", ".y", ".a", false, "p", `{"a":1,"y":4,"x":{"b":2,"c":3}}`},
+		{"plain P: previous sibling", ".y", ".a", false, "P", `{"y":4,"a":1,"x":{"b":2,"c":3}}`},
+		{"expanded object p: first child", ".y", ".x", false, "p", `{"a":1,"x":{"y":4,"b":2,"c":3}}`},
+		{"expanded object P: previous sibling", ".y", ".x", false, "P", `{"a":1,"y":4,"x":{"b":2,"c":3}}`},
+		{"collapsed object p: after the whole object", ".a", ".x", true, "p", `{"x":{"b":2,"c":3},"a":1,"y":4}`},
+		{"collapsed object P: previous sibling", ".y", ".x", true, "P", `{"a":1,"y":4,"x":{"b":2,"c":3}}`},
+		{"root p: first child", ".y", "", false, "p", `{"y":4,"a":1,"x":{"b":2,"c":3}}`},
+		{"root P: first child too", ".y", "", false, "P", `{"y":4,"a":1,"x":{"b":2,"c":3}}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := openPut(t)
+			a.on(t, tc.cut)
+			press(t, a, "d", "d")
+			if tc.on == "" {
+				onRoot(t, a)
+			} else {
+				a.on(t, tc.on)
+			}
+			if tc.collapse {
+				press(t, a, "h")
+				if !a.rs.tree.Collapsed(a.idOf(t, tc.on)) {
+					t.Fatal("h did not collapse")
+				}
+			}
+			press(t, a, tc.key)
+			if got := agreesWith(t, a, nestDoc); got != tc.want {
+				t.Fatalf("got %s want %s", got, tc.want)
+			}
+		})
+	}
+}
+
+// "a d d deletes into register a; "a p puts from it, while p puts the
+// unnamed register, which the last yank filled.
+func TestNamedRegisterPut(t *testing.T) {
+	a := openPut(t)
+	a.on(t, ".a")
+	press(t, a, `"`, "a", "d", "d")
+	if !strings.Contains(a.m.Info, `"a`) {
+		t.Fatalf("info %q", a.m.Info)
+	}
+	if y, _ := a.r.ReadYank("a"); y.Shape != nodesShape {
+		t.Fatalf("register a %+v", y)
+	}
+	a.on(t, ".y")
+	press(t, a, "y", "y")
+	a.on(t, ".x.c")
+	press(t, a, `"`, "a", "p")
+	if got := output(t, a); got != `{"x":{"b":2,"c":3,"a":1},"y":4}` {
+		t.Fatalf(`"a p %s`, got)
+	}
+	press(t, a, "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"x":{"b":2,"c":3,"a":1,"y":4},"y":4}` {
+		t.Fatalf("p %s", got)
+	}
+	// "b y y then "B y y appends: "b p puts both.
+	a.on(t, ".x.b")
+	press(t, a, `"`, "b", "y", "y")
+	a.on(t, ".x.c")
+	press(t, a, `"`, "B", "y", "y")
+	onRoot(t, a)
+	press(t, a, `"`, "b", "p")
+	if got := output(t, a); got != `{"b":2,"c":3,"x":{"b":2,"c":3,"a":1,"y":4},"y":4}` {
+		t.Fatalf(`"B appends: %s`, got)
+	}
+}
+
+// V ... d deletes every marked node as one undo step, V ... y yanks them,
+// and a put of several nodes is one undo step too.
+func TestMarkedDeletePutOneUndoStep(t *testing.T) {
+	a := openPut(t)
+	a.on(t, ".a")
+	press(t, a, "V", "j", "d")
+	if got := output(t, a); got != `{"y":4}` {
+		t.Fatalf("V j d %s", got)
+	}
+	if a.rs.tree.List().Visual() {
+		t.Fatal("the selection is still on")
+	}
+	a.on(t, ".y")
+	press(t, a, "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"y":4,"a":1,"x":{"b":2,"c":3}}` {
+		t.Fatalf("put %s", got)
+	}
+	press(t, a, "u")
+	if got := output(t, a); got != `{"y":4}` {
+		t.Fatalf("one u takes the put back: %s", got)
+	}
+	press(t, a, "u")
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4}` {
+		t.Fatalf("one u takes the delete back: %s", got)
+	}
+	// V ... y yanks both; the tree is unchanged.
+	a.on(t, ".a")
+	press(t, a, "V", "j", "y")
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4}` {
+		t.Fatalf("V j y changed the tree: %s", got)
+	}
+	a.on(t, ".y")
+	press(t, a, "p")
+	if got := agreesWith(t, a, nestDoc); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"a-2":1,"x-2":{"b":2,"c":3}}` {
+		t.Fatalf("put of the yank %s", got)
+	}
+	// While a selection is on, d d and y y are not available, so d and y
+	// answer at once; without one, d and y alone are not.
+	press(t, a, "V")
+	if a.available("node", "delete") || a.available("node", "yank") || !a.available("restructure", "delete") {
+		t.Fatal("in V: node.delete / node.yank should stand aside for restructure.delete")
+	}
+	press(t, a, "esc")
+	if !a.available("node", "delete") || a.available("restructure", "delete") || a.available("restructure", "yank") {
+		t.Fatal("out of V: d d and y y answer, d and y alone do not")
+	}
+}
+
+// A put into an array item, where the mapping would not check, is
+// refused with a notice and changes nothing: no other key answers.
+func TestPutRefusedIntoAnArrayItem(t *testing.T) {
+	a := openRestructure(t, 120, 30)
+	sendPaths(t, a, ".items[].id", ".name")
+	press(t, a, "tab")
+	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
+	press(t, a, "y", "y")
+	before := entries(a.Mapping())
+	items := func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].from == ".items" }
+	item := func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].item }
+	for _, tc := range []struct {
+		name string
+		at   func(ochazuke.TreeNode) bool
+		key  string
+	}{
+		{"p on the array: a key beside its item", items, "p"},
+		{"p on the item: .name inside .items[]", item, "p"},
+		{"P on the item: a key beside it", item, "P"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			selectIn(t, a, a.rs.tree, tc.at)
+			focus := a.r.Focus
+			press(t, a, tc.key)
+			if got := entries(a.Mapping()); !slices.Equal(got, before) {
+				t.Fatalf("mapping changed: %v", got)
+			}
+			if !strings.HasPrefix(a.m.Info, "put does not go here") || a.r.Focus != focus {
+				t.Fatalf("info %q, focus %s (was %s)", a.m.Info, a.r.Focus, focus)
+			}
+		})
+	}
+	// A key of the item's own values goes into it.
+	selectIn(t, a, a.rs.tree, a.fromPath(".items[].id"))
+	press(t, a, "y", "y")
+	selectIn(t, a, a.rs.tree, item)
+	press(t, a, "p")
+	if got := agrees(t, a); got != `{"items":[{"id-2":1,"id":1},{"id-2":2,"id":2},{"id-2":3,"id":3},{"id-2":4,"id":4}],"name":"o-json sample"}` {
+		t.Fatalf("put into the item %s", got)
+	}
+}
+
+// Undo and redo walk a delete and its put back and forth.
+func TestPutUndoRedoRoundTrip(t *testing.T) {
+	a := openPut(t)
+	start := output(t, a)
+	a.on(t, ".a")
+	press(t, a, "d", "d")
+	deleted := output(t, a)
+	a.on(t, ".y")
+	press(t, a, "p")
+	moved := output(t, a)
+	for _, step := range []struct{ key, want string }{
+		{"u", deleted}, {"u", start}, {"ctrl+r", deleted}, {"ctrl+r", moved},
+	} {
+		press(t, a, step.key)
+		if got := output(t, a); got != step.want {
+			t.Fatalf("%s: %s, want %s", step.key, got, step.want)
+		}
+	}
+	if moved != `{"x":{"b":2,"c":3},"y":4,"a":1}` {
+		t.Fatalf("moved %s", moved)
+	}
+}
+
+// y y, p, P and d d answer with o-json's verbs on every kind of node the
+// tree holds (not d d and y y on the document node, which stays: those
+// keys pass on and change nothing), and over a V selection d and y do;
+// each row has a hint.
+func TestPutKeysOnEveryNode(t *testing.T) {
+	a := openRestructure(t, 120, 30)
+	sendPaths(t, a, ".items[].owner", ".name")
+	press(t, a, "tab")
+	kinds := []struct {
+		name  string
+		match func(ochazuke.TreeNode) bool
+	}{
+		{"root", func(n ochazuke.TreeNode) bool { return n.ID == rsRootID }},
+		{"array", func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].from == ".items" }},
+		{"item", func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].item }},
+		{"object", a.fromPath(".items[].owner")},
+		{"plain", a.fromPath(".name")},
+	}
+	answers := func() (map[string]string, map[string]bool) {
+		got, hints := map[string]string{}, map[string]bool{}
+		for _, b := range a.r.ListBindings(a.r.Focus) {
+			if b.Keys != "" && !b.Unbind && got[b.Keys] == "" {
+				got[b.Keys] = a.r.CanonicalKey(b.Request.Key())
+				hints[b.Keys] = b.Hint != ""
+			}
+		}
+		return got, hints
+	}
+	expect := func(name string, want map[string]string) {
+		t.Helper()
+		got, hints := answers()
+		for key, verb := range want {
+			if got[key] != verb {
+				t.Errorf("%s: %q answers %q, want %q", name, key, got[key], verb)
+			}
+			if verb != "" && !hints[key] {
+				t.Errorf("%s: %q has no hint", name, key)
+			}
+		}
+	}
+	for _, k := range kinds {
+		selectIn(t, a, a.rs.tree, k.match)
+		normal := map[string]string{"y y": "node.yank", "d d": "node.delete", "p": "node.put", "P": "node.put", "d": ""}
+		if k.name == "root" {
+			normal["y y"], normal["d d"] = "", ""
+		}
+		expect(k.name, normal)
+		press(t, a, "V")
+		expect(k.name+" in V", map[string]string{"d": "restructure.delete", "y": "restructure.yank", "d d": "", "y y": ""})
+		press(t, a, "esc")
+	}
+}

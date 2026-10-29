@@ -466,11 +466,11 @@ func TestVisualSelectionSendsSeveral(t *testing.T) {
 	if n := len(a.Mapping().Map); n != 0 {
 		t.Fatalf("one undo: %v", entries(a.Mapping()))
 	}
-	// On the restructure tree: V and d d delete every selected node.
+	// On the restructure tree: V and d delete every selected node.
 	sendPaths(t, a, ".name", ".version", ".meta")
 	press(t, a, "tab")
 	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
-	press(t, a, "V", "j", "d", "d")
+	press(t, a, "V", "j", "d")
 	if got := entries(a.Mapping()); len(got) == 0 || got[0] != ".meta>.meta" {
 		t.Fatalf("visual delete: %v", got)
 	}

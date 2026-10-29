@@ -110,11 +110,7 @@ func (a *App) placeholder(e edit, parent, skip string) string {
 			taken[e.nodes[e.at(id)].Label] = true
 		}
 	}
-	key := base
-	for n := 2; taken[key]; n++ {
-		key = fmt.Sprintf("%s-%d", base, n)
-	}
-	return key
+	return freeKey(base, taken)
 }
 
 func (a *App) layout() string {
@@ -957,15 +953,11 @@ func (a *App) registerRestructureVerbs() {
 	r.DefineGuard("restructure-tree", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.sideOf(ev.Focus) == rsTreeID
 	})
-	// Renaming and deleting need a node with a parent: the document node
-	// has no key and is always there.
+	// Renaming needs a node with a parent: the document node has no key
+	// and is always there (deleting it neither: node-yankable, put.go).
 	r.DefineGuard("node-renamable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		id := a.focusedNode(ev.Focus)
 		return id != "" && !a.rs.meta[id].item && a.current().parent(id) != ""
-	})
-	r.DefineGuard("node-deletable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
-		id := a.focusedNode(ev.Focus)
-		return id != "" && a.current().parent(id) != ""
 	})
 	r.DefineGuard("shape-sendable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		inst := r.Instances[ev.Focus]
@@ -1024,21 +1016,10 @@ func (a *App) registerRestructureVerbs() {
 				return ochazuke.Failed(err)
 			}
 			return ochazuke.Done(a.Mapping())
-		}, "Rename the node's key: in place, or to key").When("node-renamable").
-		Verb("delete", func(c ochazuke.Ctx) ochazuke.Result {
-			e := a.current()
-			ids := slices.DeleteFunc(subjectIDs(c), func(id string) bool { return e.parent(id) == "" })
-			if len(ids) == 0 {
-				return ochazuke.Failed(errors.New("the document node stays; d d deletes the nodes in it"))
-			}
-			next := a.nextAfter(e, ids)
-			if err := a.commit("delete", next, e.remove(ids)); err != nil {
-				return ochazuke.Failed(err)
-			}
-			a.refocus(next)
-			c.Info(fmt.Sprintf("deleted %d node(s); u brings them back", len(ids)))
-			return ochazuke.Done(a.Mapping())
-		}, "Delete the nodes and their children from the restructure (the document node stays); u brings them back").Many().When("node-deletable")
+		}, "Rename the node's key: in place, or to key").When("node-renamable")
+	// node.delete, node.yank, node.put and the selection's delete and
+	// yank: put.go.
+	a.registerPutVerbs()
 	// A new key (a wrapper from S, or o and O) opens selected: typing
 	// renames it, esc or a motion keeps the placeholder. With key it is
 	// named at once (the palette, the CLI).
