@@ -443,3 +443,38 @@ func TestDotRepeatsThePut(t *testing.T) {
 		t.Fatalf(". after > > (repeat.scope edit): %s", got)
 	}
 }
+
+// y on the original tree yanks the shape's path; p / P on the
+// restructured tree put that shape (with the fields under it), a copy of
+// its identity mapping; V j y yanks several.
+func TestYankOnTheOriginalPutsOnTheRight(t *testing.T) {
+	a := openRestructure(t, 120, 30)
+	sendPaths(t, a, ".name")
+	selectIn(t, a, a.rs.orig, origPath(".meta"))
+	press(t, a, "y")
+	press(t, a, "tab")
+	a.on(t, ".name")
+	press(t, a, "p")
+	if got := agrees(t, a); got != `{"name":"o-json sample","meta":{"generated":"2026-10-25","count":4,"source":null}}` {
+		t.Fatalf("p of a yanked shape: %s", got)
+	}
+	press(t, a, "u", "tab")
+	selectIn(t, a, a.rs.orig, origPath(".version"))
+	press(t, a, "V", "k", "y")
+	press(t, a, "tab")
+	a.on(t, ".name")
+	press(t, a, "P")
+	if got := agrees(t, a); got != `{"name-2":"o-json sample","version":2,"name":"o-json sample"}` {
+		t.Fatalf("P of two yanked shapes: %s", got)
+	}
+	// In the viewer: y on the original (T), back to the edited, p.
+	b := open(t, sample, 120, 30)
+	press(t, b, "T")
+	selectPath(t, b, ".version")
+	press(t, b, "y", "T")
+	b.on(t, ".meta")
+	press(t, b, "p")
+	if got := output(t, b); !strings.Contains(got, `"meta":{"version":2,"generated"`) {
+		t.Fatalf("viewer p of a yanked shape: %s", got)
+	}
+}

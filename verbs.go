@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 
 	"github.com/unixsuperhero/ochazuke"
 )
@@ -99,12 +100,21 @@ func (a *App) registerVerbs() {
 
 	r.Define("shape").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {
-			s, _ := c.Instance.Data.(*Shape)
-			if s == nil {
+			subjects := c.Subjects
+			if len(subjects) == 0 {
+				subjects = []*ochazuke.Instance{c.Instance}
+			}
+			var paths []string
+			for _, inst := range subjects {
+				if s, _ := inst.Data.(*Shape); s != nil {
+					paths = append(paths, s.Path)
+				}
+			}
+			if len(paths) == 0 {
 				return ochazuke.Failed(errors.New("not a path"))
 			}
-			return a.copyText(c, s.Path, s.Path)
-		}, "Copy the structure path into the registers and the system clipboard")
+			return a.copyText(c, strings.Join(paths, "\n"), strings.Join(paths, ", "))
+		}, "Copy the structure path (one per line over a V selection) into the registers and the system clipboard; p / P on the restructured tree put those shapes there").Many()
 
 	// rows.move is the windowed tables' motion: the list holds only the
 	// rows on screen, so list.move would stop at the screen's edge.

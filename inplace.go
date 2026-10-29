@@ -57,35 +57,40 @@ func (a *App) identity() edit {
 	if a.Doc == nil {
 		return e
 	}
-	expands := func(s *Shape) bool {
-		fields := 0
-		for _, c := range s.Children {
-			if c.IsField() {
-				fields++
-			}
-		}
-		return len(s.Children) > 0 && fields <= maxFields && (objectOnly(s) || s.Kinds[KArray] == s.Count)
-	}
 	root := a.Doc.Shape
-	if !expands(root) {
+	if !copyExpands(root) {
 		e.meta[rsRootID] = nodeMeta{from: "."}
 		return e
 	}
-	var add func(s *Shape, parent string)
-	add = func(s *Shape, parent string) {
-		id := a.newNodeID()
-		e.nodes = append(e.nodes, ochazuke.TreeNode{ID: id, Parent: parent, Label: s.Key, Noun: "node"})
-		e.meta[id] = nodeMeta{from: s.Path, item: s.Key == "[]"}
-		if expands(s) {
-			for _, c := range s.Children {
-				add(c, id)
-			}
-		}
-	}
 	for _, c := range root.Children {
-		add(c, rsRootID)
+		a.copyShape(&e, c, rsRootID)
 	}
 	return e
+}
+
+// copyExpands reports a shape the copy shows with its children: objects
+// (or arrays) with few enough fields.
+func copyExpands(s *Shape) bool {
+	fields := 0
+	for _, c := range s.Children {
+		if c.IsField() {
+			fields++
+		}
+	}
+	return len(s.Children) > 0 && fields <= maxFields && (objectOnly(s) || s.Kinds[KArray] == s.Count)
+}
+
+// copyShape appends s and the subtree the copy shows of it under parent,
+// each node mapped from its shape (the identity mapping of s).
+func (a *App) copyShape(e *edit, s *Shape, parent string) {
+	id := a.newNodeID()
+	e.nodes = append(e.nodes, ochazuke.TreeNode{ID: id, Parent: parent, Label: s.Key, Noun: "node"})
+	e.meta[id] = nodeMeta{from: s.Path, item: s.Key == "[]"}
+	if copyExpands(s) {
+		for _, c := range s.Children {
+			a.copyShape(e, c, id)
+		}
+	}
 }
 
 // startState makes the restructure state the one a new document starts

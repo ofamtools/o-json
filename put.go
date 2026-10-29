@@ -115,6 +115,39 @@ func clipBlocks(text string) ([][]clipNode, error) {
 	return blocks, nil
 }
 
+// pathBlocks reads a register holding structure paths, one per line (y
+// on the original tree, or typed): each path's shape, with the fields
+// the copy shows under it, as restructure nodes mapped from it (a put of
+// it maps the same shapes again, as s sends them). ok is false when a
+// line names no shape of the document.
+func (a *App) pathBlocks(text string) ([][]clipNode, bool) {
+	if a.Doc == nil {
+		return nil, false
+	}
+	// The blocks hang under a stand-in document node, as a restructure's
+	// do; clipOf drops it.
+	e := edit{nodes: []ochazuke.TreeNode{{ID: "paths:doc", Noun: "node"}}, meta: map[string]nodeMeta{}}
+	var roots []string
+	for _, line := range strings.Split(text, "\n") {
+		if line = strings.TrimSpace(line); line == "" {
+			continue
+		}
+		s := a.Doc.Shape.Find(line)
+		if s == nil || s.parent == nil {
+			return nil, false
+		}
+		at := len(e.nodes)
+		a.copyShape(&e, s, "paths:doc")
+		roots = append(roots, e.nodes[at].ID)
+	}
+	clipText, n := clipOf(e, roots)
+	if n == 0 {
+		return nil, false
+	}
+	blocks, err := clipBlocks(clipText)
+	return blocks, err == nil
+}
+
 // freeKey is key, or key-2, key-3, ... past the keys taken.
 func freeKey(key string, taken map[string]bool) string {
 	out := key
@@ -319,8 +352,11 @@ func (a *App) putNodes(c ochazuke.Ctx, ids []string, before bool) ochazuke.Resul
 	}
 	blocks, err := clipBlocks(y.Text)
 	if err != nil {
-		c.Info(err.Error())
-		return ochazuke.Done(a.Mapping())
+		var ok bool
+		if blocks, ok = a.pathBlocks(y.Text); !ok {
+			c.Info(err.Error())
+			return ochazuke.Done(a.Mapping())
+		}
 	}
 	now := a.current()
 	var e edit
