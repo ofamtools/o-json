@@ -111,6 +111,9 @@ func New() (*App, error) {
 	if err := declareValueSettings(r); err != nil {
 		return nil, err
 	}
+	if err := declareExportSettings(r); err != nil {
+		return nil, err
+	}
 	page, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID))
 	if err != nil {
 		return nil, err

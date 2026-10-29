@@ -5,6 +5,7 @@
 //	o-json table [--format text|json|markdown] FILE|- [PATH]
 //	o-json get [--raw] [--format json] FILE|- PATH
 //	o-json restructure FILE|- --map SPEC.json [--jq | --mapping] [--out PATH [--overwrite]]
+//	o-json export FILE|- [--map SPEC.json] [--of PATH] [--format F] [--jq] [--out PATH [--overwrite]]
 //	o-json doc structure|table|get FILE [PATH]   (JSON, for a host)
 //	o-json catalog
 //
@@ -52,6 +53,7 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		}))
 	ocli.Mount(app, newShell(stdin, stdout, stderr))
 	app.Add(textCommands(stdin, stdout, stderr)...)
+	app.Add(exportCommand(stdin, stdout, stderr))
 	app.Add(viewCommand(stdin, stdout, stderr))
 	// Mount's help note says every result is JSON, which is true of the doc
 	// noun only; structure, table and get print text.

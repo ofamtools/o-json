@@ -1241,12 +1241,19 @@ func (a *App) registerRestructureVerbs() {
 		Verb("overwrite-source", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, writeSource) },
 			"Replace the source document with the restructured one (as o-json restructure --out SOURCE --overwrite does); it always asks first").Confirm("Overwrite the source {{path}} with the restructured document?").
 		Verb("jq", func(c ochazuke.Ctx) ochazuke.Result {
+			if f := ochazuke.StringArg(c.Args, "format", ""); f != "" {
+				text, err := a.exportJQText(f, ochazuke.StringArg(c.Args, "of", ""), ochazuke.StringArg(c.Args, "columns", ""))
+				if err != nil {
+					return ochazuke.Failed(err)
+				}
+				return a.copyText(c, text, "the jq program of the "+f+" export")
+			}
 			p, err := a.plan()
 			if err != nil {
 				return ochazuke.Failed(err)
 			}
 			return a.copyText(c, p.JQ(), "the jq program")
-		}, "Copy the jq program that makes the restructured document into the registers and the system clipboard").
+		}, "Copy the jq program that makes the restructured document into the registers and the system clipboard; with format (csv or tsv) it ends in the export's @csv / @tsv step (of and columns as viewer.export takes them), so jq -r makes the export").
 		Verb("export-map", func(c ochazuke.Ctx) ochazuke.Result {
 			path := ochazuke.StringArg(c.Args, "path", "")
 			text, err := a.mappingText()
@@ -1268,6 +1275,11 @@ func (a *App) registerRestructureVerbs() {
 		"force": {Type: "boolean", Description: "replace an existing file without asking; the source asks once (W)"}})
 	params("restructure.overwrite", map[string]ochazuke.Parameter{"path": path})
 	params("restructure.overwrite-source", map[string]ochazuke.Parameter{"path": path})
+	params("restructure.jq", map[string]ochazuke.Parameter{
+		"format":  {Type: "string", Enum: []string{"csv", "tsv"}, Description: "end in the export's @csv / @tsv step; omit for the restructure alone"},
+		"of":      {Type: "string", Description: "with format, the array's structure path; omit for the one under the cursor"},
+		"columns": {Type: "string", Description: "with format, the columns to keep, separated by commas"},
+	})
 	params("restructure.export-map", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "the mapping file to write, e.g. NAME.map.json"}})
 	params("restructure.add", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "a structure path, e.g. .items[].id"}})
 	params("restructure.show", map[string]ochazuke.Parameter{"side": {Type: "string", Enum: []string{"original", "restructured", "edited"}, Description: "edited is restructured"}})
@@ -1423,7 +1435,16 @@ func (a *App) write(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 		}
 		return ochazuke.Done(v)
 	}
-	return a.writeFile(c, path, []byte(Pretty(p.Apply(a.Doc.Root))+"\n"), mode, "the restructured document", "restructure.overwrite", func(string) { a.markSaved() })
+	data, isJSON, err := a.encodeFor(path, p.Apply(a.Doc.Root))
+	if err != nil {
+		return ochazuke.Failed(err)
+	}
+	what, done := "the restructured document", func(string) { a.markSaved() }
+	if !isJSON {
+		// An export is not the document: the edits stay unsaved.
+		what, done = "the export of the restructured document", nil
+	}
+	return a.writeFile(c, path, data, mode, what, "restructure.overwrite", done)
 }
 
 // writeFile writes data to path off the loop through writeNew. The source
@@ -1432,6 +1453,15 @@ func (a *App) write(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 // verb ask with the path (none: the write is refused). done, when set,
 // runs on the loop after a write that succeeded.
 func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, mode writeMode, what, ask string, done func(path string)) ochazuke.Result {
+	return a.writeFileAsk(c, path, data, mode, what, ask, nil, done)
+}
+
+// writeFileAsk is writeFile whose confirming verb gets askArgs (nil: the
+// path alone) with the path.
+func (a *App) writeFileAsk(c ochazuke.Ctx, path string, data []byte, mode writeMode, what, ask string, askArgs ochazuke.Arguments, done func(path string)) ochazuke.Result {
+	if askArgs == nil {
+		askArgs = ochazuke.Arguments{}
+	}
 	if strings.TrimSpace(path) == "" {
 		return ochazuke.Failed(errors.New("path is required"))
 	}
@@ -1439,6 +1469,7 @@ func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, mode writeMode
 		return ochazuke.Failed(fmt.Errorf("%s is the source; W (restructure.write {force: true}) overwrites it after a confirm", path))
 	}
 	overwrite := mode != writeNewFile
+	askArgs["path"] = path
 	return ochazuke.Pending(func(context.Context) (any, error) {
 		if _, err := os.Stat(path); err == nil && !overwrite {
 			return nil, errExists
@@ -1449,7 +1480,7 @@ func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, mode writeMode
 		case errors.Is(err, errExists) && ask != "":
 			// It is there: ask before replacing it.
 			noun, verb, _ := strings.Cut(ask, ".")
-			if _, err := a.r.Execute(ochazuke.Request{Noun: noun, Verb: verb, Args: ochazuke.Arguments{"path": path}}); err != nil {
+			if _, err := a.r.Execute(ochazuke.Request{Noun: noun, Verb: verb, Args: askArgs}); err != nil {
 				c.Error(err.Error())
 			}
 		case errors.Is(err, errExists):

@@ -366,6 +366,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	setHistory(r, ochazuke.HistoryFetch, "viewer.open")
 	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite")
 	setHistory(r, ochazuke.HistoryAction, "viewer.quit")
+	a.registerExportVerbs(params)
 	a.guardQuit()
 }
 
@@ -384,7 +385,16 @@ func (a *App) writeDoc(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 		return ochazuke.Failed(errors.New("no document to write: e opens a file, p pastes JSON"))
 	}
 	doc := a.Doc
-	return a.writeFile(c, ochazuke.StringArg(c.Args, "path", ""), []byte(Pretty(doc.Root)+"\n"), mode, "the document", "viewer.overwrite",
+	path := ochazuke.StringArg(c.Args, "path", "")
+	data, isJSON, err := a.encodeFor(path, doc.Root)
+	if err != nil {
+		return ochazuke.Failed(err)
+	}
+	if !isJSON {
+		// An export names no document: a document of no file stays one.
+		return a.writeFile(c, path, data, mode, "the export", "viewer.overwrite", nil)
+	}
+	return a.writeFile(c, path, data, mode, "the document", "viewer.overwrite",
 		func(path string) {
 			if a.Doc == doc && a.Path == "" {
 				a.Path, doc.Name = path, path
