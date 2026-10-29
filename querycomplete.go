@@ -62,7 +62,7 @@ func (a *App) snapshotShape() {
 	switch {
 	case a.Doc == nil || !a.r.Settings().Bool(settingCompletePaths):
 	case a.editedShown():
-		s = a.restructuredDoc().shape
+		s = a.shownDoc().shape
 	default:
 		s = a.Doc.Shape
 	}

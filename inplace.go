@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
+
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/unixsuperhero/ochazuke"
@@ -191,23 +194,17 @@ type restructured struct {
 }
 
 // restructuredDoc is the document the state makes, as w writes it,
-// parsed again so its values have their own paths.
+// parsed again so its values have their own paths. It is always current:
+// writes, exports and value edits read it. What is drawn reads shownDoc.
 func (a *App) restructuredDoc() *restructured {
 	key := mappingKey(a.Mapping())
 	if a.ed != nil && a.ed.key == key && a.ed.doc == a.Doc {
 		return &a.ed.restructured
 	}
-	out := restructured{key: key}
-	if p, err := a.plan(); err != nil {
-		out.err = err
-	} else {
-		v, orphans := p.ApplyAll(a.Doc.Root)
-		if root, err := Build([]byte(Compact(v, 0))); err != nil {
-			out.err = err
-		} else {
-			out.root, out.shape, out.orphans = root, Infer(root), orphans
-		}
-	}
+	p, err := a.plan()
+	start := time.Now()
+	out := buildRestructured(a.Doc, p, err, key)
+	a.rb.slow = time.Since(start) > rebuildOnLoop
 	a.ed = &editedCache{restructured: out, doc: a.Doc}
 	return &a.ed.restructured
 }
@@ -217,6 +214,107 @@ type editedCache struct {
 	doc *Doc
 }
 
+// buildRestructured applies a plan to doc and parses the result again:
+// the costly part of a rebuild (ApplyAll, Compact, Build, Infer). It reads
+// only its arguments, so it runs off the loop as well as on it.
+func buildRestructured(doc *Doc, p *Plan, err error, key string) restructured {
+	out := restructured{key: key}
+	if err != nil {
+		out.err = err
+		return out
+	}
+	v, orphans := p.ApplyAll(doc.Root)
+	if root, err := Build([]byte(Compact(v, 0))); err != nil {
+		out.err = err
+	} else {
+		out.root, out.shape, out.orphans = root, Infer(root), orphans
+	}
+	return out
+}
+
+// shownDoc is the restructured document to draw: the current one, or,
+// while a slow rebuild runs off the loop (rebuilder), the last one built
+// for this document, kept on screen until the new one arrives.
+func (a *App) shownDoc() *restructured {
+	if a.rb.slow && a.ed != nil && a.ed.doc == a.Doc {
+		return &a.ed.restructured
+	}
+	return a.restructuredDoc()
+}
+
+// rebuildOnLoop is the longest rebuild the loop waits for: once one takes
+// longer (a large document), the next rebuilds run off the loop.
+const rebuildOnLoop = 20 * time.Millisecond
+
+const rebuildID = "restructure-rebuild"
+
+// rebuilder rebuilds the restructured document off the loop once a
+// rebuild is slow (F7: about 200 ms on 60k items): one job slot, a newer
+// mapping cancelling the older run; a result lands only for the mapping
+// and document it was built for.
+type rebuilder struct {
+	a      *App
+	slow   bool   // the last rebuild on the loop took longer than rebuildOnLoop
+	wanted string // the mapping the running job builds
+	ticket ochazuke.Ticket
+}
+
+type rebuilt struct {
+	doc *Doc
+	restructured
+}
+
+// PendingCommand starts a rebuild when the shown document is stale.
+func (b *rebuilder) PendingCommand() tea.Cmd {
+	a := b.a
+	if !b.slow || a.Doc == nil || a.ed == nil || a.ed.doc != a.Doc {
+		return nil
+	}
+	key := mappingKey(a.Mapping())
+	if a.ed.key == key || b.wanted == key {
+		return nil
+	}
+	b.cancel()
+	b.wanted = key
+	p, err := a.plan()
+	ticket, ctx, ierr := a.r.Issue(rebuildID, "restructure.rebuild", "rebuild", ochazuke.Ctx{Runtime: a.r})
+	if ierr != nil {
+		return nil
+	}
+	b.ticket = ticket
+	doc := a.Doc
+	return func() tea.Msg {
+		if ctx.Err() != nil {
+			return ochazuke.Completion{Ticket: ticket, Err: ctx.Err()}
+		}
+		return ochazuke.Completion{Ticket: ticket, Value: rebuilt{doc: doc, restructured: buildRestructured(doc, p, err, key)}}
+	}
+}
+
+func (b *rebuilder) cancel() {
+	if b.a.r.Accepts(b.ticket) {
+		b.a.r.Settle(b.ticket, errors.New("superseded"))
+	}
+	b.wanted = ""
+}
+
+func (b *rebuilder) HandleMessage(msg tea.Msg) bool {
+	c, ok := msg.(ochazuke.Completion)
+	if !ok || c.Ticket.Owner != rebuildID {
+		return false
+	}
+	if out, ok := c.Value.(rebuilt); ok && c.Ticket == b.ticket {
+		b.wanted = ""
+		a := b.a
+		if out.doc == a.Doc && out.key == mappingKey(a.Mapping()) {
+			a.ed = &editedCache{restructured: out.restructured, doc: out.doc}
+		}
+	}
+	return true
+}
+
+func (b *rebuilder) Close() { b.cancel() }
+
 // editedShape is the restructured document's shape at the selected
 // node's new path, or why there is none.
 func (a *App) editedShape() (*Shape, string) {
@@ -224,7 +322,7 @@ func (a *App) editedShape() (*Shape, string) {
 	if !ok {
 		return nil, ""
 	}
-	d := a.restructuredDoc()
+	d := a.shownDoc()
 	if d.err != nil {
 		return nil, d.err.Error()
 	}

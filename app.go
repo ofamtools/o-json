@@ -78,6 +78,7 @@ type App struct {
 	original bool
 	note     string       // why the data panel is empty in the edited view
 	ed       *editedCache // the restructured document the edited view shows
+	rb       *rebuilder   // rebuilds it off the loop once a rebuild is slow
 
 	vedit *valueEdit // the data pane's open inline input (values.go)
 
@@ -114,6 +115,10 @@ func New() (*App, error) {
 		return nil, err
 	}
 	a.registerQueryFunctions()
+	// The rebuilder's jobs are its instance's (an instance of the
+	// restructure noun, no row or stop).
+	a.rb = &rebuilder{a: a}
+	r.Instance(rebuildID, ochazuke.Kind("restructure")).Component = a.rb
 	if err := declareSettings(r); err != nil {
 		return nil, err
 	}

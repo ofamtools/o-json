@@ -610,11 +610,16 @@ type patchStatus struct {
 
 // orphans is the indexes of the value edits the restructured document
 // skips.
-func (a *App) orphans() []int {
+func (a *App) orphans() []int { return a.orphansIn(a.restructuredDoc) }
+
+// shownOrphans is orphans as drawn: of the shown document (shownDoc).
+func (a *App) shownOrphans() []int { return a.orphansIn(a.shownDoc) }
+
+func (a *App) orphansIn(doc func() *restructured) []int {
 	if a.Doc == nil || len(a.rs.patches) == 0 {
 		return nil
 	}
-	d := a.restructuredDoc()
+	d := doc()
 	if d.err != nil {
 		out := make([]int, len(a.rs.patches))
 		for i := range out {

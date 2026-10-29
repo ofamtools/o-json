@@ -81,7 +81,7 @@ func (a *App) queryRoot() *Node {
 		return nil
 	}
 	if a.editedShown() {
-		return a.restructuredDoc().root
+		return a.shownDoc().root // the last built while a slow rebuild runs; the query runs again on the new one
 	}
 	return a.Doc.Root
 }

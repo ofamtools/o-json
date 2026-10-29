@@ -101,7 +101,7 @@ func (a *App) detailEditable() bool {
 	if len(a.trail) == 0 || !a.editedShown() {
 		return false
 	}
-	d := a.restructuredDoc()
+	d := a.shownDoc()
 	return d.err == nil && rootOf(a.trail[0]) == d.root
 }
 
@@ -120,7 +120,7 @@ func (a *App) refreshDetail() {
 	if len(a.trail) == 0 || !a.editedShown() {
 		return
 	}
-	d := a.restructuredDoc()
+	d := a.shownDoc()
 	if d.err != nil || d.root == nil || rootOf(a.trail[0]) == d.root || rootOf(a.trail[0]) == a.Doc.Root {
 		return
 	}

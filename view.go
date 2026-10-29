@@ -160,7 +160,7 @@ func (a *App) breadcrumb() string {
 	if len(a.rs.patches) > 0 && a.editable() {
 		n := len(a.rs.patches)
 		part := fmt.Sprintf("%d value edit%s", n, plural(n))
-		if o := a.orphans(); len(o) > 0 {
+		if o := a.shownOrphans(); len(o) > 0 {
 			part += fmt.Sprintf(" (%d orphaned)", len(o))
 		}
 		parts = append(parts, part)
