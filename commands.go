@@ -116,6 +116,45 @@ func textCommands(stdin io.Reader, stdout, stderr io.Writer) []oden.Command {
 			},
 		},
 		{
+			Name: "query", Summary: "run a jq query (gojq) and print each result as JSON, keys in document order where the query is a path",
+			Usage: "[--compact] FILE|- QUERY", Source: "o-json",
+			Details: "The viewer's query line runs the same engine. A path query (.items[] | .name, select(...)) prints the document's own values,\nkeys in document order; a query that builds values ({...}, map, arithmetic) prints gojq's output, whose object keys are sorted.\nAn error names its position in the query.",
+			Run: func(ctx context.Context, args []string) error {
+				fs := flag.NewFlagSet("o-json query", flag.ContinueOnError)
+				fs.SetOutput(stderr)
+				compact := fs.Bool("compact", false, "print each result on one line")
+				words, err := parseFlags(fs, args)
+				if err != nil {
+					return err
+				}
+				doc, rest, err := readArgs(words, stdin, 1)
+				if err != nil {
+					return err
+				}
+				if len(rest) == 0 {
+					return errors.New("a query is required (. is the whole document)")
+				}
+				out := queryDoc(ctx, doc.Root, rest[0])
+				if out.Err != nil {
+					if out.Pos >= 0 {
+						return fmt.Errorf("jq: %v (at column %d)", out.Err, out.Pos+1)
+					}
+					return fmt.Errorf("jq: %v", out.Err)
+				}
+				var b strings.Builder
+				for _, v := range out.Values {
+					if *compact {
+						b.WriteString(Compact(v, 0))
+					} else {
+						b.WriteString(Pretty(v))
+					}
+					b.WriteByte('\n')
+				}
+				_, err = io.WriteString(stdout, b.String())
+				return err
+			},
+		},
+		{
 			Name: "restructure", Summary: "make a new document from a mapping of shape paths, or print the mapping's jq program",
 			Usage: "FILE|- --map SPEC.json [--jq | --mapping] [--out PATH [--overwrite]]", Source: "o-json",
 			Details: `SPEC is {"map": [{"from": ".items[]", "to": ".records[]"}, {"from": ".items[].owner.name", "to": ".records[].owner"}, ...]}:

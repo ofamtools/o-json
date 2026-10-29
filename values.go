@@ -110,7 +110,7 @@ func (a *App) valueOf(inst *ochazuke.Instance) (valueAt, bool) {
 // not the raw JSON, no value input open.
 func (a *App) editableValue(focus string) (valueAt, bool) {
 	inst := a.r.Instances[focus]
-	if !a.dataEditable() || !a.editedShown() || a.Raw || a.vedit != nil || a.rowsOf(inst) != a.data {
+	if !a.dataEditable() || !a.editedShown() || a.queryShowing() || a.Raw || a.vedit != nil || a.rowsOf(inst) != a.data {
 		return valueAt{}, false
 	}
 	return a.valueOf(inst)

@@ -119,16 +119,19 @@ func (a *App) breadcrumb() string {
 			info += " optional"
 		}
 		part := s.Path + " (" + info + ")"
-		if n, ok := a.rs.tree.Selected(); ok && a.editedShown() && a.rs.meta[n.ID].from != "" && a.rs.meta[n.ID].from != s.Path {
+		if n, ok := a.rs.tree.Selected(); ok && a.editedShown() && !a.queryShowing() && a.rs.meta[n.ID].from != "" && a.rs.meta[n.ID].from != s.Path {
 			part += " ← " + a.rs.meta[n.ID].from
 		}
 		parts = append(parts, part)
-		if note := a.origin(s).DuplicateNote(); note != "" {
+		if note := a.origin(s).DuplicateNote(); note != "" && !a.queryShowing() {
 			parts = append(parts, note)
 		}
 		if n := a.dataNode(); n != nil && a.data.list.Focused() {
 			parts = append(parts, "row "+n.Path())
 		}
+	}
+	if note := a.queryNote(); note != "" {
+		parts = append(parts, note)
 	}
 	if a.Query != "" {
 		parts = append(parts, fmt.Sprintf("search %q", a.Query))

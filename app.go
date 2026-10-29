@@ -74,6 +74,8 @@ type App struct {
 	ed       *editedCache // the restructured document the edited view shows
 
 	vedit *valueEdit // the data pane's open inline input (values.go)
+
+	q queryState // the live jq query (query.go)
 }
 
 // New builds the viewer on a fresh runtime: the page with the structure
@@ -99,6 +101,9 @@ func New() (*App, error) {
 	a.registerPrompt()
 	a.registerDetail()
 	a.registerVerbs()
+	if err := a.registerQuery(); err != nil {
+		return nil, err
+	}
 	if err := declareSettings(r); err != nil {
 		return nil, err
 	}
@@ -148,6 +153,7 @@ func (a *App) Load(path string) error {
 func (a *App) setDoc(path string, doc *Doc) error {
 	a.Doc, a.Path, a.Loading, a.LoadErr = doc, path, "", nil
 	a.shown = nil
+	a.forgetQuery()
 	if page := a.r.PageOf(pageID); page != nil {
 		page.Title = doc.Name
 	}
@@ -325,6 +331,13 @@ func (a *App) selectedShape() *Shape {
 // sync points the data panel at the selected shape when it moved, or
 // when an edit made the restructured document again.
 func (a *App) sync() error {
+	if a.queryShowing() {
+		a.note = ""
+		if a.q.goodView == a.shown {
+			return nil
+		}
+		return a.show(a.q.goodView)
+	}
 	if a.editedShown() {
 		s, note := a.editedShape()
 		if s == nil {
