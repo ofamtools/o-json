@@ -66,7 +66,27 @@
     {"context": "shape/normal", "bindings": [
       {"key": "enter", "action": "outline.fold"},
       {"key": "y", "action": "shape.yank"},
-      {"key": "s", "action": "shape.send", "hint": "send"}
+      {"key": "s", "action": "shape.send", "hint": "send"},
+      {"key": "m", "action": "jq.mode", "hint": "query mode"}
+    ]},
+    {"context": "shape/query", "bindings": [
+      {"key": "m", "action": "jq.mode", "hint": "edit mode"},
+      {"key": "esc", "action": "jq.mode", "args": {"to": "edit"}, "hidden": true},
+      {"key": ".", "action": "jq.path", "hint": ". path"},
+      {"key": "|", "action": "jq.pipe", "hint": "| pipe"},
+      {"key": "]", "action": "jq.close", "hint": "] } ) out"},
+      {"key": "]", "action": "jq.iterate", "hint": "] each"},
+      {"key": "}", "action": "jq.close", "hidden": true},
+      {"key": ")", "action": "jq.close", "hidden": true},
+      {"key": "[", "action": "jq.open", "args": {"bracket": "["}, "hint": "[ { open"},
+      {"key": "{", "action": "jq.open", "args": {"bracket": "{"}, "hidden": true},
+      {"key": "(", "action": "jq.open", "args": {"bracket": "("}, "hidden": true},
+      {"key": ",", "action": "jq.comma", "hint": ", comma"},
+      {"key": "a", "action": "jq.anchor", "hint": "anchor"},
+      {"key": "backspace", "action": "jq.erase", "hint": "erase"},
+      {"key": "u", "action": "jq.undo", "hidden": true},
+      {"key": "ctrl+r", "action": "jq.redo", "hidden": true},
+      {"key": "enter", "action": "outline.fold", "hidden": true}
     ]},
     {"context": "restructure/normal", "bindings": [
       {"key": "tab", "action": "restructure.show", "hint": "other side"},
@@ -95,8 +115,37 @@
       {"key": "p", "action": "node.put", "hint": "p/P put"},
       {"key": "P", "action": "node.put", "args": {"before": true}, "hint": "put above", "hidden": true},
       {"key": "d", "action": "restructure.delete", "hint": "delete selection"},
-      {"key": "y", "action": "restructure.yank", "hint": "yank selection"}
+      {"key": "y", "action": "restructure.yank", "hint": "yank selection"},
+      {"key": "m", "action": "jq.mode", "hint": "query mode"}
     ]},
+    {"context": "node/query", "bindings": [
+      {"key": "m", "action": "jq.mode", "hint": "edit mode"},
+      {"key": "esc", "action": "jq.mode", "args": {"to": "edit"}, "hidden": true},
+      {"key": ".", "action": "jq.path", "hint": ". path"},
+      {"key": "|", "action": "jq.pipe", "hint": "| pipe"},
+      {"key": "]", "action": "jq.close", "hint": "] } ) out"},
+      {"key": "]", "action": "jq.iterate", "hint": "] each"},
+      {"key": "}", "action": "jq.close", "hidden": true},
+      {"key": ")", "action": "jq.close", "hidden": true},
+      {"key": "[", "action": "jq.open", "args": {"bracket": "["}, "hint": "[ { open"},
+      {"key": "{", "action": "jq.open", "args": {"bracket": "{"}, "hidden": true},
+      {"key": "(", "action": "jq.open", "args": {"bracket": "("}, "hidden": true},
+      {"key": ",", "action": "jq.comma", "hint": ", comma"},
+      {"key": "a", "action": "jq.anchor", "hint": "anchor"},
+      {"key": "backspace", "action": "jq.erase", "hint": "erase"},
+      {"key": "u", "action": "jq.undo", "hidden": true},
+      {"key": "ctrl+r", "action": "jq.redo", "hidden": true}
+    ]},
+    {"context": "ochazuke.outline/query", "bindings": [
+      {"key": "h", "action": "ochazuke.outline.collapse"},
+      {"key": "left", "action": "ochazuke.outline.collapse", "hidden": true},
+      {"key": "l", "action": "ochazuke.outline.expand"},
+      {"key": "right", "action": "ochazuke.outline.expand", "hidden": true}
+    ]},
+    {"context": "ochazuke.outline-row/query", "extends": "normal", "bindings": []},
+    {"context": "ochazuke.list/query", "extends": "normal", "bindings": []},
+    {"context": "viewer/query", "extends": "normal", "bindings": []},
+    {"context": "app/query", "extends": "normal", "bindings": []},
     {"context": "ochazuke.outline/normal", "bindings": [
       {"key": "o", "action": "restructure.add-key", "args": {"where": "below"}, "hint": "o/O new key"},
       {"key": "O", "action": "restructure.add-key", "args": {"where": "above"}, "hidden": true},

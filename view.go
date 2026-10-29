@@ -176,6 +176,7 @@ func (a *App) treeTitle() string {
 	if (a.Query != "" || a.Kind != "") && !a.editedShown() {
 		title += " (filtered)"
 	}
+	title += a.queryModeTitle()
 	return title
 }
 

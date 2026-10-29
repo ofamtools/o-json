@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"os"
 	"os/exec"
 	"slices"
 	"strings"
@@ -300,5 +301,131 @@ func TestQueryWrapSelection(t *testing.T) {
 	view(a)
 	if got := a.shown.Values(); len(got) != 1 || Compact(got[0], 0) != `["o-json sample",2]` {
 		t.Fatalf("results %v", a.queryState())
+	}
+}
+
+// writeDoc writes a document to a temporary file.
+func writeDoc(t *testing.T, doc string) string {
+	t.Helper()
+	p := t.TempDir() + "/doc.json"
+	if err := os.WriteFile(p, []byte(doc), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+const peopleDoc = `{"a":1,"b":"two","people":[{"name":"ann","email":"a@x"},{"name":"bob","email":"b@x"}]}`
+
+// m switches the structure pane to query mode, where jq's characters
+// build the query from the highlighted field; the edit keys stand aside
+// and m or esc brings them back.
+func TestQueryModeKeysBuildAQuery(t *testing.T) {
+	a := openQuery(t, writeDoc(t, peopleDoc))
+	press(t, a, "m")
+	if !a.queryModeOn() || !strings.Contains(view(a), "· query") {
+		t.Fatalf("m: mode %q\n%s", a.r.BaseMode(), view(a))
+	}
+	selectPath(t, a, ".people[]")
+	press(t, a, "|")
+	selectPath(t, a, ".people[].email")
+	if !strings.Contains(view(a), "· query · .email") {
+		t.Fatalf("the title does not show the path relative to the query:\n%s", line(view(a), "Structure"))
+	}
+	finish(a, Press(a.m, "."))
+	if got := a.queryText(); got != ".people[] | .email" {
+		t.Fatalf("query %q", got)
+	}
+	view(a)
+	if got := a.shown.Values(); len(got) != 2 || got[1].Value != "b@x" {
+		t.Fatalf("results %v", a.queryState())
+	}
+	// d d is an edit key: in query mode it does not delete.
+	nodes := len(a.rs.tree.Nodes())
+	press(t, a, "esc")
+	if a.queryModeOn() {
+		t.Fatal("esc stays in query mode")
+	}
+	press(t, a, "m")
+	press(t, a, "d", "d")
+	if len(a.rs.tree.Nodes()) != nodes {
+		t.Fatal("d d edited the structure in query mode")
+	}
+
+	// [ opens an array; . fills it, a comma between; ] steps out.
+	query(t, a, "")
+	selectPath(t, a, ".a")
+	press(t, a, "[", ".")
+	selectPath(t, a, ".b")
+	press(t, a, ".", "]")
+	if got := a.queryText(); got != "[.a, .b]" || a.q.in.Cursor != len(a.q.in.Text) {
+		t.Fatalf("query %q cursor %d", got, a.q.in.Cursor)
+	}
+	// { takes key: path; ] on an array iterates; backspace takes back a
+	// whole field; a anchors after a field's reference.
+	query(t, a, "")
+	press(t, a, "{")
+	selectPath(t, a, ".a")
+	press(t, a, ".")
+	if got := a.queryText(); got != "{a: .a}" {
+		t.Fatalf("object %q", got)
+	}
+	query(t, a, "")
+	selectPath(t, a, ".people")
+	press(t, a, "]", "|")
+	selectPath(t, a, ".people[].name")
+	press(t, a, ".")
+	if got := a.queryText(); got != ".people[] | .name" {
+		t.Fatalf("iterate %q", got)
+	}
+	press(t, a, "backspace")
+	if got := a.queryText(); got != ".people[] | " {
+		t.Fatalf("erase %q", got)
+	}
+	selectPath(t, a, ".people[]")
+	press(t, a, "a")
+	if a.q.in.Cursor != len(".people[]") {
+		t.Fatalf("anchor at %d", a.q.in.Cursor)
+	}
+	press(t, a, "u")
+	if got := a.queryText(); got != ".people[] | .name" {
+		t.Fatalf("undo %q", got)
+	}
+}
+
+// The path context: relative to what the query reads at the cursor,
+// chained onto a path ending there, map's argument reads each item.
+func TestQueryContext(t *testing.T) {
+	for _, c := range []struct{ text, path, want string }{
+		{"", ".people[].email", ".people[].email"},
+		{".people[] | ", ".people[].email", ".email"},
+		{".people", ".people[].email", "[].email"},
+		{".people | map(", ".people[].name", ".name"},
+		{"[.a", ".b", ", .b"},
+		{"{x: .a, ", ".b", "b: .b"},
+		{".people[] | select(", ".people[].name", ".name"},
+		{".a | ", ".b", ".b"},
+	} {
+		got := fieldTerm(jqContextAt([]rune(c.text), len([]rune(c.text))), c.path)
+		if got != c.want {
+			t.Errorf("%q + %s: %q, want %q", c.text, c.path, got, c.want)
+		}
+	}
+}
+
+// Query mode works on the original structure too, and / from it comes
+// back to it.
+func TestQueryModeOnTheOriginalAndBack(t *testing.T) {
+	a := openQuery(t, writeDoc(t, peopleDoc))
+	press(t, a, "T", "m")
+	selectPath(t, a, ".people[].name")
+	press(t, a, ".")
+	if got := a.queryText(); got != ".people[].name" {
+		t.Fatalf("query %q", got)
+	}
+	press(t, a, "/")
+	Type(a.m, " | length")
+	press(t, a, "esc")
+	if !a.queryModeOn() || a.queryText() != ".people[].name | length" {
+		t.Fatalf("back: mode %q query %q", a.r.BaseMode(), a.queryText())
 	}
 }
