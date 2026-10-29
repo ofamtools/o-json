@@ -19,6 +19,7 @@ import (
 //	field    a data panel field: open, yank
 //	entry    a detail row: open (drill in), up, yank
 //	line     a raw JSON line: yank
+//	value    a data pane value: edit, delete, add, rename, paste, yank, patches, drop (values.go)
 
 // typeCycle is the order t steps the type filter through, then off.
 var typeCycle = []Kind{KString, KNumber, KBool, KNull, KObject, KArray}
@@ -164,12 +165,13 @@ func (a *App) registerVerbs() {
 		return a.copyText(c, text, n.Path())
 	}
 	open := func(c ochazuke.Ctx) ochazuke.Result { return done(a.openDetail(nodeAt(c.Instance))) }
+	yankValue := func(c ochazuke.Ctx) ochazuke.Result { return a.yankValue(c) }
 	r.Define("item").
 		Verb("open", open, "Open the row's item in the detail as labeled fields").
-		Verb("yank", yankNode, "Copy the row's item as JSON into the registers and the system clipboard")
+		Verb("yank", yankValue, "Copy the value under the cursor into the registers and the system clipboard: the cell on a field column, the row's item as JSON on # (value.yank); p puts it with its type")
 	r.Define("field").
 		Verb("open", open, "Open the field's object or array in the detail").
-		Verb("yank", yankNode, "Copy the field's value (JSON for an object or array) into the registers and the system clipboard")
+		Verb("yank", yankValue, "Copy the field's value (JSON for an object or array) into the registers and the system clipboard (value.yank); p puts it with its type")
 	r.Define("entry").
 		Verb("open", func(c ochazuke.Ctx) ochazuke.Result { return done(a.drill(nodeAt(c.Instance))) }, "Step into the entry's object or array").
 		Verb("up", func(ochazuke.Ctx) ochazuke.Result { return done(a.up()) }, "Step back out to the containing value; at the top, close the detail").
@@ -203,8 +205,13 @@ func (a *App) rowsOf(inst *ochazuke.Instance) *rowsView {
 // loop (from o-csv). The status line names what was copied; a clipboard
 // failure is a notice, since the registers still hold the text.
 func (a *App) copyText(c ochazuke.Ctx, text, what string) ochazuke.Result {
+	return a.copyYank(c, ochazuke.Yank{Text: text}, what)
+}
+
+// copyYank is copyText for a yank with a shape (a value keeps its type).
+func (a *App) copyYank(c ochazuke.Ctx, y ochazuke.Yank, what string) ochazuke.Result {
 	register := ochazuke.StringArg(c.Args, "register", "")
-	y := ochazuke.Yank{Text: text}
+	text := y.Text
 	if err := a.r.StoreYank(y, register, false); err != nil {
 		return ochazuke.Failed(err)
 	}

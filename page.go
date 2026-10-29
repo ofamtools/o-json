@@ -90,6 +90,9 @@ type restructureState struct {
 	// startedEmpty is a restructure page that emptied the copy when it
 	// opened, with no change made since (inplace.go).
 	startedEmpty bool
+	// patches are the value edits applied after the restructure
+	// (patch.go, values.go), part of the mapping.
+	patches []Patch
 }
 
 func declareSettings(r *ochazuke.Runtime) error {
@@ -249,8 +252,14 @@ func (e edit) markBuilt() {
 	}
 }
 
-// Mapping is the page's mapping now.
-func (a *App) Mapping() *Mapping { return mappingOf(a.rs.tree.Nodes(), a.rs.meta) }
+// Mapping is the page's mapping now, with the value edits.
+func (a *App) Mapping() *Mapping {
+	m := mappingOf(a.rs.tree.Nodes(), a.rs.meta)
+	if len(a.rs.patches) > 0 {
+		m.Patches = slices.Clone(a.rs.patches)
+	}
+	return m
+}
 
 // plan checks the page's mapping against the document.
 func (a *App) plan() (*Plan, error) {
@@ -783,21 +792,29 @@ func (a *App) send(e edit, shapes []*Shape) (edit, int) {
 }
 
 // commit makes e the tree's state and puts it on the tree's undo stack,
-// with focus the node selected after undo or redo.
+// with focus the node selected after undo or redo. The value edits stay
+// as they are.
 func (a *App) commit(label, focus string, e edit) error {
+	return a.commitWith(label, focus, e, a.rs.patches)
+}
+
+// commitWith is commit that also makes patches the value edits: one
+// step, so u undoes a structure edit and a value edit alike, in order.
+func (a *App) commitWith(label, focus string, e edit, patches []Patch) error {
 	a.rs.startedEmpty = false
-	before := a.current()
+	before, was := a.current(), slices.Clone(a.rs.patches)
 	e.markBuilt()
-	set := func(to edit) func() error {
+	patches = slices.Clone(patches)
+	set := func(to edit, p []Patch) func() error {
 		return func() error {
-			a.rs.meta, a.rs.dirty = maps.Clone(to.meta), true
+			a.rs.meta, a.rs.dirty, a.rs.patches = maps.Clone(to.meta), true, slices.Clone(p)
 			return a.rs.tree.SetNodes(to.nodes)
 		}
 	}
-	if err := set(e)(); err != nil {
+	if err := set(e, patches)(); err != nil {
 		return err
 	}
-	return a.rs.tree.Record(ochazuke.TreeAction{ID: focus, Label: label, Undo: set(before), Redo: set(e)})
+	return a.rs.tree.Record(ochazuke.TreeAction{ID: focus, Label: label, Undo: set(before, was), Redo: set(e, patches)})
 }
 
 // decorate gives every restructure node its cells (key, type, from) after

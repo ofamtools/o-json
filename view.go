@@ -29,6 +29,13 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if !a.editedShown() && a.sideOf(r.Focus) == rsTreeID {
 		_ = a.tree.Focus() // the edited structure is not shown (structure.editable went off)
 	}
+	if a.vedit != nil && r.Focus != valueInputID {
+		// The focus left the inline input (a click, a page): its text is
+		// the edit, as enter would make it.
+		if err := a.accept(); err != nil {
+			a.LoadErr = err
+		}
+	}
 	if err := a.sync(); err != nil {
 		a.LoadErr = err
 	}
@@ -42,7 +49,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	treeFocused := a.tree.List().Focused() || a.rs.tree.List().Focused()
 	// Under a modal the page is drawn with the focus it opened over, so
 	// the panel the modal came from keeps its border.
-	dataFocused := a.data.list.Focused()
+	dataFocused := a.data.list.Focused() || a.vedit != nil
 	var left, right ochazuke.Block
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth
@@ -62,10 +69,12 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	cw, ch := ochazuke.PanelContentSize(lw, lh)
 	left = l.PanelBlock(a.treeTitle(), ochazuke.Text(a.treeBody(cw, ch)), lw, lh, treeFocused)
 	cw, ch = ochazuke.PanelContentSize(rw, rh)
-	right = l.PanelBlock(a.dataTitle(), ochazuke.Text(a.dataBody(cw, ch)), rw, rh, dataFocused)
+	right = l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), rw, rh, dataFocused)
 	var body string
+	cursor := right.Offset(lw+1, 1)
 	if stacked {
 		body = left.Text + "\n" + right.Text
+		cursor = right.Offset(0, 1+lh)
 	} else {
 		lr, rr := strings.Split(left.Text, "\n"), strings.Split(right.Text, "\n")
 		rows := make([]string, bh)
@@ -74,7 +83,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 		}
 		body = strings.Join(rows, "\n")
 	}
-	return ochazuke.Text(crumb + "\n" + body)
+	return cursor.WithText(crumb + "\n" + body)
 }
 
 func at(rows []string, i int) string {
@@ -133,6 +142,14 @@ func (a *App) breadcrumb() string {
 	if a.note != "" && a.editedShown() {
 		parts = append(parts, a.note)
 	}
+	if len(a.rs.patches) > 0 && a.editable() {
+		n := len(a.rs.patches)
+		part := fmt.Sprintf("%d value edit%s", n, plural(n))
+		if o := a.orphans(); len(o) > 0 {
+			part += fmt.Sprintf(" (%d orphaned)", len(o))
+		}
+		parts = append(parts, part)
+	}
 	return strings.Join(parts, "  ·  ")
 }
 
@@ -180,6 +197,16 @@ func (a *App) dataTitle() string {
 		return "Fields " + s.Path
 	}
 	return "Value " + s.Path
+}
+
+// dataBlock is the data panel's body, with the inline input of a value
+// edit (values.go) drawn on its row and carrying the cursor.
+func (a *App) dataBlock(w, h int) ochazuke.Block {
+	body := a.dataBody(w, h)
+	if a.vedit == nil || a.r.Instances[valueInputID] == nil {
+		return ochazuke.Text(body)
+	}
+	return a.inputBlock(body, w)
 }
 
 func (a *App) dataBody(w, h int) string {

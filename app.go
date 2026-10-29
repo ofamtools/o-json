@@ -72,6 +72,8 @@ type App struct {
 	original bool
 	note     string       // why the data panel is empty in the edited view
 	ed       *editedCache // the restructured document the edited view shows
+
+	vedit *valueEdit // the data pane's open inline input (values.go)
 }
 
 // New builds the viewer on a fresh runtime: the page with the structure
@@ -106,6 +108,9 @@ func New() (*App, error) {
 	if err := declareEditSettings(r); err != nil {
 		return nil, err
 	}
+	if err := declareValueSettings(r); err != nil {
+		return nil, err
+	}
 	page, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID))
 	if err != nil {
 		return nil, err
@@ -114,6 +119,7 @@ func New() (*App, error) {
 	if err := a.registerRestructure(); err != nil {
 		return nil, err
 	}
+	a.registerValueVerbs()
 	a.placeTree(pageID)
 	if err := a.bind(); err != nil {
 		return nil, err
@@ -342,22 +348,38 @@ func (a *App) sync() error {
 // show fills the data panel with a shape's values: one object as labeled
 // fields, one array or many values as a table, one scalar as is; with Raw,
 // the values as indented JSON lines.
+//
+// The same path shown again (a value edit, an undo) keeps the selected
+// row and column.
 func (a *App) show(s *Shape) error {
+	sel, col := 0, 0
+	if prev := a.shown; prev != nil && prev.Path == s.Path && a.lines == nil && !a.Raw {
+		sel, col = a.data.Selected(), a.data.list.Column()
+	}
 	a.shown, a.tab, a.fields, a.lines, a.scalar = s, nil, nil, nil, nil
 	values := s.Values()
+	set := func(src rowSource) error {
+		if err := a.data.set(src, sel); err != nil {
+			return err
+		}
+		if col > 0 {
+			a.data.list.SetColumn(col)
+		}
+		return nil
+	}
 	switch {
 	case a.Raw:
 		a.lines = rawLines(values, len(values) != 1)
 		return a.data.set(linesSource(a.lines), 0)
 	case len(values) == 1 && values[0].Kind == KObject:
 		a.fields = values[0]
-		return a.data.set(fieldsSource(values[0], "field"), 0)
+		return set(fieldsSource(values[0], "field"))
 	case len(values) == 1 && !values[0].IsContainer():
 		a.scalar = values[0]
 		return a.data.set(rowSource{}, 0)
 	}
 	a.tab = NewTable(s.Path, values, len(values) != 1)
-	return a.data.set(tableSource(a.tab), 0)
+	return set(tableSource(a.tab))
 }
 
 // tableSource is a table as rows: "#" then the columns, optional titles
@@ -485,6 +507,12 @@ func (a *App) state() map[string]any {
 	if a.editable() {
 		out["view"] = a.shownName()
 		out["unsaved"] = a.unsaved()
+	}
+	if len(a.rs.patches) > 0 {
+		out["valueEdits"] = len(a.rs.patches)
+		if o := a.orphans(); len(o) > 0 {
+			out["orphaned"] = len(o)
+		}
 	}
 	return out
 }

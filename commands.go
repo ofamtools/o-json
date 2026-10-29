@@ -121,7 +121,9 @@ func textCommands(stdin io.Reader, stdout, stderr io.Writer) []oden.Command {
 			Details: `SPEC is {"map": [{"from": ".items[]", "to": ".records[]"}, {"from": ".items[].owner.name", "to": ".records[].owner"}, ...]}:
 from is a structure path, to the path in the new document; an entry without from is a new object, to null drops from.
 An optional field is copied only where it is present. --jq prints a jq program that does the same and never fails on this
-shape; --mapping prints the mapping with every shape it leaves out as a drop. Output goes to stdout, or with --out to a new
+shape; --mapping prints the mapping with every shape it leaves out as a drop. "patches": [{"op": "set"|"delete"|"add"|"rename",
+"path": ".records[1].name", "value": V, "key": K, "after": K}] edits single values of the result after the restructure; a patch
+whose path is not there is skipped (orphaned), and --jq applies the same steps. Output goes to stdout, or with --out to a new
 file; an existing file (the source among them) is replaced only with --overwrite.`,
 			Run: func(_ context.Context, args []string) error {
 				fs := flag.NewFlagSet("o-json restructure", flag.ContinueOnError)

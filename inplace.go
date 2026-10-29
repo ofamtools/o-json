@@ -94,12 +94,13 @@ func (a *App) identity() edit {
 func (a *App) startState() error {
 	a.rs.startedEmpty = false
 	if !a.editable() {
+		a.rs.patches = nil
 		a.rs.base = mappingKey(&Mapping{Map: []MapEntry{}})
 		return nil
 	}
 	a.original = false
 	e := a.identity()
-	if err := a.commit("open", rsRootID, e); err != nil {
+	if err := a.commitWith("open", rsRootID, e, nil); err != nil {
 		return err
 	}
 	a.rs.base, a.rs.saved = mappingKey(a.Mapping()), ""
@@ -171,10 +172,11 @@ func (a *App) openedRestructure() {
 // restructured is the restructured document the edited view shows,
 // built again when the mapping changes.
 type restructured struct {
-	key   string
-	root  *Node
-	shape *Shape
-	err   error
+	key     string
+	root    *Node
+	shape   *Shape
+	err     error
+	orphans []int // the value edits skipped (patch.go)
 }
 
 // restructuredDoc is the document the state makes, as w writes it,
@@ -187,10 +189,13 @@ func (a *App) restructuredDoc() *restructured {
 	out := restructured{key: key}
 	if p, err := a.plan(); err != nil {
 		out.err = err
-	} else if root, err := Build([]byte(Compact(p.Apply(a.Doc.Root), 0))); err != nil {
-		out.err = err
 	} else {
-		out.root, out.shape = root, Infer(root)
+		v, orphans := p.ApplyAll(a.Doc.Root)
+		if root, err := Build([]byte(Compact(v, 0))); err != nil {
+			out.err = err
+		} else {
+			out.root, out.shape, out.orphans = root, Infer(root), orphans
+		}
 	}
 	a.ed = &editedCache{restructured: out, doc: a.Doc}
 	return &a.ed.restructured

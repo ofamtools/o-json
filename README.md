@@ -116,6 +116,21 @@ A mapping is `{"map": [entries]}` and an entry is `{"from": PATH, "to": PATH}`. 
 {"v": .version, "records": [.items[] | {"id": .id, "info": ({"name": .name} + (if has("note") then {"note": .note} else {} end))} + (if has("size") then {"size": .size} else {} end) + (if (.owner | type == "object") then {"owner": .owner.name} else {} end) + {"contact": (if (.owner | type == "object" and has("email")) then {"email": .owner.email} else {} end), "tag_names": [select(has("tags")) | .tags[]?.t]}], "all_tags": [.items[] | select(has("tags")) | .tags[]?], "names": [.items[].name]}
 ```
 
+**Value patches.** A mapping may end with `"patches": [...]`, single-value edits applied after the restructure, in order, each at a concrete path of the restructured document (indexes, no `[]`). The viewer's data pane makes them (below), and `--map` reproduces them:
+
+```json
+{"map": [...],
+"patches": [
+  {"op": "set", "path": ".records[1].owner", "value": "bo"},
+  {"op": "delete", "path": ".records[3]"},
+  {"op": "add", "path": ".records[0].nick", "value": "al", "after": "id"},
+  {"op": "add", "path": ".all_tags[0]", "value": "first"},
+  {"op": "rename", "path": ".records[2].id", "key": "key"}
+]}
+```
+
+`set` replaces a value (`"path": "."` the whole document); `delete` removes a field or an item; `add` adds a key the object lacks (after the key `after`, else last) or inserts an item at an index (at most the array's length); `rename` renames one key in that one object. A patch applies only where its target is there: every step of its path (for `add`, the container, without that key); a `rename` onto a key the object has is not there either. A patch whose target is not there is **orphaned**: kept, skipped, never an error, and it applies again once its path is back. `--jq` appends each patch as a guarded `setpath` / `delpaths` step after the restructure, testing the same thing, so the program's output equals the Go result.
+
 `--mapping` prints the mapping with every shape it leaves out added as a drop (`{"from": ".items[].archived", "to": null}`), so it reads as the whole story of the source; the output is itself a mapping, one entry per line.
 
 A key an object repeats is read as jq reads it: the last value, at the first one's position. The Go result, the jq program, the viewer and `table` therefore agree.
@@ -141,12 +156,13 @@ dee
 
 ## The viewer
 
-The viewer has a breadcrumb line and then two panels. The breadcrumb shows the file (followed by `[+]`, as in vim, while the structure has edits no write saved), the selected path with its types and presence (and `← from` for a node that moved), the selected row's own path when the data panel holds the focus, and the active filters.
+The viewer has a breadcrumb line and then two panels. The breadcrumb shows the file (followed by `[+]`, as in vim, while the structure has edits no write saved), the selected path with its types and presence (and `← from` for a node that moved), the selected row's own path when the data panel holds the focus, the active filters, and the value edits (`2 value edits (1 orphaned)`).
 
 - **Left: the structure, edited in place.** The structure pane is the restructure editor: it opens as a copy of the document's shape (`Structure · edited`), every shape a node mapped to itself, so the output is the input. Every key of the restructure page's tree works here (below): `d d` / `y y` / `p` / `P`, `> >` / `g >` / `> j` / `> k` / `< <`, `S`, `t`, `r`, `o` / `O` / `a`, `V` selections, `u` / `ctrl+r`. Each node keeps the shape path it came from (the `from` column), wherever it moves. Nothing is written until `w`: `w` (`restructure.write {path}`) writes the restructured document to a new file, an existing one asks first, and the source is never written; `W` replaces an existing file, and the source after one confirm. A shape whose values mix types (an object in some items, `null` in others) is one node that copies its values, so the copy never changes them; an object with more than 200 keys likewise.
 - **`T` flips original and edited** (`restructure.show`): the structure pane shows the original structure tree (`Structure · original`), read-only, one row per path with its types and count (an optional field's name ends in `?`), and the data pane the original document; `T` again goes back to the edited one, on the same shape. The search and the type filter (`/`, `n`, `N`, `t`, `esc`) and `p` paste work on the original; on the edited tree `/` filters its rows, `t` turns a key into an array and `p` puts nodes. A structure with more than 150 paths opens collapsed below the second level, and an object with more than 200 distinct keys (a map) lists the first 200 and a `… N more fields` row.
 - **The setting `structure.editable`** (default on) off keeps the viewer read-only, as it was: the original tree only, no `T`, and the restructure page (`M`) alone edits. It takes effect on the next document.
 - **Right: the selected path's data**, from the edited document while the edited structure is shown: as a node moves, the data moves with it (the restructured document, as `w` would write it), and the focused node shows its restructured value. One array, or the values of a `[]` path, is a table with a `#` column, columns in frequency order and optional ones last. One object is labeled `field  type  value` rows, and one scalar is shown as is. Column widths come from the first 2,000 rows, so they hold still while you scroll. On a narrow screen the widest columns narrow first, and after that columns drop from the right, so the optional columns go first. Only the rows on screen are in the table, so a 100,000-row array costs one screen per key.
+- **Value edits** (setting `data.editable`, default on): in the edited view the data pane edits single values, as a second layer of **value patches** applied after the restructure (the structure edits stay shape-level, for every item). `r` or `i` (`value.edit`) opens an inline input on the row with the value selected (`rename.select`), so typing replaces it; `enter` or `esc` sets it, its type read from the text: a number, `true`/`false`, `null`, an object or array in JSON, `"…"` to force a string (`"42"`), anything else the text as a string; the input's prefix shows the type it reads as, and a string that would read as another type opens quoted. `d d` (`value.delete`) deletes the field or item; `o` (`value.add`) adds one after it: in an object its key first (the `restructure.new-key` placeholder selected), then its value (`null` selected), in an array an item; `K` (`value.rename`) renames the key in that one object; `y` copies the value with its type and `p` (`value.paste`) puts the register's value over this one. In a table the value is the cell under the cursor (a cell the row lacks is added by `r` and `p`); on the `#` column it is the row. Each edit is one undo step on the restructure's stack (`u` / `ctrl+r` from the data pane too), nothing is written until `w`, and `[+]` covers them. A value edit names a concrete path of the restructured document (`.items[1].name`). A later structure edit keeps it while its path is there; one that removes or renames the path **orphans** it: kept, skipped (not applied), counted on the breadcrumb (`2 value edits (1 orphaned)`) and listed by `: value patches` with `orphaned: true`; it applies again once the path is back (`u`). `: value drop {index}` forgets one. The mapping carries them as `"patches"` (above), so `w`, `restructure.jq`, `restructure.export-map` and `o-json restructure --map` all give what the data pane shows. Off, the data pane is read-only.
 - **Detail**: `enter` on a table row, or on a field that holds an object or an array, opens it in a modal as labeled rows. `enter` (or `l`) on a nested object or array steps into it, and `h` or `backspace` steps back out.
 
 The file is read off the event loop (`viewer.open`, and `viewer.load` reads it again), and the screen says `loading …` until it is done. A parse error gives the line and column. The panels sit side by side from 60 columns up and stack below that. `>` and `<` move the divider (the tree's width, or its height when stacked) and `=` puts it back; the divider is remembered in `~/.local/state/o-json/panes.json`.
@@ -185,10 +201,16 @@ The viewer holds one document, like a vim buffer.
 | `t` | tree, data (original) | type filter: string, number, bool, null, object, array, then off |
 | `esc` | tree, data (original) | clear the search and the type filter |
 | `v` | tree, data | show the selected path's values as indented JSON (toggle; cut at 4 MB) |
-| `y` | anywhere | copy: the path on the tree, the row or value as JSON in the data and the detail. The copy goes to the ochazuke registers (`"a y` names one) and to the system clipboard (pbcopy, wl-copy, xclip or xsel, whichever is on PATH). The status line says what was copied; a clipboard tool that fails is a footer notice, and the registers still hold the copy. `.` copies again at the focus (`y j .` copies the next row) |
+| `y` | anywhere | copy: the path on the tree, the value under the cursor in the data (a table's cell on a field column, the row on `#`) and the detail, as JSON for an object or array. The copy goes to the ochazuke registers (`"a y` names one) and to the system clipboard (pbcopy, wl-copy, xclip or xsel, whichever is on PATH). The status line says what was copied; a clipboard tool that fails is a footer notice, and the registers still hold the copy. `.` copies again at the focus (`y j .` copies the next row) |
 | `R` | tree, data | read the file again |
 | `e` | tree, data | open a file (args form; suggestions: recent files, then the current folder) |
-| `p` | tree, data (original) | paste JSON from the clipboard into the buffer (on the edited tree `p` puts nodes) |
+| `p` | tree, data (original) | paste JSON from the clipboard into the buffer (on the edited tree `p` puts nodes, in the edited data pane a value) |
+| `r`, `i` | data (edited) | edit the value in place: inline input, value selected; `enter` or `esc` sets it, the type read from the text (`"…"` forces a string) |
+| `d d` | data (edited) | delete the field or item (a table cell: that field of that row) |
+| `o` | data (edited) | add a key (name, then value) or an item after this one |
+| `K` | data (edited) | rename this key in this one object |
+| `p` | data (edited) | put the register's value over this one (`y` yanked it with its type) |
+| `u` / `ctrl+r` | data (edited) | undo / redo the last edit (value or structure) |
 | `w` / `W` | tree, data (edited) | write the restructured document to a new file / replacing a file, the source after one confirm |
 | `w` | tree, data (original) | write the shown document to a new file |
 | node keys | tree (edited) | as on the restructure page's restructured tree (below) |

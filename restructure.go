@@ -85,9 +85,11 @@ func (e *MapEntry) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Mapping is a restructure spec: {"map": [entries]}.
+// Mapping is a restructure spec: {"map": [entries]}, and the value
+// patches applied after it, {"patches": [...]} (patch.go).
 type Mapping struct {
-	Map []MapEntry `json:"map"`
+	Map     []MapEntry `json:"map"`
+	Patches []Patch    `json:"patches,omitempty"`
 }
 
 // ReadMapping parses a mapping file's bytes.
@@ -96,7 +98,7 @@ func ReadMapping(data []byte) (*Mapping, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&m); err != nil {
-		return nil, fmt.Errorf(`mapping: %w (a mapping is {"map": [{"from": PATH, "to": PATH|null}]})`, err)
+		return nil, fmt.Errorf(`mapping: %w (a mapping is {"map": [{"from": PATH, "to": PATH|null}], "patches": [{"op": "set"|"delete"|"add"|"rename", "path": PATH, ...}]})`, err)
 	}
 	return &m, nil
 }
@@ -139,6 +141,9 @@ func NewPlan(m *Mapping, shape *Shape) (*Plan, error) {
 	}
 	if !p.root.declared && p.root.leaf() {
 		return nil, errors.New("the mapping maps nothing (every entry drops)")
+	}
+	if err := checkPatches(m.Patches); err != nil {
+		return nil, err
 	}
 	if err := p.check(p.root, nil, shape); err != nil {
 		return nil, err
@@ -277,13 +282,21 @@ func shapesAlong(from *Shape, steps []pathStep) []*Shape {
 	return out
 }
 
-// Apply builds the new document from a document.
+// Apply builds the new document from a document: the restructure, then
+// the value patches.
 func (p *Plan) Apply(root *Node) *Node {
+	out, _ := p.ApplyAll(root)
+	return out
+}
+
+// ApplyAll is Apply and the patches it skipped, by index (orphans: their
+// target is not in the restructured document).
+func (p *Plan) ApplyAll(root *Node) (*Node, []int) {
 	v, ok := p.value(p.root, root)
 	if !ok {
-		return &Node{Kind: KNull, Value: "null"}
+		v = &Node{Kind: KNull, Value: "null"}
 	}
-	return v
+	return applyPatches(v, p.mapping.Patches)
 }
 
 // value is t's value with ctx as the context, and whether t is present.
@@ -355,12 +368,23 @@ func rekey(n *Node, key string) *Node {
 // test where the values may be objects), an optional field is copied
 // under "if has(k)", and a step into a value that may not be an object
 // tests its type first.
+//
+// The value patches follow as setpath / delpaths steps, each testing its
+// target first (patch.go), so the program's output is Apply's.
 func (p *Plan) JQ() string {
 	expr := p.jqValue(p.root)
 	if p.root.hasFrom {
 		if cond := jqCond(p.root.rel, p.root.shapes); cond != "" {
 			expr = "if " + cond + " then " + expr + " else null end"
 		}
+	}
+	steps, uses := patchesJQ(p.mapping.Patches)
+	if steps == "" {
+		return expr + "\n"
+	}
+	expr = "(" + expr + ")" + steps
+	if uses {
+		expr = jqHasPath + " " + expr
 	}
 	return expr + "\n"
 }
@@ -529,7 +553,7 @@ func jqStream(steps []pathStep, shapes []*Shape) string {
 // story of the source. A shape counts as kept when an entry maps it or a
 // path under it, or when it is inside a value an entry copies whole.
 func (p *Plan) Complete() *Mapping {
-	out := &Mapping{Map: slices.Clone(p.mapping.Map)}
+	out := &Mapping{Map: slices.Clone(p.mapping.Map), Patches: slices.Clone(p.mapping.Patches)}
 	kept, listed := map[*Shape]bool{}, map[*Shape]bool{}
 	for _, e := range p.mapping.Map {
 		if e.From == "" {
@@ -577,7 +601,8 @@ func (p *Plan) Complete() *Mapping {
 
 // FormatMapping writes a mapping one entry per line, as the family's row
 // files are: {"map": [, then each {"from": …, "to": …} on its own line
-// (no "from" on a wrapper, "to": null on a drop), then ]}.
+// (no "from" on a wrapper, "to": null on a drop), then ]}; with value
+// patches, "patches": [ follows with one patch per line.
 func FormatMapping(m *Mapping) ([]byte, error) {
 	str := func(v string) string {
 		var b bytes.Buffer
@@ -600,6 +625,18 @@ func FormatMapping(m *Mapping) ([]byte, error) {
 		fields = append(fields, `"to": `+to)
 		b.WriteString("  {" + strings.Join(fields, ", ") + "}")
 		if i < len(m.Map)-1 {
+			b.WriteString(",")
+		}
+		b.WriteString("\n")
+	}
+	if len(m.Patches) == 0 {
+		b.WriteString("]}\n")
+		return []byte(b.String()), nil
+	}
+	b.WriteString("],\n\"patches\": [\n")
+	for i, p := range m.Patches {
+		b.WriteString("  " + formatPatch(p, str))
+		if i < len(m.Patches)-1 {
 			b.WriteString(",")
 		}
 		b.WriteString("\n")

@@ -157,9 +157,9 @@ func (a *App) reset() error {
 	if err := a.setOriginal(); err != nil {
 		return err
 	}
-	if len(a.rs.tree.Nodes()) > 1 || len(a.rs.meta) > 0 {
+	if len(a.rs.tree.Nodes()) > 1 || len(a.rs.meta) > 0 || len(a.rs.patches) > 0 {
 		root := []ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}
-		if err := a.commit("new document", rsRootID, edit{nodes: root, meta: map[string]nodeMeta{}}); err != nil {
+		if err := a.commitWith("new document", rsRootID, edit{nodes: root, meta: map[string]nodeMeta{}}, nil); err != nil {
 			return err
 		}
 	}
