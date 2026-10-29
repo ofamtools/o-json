@@ -53,6 +53,11 @@ type queryState struct {
 	good     *jqOut // the latest answer with results, shown while the query is not empty
 	goodView *Shape // good's results as the data pane shows them
 	running  bool   // a run of the current query has not answered
+
+	toks     []jqTok // the query's tokens (queryTokens), for toksFor
+	toksFor  string
+	from     string // the focus / came from, where esc returns
+	fromMode string // and its mode (query mode stays on)
 }
 
 // queryOn reports the query line (the query.line setting).
@@ -216,6 +221,10 @@ func (a *App) registerQuery() error {
 	a.q.run = &jqRunner{a: a, Debounce: jqDebounce}
 	r.Instance(jqRunID, ochazuke.Kind("jq")).Component = a.q.run
 	r.DefineGuard("query-line", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return a.queryOn() && a.Doc != nil })
+	r.DefineGuard("query-focused", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool { return ev.Focus == jqFieldID })
+	r.DefineGuard("query-selecting", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		return ev.Focus == jqFieldID && strings.HasPrefix(a.q.in.Mode, "visual")
+	})
 	r.Define("jq").
 		Verb("set", func(c ochazuke.Ctx) ochazuke.Result {
 			if err := a.setQuery(ochazuke.StringArg(c.Args, "query", "")); err != nil {
@@ -236,11 +245,24 @@ func (a *App) registerQuery() error {
 			}
 			return a.copyText(c, q, "the query")
 		}, "Copy the jq query into the registers and the system clipboard").When("query-line").
+		Verb("focus", func(c ochazuke.Ctx) ochazuke.Result {
+			return a.queryDone(a.focusQuery())
+		}, "Focus the jq query line, typing at its end (/); esc goes back where it came from, the query kept").When("query-line").
+		Verb("leave", func(c ochazuke.Ctx) ochazuke.Result {
+			return a.queryDone(a.leaveQuery())
+		}, "Leave the jq query line for where / came from (the structure pane), the query kept").When("query-focused").
+		Verb("wrap", func(c ochazuke.Ctx) ochazuke.Result {
+			return a.queryDone(a.wrapSelection(ochazuke.StringArg(c.Args, "open", "[")))
+		}, "Wrap the query line's visual selection in brackets: [ ] (collect), { } (an object) or ( ) (group), and go on typing after it").When("query-selecting").
 		Verb("state", func(ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.queryState()) }, "The jq query, its results' count, the error and where it points").Fetch()
-	op := r.Operations[r.CanonicalKey("jq.set")]
-	op.Parameters = map[string]ochazuke.Parameter{"query": {Type: "string", Description: "the jq query; empty clears it"}}
-	r.Operations[r.CanonicalKey("jq.set")] = op
-	setHistory(r, ochazuke.HistoryAction, "jq.set", "jq.clear")
+	params := func(key string, p map[string]ochazuke.Parameter) {
+		op := r.Operations[r.CanonicalKey(key)]
+		op.Parameters = p
+		r.Operations[r.CanonicalKey(key)] = op
+	}
+	params("jq.set", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "the jq query; empty clears it"}})
+	params("jq.wrap", map[string]ochazuke.Parameter{"open": {Type: "string", Enum: []string{"[", "{", "("}, Description: "the opening bracket; its pair closes"}})
+	setHistory(r, ochazuke.HistoryAction, "jq.set", "jq.clear", "jq.focus", "jq.leave", "jq.wrap")
 	setHistory(r, ochazuke.HistoryChange, "jq.yank")
 	return nil
 }
@@ -276,6 +298,69 @@ func (a *App) queryNote() string {
 		note += " (running…)"
 	}
 	return note
+}
+
+func (a *App) queryDone(err error) ochazuke.Result {
+	if err != nil {
+		return ochazuke.Failed(err)
+	}
+	return ochazuke.Done(a.queryState())
+}
+
+// focusQuery focuses the query line in insert, the cursor at the end,
+// remembering where the focus and the mode were for leaveQuery.
+func (a *App) focusQuery() error {
+	if a.r.Focus != jqFieldID {
+		a.q.from, a.q.fromMode = a.r.Focus, a.r.BaseMode()
+	}
+	if err := a.r.SetFocus(jqFieldID); err != nil {
+		return err
+	}
+	if err := a.r.SetMode("insert"); err != nil {
+		return err
+	}
+	a.q.in.Cursor = len(a.q.in.Text)
+	return nil
+}
+
+// leaveQuery goes back where / came from (in the mode it was in), else to
+// the structure pane shown.
+func (a *App) leaveQuery() error {
+	if a.r.SetFocus(a.q.from) != nil {
+		t := a.tree
+		if a.editedShown() {
+			t = a.rs.tree
+		}
+		a.q.fromMode = ""
+		if err := t.Focus(); err != nil {
+			return err
+		}
+	}
+	if m := a.q.fromMode; m != "" && m != "normal" && a.r.Modes[m] {
+		return a.r.SetMode(m)
+	}
+	return nil
+}
+
+// wrapSelection puts the visual selection between open and its pair, as
+// one edit, and goes on typing after it.
+func (a *App) wrapSelection(open string) error {
+	pairs := map[string]string{"[": "]", "{": "}", "(": ")"}
+	cls, ok := pairs[open]
+	if !ok {
+		return fmt.Errorf("no bracket %q: [, { or (", open)
+	}
+	in := a.q.in
+	lo, hi := min(in.Anchor, in.Cursor), min(max(in.Anchor, in.Cursor)+1, len(in.Text))
+	inner := string(in.Text[lo:hi])
+	if err := in.Replace(lo, hi, open+inner+cls); err != nil {
+		return err
+	}
+	if err := a.r.SetMode("insert"); err != nil {
+		return err
+	}
+	in.Cursor = lo + len([]rune(open+inner+cls))
+	return nil
 }
 
 // queryState is the query as jq.state answers it.

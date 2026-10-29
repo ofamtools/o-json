@@ -204,3 +204,101 @@ func mustRoot(t *testing.T) *Node {
 }
 
 var _ = ochazuke.Done
+
+// / focuses the query line, typing at its end; esc goes back to the
+// structure pane with the query kept. The line is no stop of tab's ring.
+func TestQuerySlashFocusesAndEscLeaves(t *testing.T) {
+	a := openQuery(t, sample)
+	from := a.r.Focus
+	press(t, a, "/")
+	if a.r.Focus != jqFieldID || a.q.in.Mode != "insert" {
+		t.Fatalf("/ focus %q mode %q", a.r.Focus, a.q.in.Mode)
+	}
+	finish(a, Type(a.m, ".name"))
+	if got := a.queryText(); got != ".name" {
+		t.Fatalf("typed %q", got)
+	}
+	if !a.queryShowing() || !strings.Contains(view(a), "Value jq .name") {
+		t.Fatal("the results do not show while typing")
+	}
+	press(t, a, "esc")
+	if a.r.Focus != from || a.queryText() != ".name" {
+		t.Fatalf("esc: focus %q (want %q), query %q", a.r.Focus, from, a.queryText())
+	}
+	for range 4 {
+		press(t, a, "tab")
+		if a.r.Focus == jqFieldID {
+			t.Fatal("tab reached the query line")
+		}
+	}
+	// enter leaves too; / again types at the end.
+	press(t, a, "/")
+	Type(a.m, " | length")
+	press(t, a, "enter")
+	if a.r.Focus == jqFieldID || a.queryText() != ".name | length" {
+		t.Fatalf("enter: focus %q query %q", a.r.Focus, a.queryText())
+	}
+}
+
+// The query line draws field references as chips (the select style,
+// reverse video): dimmed while the line is not focused, bright while it
+// is; structure characters and names are plain.
+func TestQueryChipsRender(t *testing.T) {
+	q := `.items[] | select(.id > 1) | {n: .name, "k": ."odd key"[0]}`
+	var chips []string
+	for _, tok := range jqTokens([]rune(q)) {
+		if tok.Kind == tokPath {
+			chips = append(chips, q[tok.Start:tok.End])
+		}
+	}
+	if want := []string{".items[]", ".id", ".name", `."odd key"[0]`}; !slices.Equal(chips, want) {
+		t.Fatalf("chips %q, want %q", chips, want)
+	}
+	a := openQuery(t, sample)
+	query(t, a, ".items[] | .name")
+	if l := line(view(a), "jq .items[]"); !strings.Contains(l, "jq .items[] | .name") {
+		t.Fatalf("query line %q", l)
+	}
+	raw := a.m.View().Content
+	chip := func(focused bool) string {
+		if focused {
+			return "\x1b[7m.items[]\x1b[m"
+		}
+		return "\x1b[7;2m.items[]\x1b[m"
+	}
+	if !strings.Contains(raw, chip(false)) || strings.Contains(raw, chip(true)) {
+		t.Fatalf("an unfocused chip is not dimmed reverse video:\n%q", line(raw, "items[]"))
+	}
+	if strings.Contains(raw, "\x1b[7;2m|") || strings.Contains(raw, "\x1b[7m|") {
+		t.Fatal("a pipe is drawn as a chip")
+	}
+	press(t, a, "/")
+	if raw := a.m.View().Content; !strings.Contains(raw, chip(true)) {
+		t.Fatalf("a focused chip is not bright:\n%q", line(raw, "items[]"))
+	}
+	// An error points at its column on the line below.
+	press(t, a, "esc")
+	query(t, a, ".items[] |")
+	if l := line(view(a), "^ "); !strings.Contains(l, "unexpected EOF") {
+		t.Fatalf("no caret line: %q\n%s", l, view(a))
+	}
+}
+
+// In the query field a visual selection and [ (or { or () wraps it.
+func TestQueryWrapSelection(t *testing.T) {
+	a := openQuery(t, sample)
+	press(t, a, "/")
+	Type(a.m, ".name, .version")
+	press(t, a, "ctrl+v", "0")
+	finish(a, Press(a.m, "["))
+	if got := a.queryText(); got != "[.name, .version]" {
+		t.Fatalf("wrapped %q", got)
+	}
+	if a.q.in.Mode != "insert" || a.q.in.Cursor != len(a.q.in.Text) {
+		t.Fatalf("after the wrap: mode %q cursor %d", a.q.in.Mode, a.q.in.Cursor)
+	}
+	view(a)
+	if got := a.shown.Values(); len(got) != 1 || Compact(got[0], 0) != `["o-json sample",2]` {
+		t.Fatalf("results %v", a.queryState())
+	}
+}

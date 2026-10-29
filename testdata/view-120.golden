@@ -3,11 +3,12 @@
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)                                                                           
   ╭━ Structure · edited ━━━━━━━━━━━━━━━━━━━━━━━╮ ╭─ Table .items  1/4 ───────────────────────────────────────────────╮  
-  ┃ key             type          from         ┃ │ #  id  name   owner              tags            archived?  note? │  
-  ┃ ▾ . (root)      object                     ┃ │ 0  1   alpha  {"name":"ann","e…  ["red","blue"]                   │  
-  ┃     name        string        .name        ┃ │ 1  2   beta   {"name":"bob"}     []              true             │  
-  ┃     version     number        .version     ┃ │ 2  3   gamma  {"name":"cy","em…  ["green"]                  third │  
-  ┃   ▾ items       array         .items       ┃ │ 3  4   delta  {"name":"dee"}     ["red"]                          │  
+  ┃ jq / to query                              ┃ │ #  id  name   owner              tags            archived?  note? │  
+  ┃ key             type          from         ┃ │ 0  1   alpha  {"name":"ann","e…  ["red","blue"]                   │  
+  ┃ ▾ . (root)      object                     ┃ │ 1  2   beta   {"name":"bob"}     []              true             │  
+  ┃     name        string        .name        ┃ │ 2  3   gamma  {"name":"cy","em…  ["green"]                  third │  
+  ┃     version     number        .version     ┃ │ 3  4   delta  {"name":"dee"}     ["red"]                          │  
+  ┃   ▾ items       array         .items       ┃ │                                                                   │  
   ┃     ▾ []        object        .items[]     ┃ │                                                                   │  
   ┃         id      number        .items[].id  ┃ │                                                                   │  
   ┃         name    string        .items[].na… ┃ │                                                                   │  
@@ -16,8 +17,7 @@
   ┃           ema…  string|null?  .items[].ow… ┃ │                                                                   │  
   ┃       ▾ tags    array         .items[].ta… ┃ │                                                                   │  
   ┃           []    string        .items[].ta… ┃ │                                                                   │  
-  ┃         archi…  bool?         .items[].ar… ┃ │                                                                   │  
-  ┃ 1–13 / 18                                  ┃ │                                                                   │  
+  ┃ 1–12 / 18                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
   g > nest below · S wrap · r rename · d d delete · y y yank · p/P put · space list.mark · o/O new key · J outline.mo…  

@@ -66,8 +66,17 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 		lw = l.Divide(min(max(24, natural+4), width*2/5), width-1, ochazuke.PaneMinWidth)
 		lh, rw, rh = bh, width-lw-1, bh
 	}
+	// The query line is the structure pane's first row, above its tree.
 	cw, ch := ochazuke.PanelContentSize(lw, lh)
-	left = l.PanelBlock(a.treeTitle(), ochazuke.Text(a.treeBody(cw, ch)), lw, lh, treeFocused)
+	q, qh := a.queryLines(s, cw)
+	if ch-qh < 2 {
+		q, qh = ochazuke.Text(""), 0
+	}
+	inner := ochazuke.Text(a.treeBody(cw, ch-qh))
+	if qh > 0 {
+		inner = ochazuke.Block{Text: q.Text + "\n" + inner.Text, Cursor: q.Cursor}
+	}
+	left = l.PanelBlock(a.treeTitle(), inner, lw, lh, treeFocused || a.r.Focus == jqFieldID)
 	cw, ch = ochazuke.PanelContentSize(rw, rh)
 	right = l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), rw, rh, dataFocused)
 	var body string
@@ -82,6 +91,9 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 			rows[i] = pad(at(lr, i), lw) + " " + at(rr, i)
 		}
 		body = strings.Join(rows, "\n")
+	}
+	if left.Cursor != nil {
+		cursor = left.Offset(0, 1)
 	}
 	return cursor.WithText(crumb + "\n" + body)
 }

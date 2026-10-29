@@ -179,6 +179,10 @@ func TestObjectFieldsAndScalars(t *testing.T) {
 
 func TestSearchAndTypeFilter(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
+	// With the query line off, / is the path search (viewer.search).
+	if err := a.r.Settings().Set(settingQueryLine, false); err != nil {
+		t.Fatal(err)
+	}
 	press(t, a, "/")
 	press(t, a, "e", "m", "a", "i", "l", "enter")
 	if s := a.selectedShape(); s == nil || s.Path != ".items[].owner.email" {
@@ -544,6 +548,10 @@ func TestDotAcrossPanelsFailsCleanly(t *testing.T) {
 // search prompt, the edit; after another yank, the yank.
 func TestDotRepeatsTheLastChange(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
+	// With the query line off, / is the path search's prompt.
+	if err := a.r.Settings().Set(settingQueryLine, false); err != nil {
+		t.Fatal(err)
+	}
 	selectPath(t, a, ".name")
 	press(t, a, "y", "/")
 	for _, q := range []ochazuke.Request{{Noun: "input", Verb: "insert", Args: ochazuke.Arguments{"text": "o"}}, {Noun: "history", Verb: "repeat"}} {

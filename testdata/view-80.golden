@@ -3,11 +3,12 @@
   ────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)                                   
   ╭━ Structure · edited ━━━━━━━╮ ╭─ Table .items  1/4 ───────────────────────╮  
-  ┃ key                     2› ┃ │ #      id  name   owner   tags         2› │  
-  ┃ ▾ . (root)                 ┃ │ 0      1   alpha  {"nam…  ["red…          │  
-  ┃     name                   ┃ │ 1      2   beta   {"nam…  []              │  
-  ┃     version                ┃ │ 2      3   gamma  {"nam…  ["gre…          │  
-  ┃   ▾ items                  ┃ │ 3      4   delta  {"nam…  ["red…          │  
+  ┃ jq / to query              ┃ │ #      id  name   owner   tags         2› │  
+  ┃ key                     2› ┃ │ 0      1   alpha  {"nam…  ["red…          │  
+  ┃ ▾ . (root)                 ┃ │ 1      2   beta   {"nam…  []              │  
+  ┃     name                   ┃ │ 2      3   gamma  {"nam…  ["gre…          │  
+  ┃     version                ┃ │ 3      4   delta  {"nam…  ["red…          │  
+  ┃   ▾ items                  ┃ │                                           │  
   ┃     ▾ []                   ┃ │                                           │  
   ┃         id                 ┃ │                                           │  
   ┃         name               ┃ │                                           │  
@@ -16,8 +17,7 @@
   ┃           email            ┃ │                                           │  
   ┃       ▾ tags               ┃ │                                           │  
   ┃           []               ┃ │                                           │  
-  ┃         archived           ┃ │                                           │  
-  ┃ 1–13 / 18                  ┃ │                                           │  
+  ┃ 1–12 / 18                  ┃ │                                           │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────  
   g > nest below · S wrap · r rename · d d delete · y y yank · p/P put · spac…  

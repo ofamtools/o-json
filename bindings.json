@@ -43,6 +43,7 @@
     ]},
     {"context": "rows/count_pending", "extends": "normal", "bindings": []},
     {"context": "viewer/normal", "bindings": [
+      {"key": "/", "action": "jq.focus", "hint": "jq query"},
       {"key": "/", "action": "viewer.search"},
       {"key": "n", "action": "viewer.next"},
       {"key": "N", "action": "viewer.previous"},
@@ -133,6 +134,19 @@
     {"context": "value-input/insert", "bindings": [
       {"key": "enter", "action": "value-input.accept", "hint": "set"},
       {"key": "esc", "action": "value-input.accept", "hint": "set", "hidden": true}
+    ]},
+    {"context": "jq-input/insert", "bindings": [
+      {"key": "esc", "action": "jq.leave", "hint": "leave"},
+      {"key": "enter", "action": "jq.leave", "hidden": true},
+      {"key": "ctrl+v", "action": "ochazuke.input.select", "args": {"shape": "char"}, "hint": "select"}
+    ]},
+    {"context": "jq-input/normal", "bindings": [
+      {"key": "esc", "action": "jq.leave", "hint": "leave"}
+    ]},
+    {"context": "jq-input/visual", "bindings": [
+      {"key": "[", "action": "jq.wrap", "args": {"open": "["}, "hint": "[ { ( wrap"},
+      {"key": "{", "action": "jq.wrap", "args": {"open": "{"}, "hidden": true},
+      {"key": "(", "action": "jq.wrap", "args": {"open": "("}, "hidden": true}
     ]},
     {"context": "query/insert", "bindings": [
       {"key": "enter", "action": "query.commit"},
