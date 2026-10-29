@@ -248,6 +248,46 @@ func TestRenameKeepsTheOrigin(t *testing.T) {
 	}
 }
 
+// r opens the key selected (ochazuke's rename.select, on by default):
+// typing replaces it, a motion keeps it and moves; with the setting off
+// the cursor starts at the end.
+func TestRenameOpensSelected(t *testing.T) {
+	a := openRestructure(t, 120, 30)
+	sendPaths(t, a, ".name")
+	press(t, a, "tab")
+	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
+	press(t, a, "r")
+	in := a.r.Input(a.r.Focus)
+	if in == nil {
+		t.Fatal("r opened no line")
+	}
+	if lo, hi, ok := in.SelectedText(); !ok || lo != 0 || hi != len("name") || a.r.Mode.Name != "insert" {
+		t.Fatalf("selected %d %d %v mode %s", lo, hi, ok, a.r.Mode.Name)
+	}
+	Type(a.m, "title")
+	press(t, a, "esc")
+	if got := entries(a.Mapping()); !slices.Equal(got, []string{".name>.title"}) {
+		t.Fatalf("typing over the selection: %v", got)
+	}
+	// end drops the selection and keeps the key; typing appends.
+	press(t, a, "r", "end")
+	Type(a.m, "s")
+	press(t, a, "esc")
+	if got := entries(a.Mapping()); !slices.Equal(got, []string{".name>.titles"}) {
+		t.Fatalf("end then typing: %v", got)
+	}
+	a.r.EnsureConfigSettings()
+	if err := a.r.Settings().Set(ochazuke.RenameSelectSetting, false); err != nil {
+		t.Fatal(err)
+	}
+	press(t, a, "r")
+	in = a.r.Input(a.r.Focus)
+	if _, _, ok := in.SelectedText(); ok || in.Cursor != len("titles") {
+		t.Fatalf("rename.select off: selected %v cursor %d", ok, in.Cursor)
+	}
+	press(t, a, "esc")
+}
+
 // d d deletes a node and its children; u brings them back with their
 // origins.
 func TestDeleteAndUndo(t *testing.T) {
