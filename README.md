@@ -158,7 +158,7 @@ The viewer holds one document, like a vim buffer.
 - **No file:** `o-json` with no file (and stdin a terminal) opens an empty document; the breadcrumb reads `[no file]` and names the keys that fill it. `: viewer new` empties the viewer from inside; when the structure has edits no write or export-map saved, it asks first (`viewer.discard`, and `u` brings the edits back).
 - **Open:** `e` (`viewer.open {path}`) asks for the path in the args form. The field is free text with suggestions (`ctrl+space`, or `enter` in normal mode, opens them): the recently opened files, newest first, then the files in the current file's folder (the working directory for a document of no file). The suggestions are a list, not completion as you type: the form has no completion source that sees the typed text yet. `R` (`viewer.load`) reads the current file again. With edits no write saved, `e` and `R` ask once first (`viewer.discard {path}`); the new document starts as a copy of its shape, and `u` brings the dropped edits back.
 - **Recent files:** every file opened is recorded, newest first, in `~/.local/state/o-json/recent.json` (`$XDG_STATE_HOME` if set). The setting `recent.size` (default 10; 0 keeps none) is how many; a file that is gone is left out. `: viewer recent` lists them.
-- **Paste:** `p` (`viewer.paste`) parses the system clipboard (pbpaste, wl-paste, xclip or xsel) into the buffer, a document of no file. Invalid JSON is an error naming its line and column, and the buffer stays as it was. `viewer.paste {text}` pastes the text given (the palette, a script).
+- **Paste:** `p` (`viewer.paste`) parses the system clipboard (pbpaste, wl-paste, xclip or xsel) into the buffer, a document of no file. Invalid JSON is an error naming its line and column, and the buffer stays as it was. `viewer.paste {text}` pastes the text given (the palette, a script). With edits no write saved, `p` asks once first (`viewer.discard {paste}`).
 - **Write:** in the edited view `w` writes the restructured document (above). On the original, `w` (`viewer.write {path}`, args form) writes the shown document as indented JSON to a new file; an existing file asks first (`viewer.overwrite`) and the source is never written. A document of no file is then that file. The restructure page works on a pasted document as on a file.
 
 ### Keys
@@ -195,7 +195,8 @@ The viewer holds one document, like a vim buffer.
 | `s` | tree (original) | send the shape to the restructure (below) |
 | `M` | tree, data | open the restructure page |
 | `:` | anywhere | the command palette: every verb, by name |
-| `q`, `ctrl+c` | tree, data | quit |
+| `q`, `ctrl+c` | tree, data | quit (`app.quit`); with edits no write saved it asks once (`viewer.quit`, "Quit without writing?": `y` quits, `n` stays), as vim refuses `:q` |
+| `Q` | tree, data, restructure page | quit without writing and without asking (`app.quit {force: true}`, vim's `:q!`) |
 
 No function keys are bound.
 

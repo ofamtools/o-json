@@ -51,7 +51,8 @@
       {"key": "W", "action": "restructure.write", "args": {"force": true}, "hidden": true},
       {"key": "w", "action": "viewer.write", "hint": "write"},
       {"key": "M", "action": "restructure.open", "hint": "restructure"},
-      {"key": "q", "action": "app.quit"}
+      {"key": "q", "action": "app.quit"},
+      {"key": "Q", "action": "app.quit", "args": {"force": true}, "hint": "quit without writing", "hidden": true}
     ]},
     {"context": "shape/normal", "bindings": [
       {"key": "enter", "action": "outline.fold"},
@@ -65,7 +66,8 @@
       {"key": "ctrl+r", "action": "restructure.redo"},
       {"key": "w", "action": "restructure.write", "hint": "w/W write"},
       {"key": "W", "action": "restructure.write", "args": {"force": true}, "hidden": true},
-      {"key": "q", "action": "restructure.close", "hint": "back"}
+      {"key": "q", "action": "restructure.close", "hint": "back"},
+      {"key": "Q", "action": "app.quit", "args": {"force": true}, "hint": "quit without writing", "hidden": true}
     ]},
     {"context": "node/normal", "bindings": [
       {"key": "> >", "action": "node.indent", "args": {"into": "previous"}, "hint": "nest"},

@@ -300,3 +300,77 @@ func TestRestructurePageSharesTheState(t *testing.T) {
 		t.Fatalf("the data pane shows the deleted key\n%s", view(a))
 	}
 }
+
+// q (app.quit) with edits no write saved asks once, as vim refuses :q:
+// n stays, y quits; Q (app.quit {force}) quits without asking; with no
+// edits, or once they are written, q quits at once.
+func TestQuitAsksWithUnsavedEdits(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	press(t, a, "q")
+	if !a.r.Quit {
+		t.Fatal("q without edits did not quit")
+	}
+	a = open(t, sample, 120, 30)
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<")
+	press(t, a, "q")
+	if a.r.Quit || a.r.TopModal() == "" || !strings.Contains(view(a), "Quit without writing?") {
+		t.Fatalf("q did not ask: quit %v modal %q\n%s", a.r.Quit, a.r.TopModal(), view(a))
+	}
+	press(t, a, "n")
+	if a.r.Quit || !a.unsaved() {
+		t.Fatal("n quit or dropped the edits")
+	}
+	press(t, a, "q", "y")
+	if !a.r.Quit {
+		t.Fatal("y did not quit")
+	}
+	a = open(t, sample, 120, 30)
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<", "Q")
+	if !a.r.Quit || a.r.TopModal() != "" {
+		t.Fatalf("Q asked: modal %q", a.r.TopModal())
+	}
+	// Writing clears the unsaved state.
+	a = open(t, sample, 120, 30)
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<")
+	a.markSaved()
+	press(t, a, "q")
+	if !a.r.Quit {
+		t.Fatal("q after a write asked")
+	}
+}
+
+// p (viewer.paste) with edits pending asks once (viewer.discard): n keeps
+// the edits, y drops them and pastes.
+func TestPasteAsksWithEditsPending(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	a.Paste = func() (string, error) { return `{"pasted": 1}`, nil }
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<")
+	viewerDo(t, a, "paste", nil)
+	if a.r.TopModal() == "" || a.Path != sample {
+		t.Fatalf("paste did not ask: modal %q", a.r.TopModal())
+	}
+	press(t, a, "n")
+	settle(a)
+	if !a.unsaved() || a.Doc.Name == noFile {
+		t.Fatal("n pasted or dropped the edits")
+	}
+	viewerDo(t, a, "paste", nil)
+	finish(a, Press(a.m, "y"))
+	settle(a)
+	if a.Doc == nil || a.Doc.Name != noFile || a.Doc.Root.Children[0].Key != "pasted" || a.unsaved() {
+		t.Fatalf("y did not paste: %+v", a.Doc)
+	}
+	// With text, it pastes the text once confirmed.
+	a.on(t, ".pasted")
+	press(t, a, "d", "d")
+	viewerDo(t, a, "paste", ochazuke.Arguments{"text": `[1]`})
+	finish(a, Press(a.m, "y"))
+	settle(a)
+	if a.Doc.Root.Kind != KArray {
+		t.Fatalf("paste text after asking: %v", a.Doc.Root.Kind)
+	}
+}

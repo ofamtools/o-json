@@ -72,11 +72,62 @@ func (a *App) discardFirst(path string) ochazuke.Result {
 	if path != "" {
 		args["path"] = path
 	}
+	return a.askDiscard(args)
+}
+
+// askDiscard runs viewer.discard with args, which asks first.
+func (a *App) askDiscard(args ochazuke.Arguments) ochazuke.Result {
 	v, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "discard", Target: pageID, Args: args})
 	if err != nil {
 		return ochazuke.Failed(err)
 	}
 	return ochazuke.Done(v)
+}
+
+// pasteDoc parses the text argument, or the system clipboard off the
+// loop, as the buffer's document (viewer.paste, and viewer.discard
+// {paste} once it has asked).
+func (a *App) pasteDoc(c ochazuke.Ctx) ochazuke.Result {
+	if text, ok := c.Args["text"].(string); ok {
+		return a.doneState(a.paste(text))
+	}
+	read := a.Paste
+	if read == nil {
+		return ochazuke.Failed(errors.New("no clipboard tool (pbpaste, wl-paste, xclip, xsel) on PATH"))
+	}
+	return ochazuke.Pending(func(context.Context) (any, error) { return read() }).
+		Then(func(c ochazuke.Ctx, v any, err error) {
+			if err == nil {
+				err = a.paste(v.(string))
+			}
+			if err != nil {
+				c.Error("paste: " + err.Error())
+				return
+			}
+			c.Info("pasted the clipboard's JSON into the buffer")
+		})
+}
+
+// guardQuit makes app.quit (q, ctrl+c) ask once, through viewer.quit,
+// while there are edits no write saved, as vim refuses :q; with force
+// (Q) it quits without asking. The framework's verb is kept and wrapped,
+// so every key and caller of it asks the same way.
+func (a *App) guardQuit() {
+	key := a.r.CanonicalKey("app.quit")
+	op, ok := a.r.Operations[key]
+	if !ok {
+		panic("guardQuit: no operation app.quit")
+	}
+	run := op.Run
+	op.Run = func(r *ochazuke.Runtime, c ochazuke.Context, args ochazuke.Arguments) (any, error) {
+		if args["force"] == true || !a.unsaved() {
+			return run(r, c, args)
+		}
+		return r.ExecuteAt(c, ochazuke.Request{Noun: "viewer", Verb: "quit", Target: pageID})
+	}
+	op.Parameters = map[string]ochazuke.Parameter{"force": {Type: "boolean", Description: "quit without asking, even with edits no write saved (Q, as vim's :q!)"}}
+	op.Description = "Exit the application; with edits no write saved it asks first (viewer.quit), unless force"
+	a.r.Operations[key] = op
 }
 
 // paste parses text as the buffer's document, a document of no file.
@@ -273,32 +324,30 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 			return a.doneState(a.reset())
 		}, "Start an empty document ([no file]), as vim's :enew; with restructure edits no write saved, it asks first (viewer.discard)").
 		Verb("discard", func(c ochazuke.Ctx) ochazuke.Result {
+			if c.Args["paste"] == true {
+				return a.pasteDoc(c)
+			}
 			if p := strings.TrimSpace(ochazuke.StringArg(c.Args, "path", "")); p != "" {
 				return a.read(p)
 			}
 			return a.doneState(a.reset())
-		}, "Drop the restructure's edits and read path (viewer.open and R ask with it), or without one start an empty document (viewer.new); u brings the edits back. It always asks first").
+		}, "Drop the edits (structure and values) and read path (viewer.open and R ask with it), paste the clipboard or text (paste: viewer.paste asks with it), or without either start an empty document (viewer.new); u brings the edits back. It always asks first").
 		Confirm("The restructure has edits no write saved. Drop them?").
 		Verb("paste", func(c ochazuke.Ctx) ochazuke.Result {
-			if text, ok := c.Args["text"].(string); ok {
-				return a.doneState(a.paste(text))
+			if a.unsaved() {
+				args := ochazuke.Arguments{"paste": true}
+				if text, ok := c.Args["text"].(string); ok {
+					args["text"] = text
+				}
+				return a.askDiscard(args)
 			}
-			read := a.Paste
-			if read == nil {
-				return ochazuke.Failed(errors.New("no clipboard tool (pbpaste, wl-paste, xclip, xsel) on PATH"))
-			}
-			return ochazuke.Pending(func(context.Context) (any, error) { return read() }).
-				Then(func(c ochazuke.Ctx, v any, err error) {
-					if err == nil {
-						err = a.paste(v.(string))
-					}
-					if err != nil {
-						c.Error("paste: " + err.Error())
-						return
-					}
-					c.Info("pasted the clipboard's JSON into the buffer")
-				})
-		}, "Parse the clipboard's JSON (or text) into the buffer, a document of no file; invalid JSON is an error naming its line and column").
+			return a.pasteDoc(c)
+		}, "Parse the clipboard's JSON (or text) into the buffer, a document of no file; invalid JSON is an error naming its line and column. With edits no write saved, it asks first (viewer.discard)").
+		Verb("quit", func(c ochazuke.Ctx) ochazuke.Result {
+			a.r.Quit = true
+			return ochazuke.Done(true)
+		}, "Quit without writing the edits no write saved, as vim's :q!; app.quit (q) asks through it when there are any, app.quit {force: true} (Q) quits without asking").
+		Confirm("Quit without writing? The edits no write saved are lost.").
 		Verb("write", func(c ochazuke.Ctx) ochazuke.Result { return a.writeDoc(c, writeNewFile) },
 			"Write the shown document as indented JSON to a new file; an existing file asks first (viewer.overwrite), the source never. A document of no file is then that file").When("viewer-document").
 		Verb("overwrite", func(c ochazuke.Ctx) ochazuke.Result { return a.writeDoc(c, writeReplace) },
@@ -306,12 +355,18 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	path := ochazuke.Parameter{Type: "string", Required: true, Description: "the file to write, e.g. NAME.json"}
 	params("viewer.open", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Source: "viewer.files", Free: true,
 		Description: "the JSON file (- is stdin); choices: recent files, then the current folder"}})
-	params("viewer.discard", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the file to read once the edits are dropped (- is stdin); omit for an empty document"}})
+	params("viewer.discard", map[string]ochazuke.Parameter{
+		"path":  {Type: "string", Description: "the file to read once the edits are dropped (- is stdin); omit for an empty document"},
+		"paste": {Type: "boolean", Description: "paste the clipboard (or text) once the edits are dropped, as viewer.paste does"},
+		"text":  {Type: "string", Description: "with paste, the JSON to paste instead of the clipboard"},
+	})
 	params("viewer.paste", map[string]ochazuke.Parameter{"text": {Type: "string", Description: "the JSON; omit to read the system clipboard"}})
 	params("viewer.write", map[string]ochazuke.Parameter{"path": path})
 	params("viewer.overwrite", map[string]ochazuke.Parameter{"path": path})
 	setHistory(r, ochazuke.HistoryFetch, "viewer.open")
 	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite")
+	setHistory(r, ochazuke.HistoryAction, "viewer.quit")
+	a.guardQuit()
 }
 
 func (a *App) doneState(err error) ochazuke.Result {
