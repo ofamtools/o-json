@@ -84,6 +84,12 @@ type restructureState struct {
 	// shown is the tree a single layout draws when the focus is in
 	// neither: the last one that held it.
 	shown string
+	// base is the mapping (mappingKey) the document started with: its
+	// copy, or the empty restructure; unsaved compares with it.
+	base string
+	// startedEmpty is a restructure page that emptied the copy when it
+	// opened, with no change made since (inplace.go).
+	startedEmpty bool
 }
 
 func declareSettings(r *ochazuke.Runtime) error {
@@ -131,14 +137,14 @@ func (a *App) registerRestructure() error {
 		return err
 	}
 	tree, err := r.AddTree(rsTreeID, nil, ochazuke.Parent(rsPageID), ochazuke.NoSpill(),
-		cols(ochazuke.Column{Title: "key", Min: 8}, ochazuke.Column{Title: "type", Priority: 2}, ochazuke.Column{Title: "from", Priority: 1}))
+		cols(ochazuke.Column{Title: "key", Min: 12}, ochazuke.Column{Title: "type", Priority: 1}, ochazuke.Column{Title: "from", Priority: 2}))
 	if err != nil {
 		return err
 	}
-	tree.OnChange = func(ochazuke.TreeChange) error { a.rs.dirty = true; return nil }
+	tree.OnChange = func(ochazuke.TreeChange) error { a.rs.dirty, a.rs.startedEmpty = true, false; return nil }
 	tree.RowNoun = "node"
 	tree.NewID = a.newNodeID
-	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, shown: rsOrigID, dirty: true}
+	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, shown: rsOrigID, dirty: true, base: mappingKey(&Mapping{Map: []MapEntry{}})}
 	a.registerRestructureVerbs()
 	if err := tree.SetNodes([]ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}); err != nil {
 		return err
@@ -147,9 +153,10 @@ func (a *App) registerRestructure() error {
 	if err != nil {
 		return err
 	}
-	// However the page opens (M, the page picker, the CLI), it lands on
-	// the original, at the shape the viewer has selected.
-	page.OnOpen = func(*ochazuke.Runtime, string) { _ = a.focusOriginal() }
+	// However the page opens (M, the page picker, the CLI), it takes the
+	// restructured tree and lands on the original, at the shape the viewer
+	// has selected (inplace.go).
+	page.OnOpen = func(*ochazuke.Runtime, string) { a.openedRestructure() }
 	return nil
 }
 
@@ -778,6 +785,7 @@ func (a *App) send(e edit, shapes []*Shape) (edit, int) {
 // commit makes e the tree's state and puts it on the tree's undo stack,
 // with focus the node selected after undo or redo.
 func (a *App) commit(label, focus string, e edit) error {
+	a.rs.startedEmpty = false
 	before := a.current()
 	e.markBuilt()
 	set := func(to edit) func() error {
@@ -877,7 +885,13 @@ func (a *App) highlight() {
 		}
 	}
 	mark(a.rs.orig, func(id string) []ochazuke.ToneSpan { return a.rs.origTones[id] }, func(id string) bool { return id == origLit })
-	mark(a.rs.tree, func(string) []ochazuke.ToneSpan { return nil }, func(id string) bool { return newLit[id] })
+	// A node from a shape whose objects repeat a key keeps the warning.
+	mark(a.rs.tree, func(id string) []ochazuke.ToneSpan {
+		if s := a.shapeAt(a.rs.meta[id].from); s != nil && s.Duplicates != nil {
+			return []ochazuke.ToneSpan{ochazuke.CellTone(0, toneDuplicateKey)}
+		}
+		return nil
+	}, func(id string) bool { return newLit[id] })
 }
 
 // --- verbs ---
@@ -967,7 +981,19 @@ func (a *App) registerRestructureVerbs() {
 		s, _ := inst.Data.(*Shape)
 		return s != nil && s.parent != nil
 	})
-	r.DefineGuard("restructure-single", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return a.layout() == "single" })
+	// show swaps the tree shown: the single layout's, or the viewer's
+	// structure and data panes (structure.editable).
+	r.DefineGuard("restructure-showable", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
+		if r.Page == pageID {
+			return a.editable() && a.Doc != nil
+		}
+		return a.layout() == "single"
+	})
+	// A write of the restructured document: on its page, or from the
+	// viewer showing the edited document (w there, else viewer.write).
+	r.DefineGuard("restructure-writable", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
+		return r.Page != pageID || a.editedShown()
+	})
 
 	// move runs an edit over the verb's subjects, one undo step for all.
 	move := func(name string, fn func(c ochazuke.Ctx, e edit) (edit, int)) ochazuke.AppHandler {
@@ -1151,6 +1177,15 @@ func (a *App) registerRestructureVerbs() {
 		}, "Go back to the viewer; the restructure stays as it is").
 		Verb("show", func(c ochazuke.Ctx) ochazuke.Result {
 			side := ochazuke.StringArg(c.Args, "side", "")
+			if side == "edited" {
+				side = "restructured"
+			}
+			if r.Page == pageID {
+				if err := a.flip(side); err != nil {
+					return ochazuke.Failed(err)
+				}
+				return ochazuke.Done(a.state())
+			}
 			if side == "" {
 				side = "original"
 				if a.sideOf(r.Focus) == rsOrigID {
@@ -1163,7 +1198,7 @@ func (a *App) registerRestructureVerbs() {
 			}
 			a.rs.shown = t.ID()
 			return a.doneErr(t.Focus())
-		}, "Show and focus the original or the restructured tree (single layout; without side, the other one)").When("restructure-single").
+		}, "Show the original or the restructured (edited) document, without side the other one: in the viewer the structure pane and the data pane flip together (T); on the restructure page's single layout, the tree shown and focused (tab)").When("restructure-showable").
 		Verb("add", func(c ochazuke.Ctx) ochazuke.Result {
 			path := ochazuke.StringArg(c.Args, "path", "")
 			s := a.shapeAt(path)
@@ -1183,7 +1218,7 @@ func (a *App) registerRestructureVerbs() {
 				return a.write(c, writeForce)
 			}
 			return a.write(c, writeNewFile)
-		}, "Write the restructured document to a new file (e.g. NAME.restructured.json); an existing file asks first, the source never. With force (W) an existing file is replaced without asking, and the source too, after one confirm (restructure.overwrite-source)").
+		}, "Write the restructured document to a new file (e.g. NAME.restructured.json); an existing file asks first, the source never. With force (W) an existing file is replaced without asking, and the source too, after one confirm (restructure.overwrite-source). In the viewer, w and W write it while the edited document is shown").When("restructure-writable").
 		Verb("overwrite", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, writeReplace) },
 			"Replace an existing file with the restructured document (never the source)").Confirm("Replace {{path}} with the restructured document?").
 		Verb("overwrite-source", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, writeSource) },
@@ -1218,7 +1253,7 @@ func (a *App) registerRestructureVerbs() {
 	params("restructure.overwrite-source", map[string]ochazuke.Parameter{"path": path})
 	params("restructure.export-map", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "the mapping file to write, e.g. NAME.map.json"}})
 	params("restructure.add", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "a structure path, e.g. .items[].id"}})
-	params("restructure.show", map[string]ochazuke.Parameter{"side": {Type: "string", Enum: []string{"original", "restructured"}}})
+	params("restructure.show", map[string]ochazuke.Parameter{"side": {Type: "string", Enum: []string{"original", "restructured", "edited"}, Description: "edited is restructured"}})
 	params("restructure.layout", map[string]ochazuke.Parameter{"layout": {Type: "string", Enum: []string{"split", "single"}}})
 	setHistory(r, ochazuke.HistoryAction, "restructure.open", "restructure.close", "restructure.show")
 	setHistory(r, ochazuke.HistoryChange, "shape.send", "restructure.add", "restructure.undo", "restructure.redo",
@@ -1240,9 +1275,9 @@ func (a *App) outline(c ochazuke.Ctx, verb string) ochazuke.Result {
 }
 
 // focusOriginal puts the focus on the original tree (shown in a single
-// layout), on the shape the viewer's structure has selected, else on the
-// original's first shape.
-func (a *App) focusOriginal() error {
+// layout), on want (a node id there: the shape the viewer has selected,
+// viewerShape), else on the original's first shape.
+func (a *App) focusOriginal(want string) error {
 	a.rs.shown = rsOrigID
 	t := a.rs.orig
 	nodes := t.Nodes()
@@ -1250,13 +1285,26 @@ func (a *App) focusOriginal() error {
 		return nil
 	}
 	id := nodes[0].ID
-	if n, ok := a.tree.Selected(); ok && slices.ContainsFunc(nodes, func(o ochazuke.TreeNode) bool { return o.ID == "o:"+n.ID }) {
-		id = "o:" + n.ID
+	if slices.ContainsFunc(nodes, func(o ochazuke.TreeNode) bool { return o.ID == want }) {
+		id = want
 	}
 	if err := t.Select(id); err != nil {
 		return err
 	}
 	return t.Focus()
+}
+
+// viewerShape is the original tree's node for the shape the viewer has
+// selected: the original's selection, or in the edited view the selected
+// node's origin.
+func (a *App) viewerShape() string {
+	if n, ok := a.rs.tree.Selected(); ok && a.editedShown() && a.rs.meta[n.ID].from != "" {
+		return "o:s:" + a.rs.meta[n.ID].from
+	}
+	if n, ok := a.tree.Selected(); ok {
+		return "o:" + n.ID
+	}
+	return ""
 }
 
 // keyFor is the key a binding row on the focus gives a verb (run without
@@ -1427,7 +1475,11 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		case a.Doc == nil:
 			r.Placed(id)
 		case id == rsTreeID && len(a.rs.tree.Nodes()) == 1 && ch > 2:
-			hint := wrap("empty: s on a shape of the original sends it here", cw)
+			say := "empty: s on a shape of the original sends it here"
+			if a.rs.startedEmpty {
+				say += "; left empty, the viewer keeps its copy"
+			}
+			hint := wrap(say, cw)
 			body = strings.TrimRight(t.View(cw, 1), "\n") + "\n\n" + hint
 		default:
 			body = t.View(cw, ch)

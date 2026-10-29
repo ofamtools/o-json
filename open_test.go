@@ -174,6 +174,8 @@ func TestPasteJSON(t *testing.T) {
 	if a.Doc == nil || a.Doc.Name != noFile || a.Path != "" || !strings.Contains(view(a), "pasted") {
 		t.Fatalf("paste: status %q\n%s", a.m.Status, view(a))
 	}
+	// p pastes on the original; on the edited structure it puts nodes.
+	press(t, a, "T")
 	// Invalid JSON is an error naming its position; the buffer stays.
 	clip = "{\n  \"a\" 1\n}"
 	finish(a, Press(a.m, "p"))

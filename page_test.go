@@ -127,7 +127,7 @@ func TestSendShapeAcross(t *testing.T) {
 
 // The viewer's structure sends too, without opening the page.
 func TestSendFromTheViewer(t *testing.T) {
-	a := open(t, sample, 120, 30)
+	a := readOnly(t, sample, 120, 30)
 	selectPath(t, a, ".name")
 	press(t, a, "s")
 	if got := entries(a.Mapping()); !slices.Equal(got, []string{".name>.name"}) || !strings.Contains(a.m.Info, "M opens it") {
@@ -491,7 +491,7 @@ func TestOpenFocusesTheOriginal(t *testing.T) {
 				t.Fatalf("first open: focus %q, want %q", a.r.Focus, first)
 			}
 			sendPaths(t, a, ".name")
-			press(t, a, "q")
+			press(t, a, "q", "T") // the viewer's original: the edited one holds .name alone
 			selectPath(t, a, ".items[].owner")
 			press(t, a, "M")
 			if a.r.Focus != "o:s:.items[].owner" {

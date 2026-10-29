@@ -56,6 +56,29 @@ func (a *App) read(p string) ochazuke.Result {
 		})
 }
 
+// readAsking reads a file as read does, first asking (viewer.discard)
+// when the restructure has edits no write saved.
+func (a *App) readAsking(p string) ochazuke.Result {
+	if a.unsaved() {
+		return a.discardFirst(p)
+	}
+	return a.read(p)
+}
+
+// discardFirst asks once (viewer.discard) before dropping the edits:
+// then it reads path, or without one empties the viewer.
+func (a *App) discardFirst(path string) ochazuke.Result {
+	args := ochazuke.Arguments{}
+	if path != "" {
+		args["path"] = path
+	}
+	v, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "discard", Target: pageID, Args: args})
+	if err != nil {
+		return ochazuke.Failed(err)
+	}
+	return ochazuke.Done(v)
+}
+
 // paste parses text as the buffer's document, a document of no file.
 func (a *App) paste(text string) error {
 	root, err := Build([]byte(text))
@@ -89,15 +112,19 @@ func (a *App) reset() error {
 			return err
 		}
 	}
-	a.rs.saved = ""
+	a.rs.saved, a.rs.base = "", mappingKey(&Mapping{Map: []MapEntry{}})
+	if a.r.Page != pageID {
+		return nil
+	}
 	return a.tree.Focus()
 }
 
 // unsaved reports restructure edits that no write or export-map has
-// saved: a mapping with entries, other than the last one written.
+// saved: a mapping other than the one the document started with (its
+// copy, or the empty restructure) and the last one written.
 func (a *App) unsaved() bool {
-	m := a.Mapping()
-	return len(m.Map) > 0 && mappingKey(m) != a.rs.saved
+	key := mappingKey(a.Mapping())
+	return key != a.rs.base && key != a.rs.saved
 }
 
 func mappingKey(m *Mapping) string {
@@ -229,8 +256,8 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 			if p == "" {
 				return ochazuke.Failed(errors.New("path is required"))
 			}
-			return a.read(p)
-		}, "Read another JSON file off the loop and show it (- is stdin); its path's choices are the recent files, then the files beside the current one").
+			return a.readAsking(p)
+		}, "Read another JSON file off the loop and show it (- is stdin); its path's choices are the recent files, then the files beside the current one. With restructure edits no write saved, it asks first (viewer.discard)").
 		Verb("files", func(c ochazuke.Ctx) ochazuke.Result {
 			state, size, current := a.stateDir(), a.recentSize(), a.Path
 			return ochazuke.Pending(func(context.Context) (any, error) { return files(state, size, current), nil })
@@ -241,18 +268,17 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		}, "The recently opened files, newest first (setting recent.size; files that are gone are left out)").Fetch().
 		Verb("new", func(c ochazuke.Ctx) ochazuke.Result {
 			if a.unsaved() {
-				// Restructure edits nothing saved: ask once, then discard.
-				v, err := r.Execute(ochazuke.Request{Noun: "viewer", Verb: "discard", Target: pageID})
-				if err != nil {
-					return ochazuke.Failed(err)
-				}
-				return ochazuke.Done(v)
+				return a.discardFirst("")
 			}
 			return a.doneState(a.reset())
 		}, "Start an empty document ([no file]), as vim's :enew; with restructure edits no write saved, it asks first (viewer.discard)").
-		Verb("discard", func(c ochazuke.Ctx) ochazuke.Result { return a.doneState(a.reset()) },
-			"Start an empty document, dropping the restructure's edits (u on the restructure page brings them back); it always asks first").
-		Confirm("Start an empty document? The restructure has edits no write saved.").
+		Verb("discard", func(c ochazuke.Ctx) ochazuke.Result {
+			if p := strings.TrimSpace(ochazuke.StringArg(c.Args, "path", "")); p != "" {
+				return a.read(p)
+			}
+			return a.doneState(a.reset())
+		}, "Drop the restructure's edits and read path (viewer.open and R ask with it), or without one start an empty document (viewer.new); u brings the edits back. It always asks first").
+		Confirm("The restructure has edits no write saved. Drop them?").
 		Verb("paste", func(c ochazuke.Ctx) ochazuke.Result {
 			if text, ok := c.Args["text"].(string); ok {
 				return a.doneState(a.paste(text))
@@ -280,6 +306,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	path := ochazuke.Parameter{Type: "string", Required: true, Description: "the file to write, e.g. NAME.json"}
 	params("viewer.open", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Source: "viewer.files", Free: true,
 		Description: "the JSON file (- is stdin); choices: recent files, then the current folder"}})
+	params("viewer.discard", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the file to read once the edits are dropped (- is stdin); omit for an empty document"}})
 	params("viewer.paste", map[string]ochazuke.Parameter{"text": {Type: "string", Description: "the JSON; omit to read the system clipboard"}})
 	params("viewer.write", map[string]ochazuke.Parameter{"path": path})
 	params("viewer.overwrite", map[string]ochazuke.Parameter{"path": path})

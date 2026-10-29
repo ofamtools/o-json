@@ -65,7 +65,13 @@ type App struct {
 	ask  *question
 	in   *ochazuke.Input
 
-	rs restructureState // the restructure page (page.go)
+	rs restructureState // the restructure state: the page and the edited structure (page.go, inplace.go)
+
+	// original shows the original document in the viewer (T); otherwise,
+	// with structure.editable, the edited one (inplace.go).
+	original bool
+	note     string       // why the data panel is empty in the edited view
+	ed       *editedCache // the restructured document the edited view shows
 }
 
 // New builds the viewer on a fresh runtime: the page with the structure
@@ -97,12 +103,18 @@ func New() (*App, error) {
 	if err := declareOpenSettings(r); err != nil {
 		return nil, err
 	}
-	if _, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID)); err != nil {
+	if err := declareEditSettings(r); err != nil {
 		return nil, err
 	}
+	page, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID))
+	if err != nil {
+		return nil, err
+	}
+	page.OnOpen = func(*ochazuke.Runtime, string) { a.openedViewer() }
 	if err := a.registerRestructure(); err != nil {
 		return nil, err
 	}
+	a.placeTree(pageID)
 	if err := a.bind(); err != nil {
 		return nil, err
 	}
@@ -137,14 +149,26 @@ func (a *App) setDoc(path string, doc *Doc) error {
 		return err
 	}
 	a.rs.dirty = true
+	if err := a.startState(); err != nil {
+		return err
+	}
 	if err := a.collapseDeep(); err != nil {
 		return err
 	}
 	if err := a.tree.Select(shapeID(doc.Shape)); err != nil {
 		return err
 	}
-	if err := a.tree.Focus(); err != nil {
+	if err := a.rs.tree.Select(rsRootID); err != nil {
 		return err
+	}
+	if a.r.Page == pageID {
+		t := a.tree
+		if a.editedShown() {
+			t = a.rs.tree
+		}
+		if err := t.Focus(); err != nil {
+			return err
+		}
 	}
 	return a.sync()
 }
@@ -277,18 +301,37 @@ func (a *App) collapseDeep() error {
 	return err
 }
 
-// selectedShape is the shape of the tree's selected row, or nil.
+// selectedShape is the shape the data panel follows: the original tree's
+// selected shape, or in the edited view the restructured document's shape
+// at the selected node's path; nil for none.
 func (a *App) selectedShape() *Shape {
-	node, ok := a.tree.Selected()
-	if !ok {
-		return nil
+	if a.editedShown() {
+		s, _ := a.editedShape()
+		return s
 	}
-	s, _ := node.Data.(*Shape)
+	s, _ := a.selectedOriginal()
 	return s
 }
 
-// sync points the data panel at the tree's selected shape when it moved.
+// sync points the data panel at the selected shape when it moved, or
+// when an edit made the restructured document again.
 func (a *App) sync() error {
+	if a.editedShown() {
+		s, note := a.editedShape()
+		if s == nil {
+			if a.shown == nil && note == a.note {
+				return nil
+			}
+			a.shown, a.tab, a.fields, a.lines, a.scalar, a.note = nil, nil, nil, nil, nil, note
+			return a.data.set(rowSource{}, 0)
+		}
+		a.note = ""
+		if s == a.shown {
+			return nil
+		}
+		return a.show(s)
+	}
+	a.note = ""
 	s := a.selectedShape()
 	if s == nil || s == a.shown {
 		return nil
@@ -439,5 +482,9 @@ func (a *App) state() map[string]any {
 		out["size"] = a.Doc.Size
 	}
 	out["row"] = a.data.Selected()
+	if a.editable() {
+		out["view"] = a.shownName()
+		out["unsaved"] = a.unsaved()
+	}
 	return out
 }

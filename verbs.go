@@ -35,6 +35,9 @@ func (a *App) registerNouns() {
 
 func (a *App) registerVerbs() {
 	r := a.r
+	// The filters work on the original structure tree: the viewer shows it
+	// (T), or the structure is not editable.
+	r.DefineGuard("viewer-original", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return !a.editedShown() })
 	params := func(key string, p map[string]ochazuke.Parameter) {
 		op := r.Operations[r.CanonicalKey(key)]
 		op.Parameters = p
@@ -53,16 +56,16 @@ func (a *App) registerVerbs() {
 			if p == "" {
 				return ochazuke.Failed(errors.New("no file to load: e (viewer.open) opens one"))
 			}
-			return a.read(p)
-		}, "Read the current file again off the loop and show it (R); with path, that file, as viewer.open does (- is stdin)").When("viewer-file").
+			return a.readAsking(p)
+		}, "Read the current file again off the loop and show it (R); with path, that file, as viewer.open does (- is stdin). With restructure edits no write saved, it asks first (viewer.discard)").When("viewer-file").
 		Verb("search", func(c ochazuke.Ctx) ochazuke.Result {
 			if q, ok := c.Args["query"].(string); ok {
 				return done(a.search(q))
 			}
 			return done(a.prompt("Search paths", a.Query, a.search))
-		}, "Keep the structure paths whose key or path contains the query (with their ancestors) and jump to the first; empty clears it").
-		Verb("next", func(ochazuke.Ctx) ochazuke.Result { return done(a.jump(1)) }, "Jump to the next structure path the filters match").Motion().
-		Verb("previous", func(ochazuke.Ctx) ochazuke.Result { return done(a.jump(-1)) }, "Jump to the previous structure path the filters match").Motion().
+		}, "Keep the structure paths whose key or path contains the query (with their ancestors) and jump to the first; empty clears it").When("viewer-original").
+		Verb("next", func(ochazuke.Ctx) ochazuke.Result { return done(a.jump(1)) }, "Jump to the next structure path the filters match").Motion().When("viewer-original").
+		Verb("previous", func(ochazuke.Ctx) ochazuke.Result { return done(a.jump(-1)) }, "Jump to the previous structure path the filters match").Motion().When("viewer-original").
 		Verb("type", func(c ochazuke.Ctx) ochazuke.Result {
 			if k, ok := c.Args["kind"].(string); ok {
 				return done(a.filterKind(Kind(k)))
@@ -75,7 +78,7 @@ func (a *App) registerVerbs() {
 				}
 			}
 			return done(a.filterKind(next))
-		}, "Keep the structure paths holding values of a type; without kind, step string, number, bool, null, object, array, then off").
+		}, "Keep the structure paths holding values of a type; without kind, step string, number, bool, null, object, array, then off").When("viewer-original").
 		Verb("raw", func(ochazuke.Ctx) ochazuke.Result {
 			a.Raw = !a.Raw
 			return done(a.reshow())
@@ -83,7 +86,7 @@ func (a *App) registerVerbs() {
 		Verb("clear", func(ochazuke.Ctx) ochazuke.Result {
 			a.Query, a.Kind = "", ""
 			return done(a.refilter())
-		}, "Clear the search and the type filter").
+		}, "Clear the search and the type filter").When("viewer-original").
 		Verb("state", func(ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.state()) }, "The viewer's file, selected path, filters and row").Fetch()
 	params("viewer.load", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the JSON file; - reads stdin"}})
 	params("viewer.search", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "omit to be asked in a prompt"}})

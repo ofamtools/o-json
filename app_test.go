@@ -29,6 +29,37 @@ func open(t *testing.T, path string, width, height int) *App {
 	return a
 }
 
+// openOriginal opens a document with the viewer showing the original
+// (T): the read-only structure tree of shapes and the document's data.
+func openOriginal(t *testing.T, path string, width, height int) *App {
+	t.Helper()
+	a := open(t, path, width, height)
+	press(t, a, "T")
+	if !a.original {
+		t.Fatal("T did not show the original")
+	}
+	return a
+}
+
+// readOnly opens a document with structure.editable off: the viewer as
+// it was, the restructure page alone editing.
+func readOnly(t *testing.T, path string, width, height int) *App {
+	t.Helper()
+	a, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.r.Settings().Set(settingEditable, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Load(path); err != nil {
+		t.Fatal(err)
+	}
+	a.m.Width, a.m.Height = width, height
+	view(a)
+	return a
+}
+
 func view(a *App) string { return ansi.Strip(a.m.View().Content) }
 
 // press sends keys one by one, failing on the first error the model
@@ -147,14 +178,14 @@ func TestObjectFieldsAndScalars(t *testing.T) {
 }
 
 func TestSearchAndTypeFilter(t *testing.T) {
-	a := open(t, sample, 120, 30)
+	a := openOriginal(t, sample, 120, 30)
 	press(t, a, "/")
 	press(t, a, "e", "m", "a", "i", "l", "enter")
 	if s := a.selectedShape(); s == nil || s.Path != ".items[].owner.email" {
 		t.Fatalf("search selected %v", s)
 	}
 	frame := view(a)
-	if strings.Contains(frame, "version") || !strings.Contains(frame, "Structure (filtered)") {
+	if strings.Contains(frame, "version") || !strings.Contains(frame, "Structure · original (filtered)") {
 		t.Fatalf("filter keeps the match and its ancestors only\n%s", frame)
 	}
 	press(t, a, "esc")
@@ -313,7 +344,7 @@ func TestBindingRowsAreAtomic(t *testing.T) {
 }
 
 func TestYankToNamedRegister(t *testing.T) {
-	a := open(t, sample, 100, 30)
+	a := openOriginal(t, sample, 100, 30)
 	selectPath(t, a, ".items[].owner.email")
 	press(t, a, "\"", "a", "y")
 	if y, _ := a.r.ReadYank("a"); y.Text != ".items[].owner.email" {
@@ -333,7 +364,7 @@ func TestYankToNamedRegister(t *testing.T) {
 // The tree and the table are read-only: space marks nothing in either,
 // and no hint offers list.mark.
 func TestReadOnlyViewsTakeNoMarks(t *testing.T) {
-	a := open(t, sample, 120, 30)
+	a := openOriginal(t, sample, 120, 30)
 	selectPath(t, a, ".items")
 	for _, panel := range []string{"tree", "table"} {
 		Press(a.m, "space")
@@ -351,7 +382,7 @@ func TestReadOnlyViewsTakeNoMarks(t *testing.T) {
 // A yank says what it copied on the status line; a clipboard that fails is
 // a notice, and the registers still hold the text.
 func TestYankTellsTheUser(t *testing.T) {
-	a := open(t, sample, 100, 30)
+	a := openOriginal(t, sample, 100, 30)
 	selectPath(t, a, ".items[].owner.email")
 	press(t, a, "y")
 	if a.m.Info != "copied .items[].owner.email" || a.m.Status != "" {
@@ -408,7 +439,7 @@ func TestPaneKeysResizeTheSplit(t *testing.T) {
 		t.Fatalf("no split\n%s", view(a))
 		return 0
 	}
-	a := open(t, sample, 120, 24)
+	a := openOriginal(t, sample, 120, 24)
 	start := divider(a)
 	press(t, a, ">")
 	if grown := divider(a); grown <= start {
@@ -436,7 +467,7 @@ func TestPaneKeysResizeTheSplit(t *testing.T) {
 		t.Fatalf("no stacked split\n%s", view(a))
 		return 0
 	}
-	a = open(t, sample, 50, 30)
+	a = openOriginal(t, sample, 50, 30)
 	start = top(a)
 	press(t, a, "3", ">")
 	if grown := top(a); grown <= start {
@@ -448,7 +479,7 @@ func TestPaneKeysResizeTheSplit(t *testing.T) {
 // and the repeat records no value, so y j . copies the next row, in the
 // tree, the table, an object's fields, the detail and the raw lines.
 func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
-	a := open(t, sample, 120, 30)
+	a := openOriginal(t, sample, 120, 30)
 	var clip []string
 	a.Clipboard = func(s string) error { clip = append(clip, s); return nil }
 	key := func(keys ...string) {
@@ -497,7 +528,7 @@ func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 // A repeat runs the same verb, so a tree yank repeated on a table row
 // finds no path there and fails, leaving the register as it was.
 func TestDotAcrossPanelsFailsCleanly(t *testing.T) {
-	a := open(t, sample, 120, 30)
+	a := openOriginal(t, sample, 120, 30)
 	selectPath(t, a, ".items")
 	press(t, a, "y", "tab")
 	Press(a.m, ".")
@@ -512,7 +543,7 @@ func TestDotAcrossPanelsFailsCleanly(t *testing.T) {
 // Dot repeats the last repeatable change: after a yank and an edit in the
 // search prompt, the edit; after another yank, the yank.
 func TestDotRepeatsTheLastChange(t *testing.T) {
-	a := open(t, sample, 120, 30)
+	a := openOriginal(t, sample, 120, 30)
 	selectPath(t, a, ".name")
 	press(t, a, "y", "/")
 	for _, q := range []ochazuke.Request{{Noun: "input", Verb: "insert", Args: ochazuke.Arguments{"text": "o"}}, {Noun: "history", Verb: "repeat"}} {

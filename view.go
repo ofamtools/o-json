@@ -24,6 +24,11 @@ import (
 const stackWidth = 60
 
 func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
+	a.decorate()
+	a.highlight()
+	if !a.editedShown() && a.sideOf(r.Focus) == rsTreeID {
+		_ = a.tree.Focus() // the edited structure is not shown (structure.editable went off)
+	}
 	if err := a.sync(); err != nil {
 		a.LoadErr = err
 	}
@@ -34,7 +39,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if bh < 3 || width < 8 {
 		return ochazuke.Text(crumb)
 	}
-	treeFocused := a.tree.List().Focused()
+	treeFocused := a.tree.List().Focused() || a.rs.tree.List().Focused()
 	// Under a modal the page is drawn with the focus it opened over, so
 	// the panel the modal came from keeps its border.
 	dataFocused := a.data.list.Focused()
@@ -47,7 +52,11 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	} else {
 		// The tree takes its natural width (plus the panel's border and
 		// padding), between 24 cells and two fifths of the page.
-		lw = l.Divide(min(max(24, a.treeWidth+4), width*2/5), width-1, ochazuke.PaneMinWidth)
+		natural := a.treeWidth
+		if a.editedShown() {
+			natural = a.editedWidth()
+		}
+		lw = l.Divide(min(max(24, natural+4), width*2/5), width-1, ochazuke.PaneMinWidth)
 		lh, rw, rh = bh, width-lw-1, bh
 	}
 	cw, ch := ochazuke.PanelContentSize(lw, lh)
@@ -91,7 +100,7 @@ func (a *App) breadcrumb() string {
 	case a.Doc == nil:
 		return a.emptyCrumb()
 	}
-	parts := []string{a.Doc.Name}
+	parts := []string{a.Doc.Name + a.dirtyMark()}
 	if s := a.shown; s != nil {
 		info := s.Types() + " ×" + fmt.Sprint(s.Count)
 		if s.IsField() {
@@ -100,8 +109,12 @@ func (a *App) breadcrumb() string {
 		if s.Optional {
 			info += " optional"
 		}
-		parts = append(parts, s.Path+" ("+info+")")
-		if note := s.DuplicateNote(); note != "" {
+		part := s.Path + " (" + info + ")"
+		if n, ok := a.rs.tree.Selected(); ok && a.editedShown() && a.rs.meta[n.ID].from != "" && a.rs.meta[n.ID].from != s.Path {
+			part += " ← " + a.rs.meta[n.ID].from
+		}
+		parts = append(parts, part)
+		if note := a.origin(s).DuplicateNote(); note != "" {
 			parts = append(parts, note)
 		}
 		if n := a.dataNode(); n != nil && a.data.list.Focused() {
@@ -117,21 +130,30 @@ func (a *App) breadcrumb() string {
 	if a.LoadErr != nil {
 		parts = append(parts, "error: "+a.LoadErr.Error())
 	}
+	if a.note != "" && a.editedShown() {
+		parts = append(parts, a.note)
+	}
 	return strings.Join(parts, "  ·  ")
 }
 
 func (a *App) treeTitle() string {
 	title := "Structure"
-	if a.Query != "" || a.Kind != "" {
+	if a.editable() && a.Doc != nil {
+		title += " · " + a.shownName() + a.dirtyMark()
+	}
+	if (a.Query != "" || a.Kind != "") && !a.editedShown() {
 		title += " (filtered)"
 	}
 	return title
 }
 
 func (a *App) treeBody(w, h int) string {
-	if a.Doc == nil {
+	switch {
+	case a.Doc == nil:
 		a.r.Placed(treeID)
 		return ""
+	case a.editedShown():
+		return a.rs.tree.View(w, h)
 	}
 	return a.tree.View(w, h)
 }
@@ -168,6 +190,9 @@ func (a *App) dataBody(w, h int) string {
 	case a.Doc == nil && a.LoadErr != nil:
 		a.r.Placed(dataID)
 		return wrap(a.LoadErr.Error(), w)
+	case a.shown == nil && a.note != "" && a.editedShown():
+		a.r.Placed(dataID)
+		return wrap(a.note, w)
 	case a.scalar != nil:
 		a.r.Placed(dataID)
 		return wrap(Pretty(a.scalar), w)

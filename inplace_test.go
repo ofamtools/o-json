@@ -1,0 +1,302 @@
+package main
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+
+	"github.com/unixsuperhero/ochazuke"
+)
+
+// sameJSON reports two JSON texts holding the same value (key order
+// aside: the copy writes keys in the shape's order).
+func sameJSON(t *testing.T, got, want string) bool {
+	t.Helper()
+	var g, w any
+	if err := json.Unmarshal([]byte(got), &g); err != nil {
+		t.Fatalf("output %q: %v", got, err)
+	}
+	if err := json.Unmarshal([]byte(want), &w); err != nil {
+		t.Fatalf("input %q: %v", want, err)
+	}
+	return reflect.DeepEqual(g, w)
+}
+
+// identical checks the state is the copy: every entry maps a path to
+// itself, the output is the input, nothing unsaved.
+func identical(t *testing.T, a *App) {
+	t.Helper()
+	m := a.Mapping()
+	if len(m.Map) == 0 {
+		t.Fatal("empty mapping")
+	}
+	for _, e := range m.Map {
+		if e.To == nil || dotted(e.From) != *e.To { // an array document's shapes are [] and .[]
+			t.Fatalf("entry %v is not the identity (%v)", e, entries(m))
+		}
+	}
+	if got := output(t, a); !sameJSON(t, got, Compact(a.Doc.Root, 0)) {
+		t.Fatalf("output %s\ninput %s", got, Compact(a.Doc.Root, 0))
+	}
+	if a.unsaved() || strings.Contains(view(a), "[+]") {
+		t.Fatalf("the copy is unsaved\n%s", view(a))
+	}
+}
+
+// The viewer opens with the structure pane a copy of the document's
+// shape: the identity mapping, the output equal to the input, also for
+// an array document, a repeated key and shapes that mix types.
+func TestIdentityStart(t *testing.T) {
+	mixed := filepath.Join(t.TempDir(), "mixed.json")
+	if err := os.WriteFile(mixed, []byte(`{"a":[{"x":1},{"x":null},{"x":{"y":1}},{"x":[2]}],"b":null,"c":[[1],{"k":2}],"d":{}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{sample, nestDoc, "testdata/top-array.json", "testdata/duplicate-keys.json", mixed} {
+		t.Run(filepath.Base(path), func(t *testing.T) {
+			a := open(t, path, 120, 30)
+			if !a.editedShown() || a.sideOf(a.r.Focus) != rsTreeID {
+				t.Fatalf("not the edited view: focus %q", a.r.Focus)
+			}
+			if !strings.Contains(view(a), "Structure · edited") {
+				t.Fatalf("title\n%s", view(a))
+			}
+			identical(t, a)
+			agreesWith(t, a, path)
+		})
+	}
+}
+
+// A move in the viewer's structure pane shifts the data pane at once,
+// and the mapping is what o-json restructure --map (and jq) runs.
+func TestMoveInTheViewerShiftsTheData(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	a.on(t, ".meta.count")
+	if !strings.Contains(view(a), "Value .meta.count") {
+		t.Fatalf("before\n%s", view(a))
+	}
+	press(t, a, "<", "<")
+	frame := view(a)
+	if !strings.Contains(frame, "Value .count") || !strings.Contains(line(frame, ".count ("), "← .meta.count") {
+		t.Fatalf("the data pane did not follow the move\n%s", frame)
+	}
+	if !strings.Contains(frame, "Structure · edited [+]") || line(frame, "sample.json [+]  ·") == "" {
+		t.Fatalf("no [+]\n%s", frame)
+	}
+	onRoot(t, a)
+	if row := line(view(a), "count  "); !strings.Contains(row, "4") {
+		t.Fatalf("the root's fields have no count\n%s", view(a))
+	}
+	got := agrees(t, a)
+	if !strings.Contains(got, `"count":4,"meta":{"generated":"2026-10-25","source":null}`) {
+		t.Fatalf("output %s", got)
+	}
+}
+
+// u in the viewer undoes the move: the data and the mapping are the
+// copy again, and nothing is unsaved.
+func TestUndoRestoresTheOriginalData(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<")
+	if !a.unsaved() {
+		t.Fatal("the move is not unsaved")
+	}
+	press(t, a, "u")
+	identical(t, a)
+	press(t, a, "ctrl+r")
+	if !strings.Contains(output(t, a), `"count":4,"meta"`) {
+		t.Fatalf("redo: %s", output(t, a))
+	}
+}
+
+// T flips the structure pane and the data pane between the original and
+// the edited document, on the same shape; the header says which.
+func TestToggleOriginalAndEdited(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<")
+	press(t, a, "T")
+	frame := view(a)
+	if !a.original || a.sideOf(a.r.Focus) == rsTreeID || !strings.Contains(frame, "Structure · original [+]") {
+		t.Fatalf("T: focus %q\n%s", a.r.Focus, frame)
+	}
+	if s := a.selectedShape(); s == nil || s.Path != ".meta.count" || !strings.Contains(frame, "Value .meta.count") {
+		t.Fatalf("original shows %v\n%s", s, frame)
+	}
+	if !a.available("viewer", "search") || a.available("restructure", "write") || !a.available("viewer", "write") {
+		t.Fatal("the original view's keys")
+	}
+	press(t, a, "T")
+	frame = view(a)
+	if a.original || a.sideOf(a.r.Focus) != rsTreeID || !strings.Contains(frame, "Value .count") || !strings.Contains(frame, "Structure · edited [+]") {
+		t.Fatalf("T again: focus %q\n%s", a.r.Focus, frame)
+	}
+	if a.available("viewer", "search") || !a.available("restructure", "write") {
+		t.Fatal("the edited view's keys")
+	}
+	// From the data pane T flips the data and leaves the focus there.
+	press(t, a, "tab")
+	focus := a.r.Focus
+	press(t, a, "T")
+	if a.r.Focus != focus || !strings.Contains(view(a), "Value .meta.count") {
+		t.Fatalf("T from the data pane: focus %q (was %q)\n%s", a.r.Focus, focus, view(a))
+	}
+}
+
+// w in the edited view writes the restructured document by the write
+// rules: a new file, an existing one asks, the source never; W on the
+// source asks once. Nothing touches the source before that.
+func TestWriteFromTheViewer(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "doc.json")
+	data, _ := os.ReadFile(sample)
+	if err := os.WriteFile(src, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a := open(t, src, 120, 30)
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<")
+	if after, _ := os.ReadFile(src); string(after) != string(data) {
+		t.Fatal("an edit wrote the source")
+	}
+	press(t, a, "w")
+	if a.r.TopModal() != ochazuke.ArgsFormID {
+		t.Fatalf("w: modal %q", a.r.TopModal())
+	}
+	press(t, a, "esc")
+	if a.r.TopModal() != "" {
+		press(t, a, "esc")
+	}
+	write := func(args ochazuke.Arguments) error {
+		_, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "write", Args: args})
+		settle(a)
+		return err
+	}
+	if err := write(ochazuke.Arguments{"path": src}); err == nil || !strings.Contains(err.Error(), "is the source") {
+		t.Fatalf("write source: %v", err)
+	}
+	out := filepath.Join(dir, "doc.restructured.json")
+	if err := write(ochazuke.Arguments{"path": out}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := os.ReadFile(out); !strings.Contains(string(got), `"count": 4,`) || !strings.HasSuffix(string(got), "}\n") {
+		t.Fatalf("wrote %q (info %q, error %q)", got, a.m.Info, a.m.Status)
+	}
+	if a.unsaved() || strings.Contains(view(a), "[+]") {
+		t.Fatal("still unsaved after the write")
+	}
+	// The file is there now: w asks before replacing it.
+	if err := write(ochazuke.Arguments{"path": out}); err != nil || a.r.TopModal() == "" {
+		t.Fatalf("no confirm: %v", err)
+	}
+	press(t, a, "n")
+	// W on the source asks once; n leaves it as it was.
+	if err := write(ochazuke.Arguments{"path": src, "force": true}); err != nil || a.r.TopModal() == "" {
+		t.Fatalf("W source: no confirm: %v", err)
+	}
+	press(t, a, "n")
+	if after, _ := os.ReadFile(src); string(after) != string(data) {
+		t.Fatal("the source changed")
+	}
+}
+
+// structure.editable off keeps the viewer read-only: the shape tree, no
+// T, and the restructure page alone edits.
+func TestReadOnlyViewerSetting(t *testing.T) {
+	a := readOnly(t, sample, 120, 30)
+	frame := view(a)
+	if a.editedShown() || !strings.Contains(frame, "Structure ━") || strings.Contains(frame, "edited") {
+		t.Fatalf("read-only viewer\n%s", frame)
+	}
+	if a.available("restructure", "show") || a.available("restructure", "write") || len(a.Mapping().Map) != 0 {
+		t.Fatal("T or w on the read-only viewer, or a copy made")
+	}
+	selectPath(t, a, ".items")
+	press(t, a, "T", ">", ">")
+	if !strings.Contains(view(a), "Table .items") || a.selectedShape().Path != ".items" {
+		t.Fatalf("keys changed the read-only viewer\n%s", view(a))
+	}
+	press(t, a, "M")
+	if len(a.rs.tree.Nodes()) != 1 {
+		t.Fatalf("the restructure page did not open empty: %+v", a.rs.tree.Nodes())
+	}
+}
+
+// viewer.open and R with edits no write saved ask once (viewer.discard):
+// n keeps the edits, y drops them and reads the file.
+func TestOpenAndReloadWithUnsavedEditsAsk(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	a.r.Config().StateDir = t.TempDir()
+	edit := func() {
+		t.Helper()
+		a.on(t, ".meta.count")
+		press(t, a, "<", "<")
+	}
+	edit()
+	press(t, a, "R")
+	if a.r.TopModal() == "" {
+		t.Fatal("R did not ask")
+	}
+	press(t, a, "n")
+	settle(a)
+	if !a.unsaved() {
+		t.Fatal("n dropped the edits")
+	}
+	press(t, a, "R")
+	finish(a, Press(a.m, "y"))
+	settle(a)
+	identical(t, a)
+	edit()
+	viewerDo(t, a, "open", ochazuke.Arguments{"path": nestDoc})
+	if a.r.TopModal() == "" || a.Path != sample {
+		t.Fatalf("open did not ask: modal %q path %q", a.r.TopModal(), a.Path)
+	}
+	finish(a, Press(a.m, "y"))
+	settle(a)
+	if a.Path != nestDoc {
+		t.Fatalf("y: path %q", a.Path)
+	}
+	identical(t, a)
+	// Without edits it reads at once.
+	viewerDo(t, a, "open", ochazuke.Arguments{"path": sample})
+	settle(a)
+	if a.r.TopModal() != "" || a.Path != sample {
+		t.Fatalf("open without edits: modal %q path %q", a.r.TopModal(), a.Path)
+	}
+}
+
+// The viewer and the restructure page are one state: M opens on the
+// in-place edits; with none it starts empty, and left empty the viewer
+// gets its copy back.
+func TestRestructurePageSharesTheState(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	press(t, a, "M")
+	if len(a.rs.tree.Nodes()) != 1 || !a.rs.startedEmpty || !strings.Contains(view(a), "Restructured  0 nodes") {
+		t.Fatalf("M did not start empty\n%s", view(a))
+	}
+	press(t, a, "q")
+	identical(t, a)
+	a.on(t, ".meta.count")
+	press(t, a, "<", "<")
+	before := a.Mapping()
+	press(t, a, "M")
+	if mappingKey(a.Mapping()) != mappingKey(before) || !strings.Contains(view(a), "count") {
+		t.Fatalf("M did not open on the edits: %v", entries(a.Mapping()))
+	}
+	// An edit on the page shows in the viewer.
+	a.on(t, ".name")
+	press(t, a, "d", "d", "q")
+	if a.r.Page != pageID || !a.editedShown() || a.selectedShape() == nil {
+		t.Fatalf("back: page %q", a.r.Page)
+	}
+	if got := output(t, a); strings.Contains(got, `"name":"o-json sample"`) || !strings.Contains(got, `"count":4`) {
+		t.Fatalf("viewer output %s", got)
+	}
+	onRoot(t, a)
+	if strings.Contains(view(a), "o-json sample") {
+		t.Fatalf("the data pane shows the deleted key\n%s", view(a))
+	}
+}
