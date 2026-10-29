@@ -1,4 +1,4 @@
-// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers, and an unavailable one passes the key on (> and < on a restructure node nest where the JSON rules allow, else the divider resizes). The outline's tab, shift+tab and i are unbound: nesting goes through the JSON rules (> <) and renaming through r. A user's bindings.json overrides them.
+// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers, and an unavailable one passes the key on (> on a restructure node nests where the JSON rules allow, else wraps the node in a new key, and on an item resizes the divider; t turns a key into an array, or an array back into a key, where the mapping still checks). The outline's tab, shift+tab and i are unbound: nesting goes through the JSON rules (> <) and renaming through r; o, O and a add a key with a placeholder opened selected (restructure.add-key). A user's bindings.json overrides them.
 {
   "bindings": [
     {"context": "rows/normal", "bindings": [
@@ -56,11 +56,17 @@
     ]},
     {"context": "node/normal", "bindings": [
       {"key": ">", "action": "node.indent", "hint": ">/< nest"},
+      {"key": ">", "action": "node.wrap", "hidden": true},
       {"key": "<", "action": "node.dedent", "hidden": true},
+      {"key": "t", "action": "node.array", "hint": "array/object"},
+      {"key": "t", "action": "node.object", "hidden": true},
       {"key": "r", "action": "node.rename", "hint": "rename"},
       {"key": "d d", "action": "node.delete", "hint": "delete"}
     ]},
     {"context": "ochazuke.outline/normal", "bindings": [
+      {"key": "o", "action": "restructure.add-key", "args": {"where": "below"}, "hint": "o/O new key"},
+      {"key": "O", "action": "restructure.add-key", "args": {"where": "above"}, "hidden": true},
+      {"key": "a", "action": "restructure.add-key", "args": {"where": "child"}, "hidden": true},
       {"key": "tab", "unbind": true},
       {"key": "shift+tab", "unbind": true},
       {"key": "i", "unbind": true}

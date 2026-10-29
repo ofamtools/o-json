@@ -23,11 +23,13 @@ import (
 // tree, {from: origin, to: the path the node now has}.
 //
 // The tree is ochazuke's outline (OnChange set, so u and ctrl+r undo,
-// J and K move, o adds a wrapper key). o-json's own edits (send, > and <,
-// rename with a key, delete) replace the nodes and go on the same undo
-// stack as one TreeAction each, holding the nodes and meta before and
+// J and K move). o-json's own edits (send, > and <, wrap, a new key,
+// array and object, rename with a key, delete) replace the nodes and go
+// on the same undo stack as one TreeAction each, holding the nodes and meta before and
 // after. > and < follow the JSON rules as availability: where they cannot
-// apply the key passes on (to the divider's resize).
+// apply the key passes on (to the divider's resize). A new key (> where
+// a node cannot nest, o O a) opens with a placeholder selected: typing
+// names it, esc keeps it.
 //
 // Two layouts, one mechanism, setting restructure.layout: split draws
 // the original beside the restructured tree; single draws one of them,
@@ -38,6 +40,11 @@ const (
 	rsOrigID      = "restructure/original"
 	rsTreeID      = "restructure/new"
 	settingLayout = "restructure.layout"
+	settingNewKey = "restructure.new-key"
+	// toneOrigin marks, on one tree, where the other tree's selected node
+	// comes from or went to: the built-in queued tone, the scheme's accent
+	// as the foreground (a background tone waits for the library).
+	toneOrigin = ochazuke.ToneQueued
 )
 
 // nodeMeta is what o-json keeps for a restructure node beside the tree:
@@ -49,11 +56,14 @@ type nodeMeta struct {
 }
 
 type restructureState struct {
-	orig  *ochazuke.Tree
-	tree  *ochazuke.Tree
-	meta  map[string]nodeMeta
-	seq   int
-	dirty bool
+	orig *ochazuke.Tree
+	tree *ochazuke.Tree
+	// origTones are the original tree's own tones by node id (a repeated
+	// key), under the origin highlight.
+	origTones map[string][]ochazuke.ToneSpan
+	meta      map[string]nodeMeta
+	seq       int
+	dirty     bool
 	// shown is the tree a single layout draws when the focus is in
 	// neither: the last one that held it.
 	shown string
@@ -63,7 +73,31 @@ func declareSettings(r *ochazuke.Runtime) error {
 	return r.DeclareSetting(ochazuke.Setting{
 		Name: settingLayout, Type: ochazuke.SettingString, Default: "split", Enum: []string{"split", "single"},
 		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, tab swaps them",
+	}, ochazuke.Setting{
+		Name: settingNewKey, Type: ochazuke.SettingString, Default: "new-key",
+		Description: "The placeholder key a new object key gets on the restructure page (> wrapping a value, o and O): opened selected, typing replaces it; a sibling with it already gives new-key-2, -3, ...",
 	})
+}
+
+// placeholder is the key a new node under parent gets: the new-key
+// setting, numbered past the keys its siblings have (skip is a node that
+// leaves the parent, as a wrapped one does).
+func (a *App) placeholder(e edit, parent, skip string) string {
+	base := strings.TrimSpace(a.r.Settings().String(settingNewKey))
+	if base == "" {
+		base = "new-key"
+	}
+	taken := map[string]bool{}
+	for _, id := range e.siblings(parent) {
+		if id != skip {
+			taken[e.nodes[e.at(id)].Label] = true
+		}
+	}
+	key := base
+	for n := 2; taken[key]; n++ {
+		key = fmt.Sprintf("%s-%d", base, n)
+	}
+	return key
 }
 
 func (a *App) layout() string {
@@ -114,6 +148,10 @@ func (a *App) setOriginal() error {
 		return a.rs.orig.SetNodes(nil)
 	}
 	nodes, _ := shapeNodes(a.Doc.Shape, nil, "o:")
+	a.rs.origTones = map[string][]ochazuke.ToneSpan{}
+	for _, n := range nodes {
+		a.rs.origTones[n.ID] = n.Tones
+	}
 	return a.rs.orig.SetNodes(nodes)
 }
 
@@ -307,6 +345,133 @@ func (e edit) remove(ids []string) edit {
 	return e
 }
 
+// wrap puts id in a new object in its place: a wrapper (no from) holding
+// key, with id as its one child. JSON rule: an item is not wrapped (an
+// array's item has no key). It reports the wrapper's id.
+func (a *App) wrap(e edit, id, key string) (edit, string, bool) {
+	i := e.at(id)
+	if i < 0 || e.meta[id].item {
+		return e, "", false
+	}
+	parent := e.nodes[i].Parent
+	if key == "" {
+		key = a.placeholder(e, parent, id)
+	}
+	w := a.newNodeID()
+	e.nodes = slices.Insert(slices.Clone(e.nodes), i, ochazuke.TreeNode{ID: w, Parent: parent, Label: key, Noun: "node"})
+	e.nodes[i+1].Parent = w
+	e.meta[w] = nodeMeta{}
+	return e, w, true
+}
+
+// addKey adds an empty object key (a wrapper) below or above at, or as
+// at's last child; with no at, as the last top-level key. It reports the
+// new node's id.
+func (a *App) addKey(e edit, at, where, key string) (edit, string, bool) {
+	parent, pos := "", len(e.nodes)
+	if i := e.at(at); i >= 0 {
+		end := i + 1
+		for end < len(e.nodes) && e.under(e.nodes[end].ID, at) {
+			end++
+		}
+		switch where {
+		case "above":
+			parent, pos = e.nodes[i].Parent, i
+		case "child":
+			parent, pos = at, end
+		case "below", "":
+			parent, pos = e.nodes[i].Parent, end
+		default:
+			return e, "", false
+		}
+	}
+	if key == "" {
+		key = a.placeholder(e, parent, "")
+	}
+	id := a.newNodeID()
+	e.nodes = slices.Insert(slices.Clone(e.nodes), pos, ochazuke.TreeNode{ID: id, Parent: parent, Label: key, Noun: "node"})
+	e.meta[id] = nodeMeta{}
+	return e, id, true
+}
+
+// under reports a node inside the subtree of anc (not anc itself).
+func (e edit) under(id, anc string) bool {
+	for i := e.at(id); i >= 0; {
+		p := e.nodes[i].Parent
+		if p == "" {
+			return false
+		}
+		if p == anc {
+			return true
+		}
+		i = e.at(p)
+	}
+	return false
+}
+
+// toArray turns a key into an array of itself: a "[]" item that takes
+// the key's origin and its children, the key left a wrapper (as dedent
+// collects). JSON rule: a key with an origin, not an item, not an array
+// already.
+func (a *App) toArray(e edit, id string) (edit, bool) {
+	i := e.at(id)
+	md := e.meta[id]
+	if i < 0 || md.item || md.from == "" || e.hasItem(id) {
+		return e, false
+	}
+	item := a.newNodeID()
+	e.nodes = slices.Clone(e.nodes)
+	for j := range e.nodes {
+		if e.nodes[j].Parent == id {
+			e.nodes[j].Parent = item
+		}
+	}
+	e.nodes = slices.Insert(e.nodes, i+1, ochazuke.TreeNode{ID: item, Parent: id, Label: "[]", Noun: "node"})
+	e.meta[item] = nodeMeta{from: md.from, item: true}
+	e.meta[id] = nodeMeta{}
+	return e, true
+}
+
+// arrayOf is the array a node stands for in toObject: the node itself
+// when it holds an item, its parent when it is the item.
+func (e edit) arrayOf(id string) string {
+	if e.meta[id].item {
+		if i := e.at(id); i >= 0 {
+			return e.nodes[i].Parent
+		}
+		return ""
+	}
+	if e.hasItem(id) {
+		return id
+	}
+	return ""
+}
+
+// toObject turns an array back into the key its item was: the item goes,
+// its children and its origin pass to the array's key. JSON rule: an
+// array that is a key (not the root, not an item).
+func (a *App) toObject(e edit, id string) (edit, bool) {
+	arr := e.arrayOf(id)
+	if arr == "" || e.meta[arr].item {
+		return e, false
+	}
+	var item string
+	for _, n := range e.nodes {
+		if n.Parent == arr && e.meta[n.ID].item {
+			item = n.ID
+		}
+	}
+	e.nodes = slices.Clone(e.nodes)
+	for j := range e.nodes {
+		if e.nodes[j].Parent == item {
+			e.nodes[j].Parent = arr
+		}
+	}
+	e.meta[arr] = nodeMeta{from: e.meta[item].from}
+	e.nodes = slices.Delete(e.nodes, e.at(item), e.at(item)+1)
+	return e, true
+}
+
 // send adds shapes: each with the ancestors it needs (a node that came
 // from the same shape is reused, wherever it is now) and its descendants
 // (at most maxFields fields per shape, as the tree lists). It reports the
@@ -410,6 +575,51 @@ func (a *App) decorate() {
 	_ = a.rs.tree.SetNodes(nodes)
 }
 
+// highlight marks, on one tree, the other tree's selected node: the
+// shape a restructure node comes from on the original, and on the
+// restructure the nodes an original shape went to. It runs every frame
+// and sets a tree's nodes only when its marks change.
+func (a *App) highlight() {
+	var origLit string
+	newLit := map[string]bool{}
+	switch a.sideOf(a.r.Focus) {
+	case rsTreeID:
+		if n, ok := a.rs.tree.Selected(); ok {
+			if f := a.rs.meta[n.ID].from; f != "" {
+				origLit = "o:s:" + f
+			}
+		}
+	case rsOrigID:
+		if n, ok := a.rs.orig.Selected(); ok {
+			if s, _ := n.Data.(*Shape); s != nil {
+				for id, md := range a.rs.meta {
+					if md.from == s.Path {
+						newLit[id] = true
+					}
+				}
+			}
+		}
+	}
+	mark := func(t *ochazuke.Tree, base func(string) []ochazuke.ToneSpan, lit func(string) bool) {
+		nodes := t.Nodes()
+		changed := false
+		for i, n := range nodes {
+			want := base(n.ID)
+			if lit(n.ID) {
+				want = append(slices.Clone(want), ochazuke.CellTone(0, toneOrigin))
+			}
+			if !slices.Equal(n.Tones, want) {
+				nodes[i].Tones, changed = want, true
+			}
+		}
+		if changed {
+			_ = t.SetNodes(nodes)
+		}
+	}
+	mark(a.rs.orig, func(id string) []ochazuke.ToneSpan { return a.rs.origTones[id] }, func(id string) bool { return id == origLit })
+	mark(a.rs.tree, func(string) []ochazuke.ToneSpan { return nil }, func(id string) bool { return newLit[id] })
+}
+
 // --- verbs ---
 
 // focusedNode is the restructure node on a focus, "" for none.
@@ -456,6 +666,23 @@ func (a *App) registerRestructureVerbs() {
 	})
 	r.DefineGuard("node-dedent", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.moved(a.focusedNode(ev.Focus), a.dedent)
+	})
+	r.DefineGuard("node-wrappable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		return a.moved(a.focusedNode(ev.Focus), func(e edit, id string) (edit, bool) {
+			e, _, ok := a.wrap(e, id, "x")
+			return e, ok
+		})
+	})
+	r.DefineGuard("node-to-array", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		return a.moved(a.focusedNode(ev.Focus), a.toArray)
+	})
+	r.DefineGuard("node-to-object", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		return a.moved(a.focusedNode(ev.Focus), a.toObject)
+	})
+	// A new key goes on the restructure tree: on a node, or the tree
+	// itself while it is empty.
+	r.DefineGuard("restructure-tree", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		return a.sideOf(ev.Focus) == rsTreeID
 	})
 	r.DefineGuard("node-renamable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		id := a.focusedNode(ev.Focus)
@@ -523,8 +750,77 @@ func (a *App) registerRestructureVerbs() {
 			c.Info(fmt.Sprintf("deleted %d node(s); u brings them back", len(ids)))
 			return ochazuke.Done(a.Mapping())
 		}, "Delete the nodes and their children from the restructure; u brings them back").Many()
+	// A new key (a wrapper from >, or o and O) opens selected: typing
+	// renames it, esc or a motion keeps the placeholder. With key it is
+	// named at once (the palette, the CLI).
+	created := func(c ochazuke.Ctx, label string, e edit, id, key string) ochazuke.Result {
+		if err := a.commit(label, id, e); err != nil {
+			return ochazuke.Failed(err)
+		}
+		a.refocus(id)
+		if key == "" {
+			if err := a.rs.tree.Edit(id, true); err != nil {
+				return ochazuke.Failed(err)
+			}
+		}
+		return ochazuke.Done(a.Mapping())
+	}
+	toggle := func(name string, fn func(edit, string) (edit, bool)) ochazuke.AppHandler {
+		return func(c ochazuke.Ctx) ochazuke.Result {
+			id := c.Instance.ID
+			e, ok := fn(a.current(), id)
+			if !ok || !a.valid(e.nodes, e.meta) && a.valid(a.rs.tree.Nodes(), a.rs.meta) {
+				return ochazuke.Failed(fmt.Errorf("%s does not apply here", name))
+			}
+			if name == "to-object" {
+				id = edit{nodes: a.rs.tree.Nodes(), meta: a.rs.meta}.arrayOf(id)
+			}
+			if err := a.commit(name, id, e); err != nil {
+				return ochazuke.Failed(err)
+			}
+			a.refocus(id)
+			return ochazuke.Done(a.Mapping())
+		}
+	}
+	r.Define("node").
+		Verb("wrap", func(c ochazuke.Ctx) ochazuke.Result {
+			key := ochazuke.StringArg(c.Args, "key", "")
+			e, w, ok := a.wrap(a.current(), c.Instance.ID, key)
+			if !ok || !a.valid(e.nodes, e.meta) && a.valid(a.rs.tree.Nodes(), a.rs.meta) {
+				return ochazuke.Failed(errors.New("wrap does not apply here"))
+			}
+			return created(c, "wrap", e, w, key)
+		}, "Wrap the node in a new object in its place, the new key a placeholder opened selected (typing names it); > does it where the node cannot nest").When("node-wrappable").
+		Verb("array", toggle("to-array", a.toArray), "Turn the key into an array of itself: its value, or its keys, become the array's item").When("node-to-array").
+		Verb("object", toggle("to-object", a.toObject), "Turn an array (or its item) back into the key its item was, where the mapping still checks").When("node-to-object")
+	r.Define("restructure").
+		Verb("add-key", func(c ochazuke.Ctx) ochazuke.Result {
+			key := ochazuke.StringArg(c.Args, "key", "")
+			at := a.focusedNode(c.Instance.ID)
+			if at == "" {
+				if n, ok := a.rs.tree.Selected(); ok {
+					at = n.ID
+				}
+			}
+			e, id, ok := a.addKey(a.current(), at, ochazuke.StringArg(c.Args, "where", "below"), key)
+			if !ok {
+				return ochazuke.Failed(errors.New("where is below, above or child"))
+			}
+			if !a.valid(e.nodes, e.meta) && a.valid(a.rs.tree.Nodes(), a.rs.meta) {
+				return ochazuke.Failed(errors.New("a key does not go here: an array takes only its [] item"))
+			}
+			if where := ochazuke.StringArg(c.Args, "where", ""); where == "child" && at != "" {
+				_ = a.rs.tree.SetCollapsed(at, false)
+			}
+			return created(c, "add key", e, id, key)
+		}, "Add an empty object key below or above the node, or as its last child; the key is a placeholder opened selected (typing names it)").When("restructure-tree")
 	params("node.rename", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the new key; omit to edit it in place"}})
-	setHistory(r, ochazuke.HistoryChange, "node.indent", "node.dedent", "node.rename", "node.delete")
+	params("node.wrap", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the wrapper's key; omit for a placeholder opened selected"}})
+	params("restructure.add-key", map[string]ochazuke.Parameter{
+		"where": {Type: "string", Enum: []string{"below", "above", "child"}},
+		"key":   {Type: "string", Description: "the new key; omit for a placeholder opened selected"},
+	})
+	setHistory(r, ochazuke.HistoryChange, "node.indent", "node.dedent", "node.rename", "node.delete", "node.wrap", "node.array", "node.object", "restructure.add-key")
 
 	sendShapes := func(c ochazuke.Ctx, shapes []*Shape) ochazuke.Result {
 		if a.Doc == nil {
@@ -767,6 +1063,7 @@ func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, overwrite bool
 
 func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	a.decorate()
+	a.highlight()
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := r.PaneLayout(rsPageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.restructureCrumb(), width, "…"))

@@ -154,12 +154,13 @@ func TestIndentAndDedent(t *testing.T) {
 	if got := entries(a.Mapping())[4]; got != ".items[].owner.email>.items[].owner.email" {
 		t.Fatalf("> %v", entries(a.Mapping()))
 	}
-	// version under name (a string): not available, so > resizes.
-	selectIn(t, a, a.rs.tree, a.fromPath(".version"))
+	// > on an item neither nests nor wraps, so it resizes.
+	selectIn(t, a, a.rs.tree, func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].item })
 	before := strings.Index(line(view(a), "Restructured"), "Restructured")
+	mapped := entries(a.Mapping())
 	press(t, a, ">")
-	if got := entries(a.Mapping()); got[len(got)-1] != ".version>.version" {
-		t.Fatalf("> on version under a string: %v", got)
+	if got := entries(a.Mapping()); !slices.Equal(got, mapped) {
+		t.Fatalf("> on an item: %v", got)
 	}
 	if after := strings.Index(line(view(a), "Restructured"), "Restructured"); after <= before {
 		t.Errorf("> fell through to the divider: %d then %d", before, after)
