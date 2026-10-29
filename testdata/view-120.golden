@@ -20,5 +20,5 @@
   ┃ 1–12 / 18                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  g > nest below · S wrap · r rename · d d delete · y y yank · p/P put · m query mode · space list.mark · o/O new key…  
+  > j nest below · S wrap · r rename · d d delete · y y yank · p/P put · m query mode · space list.mark · o/O new key…  
                                                                                                                         

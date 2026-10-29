@@ -456,23 +456,6 @@ func (a *App) indentAll(e edit, ids []string, into string) (edit, int) {
 	return e, n
 }
 
-// indentSubjects is what node.indent works on: the selection (else the
-// node), and with "with" (next or previous) the node beside it in the
-// tree too, as vim's >j and >k take this line and the next.
-func (a *App) indentSubjects(e edit, ids []string, with string) []string {
-	if len(ids) != 1 || with == "" {
-		return ids
-	}
-	i := e.at(ids[0])
-	switch {
-	case with == "next" && i >= 0 && i+1 < len(e.nodes):
-		return []string{ids[0], e.nodes[i+1].ID}
-	case with == "previous" && i > 0:
-		return []string{e.nodes[i-1].ID, ids[0]}
-	}
-	return ids
-}
-
 // dedent moves id out to its parent's level, just before the parent (so
 // dedenting a parent's children one by one stacks them before it, in
 // order). Out of an array item it moves out of the array (an item takes
@@ -1085,8 +1068,7 @@ func (a *App) registerRestructureVerbs() {
 			return false
 		}
 		now := a.current()
-		ids := a.indentSubjects(now, []string{id}, ochazuke.StringArg(ev.Args, "with", ""))
-		after, n := a.indentAll(edit{nodes: slices.Clone(now.nodes), meta: maps.Clone(now.meta)}, ids, ochazuke.StringArg(ev.Args, "into", "previous"))
+		after, n := a.indentAll(edit{nodes: slices.Clone(now.nodes), meta: maps.Clone(now.meta)}, []string{id}, ochazuke.StringArg(ev.Args, "into", "previous"))
 		return n > 0 && (a.valid(after.nodes, after.meta) || !a.valid(now.nodes, now.meta))
 	})
 	r.DefineGuard("node-dedent", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
@@ -1157,9 +1139,8 @@ func (a *App) registerRestructureVerbs() {
 	}
 	r.Define("node").
 		Verb("indent", move("indent", func(c ochazuke.Ctx, e edit) (edit, int) {
-			ids := a.indentSubjects(e, subjectIDs(c), ochazuke.StringArg(c.Args, "with", ""))
-			return a.indentAll(e, ids, ochazuke.StringArg(c.Args, "into", "previous"))
-		}), "Nest the node into the nearest sibling that takes keys (an object or a wrapper): into previous (the default), the one above, as its last key; into next, the one below, as its first. Plain siblings between are skipped. With with (next or previous) the node beside it in the tree is indented too, as vim's >j and >k take two lines").Many().When("node-indent").
+			return a.indentAll(e, subjectIDs(c), ochazuke.StringArg(c.Args, "into", "previous"))
+		}), "Nest the node into the nearest sibling that takes keys (an object or a wrapper): into previous (the default, > k and > >), the one above, as its last key; into next (> j and g >), the one below, as its first. Plain siblings between are skipped. Several nodes are a V selection").Many().When("node-indent").
 		Verb("dedent", move("dedent", func(c ochazuke.Ctx, e edit) (edit, int) {
 			n := 0
 			for _, id := range subjectIDs(c) {
@@ -1275,7 +1256,6 @@ func (a *App) registerRestructureVerbs() {
 	params("node.rename", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the new key; omit to edit it in place"}})
 	params("node.indent", map[string]ochazuke.Parameter{
 		"into": {Type: "string", Enum: []string{"previous", "next"}, Description: "the sibling to nest into: the nearest above that takes keys (previous, the default) or below (next)"},
-		"with": {Type: "string", Enum: []string{"next", "previous"}, Description: "also indent the node below (next) or above (previous) in the tree, as vim's >j and >k"},
 	})
 	params("node.wrap", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the wrapper's key; omit for a placeholder opened selected"}})
 	params("restructure.add-key", map[string]ochazuke.Parameter{

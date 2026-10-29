@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -147,22 +149,53 @@ func TestIndentIntoNextObject(t *testing.T) {
 	agreesWith(t, a, nestDoc)
 }
 
-// >j and >k take this node and the one below or above, as vim's do.
-func TestIndentTwoNodes(t *testing.T) {
-	a := openNest(t, nestDoc, ".a", ".x", ".y", ".z")
-	a.on(t, ".y")
+// > j and > k are directions to the target object, not ranges: > j nests
+// the node into the nearest object below (plain values skipped) as its
+// first key, > k into the nearest above as its last; with none that way
+// the key does nothing (it never falls through to >).
+func TestIndentDirections(t *testing.T) {
+	doc := filepath.Join(t.TempDir(), "abc.json")
+	if err := os.WriteFile(doc, []byte(`{"a":1,"b":2,"c":{"d":33}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a := openNest(t, doc, ".a", ".b", ".c")
+	a.on(t, ".a")
 	press(t, a, ">", "j")
-	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3,"y":4,"z":5}}` {
-		t.Fatalf("> j: %s", got)
+	if got := output(t, a); got != `{"b":2,"c":{"a":1,"d":33}}` {
+		t.Fatalf("> j on a: %s", got)
 	}
 	press(t, a, "u")
-	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"z":5}` {
+	if got := output(t, a); got != `{"a":1,"b":2,"c":{"d":33}}` {
 		t.Fatalf("one undo step: %s", got)
 	}
+	a.on(t, ".b")
+	press(t, a, ">", "k")
+	if got := output(t, a); got != `{"a":1,"b":2,"c":{"d":33}}` || a.r.Mode.Name != "normal" {
+		t.Fatalf("> k with no object above: %s (mode %q)", got, a.r.Mode.Name)
+	}
+
+	a = openNest(t, nestDoc, ".a", ".x", ".y", ".z")
 	a.on(t, ".z")
 	press(t, a, ">", "k")
-	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3,"y":4,"z":5}}` {
-		t.Fatalf("> k: %s", got)
+	// z's nearest object above is x, past the plain y.
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3,"z":5},"y":4}` {
+		t.Fatalf("> k on z: %s", got)
+	}
+	press(t, a, "u")
+	a.on(t, ".a")
+	press(t, a, ">", "j")
+	if got := output(t, a); got != `{"x":{"a":1,"b":2,"c":3},"y":4,"z":5}` {
+		t.Fatalf("> j on a: %s", got)
+	}
+	press(t, a, "u")
+	a.on(t, ".y")
+	press(t, a, ">", "j")
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"z":5}` || a.r.Mode.Name != "normal" {
+		t.Fatalf("> j with no object below: %s (mode %q)", got, a.r.Mode.Name)
+	}
+	press(t, a, ">", ">")
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3,"y":4},"z":5}` {
+		t.Fatalf("> > (as > k): %s", got)
 	}
 }
 
@@ -212,7 +245,7 @@ func TestRestructureHintsFollowAvailability(t *testing.T) {
 		t.Fatalf("hints on c: %s", hints)
 	}
 	a.on(t, ".y")
-	if hints := ochazuke.BindingHints(a.r, a.r.Focus); !strings.Contains(hints, "> > nest") {
+	if hints := ochazuke.BindingHints(a.r, a.r.Focus); !strings.Contains(hints, "> k nest above") || strings.Contains(hints, "> > nest") {
 		t.Fatalf("hints on y: %s", hints)
 	}
 }
