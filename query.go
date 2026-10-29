@@ -216,7 +216,10 @@ func (a *App) registerQuery() error {
 	r.Define("jq")
 	r.Define("jq-input")
 	a.q.in = ochazuke.NewInput(jqFieldID, "", false)
-	if err := r.AddInput(a.q.in, ochazuke.Parent(pageID), ochazuke.Kind("jq-input")); err != nil {
+	if err := declareCompleteSettings(r); err != nil {
+		return err
+	}
+	if err := r.AddInput(a.q.in, ochazuke.Parent(pageID), ochazuke.Kind("jq-input"), ochazuke.Completions(a.pathTrigger())); err != nil {
 		return err
 	}
 	// The query line is focused only by / (jq.focus): it is no focus stop

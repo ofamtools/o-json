@@ -33,6 +33,8 @@ type App struct {
 	// recent source): read before the loop starts and after each read, on
 	// the read's goroutine, so the chooser does no I/O.
 	recent []string
+	// qc is the query line's path completion (querycomplete.go).
+	qc completion
 
 	// The structure tree's filters: Query keeps shapes whose key or path
 	// contains it (case-insensitive) with their ancestors; Kind keeps

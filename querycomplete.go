@@ -1,0 +1,103 @@
+package main
+
+import (
+	"context"
+	"strings"
+	"sync/atomic"
+
+	"github.com/unixsuperhero/ochazuke"
+)
+
+// Path completion in the query line: typing "." (at the start, or right
+// after | ( ) or , ) offers the field keys of the shape the query reads at
+// that point (jqContextAt): after ".items[] | ." the keys of .items[], and
+// after ".owner." in that stage the keys of .items[].owner. An array field
+// is offered as itself and with [] (each item). Accepting replaces the
+// token after the ".", as one undoable edit. query.complete-paths off
+// offers nothing.
+//
+// The search runs off the loop, so it reads a snapshot: the shape of the
+// document the query runs on, stored while the line is drawn focused
+// (shapes are never changed once inferred).
+
+const settingCompletePaths = "query.complete-paths"
+
+func declareCompleteSettings(r *ochazuke.Runtime) error {
+	return r.DeclareSetting(ochazuke.Setting{
+		Name: settingCompletePaths, Type: ochazuke.SettingBoolean, Default: true,
+		Description: "Typing . in the jq query line offers the field keys of the shape the query reads there (after | the stage's input, after .a. the keys of .a); off, . is typed with no suggestions",
+	})
+}
+
+// completion is the query line's completion snapshot.
+type completion struct {
+	shape atomic.Pointer[Shape] // nil: nothing to offer
+}
+
+// pathTrigger is the query line's "." trigger.
+func (a *App) pathTrigger() ochazuke.CompletionTrigger {
+	return ochazuke.CompletionTrigger{Trigger: ".", Boundaries: "|(),", SearchAt: func(_ context.Context, q ochazuke.CompletionQuery) ([]ochazuke.Suggestion, error) {
+		return pathSuggestions(a.qc.shape.Load(), q), nil
+	}}
+}
+
+// snapshotShape stores the shape the query runs on for the search, or
+// nil when completion is off.
+func (a *App) snapshotShape() {
+	var s *Shape
+	switch {
+	case a.Doc == nil || !a.r.Settings().Bool(settingCompletePaths):
+	case a.editedShown():
+		s = a.restructuredDoc().shape
+	default:
+		s = a.Doc.Shape
+	}
+	a.qc.shape.Store(s)
+}
+
+// pathSuggestions are the keys under the path the token q names, read
+// in root (the document's shape): the term's input at the token, then the
+// token's steps up to its last ".".
+func pathSuggestions(root *Shape, q ochazuke.CompletionQuery) []ochazuke.Suggestion {
+	if root == nil {
+		return nil
+	}
+	text := []rune(q.Text)
+	start := min(max(q.Token.Start, 0), len(text))
+	base := jqContextAt(text, start).input
+	if base == "" {
+		return nil // the query built the value here: no shape to read
+	}
+	head, prefix := "", q.Query
+	if i := strings.LastIndex(q.Query, "."); i >= 0 {
+		head, prefix = q.Query[:i], q.Query[i+1:]
+	}
+	at := base
+	if head != "" {
+		at = joinJQ(base, normPath("."+head))
+	}
+	s := root.Find(at)
+	if s == nil {
+		return nil
+	}
+	lead := ""
+	if head != "" {
+		lead = head + "."
+	}
+	var out []ochazuke.Suggestion
+	for _, c := range s.Children {
+		if !c.IsField() || !strings.HasPrefix(strings.ToLower(c.Key), strings.ToLower(strings.Trim(prefix, `"`))) {
+			continue
+		}
+		key := strings.TrimPrefix(keyStep(c.Key), ".")
+		if strings.HasPrefix(key, "[") {
+			key = quote(c.Key) // ."odd key" reads as .["odd key"]
+		}
+		detail := c.Types() + " " + c.Presence()
+		out = append(out, ochazuke.Suggestion{Text: lead + key, Label: key, Detail: detail})
+		if c.items != nil {
+			out = append(out, ochazuke.Suggestion{Text: lead + key + "[]", Label: key + "[]", Detail: "each item"})
+		}
+	}
+	return out
+}

@@ -162,6 +162,9 @@ func (a *App) queryLines(s ochazuke.Styles, width int) (ochazuke.Block, int) {
 	a.r.Placed(jqFieldID)
 	in := a.q.in
 	focused := a.r.Focus == jqFieldID
+	if focused {
+		a.snapshotShape()
+	}
 	prompt := "jq "
 	pw := ansi.StringWidth(prompt)
 	avail := max(1, width-pw)
