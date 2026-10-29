@@ -1,6 +1,6 @@
 # o-json: agent guide
 
-`o-json` (so `o json`) is the family's JSON structure and table viewer. It has a command line (`structure`, `table` and `get` print text, and the `doc` noun prints JSON for a host) and a two-panel ochazuke viewer. It never writes the document it reads unless asked: only `restructure --out`, the viewer's `viewer.write` and `restructure.write`/`export-map` (the restructure page, and `w` in the viewer's edited view) write a file (the recent list, `recent.json` in the state directory, aside), a new one unless overwriting is asked for (and confirmed, on the page); the source only with `--overwrite` or the page's `W`, which confirms (`restructure.overwrite-source`). Usage and keys are in README.md.
+`o-json` (so `o json`) is the family's JSON structure and table viewer. It has a command line (`structure`, `table` and `get` print text, and the `doc` noun prints JSON for a host) and a two-panel ochazuke viewer. It never writes the document it reads unless asked: only `restructure --out`, `export --out`, the viewer's `viewer.write`, `viewer.export` and `restructure.write`/`export-map` (the restructure page, and `w` in the viewer's edited view) write a file (the recent list, `recent.json` in the state directory, aside), a new one unless overwriting is asked for (and confirmed, on the page); the source only with `--overwrite` or the page's `W`, which confirms (`restructure.overwrite-source`). Usage and keys are in README.md.
 
 It is an ochazuke application, so ochazuke's rules apply here unchanged. Read `~/proj/ochazuke/AGENTS.md` first, especially "Building an application on ochazuke" and the Invariants: keys are binding rows (no key-name switches), every row is atomic, motions are visual, hints derive from bindings, Bubble Tea v2 idioms only, never bind F1 to F12. `~/proj/o-csv` is the sibling it copies its shape from (dispatch, shell, prompt, clipboard, key test helpers).
 
@@ -19,6 +19,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | Reading a file or stdin (`ReadDoc`, `splitFile`) | `input.go` |
 | `main`, oden dispatch (a file word opens the viewer), the help note | `main.go` |
 | The text commands `structure`, `table`, `get`, `restructure` | `commands.go` |
+| Export: the format table (`exportFormats`, extension → writer → jq step), `Export` (rows, dotted columns, `export.arrays`/`join`/`null`), the jq `@csv`/`@tsv` program, `viewer.export`, the extension a write infers (`encodeFor`), `o-json export` | `export.go` |
 | Restructure: the mapping, `Plan` (check, `Apply`, `JQ`, `Complete`), `writeNew`/`writeAtomic` | `restructure.go` |
 | Value patches (the mapping's `patches`): `Patch`, the orphan rule, the Go apply (`applyPatches`, copies along the path) and the guarded jq steps | `patch.go` |
 | Value edits in the data pane: the `value` noun (edit, delete, add, rename, paste, yank, patches, drop), the value under the cursor (`valueOf`), type inference (`inferValue`), the inline input (`value-input`, drawn on the row), `data.editable` | `values.go` |

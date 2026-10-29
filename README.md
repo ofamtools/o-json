@@ -1,6 +1,6 @@
 # o-json
 
-A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out`, the viewer's `w` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
+A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out`, `export --out`, the viewer's `w` and `viewer.export` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
 
 ```sh
 o-json data.json                        # open the viewer (also: o-json view data.json)
@@ -11,6 +11,7 @@ o-json table data.json .items           # an array as a table, optional columns 
 o-json get data.json '.items[0].owner'  # one value
 o-json restructure data.json --map spec.json        # a new document from a mapping
 o-json restructure data.json --map spec.json --jq   # the same as a jq program
+o-json export data.json --of .items > items.csv     # an array as csv (tsv, jsonl, md)
 o-json --smoke data.json                # render one 80x24 frame to stdout and exit
 ```
 
@@ -137,6 +138,23 @@ A key an object repeats is read as jq reads it: the last value, at the first one
 
 Output goes to stdout. `--out PATH` writes it to a new file instead (atomically: a temporary file beside it, then a rename); an existing file, the source among them, is replaced only with `--overwrite`. `--out` takes a value: the flag parser has no optional values, so there is no default `NAME.restructured.json`.
 
+## export
+
+`o-json export FILE|- [--map SPEC.json] [--of PATH] [--format csv|tsv|jsonl|md] [--columns A,B] [--arrays join|json|rows] [--join SEP] [--null empty|null] [--jq] [--out PATH [--overwrite]]` writes one array of the document as a table file. `--map` restructures first (patches included), as `restructure` does, so the export is of the new document.
+
+- **Rows:** the items of the array at `--of` (default `.`), one per item; a `[]` path (`.items[].owner`) makes a row of every value it names. A value that is not an array is one row with one column, `value` (a container as compact JSON); so is each item of an array that is not an object.
+- **Columns:** an object item's fields, in structure order (the order `structure` and the data pane list them: most common first, then first appearance). A nested object flattens to dotted columns (`owner.name`, `owner.email`); an empty object is the cell `{}`; a field that is sometimes an object and sometimes a scalar has its own column first, then the dotted ones. `--columns owner.name,id` picks and orders them (an unknown name is an error that lists the columns).
+- **Arrays in a cell** (`--arrays`, the viewer's setting `export.arrays`): `join` (default) joins the items with `--join` (`export.join`, default `;`), a container item as compact JSON; `json` writes the array's compact JSON; `rows` writes one row per item with the other columns repeated (an object item flattens to `tags.name`; an empty array keeps the row with an empty cell; two arrays give every combination).
+- **Missing and null:** a field an item lacks is an empty cell; `null` is an empty cell, or the text `null` with `--null null` (`export.null`).
+- **Formats:** `csv` and `tsv` (encoding/csv, quoted only where needed, which o-csv reads), `md` (a Markdown table), `jsonl` (each item as one line of JSON, not flattened; `--columns` keeps those top-level keys). The format is `--format`, else `--out`'s extension, else csv.
+- **jq:** `--jq` prints a jq program (run it with `jq -r`) that makes the same csv or tsv from the source: the restructure's program, then the export's `@csv` / `@tsv` step over the same columns. The two agree record by record; the text differs where the formats do: jq's `@csv` quotes every string, and `@tsv` escapes a tab, newline, carriage return or backslash (`\t`) where encoding/csv quotes the cell (and quotes a cell holding `"`). jsonl and md have no jq form. The columns are the ones this document has: the program is for this document, not for every document of its shape.
+
+Output goes to stdout, or with `--out` to a new file (atomically); an existing file is replaced only with `--overwrite`.
+
+In the viewer, `w` to a path ending in `.csv`, `.tsv`, `.jsonl` or `.md` writes the export instead of JSON (any other extension is JSON, as before), with the same rules: a new file, an existing one asks, the source never. By default it exports the array under the cursor: the selected array's items, or the nearest array holding the selected path (`.items[].owner.name` exports `.items[]`), else the table the data pane shows. It reads the shown document (in the edited view, the restructure and the value edits applied). An export is not the document: the edits stay unsaved (`[+]`), and a document of no file keeps no name. `: viewer export {path, format, of, columns}` (the args form asks for the path) exports with explicit choices; an existing file asks (`viewer.export-overwrite`, which keeps them). `: restructure jq {format: csv}` copies the jq program of that export.
+
+o-csv is a full-screen program and ochazuke has no way to hand the terminal to another one (an `actions.json` command runs with its output captured), so there is no "open in o-csv" verb yet: `w items.csv`, then `o-csv items.csv`.
+
 ## For a host: the doc noun and the catalog
 
 `o-json doc structure|table|get FILE [PATH]` gives the same answers as JSON through ochazuke's `cli.Shell`, and `o-json catalog` describes the noun, so `o-nabe extension register json` can mount it. A value keeps the document's key order.
@@ -175,7 +193,7 @@ The viewer holds one document, like a vim buffer.
 - **Open:** `e` (`viewer.open {path}`) asks for the path in the args form. The field is free text with suggestions (`ctrl+space`, or `enter` in normal mode, opens them): the recently opened files, newest first, then the files in the current file's folder (the working directory for a document of no file). The suggestions are a list, not completion as you type: the form has no completion source that sees the typed text yet. `R` (`viewer.load`) reads the current file again. With edits no write saved, `e` and `R` ask once first (`viewer.discard {path}`); the new document starts as a copy of its shape, and `u` brings the dropped edits back.
 - **Recent files:** every file opened is recorded, newest first, in `~/.local/state/o-json/recent.json` (`$XDG_STATE_HOME` if set). The setting `recent.size` (default 10; 0 keeps none) is how many; a file that is gone is left out. `: viewer recent` lists them.
 - **Paste:** `p` (`viewer.paste`) parses the system clipboard (pbpaste, wl-paste, xclip or xsel) into the buffer, a document of no file. Invalid JSON is an error naming its line and column, and the buffer stays as it was. `viewer.paste {text}` pastes the text given (the palette, a script). With edits no write saved, `p` asks once first (`viewer.discard {paste}`).
-- **Write:** in the edited view `w` writes the restructured document (above). On the original, `w` (`viewer.write {path}`, args form) writes the shown document as indented JSON to a new file; an existing file asks first (`viewer.overwrite`) and the source is never written. A document of no file is then that file. The restructure page works on a pasted document as on a file.
+- **Write:** in the edited view `w` writes the restructured document (above). On the original, `w` (`viewer.write {path}`, args form) writes the shown document as indented JSON to a new file; an existing file asks first (`viewer.overwrite`) and the source is never written. A document of no file is then that file. A `.csv`, `.tsv`, `.jsonl` or `.md` path writes an export instead (see export). The restructure page works on a pasted document as on a file.
 
 ### Keys
 
@@ -237,7 +255,7 @@ No function keys are bound.
 - **An array document**: `t` on the empty root makes the top level an array, `. (root) array`, whose `[]` item waits for a shape. The first shape sent fills it with the array it is in: `s` on `.items[]` (or on `.items[].id`) maps `.items[]` to `.[]`, so the output is the array of items (`jq '[.items[] | …]'`). A root holding one array key turns into that array with `t` (the key goes, its item moves up); a root holding other keys becomes an array of itself, `[ {keys} ]` (`{"from": ".", "to": ".[]"}`). `t` on an array root turns it back: under the key it came from (`.[]` from `.items[]` becomes `.items[]`), back to the document's keys, or, for an array document's own array, under one new key, its placeholder opened selected (`{"new-key": [...]}`). Each flip is one undo step, the cursor on the toggled node.
 - **Origins light up.** Selecting a node on the restructured tree marks the shape it comes from on the original (the accent colour), and selecting a shape on the original marks the nodes it went to.
 - **Layouts**, setting `restructure.layout` (`L` on the page, `o-json settings set restructure.layout single`, or `: restructure layout`): `split` (default) puts the original on the left and the restructured tree with its mapping on the right, and `tab` moves between them. `single` shows one tree above the mapping, and `tab` swaps the original and the restructured tree. `L` keeps the focused tree, and the breadcrumb names the layout and the key (`split layout (L: single)`).
-- **Output**: `w` (`restructure.write {path}`) writes the restructured document to a new file, asking for the path in a form (for example `NAME.restructured.json`). An existing file asks before it is replaced (`restructure.overwrite`), and the source is never written. `W` (`restructure.write {path, force: true}`) replaces an existing file without asking and, after one confirm (`restructure.overwrite-source`: "Overwrite the source people.json …?"), the source too, as `--out SOURCE --overwrite` does on the command line. `: restructure jq` copies the jq program, and `: restructure export-map {path}` writes the mapping to a new file.
+- **Output**: `w` (`restructure.write {path}`) writes the restructured document to a new file, asking for the path in a form (for example `NAME.restructured.json`). An existing file asks before it is replaced (`restructure.overwrite`), and the source is never written. `W` (`restructure.write {path, force: true}`) replaces an existing file without asking and, after one confirm (`restructure.overwrite-source`: "Overwrite the source people.json …?"), the source too, as `--out SOURCE --overwrite` does on the command line. `: restructure jq` copies the jq program (`{format: csv}` or `tsv` ends it in the export's step), a `.csv`, `.tsv`, `.jsonl` or `.md` path writes an export (see export), and `: restructure export-map {path}` writes the mapping to a new file.
 
 | Key | Where | Does |
 |---|---|---|
