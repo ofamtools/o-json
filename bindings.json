@@ -49,6 +49,7 @@
     ]},
     {"context": "restructure/normal", "bindings": [
       {"key": "tab", "action": "restructure.show", "hint": "other side"},
+      {"key": "L", "action": "restructure.layout", "hint": "layout"},
       {"key": "u", "action": "restructure.undo"},
       {"key": "ctrl+r", "action": "restructure.redo"},
       {"key": "w", "action": "restructure.write", "hint": "write"},

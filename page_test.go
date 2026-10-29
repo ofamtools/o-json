@@ -473,3 +473,80 @@ func TestVisualSelectionSendsSeveral(t *testing.T) {
 		t.Fatalf("visual delete: %v", got)
 	}
 }
+
+// M lands on the original at the shape the viewer has selected, in both
+// layouts, and again on every reopen; with the viewer on its root, the
+// original's first shape.
+func TestOpenFocusesTheOriginal(t *testing.T) {
+	for _, layout := range []string{"split", "single"} {
+		t.Run(layout, func(t *testing.T) {
+			a := open(t, sample, 120, 30)
+			if err := a.r.Settings().Set(settingLayout, layout); err != nil {
+				t.Fatal(err)
+			}
+			press(t, a, "M")
+			if first := a.rs.orig.Nodes()[0].ID; a.r.Focus != first {
+				t.Fatalf("first open: focus %q, want %q", a.r.Focus, first)
+			}
+			sendPaths(t, a, ".name")
+			press(t, a, "q")
+			selectPath(t, a, ".items[].owner")
+			press(t, a, "M")
+			if a.r.Focus != "o:s:.items[].owner" {
+				t.Fatalf("focus %q", a.r.Focus)
+			}
+			if n, _ := a.rs.orig.Selected(); n.ID != "o:s:.items[].owner" {
+				t.Fatalf("selected %q", n.ID)
+			}
+			// Leaving from the restructured tree, M still opens on the original.
+			press(t, a, "tab")
+			if a.sideOf(a.r.Focus) != rsTreeID {
+				t.Fatalf("tab: focus %q", a.r.Focus)
+			}
+			press(t, a, "q")
+			selectPath(t, a, ".version")
+			press(t, a, "M")
+			frame := view(a)
+			if a.r.Focus != "o:s:.version" || !strings.Contains(frame, "Original") {
+				t.Fatalf("reopen: focus %q\n%s", a.r.Focus, frame)
+			}
+			if layout == "single" && strings.Contains(frame, "Restructured") {
+				t.Fatalf("single opens showing the original\n%s", frame)
+			}
+		})
+	}
+}
+
+// L flips the layout and keeps the focused tree; the crumb names the
+// layout and the key, the footer hints it.
+func TestLayoutKeyFlips(t *testing.T) {
+	a := openRestructure(t, 120, 30)
+	sendPaths(t, a, ".name")
+	frame := view(a)
+	if !strings.Contains(frame, "split layout (L: single)") || !strings.Contains(frame, "L layout") {
+		t.Fatalf("split crumb and hint\n%s", frame)
+	}
+	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
+	focus := a.r.Focus
+	press(t, a, "L")
+	frame = view(a)
+	if a.layout() != "single" || a.r.Focus != focus || !strings.Contains(frame, "Restructured  1 nodes") || strings.Contains(frame, "Original") {
+		t.Fatalf("L to single: layout %s focus %q\n%s", a.layout(), a.r.Focus, frame)
+	}
+	if !strings.Contains(frame, "single layout (L: split)") {
+		t.Fatalf("single crumb\n%s", frame)
+	}
+	press(t, a, "tab")
+	if a.sideOf(a.r.Focus) != rsOrigID {
+		t.Fatalf("single tab swaps: %q", a.r.Focus)
+	}
+	focus = a.r.Focus
+	press(t, a, "L")
+	if a.layout() != "split" || a.r.Focus != focus {
+		t.Fatalf("L to split: layout %s focus %q", a.layout(), a.r.Focus)
+	}
+	press(t, a, "tab")
+	if a.sideOf(a.r.Focus) != rsTreeID {
+		t.Fatalf("split tab moves: %q", a.r.Focus)
+	}
+}

@@ -33,7 +33,9 @@ import (
 //
 // Two layouts, one mechanism, setting restructure.layout: split draws
 // the original beside the restructured tree; single draws one of them,
-// the one holding the focus, and tab (restructure.show) swaps them.
+// the one holding the focus, and tab (restructure.show) swaps them. L
+// (restructure.layout) flips the setting; the page opens on the
+// original either way (focusOriginal).
 
 const (
 	rsPageID      = "restructure"
@@ -127,8 +129,14 @@ func (a *App) registerRestructure() error {
 	tree.NewID = a.newNodeID
 	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, shown: rsOrigID}
 	a.registerRestructureVerbs()
-	_, err = r.AddPage(rsPageID, "Restructure", a.renderRestructure, ochazuke.Focus(rsOrigID))
-	return err
+	page, err := r.AddPage(rsPageID, "Restructure", a.renderRestructure, ochazuke.Focus(rsOrigID))
+	if err != nil {
+		return err
+	}
+	// However the page opens (M, the page picker, the CLI), it lands on
+	// the original, at the shape the viewer has selected.
+	page.OnOpen = func(*ochazuke.Runtime, string) { _ = a.focusOriginal() }
+	return nil
 }
 
 func (a *App) newNodeID() string {
@@ -865,7 +873,7 @@ func (a *App) registerRestructureVerbs() {
 				return ochazuke.Failed(err)
 			}
 			return ochazuke.Done(a.Mapping())
-		}, "Open the restructure page: the original structure and the restructured tree").
+		}, "Open the restructure page focused on the original structure, on the shape the viewer has selected (else the first)").
 		Verb("close", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.doneErr(r.OpenPage(pageID))
 		}, "Go back to the viewer; the restructure stays as it is").
@@ -949,6 +957,38 @@ func (a *App) doneErr(err error) ochazuke.Result {
 func (a *App) outline(c ochazuke.Ctx, verb string) ochazuke.Result {
 	_, err := a.r.ExecuteAt(c.Context, ochazuke.Request{Noun: "ochazuke.outline", Verb: verb, Target: rsTreeID})
 	return a.doneErr(err)
+}
+
+// focusOriginal puts the focus on the original tree (shown in a single
+// layout), on the shape the viewer's structure has selected, else on the
+// original's first shape.
+func (a *App) focusOriginal() error {
+	a.rs.shown = rsOrigID
+	t := a.rs.orig
+	nodes := t.Nodes()
+	if len(nodes) == 0 {
+		return nil
+	}
+	id := nodes[0].ID
+	if n, ok := a.tree.Selected(); ok && slices.ContainsFunc(nodes, func(o ochazuke.TreeNode) bool { return o.ID == "o:"+n.ID }) {
+		id = "o:" + n.ID
+	}
+	if err := t.Select(id); err != nil {
+		return err
+	}
+	return t.Focus()
+}
+
+// keyFor is the key a binding row on the focus gives a verb (run without
+// arguments), "" when none does.
+func (a *App) keyFor(verb string) string {
+	key := a.r.CanonicalKey(verb)
+	for _, b := range a.r.ListBindings(a.r.Focus) {
+		if b.Keys != "" && len(b.Request.Args) == 0 && a.r.CanonicalKey(b.Request.Key()) == key {
+			return b.Keys
+		}
+	}
+	return ""
 }
 
 // sideOf is the page tree a focus is in, "" for neither.
@@ -1141,7 +1181,8 @@ func wrapLong(text string, width int, wrapIt bool) string {
 }
 
 // restructureCrumb is the line above the panels: the file, the focused
-// node's new path and where it comes from, the layout.
+// node's new path and where it comes from, the layout and the key that
+// flips it.
 func (a *App) restructureCrumb() string {
 	if a.Doc == nil {
 		return "Restructure  ·  no document"
@@ -1169,6 +1210,9 @@ func (a *App) restructureCrumb() string {
 			}
 		}
 	}
-	parts = append(parts, a.layout())
-	return strings.Join(parts, "  ·  ")
+	layout := a.layout() + " layout"
+	if key := a.keyFor("restructure.layout"); key != "" {
+		layout += fmt.Sprintf(" (%s: %s)", key, map[string]string{"split": "single", "single": "split"}[a.layout()])
+	}
+	return strings.Join(append(parts, layout), "  ·  ")
 }

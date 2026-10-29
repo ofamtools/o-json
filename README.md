@@ -182,7 +182,7 @@ No function keys are bound.
 
 ## The restructure page
 
-`M` opens a page for building a restructure mapping by hand, and `q` goes back to the viewer. It works on shapes, as `restructure` does: one node maps that field of every item, and an optional field maps only where it is present. The page's state *is* a mapping: the Mapping panel shows it live in the `--mapping` form (or why it does not check), and `o-json restructure FILE --map` runs it the same way.
+`M` opens a page for building a restructure mapping by hand, and `q` goes back to the viewer. It opens focused on the original structure, on the shape the viewer has selected, every time it opens (in the single layout, showing the original). It works on shapes, as `restructure` does: one node maps that field of every item, and an optional field maps only where it is present. The page's state *is* a mapping: the Mapping panel shows it live in the `--mapping` form (or why it does not check), and `o-json restructure FILE --map` runs it the same way.
 
 - **It starts empty.** `s` on a shape of the original (or in the viewer's structure tree) sends it across, with the ancestors it needs (`.items[].owner.name` brings `items` and `[]`) and its fields. A node that came from the same shape is reused, wherever it has moved. `V` selects several shapes, and `s` sends them all as one change.
 - **Every node keeps its origin.** The `from` column is the shape a node came from. Renames and moves change only where it goes (`to`), and the breadcrumb shows `to ← from`.
@@ -190,7 +190,7 @@ No function keys are bound.
 - **New keys open selected.** A key the page makes (the wrapper `>` makes, and `o`/`O`/`a`, `restructure.add-key {where}`, an empty object below, above or inside the node) gets a placeholder, `new-key`, opened in select mode: typing replaces it, and `esc` or a motion keeps it. The placeholder is the setting `restructure.new-key`, numbered past its siblings' keys (`new-key-2`, `new-key-3`). A wrapper has no `from` in the mapping. Making the key is one undo step and the typed name another, so `u` first takes the name back and then the key. With `{key}` (from the palette or the CLI) the key is named at once.
 - **Arrays and objects**: `t` (`node.array`) turns a key into an array of itself, its keys or its value becoming the array's `[]` item (`.items[].owner` becomes `.items[].owner[]`, one owner per array). `t` on that array or its item (`node.object`) turns it back. Each applies only where the mapping still checks, so on `.items[]`, whose values are many, `t` does nothing.
 - **Origins light up.** Selecting a node on the restructured tree marks the shape it comes from on the original (the accent colour), and selecting a shape on the original marks the nodes it went to.
-- **Layouts**, setting `restructure.layout` (`o-json settings set restructure.layout single`, or `: restructure layout`): `split` (default) puts the original on the left and the restructured tree with its mapping on the right, and `tab` moves between them. `single` shows one tree above the mapping, and `tab` swaps the original and the restructured tree.
+- **Layouts**, setting `restructure.layout` (`L` on the page, `o-json settings set restructure.layout single`, or `: restructure layout`): `split` (default) puts the original on the left and the restructured tree with its mapping on the right, and `tab` moves between them. `single` shows one tree above the mapping, and `tab` swaps the original and the restructured tree. `L` keeps the focused tree, and the breadcrumb names the layout and the key (`split layout (L: single)`).
 - **Output**: `w` (`restructure.write {path}`) writes the restructured document to a new file, asking for the path in a form (for example `NAME.restructured.json`). An existing file asks before it is replaced (`restructure.overwrite`), and the source is never written. `: restructure jq` copies the jq program, and `: restructure export-map {path}` writes the mapping to a new file.
 
 | Key | Where | Does |
@@ -202,6 +202,7 @@ No function keys are bound.
 | `r`, `d d` | restructured | rename the key, delete |
 | `u` / `ctrl+r` | page | undo / redo |
 | `tab` | page | the other tree (split: focus; single: show) |
+| `L` | page | flip the layout (split / single), keeping the focused tree |
 | `w` | page | write the restructured document to a new file |
 | `q` | page | back to the viewer |
 
