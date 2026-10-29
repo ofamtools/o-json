@@ -575,6 +575,39 @@ func (p *Plan) Complete() *Mapping {
 	return out
 }
 
+// FormatMapping writes a mapping one entry per line, as the family's row
+// files are: {"map": [, then each {"from": …, "to": …} on its own line
+// (no "from" on a wrapper, "to": null on a drop), then ]}.
+func FormatMapping(m *Mapping) ([]byte, error) {
+	str := func(v string) string {
+		var b bytes.Buffer
+		enc := json.NewEncoder(&b)
+		enc.SetEscapeHTML(false)
+		_ = enc.Encode(v)
+		return strings.TrimRight(b.String(), "\n")
+	}
+	var b strings.Builder
+	b.WriteString("{\"map\": [\n")
+	for i, e := range m.Map {
+		var fields []string
+		if e.From != "" {
+			fields = append(fields, `"from": `+str(e.From))
+		}
+		to := "null"
+		if e.To != nil {
+			to = str(*e.To)
+		}
+		fields = append(fields, `"to": `+to)
+		b.WriteString("  {" + strings.Join(fields, ", ") + "}")
+		if i < len(m.Map)-1 {
+			b.WriteString(",")
+		}
+		b.WriteString("\n")
+	}
+	b.WriteString("]}\n")
+	return []byte(b.String()), nil
+}
+
 // restructureOutput is what the restructure command prints or writes.
 func restructureOutput(doc *Doc, m *Mapping, as string) ([]byte, error) {
 	src := doc.Root
@@ -586,12 +619,7 @@ func restructureOutput(doc *Doc, m *Mapping, as string) ([]byte, error) {
 	case "jq":
 		return []byte(plan.JQ()), nil
 	case "mapping":
-		var b bytes.Buffer
-		enc := json.NewEncoder(&b)
-		enc.SetEscapeHTML(false)
-		enc.SetIndent("", "  ")
-		err := enc.Encode(plan.Complete())
-		return b.Bytes(), err
+		return FormatMapping(plan.Complete())
 	}
 	return []byte(Pretty(plan.Apply(src)) + "\n"), nil
 }

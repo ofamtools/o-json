@@ -18,6 +18,10 @@ import (
 // newShell is the NOUN VERB shell over a runtime holding the doc noun.
 func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 	r := ochazuke.NewRuntime()
+	// The settings the viewer reads, so settings list|set know them.
+	if err := declareSettings(r); err != nil {
+		panic(err)
+	}
 	// Each verb reads the file as pending work: reading and parsing a
 	// document is I/O, which an application verb keeps off the loop. (Key
 	// order is not the reason: the shell keeps an immediate result's keys

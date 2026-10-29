@@ -61,6 +61,8 @@ type App struct {
 	tree *ochazuke.Tree
 	ask  *question
 	in   *ochazuke.Input
+
+	rs restructureState // the restructure page (page.go)
 }
 
 // New builds the viewer on a fresh runtime: the page with the structure
@@ -85,10 +87,16 @@ func New() (*App, error) {
 	a.registerPrompt()
 	a.registerDetail()
 	a.registerVerbs()
-	if err := a.bind(); err != nil {
+	if err := declareSettings(r); err != nil {
 		return nil, err
 	}
 	if _, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID)); err != nil {
+		return nil, err
+	}
+	if err := a.registerRestructure(); err != nil {
+		return nil, err
+	}
+	if err := a.bind(); err != nil {
 		return nil, err
 	}
 	if err := r.OpenPage(pageID); err != nil {
@@ -118,6 +126,10 @@ func (a *App) setDoc(path string, doc *Doc) error {
 	if err := a.rebuild(); err != nil {
 		return err
 	}
+	if err := a.setOriginal(); err != nil {
+		return err
+	}
+	a.rs.dirty = true
 	if err := a.collapseDeep(); err != nil {
 		return err
 	}
@@ -151,7 +163,15 @@ func (a *App) rebuild() error {
 	if a.Doc == nil {
 		return a.tree.SetNodes(nil)
 	}
-	keep := a.keep()
+	nodes, width := shapeNodes(a.Doc.Shape, a.keep(), "")
+	a.treeWidth = width
+	return a.tree.SetNodes(nodes)
+}
+
+// shapeNodes is a structure tree's nodes (ids prefix+"s:"+path, noun
+// shape, cells path, type, count) for the shapes keep holds (nil: all),
+// and the tree's natural width.
+func shapeNodes(root *Shape, keep map[*Shape]bool, prefix string) ([]ochazuke.TreeNode, int) {
 	var nodes []ochazuke.TreeNode
 	var add func(s *Shape, parent string)
 	add = func(s *Shape, parent string) {
@@ -162,7 +182,7 @@ func (a *App) rebuild() error {
 		if s.Optional {
 			name += "?"
 		}
-		id := shapeID(s)
+		id := prefix + shapeID(s)
 		var tones []ochazuke.ToneSpan
 		if s.Duplicates != nil {
 			tones = []ochazuke.ToneSpan{ochazuke.CellTone(0, toneDuplicateKey)}
@@ -184,7 +204,7 @@ func (a *App) rebuild() error {
 			nodes = append(nodes, ochazuke.TreeNode{ID: id + "/more", Parent: id, Label: label, Noun: "shape", Cells: []string{label, "", ""}})
 		}
 	}
-	add(a.Doc.Shape, "")
+	add(root, "")
 	// The tree's natural width: indent and marker, then the three cells.
 	cols := [3]int{4, 4, 5}
 	for _, n := range nodes {
@@ -199,8 +219,7 @@ func (a *App) rebuild() error {
 		cols[1] = max(cols[1], len(n.Cells[1]))
 		cols[2] = max(cols[2], len(n.Cells[2]))
 	}
-	a.treeWidth = cols[0] + cols[1] + cols[2] + 4
-	return a.tree.SetNodes(nodes)
+	return nodes, cols[0] + cols[1] + cols[2] + 4
 }
 
 // keep is the set of shapes the filters keep (matches and their

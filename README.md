@@ -1,6 +1,6 @@
 # o-json
 
-A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads: the one command that writes, `restructure --out`, makes a new file and replaces an existing one only with `--overwrite`.
+A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads: `restructure --out` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or a confirm on the page).
 
 ```sh
 o-json data.json                        # open the viewer (also: o-json view data.json)
@@ -115,9 +115,9 @@ A mapping is `{"map": [entries]}` and an entry is `{"from": PATH, "to": PATH}`. 
 {"v": .version, "records": [.items[] | {"id": .id, "info": ({"name": .name} + (if has("note") then {"note": .note} else {} end))} + (if has("size") then {"size": .size} else {} end) + (if (.owner | type == "object") then {"owner": .owner.name} else {} end) + {"contact": (if (.owner | type == "object" and has("email")) then {"email": .owner.email} else {} end), "tag_names": [select(has("tags")) | .tags[]?.t]}], "all_tags": [.items[] | select(has("tags")) | .tags[]?], "names": [.items[].name]}
 ```
 
-`--mapping` prints the mapping with every shape it leaves out added as a drop (`{"from": ".items[].archived", "to": null}`), so it reads as the whole story of the source; the output is itself a mapping.
+`--mapping` prints the mapping with every shape it leaves out added as a drop (`{"from": ".items[].archived", "to": null}`), so it reads as the whole story of the source; the output is itself a mapping, one entry per line.
 
-A key an object repeats is read as jq reads it: the last value, at the first one's position. The Go result and the jq program therefore agree, though the viewer and `table` show the first value.
+A key an object repeats is read as jq reads it: the last value, at the first one's position. The Go result, the jq program, the viewer and `table` therefore agree.
 
 Output goes to stdout. `--out PATH` writes it to a new file instead (atomically: a temporary file beside it, then a rename); an existing file, the source among them, is replaced only with `--overwrite`. `--out` takes a value: the flag parser has no optional values, so there is no default `NAME.restructured.json`.
 
@@ -173,10 +173,32 @@ The file is read off the event loop (`viewer.load`), and the screen says `loadin
 | `v` | tree, data | show the selected path's values as indented JSON (toggle; cut at 4 MB) |
 | `y` | anywhere | copy: the path on the tree, the row or value as JSON in the data and the detail. The copy goes to the ochazuke registers (`"a y` names one) and to the system clipboard (pbcopy, wl-copy, xclip or xsel, whichever is on PATH). The status line says what was copied; a clipboard tool that fails is a footer notice, and the registers still hold the copy. `.` copies again at the focus (`y j .` copies the next row) |
 | `R` | tree, data | read the file again |
+| `s` | tree | send the shape to the restructure (below) |
+| `M` | tree, data | open the restructure page |
 | `:` | anywhere | the command palette: every verb, by name |
 | `q`, `ctrl+c` | tree, data | quit |
 
 No function keys are bound.
+
+## The restructure page
+
+`M` opens a page for building a restructure mapping by hand, and `q` goes back to the viewer. It works on shapes, as `restructure` does: one node maps that field of every item, and an optional field maps only where it is present. The page's state *is* a mapping: the Mapping panel shows it live in the `--mapping` form (or why it does not check), and `o-json restructure FILE --map` runs it the same way.
+
+- **It starts empty.** `s` on a shape of the original (or in the viewer's structure tree) sends it across, with the ancestors it needs (`.items[].owner.name` brings `items` and `[]`) and its fields. A node that came from the same shape is reused, wherever it has moved. `V` selects several shapes, and `s` sends them all as one change.
+- **Every node keeps its origin.** The `from` column is the shape a node came from. Renames and moves change only where it goes (`to`), and the breadcrumb shows `to ← from`.
+- **Editing** (on the restructured tree): `>` nests the node under the node above it, and `<` moves it out to follow its parent. They follow the JSON rules and apply only when the result still maps. `>` needs the node above to take keys (an object, or a wrapper made with `o`). `<` out of an array item collects the values: `.items[].id` becomes `.id[]`, an array of every id. Where neither applies, the key passes on and resizes the divider. `r` edits the key in place, `d d` deletes a node and its children (over a `V` selection too), `J`/`K` move a node among its siblings, `o`/`O`/`a` add a wrapper key, and `u`/`ctrl+r` undo and redo from either side.
+- **Layouts**, setting `restructure.layout` (`o-json settings set restructure.layout single`, or `: restructure layout`): `split` (default) puts the original on the left and the restructured tree with its mapping on the right, and `tab` moves between them. `single` shows one tree above the mapping, and `tab` swaps the original and the restructured tree.
+- **Output**: `w` (`restructure.write {path}`) writes the restructured document to a new file, asking for the path in a form (for example `NAME.restructured.json`). An existing file asks before it is replaced (`restructure.overwrite`), and the source is never written. `: restructure jq` copies the jq program, and `: restructure export-map {path}` writes the mapping to a new file.
+
+| Key | Where | Does |
+|---|---|---|
+| `s` | original | send the shape (and the ancestors it needs, and its fields) |
+| `>` / `<` | restructured | nest under the node above / move out (out of an array item: collect into an array) |
+| `r`, `d d` | restructured | rename the key, delete |
+| `u` / `ctrl+r` | page | undo / redo |
+| `tab` | page | the other tree (split: focus; single: show) |
+| `w` | page | write the restructured document to a new file |
+| `q` | page | back to the viewer |
 
 ## Checks
 

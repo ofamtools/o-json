@@ -1,5 +1,5 @@
   ◆ o-json                                                                                                     NORMAL   
-   › testdata/sample.json                                                                                               
+   › testdata/sample.json  Restructure                                                                                  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)                                                                           
   ╭━ Structure ━━━━━━━━━━━━━━━━━━━━━━━━━━━╮ ╭─ Table .items  1/4 ────────────────────────────────────────────────────╮  
@@ -20,5 +20,5 @@
   ┃ 1–13 / 18                             ┃ │                                                                        │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰────────────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  enter outline.fold · y shape.yank · / viewer.search · t viewer.type · v viewer.raw · esc viewer.clear · R viewer.lo…  
+  enter outline.fold · y shape.yank · s send · / viewer.search · t viewer.type · v viewer.raw · esc viewer.clear · R …  
                                                                                                                         

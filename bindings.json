@@ -1,4 +1,4 @@
-// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers. A user's bindings.json overrides them; o-json bindings list prints the effective rows.
+// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers, and an unavailable one passes the key on (> and < on a restructure node nest where the JSON rules allow, else the divider resizes). The outline's tab, shift+tab and i are unbound: nesting goes through the JSON rules (> <) and renaming through r. A user's bindings.json overrides them.
 {
   "bindings": [
     {"context": "rows/normal", "bindings": [
@@ -39,11 +39,35 @@
       {"key": "v", "action": "viewer.raw"},
       {"key": "esc", "action": "viewer.clear"},
       {"key": "R", "action": "viewer.load"},
+      {"key": "M", "action": "restructure.open", "hint": "restructure"},
       {"key": "q", "action": "app.quit"}
     ]},
     {"context": "shape/normal", "bindings": [
       {"key": "enter", "action": "outline.fold"},
-      {"key": "y", "action": "shape.yank"}
+      {"key": "y", "action": "shape.yank"},
+      {"key": "s", "action": "shape.send", "hint": "send"}
+    ]},
+    {"context": "restructure/normal", "bindings": [
+      {"key": "tab", "action": "restructure.show", "hint": "other side"},
+      {"key": "u", "action": "restructure.undo"},
+      {"key": "ctrl+r", "action": "restructure.redo"},
+      {"key": "w", "action": "restructure.write", "hint": "write"},
+      {"key": "q", "action": "restructure.close", "hint": "back"}
+    ]},
+    {"context": "node/normal", "bindings": [
+      {"key": ">", "action": "node.indent", "hint": ">/< nest"},
+      {"key": "<", "action": "node.dedent", "hidden": true},
+      {"key": "r", "action": "node.rename", "hint": "rename"},
+      {"key": "d d", "action": "node.delete", "hint": "delete"}
+    ]},
+    {"context": "ochazuke.outline/normal", "bindings": [
+      {"key": "tab", "unbind": true},
+      {"key": "shift+tab", "unbind": true},
+      {"key": "i", "unbind": true}
+    ]},
+    {"context": "ochazuke.outline-line/insert", "bindings": [
+      {"key": "tab", "unbind": true},
+      {"key": "shift+tab", "unbind": true}
     ]},
     {"context": "item/normal", "bindings": [
       {"key": "enter", "action": "item.open"},
