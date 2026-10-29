@@ -31,12 +31,18 @@ import (
 // opened on in-place edits, it shows them. Back in the viewer with
 // nothing done there, the copy comes back (that step undone).
 
-const settingEditable = "structure.editable"
+const (
+	settingEditable    = "structure.editable"
+	settingUndoAtStart = "undo.at-start"
+)
 
 func declareEditSettings(r *ochazuke.Runtime) error {
 	return r.DeclareSetting(ochazuke.Setting{
 		Name: settingEditable, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "The viewer's structure pane is the restructure editor, a copy of the document's shape (T shows the original); off keeps the viewer read-only and the restructure page (M) alone edits. Takes effect on the next document",
+	}, ochazuke.Setting{
+		Name: settingUndoAtStart, Type: ochazuke.SettingString, Default: "info", Enum: []string{"info", "silent"},
+		Description: "u at the copy a document starts with (the oldest change; nothing is undone): info says \"already at oldest change\" in the plain tone, silent says nothing",
 	})
 }
 
@@ -105,7 +111,7 @@ func (a *App) startState() error {
 	}
 	a.original = false
 	e := a.identity()
-	if err := a.commitWith("open", rsRootID, e, nil); err != nil {
+	if err := a.commitStep("open", rsRootID, e, nil, true); err != nil {
 		return err
 	}
 	a.rs.base, a.rs.saved = mappingKey(a.Mapping()), ""

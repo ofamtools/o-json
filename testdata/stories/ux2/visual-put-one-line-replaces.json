@@ -1,0 +1,11 @@
+{
+  "name": "o-json: y y on y, j, V p replaces z with the copy (restructure.visual-put replace, one selected line)",
+  "area": "ux2",
+  "width": 100,
+  "height": 20,
+  "page": {"id": "o-json"},
+  "script": ["y", "y", "j", "V", "p"],
+  "expect": [
+    {"after": 5, "mode": "normal", "contains": ["y-2"], "lacks": ["z       number  .z"]}
+  ]
+}

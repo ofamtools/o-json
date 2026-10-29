@@ -877,6 +877,18 @@ func (a *App) commit(label, focus string, e edit) error {
 // commitWith is commit that also makes patches the value edits: one
 // step, so u undoes a structure edit and a value edit alike, in order.
 func (a *App) commitWith(label, focus string, e edit, patches []Patch) error {
+	return a.commitStep(label, focus, e, patches, false)
+}
+
+// errAtOldest is the undo of the copy a document starts with: the floor
+// of the undo stack, so u there changes nothing (undo.at-start says how
+// it tells).
+var errAtOldest = errors.New("already at oldest change")
+
+// commitStep is commitWith; a floor step is never undone (its undo
+// refuses with errAtOldest, so the tree keeps it on the stack and
+// nothing beneath it is reached).
+func (a *App) commitStep(label, focus string, e edit, patches []Patch, floor bool) error {
 	a.rs.startedEmpty = false
 	before, was := a.current(), slices.Clone(a.rs.patches)
 	e.markBuilt()
@@ -890,7 +902,11 @@ func (a *App) commitWith(label, focus string, e edit, patches []Patch) error {
 	if err := set(e, patches)(); err != nil {
 		return err
 	}
-	return a.rs.tree.Record(ochazuke.TreeAction{ID: focus, Label: label, Undo: set(before, was), Redo: set(e, patches)})
+	undo := set(before, was)
+	if floor {
+		undo = func() error { return errAtOldest }
+	}
+	return a.rs.tree.Record(ochazuke.TreeAction{ID: focus, Label: label, Undo: undo, Redo: set(e, patches)})
 }
 
 // The changes a restructure node refuses (TreeNode.Fixed), from every
@@ -1091,7 +1107,8 @@ func (a *App) registerRestructureVerbs() {
 		return a.moved(a.focusedNode(ev.Focus), a.toObject)
 	})
 	// A new key goes on the restructure tree: on a node, or the tree
-	// itself while it is empty.
+	// itself while it is empty; never from a modal opened over it
+	// (sideOf stops at the modal).
 	r.DefineGuard("restructure-tree", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.sideOf(ev.Focus) == rsTreeID
 	})
@@ -1347,8 +1364,15 @@ func (a *App) registerRestructureVerbs() {
 			return sendShapes(c, []*Shape{s})
 		}, "Add the shape at a structure path, as shape.send does").
 		Verb("undo", func(c ochazuke.Ctx) ochazuke.Result {
-			return a.outline(c, "undo")
-		}, "Undo the last restructure change").
+			_, err := a.r.ExecuteAt(c.Context, ochazuke.Request{Noun: "ochazuke.outline", Verb: "undo", Target: rsTreeID})
+			if errors.Is(err, errAtOldest) {
+				if a.r.Settings().String(settingUndoAtStart) != "silent" {
+					c.Info(errAtOldest.Error())
+				}
+				return ochazuke.Done(a.Mapping())
+			}
+			return a.doneErr(err)
+		}, "Undo the last restructure change; at the copy the document started with there is nothing older (undo.at-start)").
 		Verb("redo", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.outline(c, "redo")
 		}, "Redo the last undone restructure change").
@@ -1471,9 +1495,20 @@ func (a *App) keyFor(verb string) string {
 	return ""
 }
 
-// sideOf is the page tree a focus is in, "" for neither.
+// sideOf is the page tree a focus is in, "" for neither. An open modal is
+// a boundary: a focus inside one (the help, a detail) is in neither tree,
+// though the modal is parented at the tree it opened over.
 func (a *App) sideOf(focus string) string {
+	modals := map[string]bool{}
+	for _, m := range a.r.Modals() {
+		if m != nil {
+			modals[m.ID] = true
+		}
+	}
 	for _, id := range a.r.Ancestry(focus) {
+		if modals[id] {
+			return ""
+		}
 		if id == rsOrigID || id == rsTreeID {
 			return id
 		}

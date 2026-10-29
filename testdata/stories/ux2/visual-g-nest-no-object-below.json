@@ -1,0 +1,11 @@
+{
+  "name": "o-json: V j g > on y and z, no object below, nests nothing (it must not fall back to > into x)",
+  "area": "ux2",
+  "width": 100,
+  "height": 20,
+  "page": {"id": "o-json"},
+  "script": ["V", "j", "g", ">"],
+  "expect": [
+    {"after": 4, "lacks": [".x.z ← .z", ".x.y ← .y", "[+]"]}
+  ]
+}

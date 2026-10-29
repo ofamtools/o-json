@@ -1,0 +1,11 @@
+{
+  "name": "o-json: u in a fresh viewer is at the oldest change: the starting copy stays, nothing is marked edited (P8/P4)",
+  "area": "inplace",
+  "width": 100,
+  "height": 20,
+  "page": {"id": "o-json-viewer"},
+  "script": ["u"],
+  "expect": [
+    {"after": 1, "contains": ["already at oldest change"], "lacks": ["[+]", "Error"]}
+  ]
+}

@@ -343,8 +343,9 @@ func (a *App) applyRepeatScope() {
 }
 
 // putNodes is node.put: the register's nodes put at at (one subject), or
-// over several selected nodes (restructure.visual-put).
-func (a *App) putNodes(c ochazuke.Ctx, ids []string, before bool) ochazuke.Result {
+// over a visual selection (restructure.visual-put), however many lines it
+// holds: visual says a selection is on, one selected line included.
+func (a *App) putNodes(c ochazuke.Ctx, ids []string, before, visual bool) ochazuke.Result {
 	y, err := a.r.ReadYank("")
 	a.r.Registers().Active = ""
 	if err != nil {
@@ -363,7 +364,7 @@ func (a *App) putNodes(c ochazuke.Ctx, ids []string, before bool) ochazuke.Resul
 	var parent, first string
 	tops := now.tops(ids)
 	switch {
-	case len(ids) > 1 && len(tops) > 0 && a.r.Settings().String(settingVisualPut) != "below":
+	case visual && len(tops) > 0 && a.r.Settings().String(settingVisualPut) != "below":
 		// V p: the selection goes into the register (as V d puts it) and
 		// the register's nodes take the place of the first one.
 		text, _ := clipOf(now, tops)
@@ -430,7 +431,7 @@ func (a *App) registerPutVerbs() {
 			return a.yankNodes(c, subjectIDs(c), false)
 		}, "Yank the nodes and their children into the register (\"a y y into a); p puts a copy, the same shapes mapped again").Many().When("node-yankable").
 		Verb("put", func(c ochazuke.Ctx) ochazuke.Result {
-			return a.putNodes(c, subjectIDs(c), c.Args["before"] == true)
+			return a.putNodes(c, subjectIDs(c), c.Args["before"] == true, a.selecting())
 		}, "Put the register's nodes (\"a p from a) where the cursor is, at the level they land on: p below as the next sibling, or as the first child of a node whose children are shown (the document's first child on the root); P above as the previous sibling (on the root, its first child too). A put whose mapping does not check (a key into an array) is refused. Nodes that were deleted come back as they were (a move); a yank is put as a copy. Over a V selection (p), restructure.visual-put: replace (the selection into the register, the put in its place) or below").Many().When("node-puttable")
 	r.Define("restructure").
 		Verb("delete", func(c ochazuke.Ctx) ochazuke.Result {

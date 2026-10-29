@@ -1,0 +1,12 @@
+{
+  "name": "o-json: o in the help opened from the structure tree adds no key beneath the modal (R4.2)",
+  "area": "ux2",
+  "width": 100,
+  "height": 20,
+  "page": {"id": "o-json"},
+  "script": ["?", "o", "esc"],
+  "expect": [
+    {"after": 2, "lacks": ["Error: focus is outside the open modal", "o/O new key"]},
+    {"after": 3, "lacks": ["new-key"]}
+  ]
+}
