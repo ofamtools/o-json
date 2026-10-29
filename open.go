@@ -108,26 +108,17 @@ func (a *App) pasteDoc(c ochazuke.Ctx) ochazuke.Result {
 		})
 }
 
-// guardQuit makes app.quit (q, ctrl+c) ask once, through viewer.quit,
-// while there are edits no write saved, as vim refuses :q; with force
-// (Q) it quits without asking. The framework's verb is kept and wrapped,
-// so every key and caller of it asks the same way.
-func (a *App) guardQuit() {
-	key := a.r.CanonicalKey("app.quit")
-	op, ok := a.r.Operations[key]
-	if !ok {
-		panic("guardQuit: no operation app.quit")
-	}
-	run := op.Run
-	op.Run = func(r *ochazuke.Runtime, c ochazuke.Context, args ochazuke.Arguments) (any, error) {
-		if args["force"] == true || !a.unsaved() {
-			return run(r, c, args)
+// beforeQuit makes app.quit (q, ctrl+c) ask once while there are edits
+// no write saved, as vim refuses :q; app.quit {force: true} (Q) skips the
+// check (ochazuke's before-quit hook). viewer.quit stays the verb that
+// quits without writing after its own confirm.
+func (a *App) beforeQuit() error {
+	return a.r.BeforeQuit("unsaved", func(r *ochazuke.Runtime, c ochazuke.Context) ochazuke.Verdict {
+		if !a.unsaved() {
+			return ochazuke.Allow()
 		}
-		return r.ExecuteAt(c, ochazuke.Request{Noun: "viewer", Verb: "quit", Target: pageID})
-	}
-	op.Parameters = map[string]ochazuke.Parameter{"force": {Type: "boolean", Description: "quit without asking, even with edits no write saved (Q, as vim's :q!)"}}
-	op.Description = "Exit the application; with edits no write saved it asks first (viewer.quit), unless force"
-	a.r.Operations[key] = op
+		return ochazuke.AskFirst("Quit without writing? The edits no write saved are lost.")
+	})
 }
 
 // paste parses text as the buffer's document, a document of no file.
@@ -346,7 +337,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		Verb("quit", func(c ochazuke.Ctx) ochazuke.Result {
 			a.r.Quit = true
 			return ochazuke.Done(true)
-		}, "Quit without writing the edits no write saved, as vim's :q!; app.quit (q) asks through it when there are any, app.quit {force: true} (Q) quits without asking").
+		}, "Quit without writing the edits no write saved, as vim's :q!, after one confirm; app.quit (q) asks the same through its before-quit check, app.quit {force: true} (Q) quits without asking").
 		Confirm("Quit without writing? The edits no write saved are lost.").
 		Verb("write", func(c ochazuke.Ctx) ochazuke.Result { return a.writeDoc(c, writeNewFile) },
 			"Write the shown document as indented JSON to a new file; an existing file asks first (viewer.overwrite), the source never. A document of no file is then that file").When("viewer-document").
@@ -367,7 +358,9 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite")
 	setHistory(r, ochazuke.HistoryAction, "viewer.quit")
 	a.registerExportVerbs(params)
-	a.guardQuit()
+	if err := a.beforeQuit(); err != nil {
+		panic(err) // app.quit is the framework's own verb: always there
+	}
 }
 
 func (a *App) doneState(err error) ochazuke.Result {
