@@ -1,0 +1,13 @@
+{
+  "name": "o-json: V j > nests two nodes into the object above as one undo step, then visual ends",
+  "area": "restructure",
+  "width": 100,
+  "height": 20,
+  "page": {"id": "o-json"},
+  "script": ["V", "j", ">", "u"],
+  "expect": [
+    {"after": 2, "mode": "visual-line", "contains": ["VISUAL-LINE"]},
+    {"after": 3, "mode": "normal", "contains": [".x.z ← .z"], "lacks": ["VISUAL-LINE"]},
+    {"mode": "normal", "lacks": [".x.z ← .z", ".x.y ← .y"]}
+  ]
+}

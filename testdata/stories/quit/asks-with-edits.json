@@ -1,0 +1,14 @@
+{
+  "name": "o-json: q with an unsaved structure edit asks (the before-quit check); n stays, Q quits without asking",
+  "area": "quit",
+  "width": 100,
+  "height": 20,
+  "page": {"id": "o-json"},
+  "script": [">", ">", "q", "q", "n", "Q"],
+  "expect": [
+    {"after": 3, "quit": false, "contains": ["Structure · edited"]},
+    {"after": 4, "contains": ["Quit without writing?"], "quit": false},
+    {"after": 5, "quit": false, "lacks": ["Quit without writing?"]},
+    {"quit": true}
+  ]
+}
