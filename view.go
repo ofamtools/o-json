@@ -29,7 +29,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if !a.editedShown() && a.sideOf(r.Focus) == rsTreeID {
 		_ = a.tree.Focus() // the edited structure is not shown (structure.editable went off)
 	}
-	if a.vedit != nil && r.Focus != valueInputID {
+	if a.vedit != nil && a.vedit.view != a.detail && r.Focus != valueInputID {
 		// The focus left the inline input (a click, a page): its text is
 		// the edit, as enter would make it.
 		if err := a.accept(); err != nil {
@@ -49,7 +49,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	treeFocused := a.tree.List().Focused() || a.rs.tree.List().Focused()
 	// Under a modal the page is drawn with the focus it opened over, so
 	// the panel the modal came from keeps its border.
-	dataFocused := a.data.list.Focused() || a.vedit != nil
+	dataFocused := a.data.list.Focused() || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
 	var left, right ochazuke.Block
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth
@@ -219,7 +219,7 @@ func (a *App) dataTitle() string {
 // edit (values.go) drawn on its row and carrying the cursor.
 func (a *App) dataBlock(w, h int) ochazuke.Block {
 	body := a.dataBody(w, h)
-	if a.vedit == nil || a.r.Instances[valueInputID] == nil {
+	if a.vedit == nil || a.r.Instances[valueInputID] == nil || a.vedit.view != nil && a.vedit.view != a.data {
 		return ochazuke.Text(body)
 	}
 	return a.inputBlock(body, w)

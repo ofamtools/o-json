@@ -522,3 +522,66 @@ func TestEditAScalarShownAlone(t *testing.T) {
 		t.Fatalf("scalar: %s", got)
 	}
 }
+
+// The detail opened from the edited view takes the same value verbs: r
+// edits an entry in an inline input drawn in the detail, o / O add, d d
+// deletes, K renames; the detail follows each edit.
+func TestValueEditsInTheDetail(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	onData(t, a, ".items", ".items[0]")
+	press(t, a, "enter")
+	if a.r.TopModal() != detailID {
+		t.Fatalf("enter: modal %q", a.r.TopModal())
+	}
+	entry := func(label string) {
+		t.Helper()
+		for i := 0; i < a.detail.src.n; i++ {
+			if a.detail.src.label(i) == label {
+				if err := a.detail.to(i); err != nil {
+					t.Fatal(err)
+				}
+				if err := a.detail.list.Focus(); err != nil {
+					t.Fatal(err)
+				}
+				view(a)
+				return
+			}
+		}
+		t.Fatalf("no detail entry %q\n%s", label, view(a))
+	}
+	entry("name")
+	press(t, a, "r")
+	if a.vedit == nil || a.vedit.view != a.detail || !strings.Contains(view(a), "name (string): ") {
+		t.Fatalf("r in the detail did not open its input:\n%s", view(a))
+	}
+	typeText(t, a, "omega")
+	press(t, a, "enter")
+	if got := field(t, a, ".items[0].name"); got != `"omega"` {
+		t.Fatalf("edit in the detail: %s", got)
+	}
+	if a.r.TopModal() != detailID || !strings.Contains(view(a), "omega") {
+		t.Fatalf("the detail did not follow the edit:\n%s", view(a))
+	}
+	entry("id")
+	press(t, a, "O")
+	typeText(t, a, "rank")
+	press(t, a, "enter")
+	typeText(t, a, "1")
+	press(t, a, "enter")
+	if got := field(t, a, ".items[0]"); !strings.HasPrefix(got, `{"rank":1,"id":1,"name":"omega"`) {
+		t.Fatalf("O in the detail: %s", got)
+	}
+	entry("rank")
+	press(t, a, "d", "d")
+	if got := field(t, a, ".items[0]"); strings.Contains(got, "rank") {
+		t.Fatalf("d d in the detail: %s", got)
+	}
+	agrees(t, a)
+	// The original's detail is read-only, as its data pane is.
+	press(t, a, "esc", "T")
+	onData(t, a, ".items", ".items[0]")
+	press(t, a, "enter")
+	if a.available("value", "edit") {
+		t.Fatal("value.edit in the original's detail")
+	}
+}

@@ -76,9 +76,67 @@ func (a *App) detailView(r *ochazuke.Runtime, _ *ochazuke.Instance, w, h int) oc
 	if a.detail == nil || r.Instances[rowsID] == nil {
 		return ochazuke.Text("")
 	}
+	if a.vedit != nil && a.vedit.view == a.detail && r.Focus != valueInputID {
+		// The focus left the detail's inline input: its text is the edit.
+		if err := a.accept(); err != nil {
+			a.LoadErr = err
+		}
+	}
+	a.refreshDetail()
 	if a.detail.src.n == 0 {
 		r.Placed(rowsID)
 		return ochazuke.Text("(empty)")
 	}
-	return ochazuke.Text(a.detail.view(w, h))
+	body := a.detail.view(w, h)
+	if a.vedit != nil && a.vedit.view == a.detail && r.Instances[valueInputID] != nil {
+		return a.inputBlock(body, w)
+	}
+	return ochazuke.Text(body)
+}
+
+// detailEditable reports a detail whose rows are the edited document's
+// (opened from the edited view): the value verbs patch them as they do
+// the data pane's.
+func (a *App) detailEditable() bool {
+	if len(a.trail) == 0 || !a.editedShown() {
+		return false
+	}
+	d := a.restructuredDoc()
+	return d.err == nil && rootOf(a.trail[0]) == d.root
+}
+
+// rootOf is the document node n is in.
+func rootOf(n *Node) *Node {
+	for n != nil && n.Parent != nil {
+		n = n.Parent
+	}
+	return n
+}
+
+// refreshDetail follows a value edit: the edited document is built
+// again, so the trail is found again by path in the new one (a level
+// that went is dropped), the selected row kept.
+func (a *App) refreshDetail() {
+	if len(a.trail) == 0 || !a.editedShown() {
+		return
+	}
+	d := a.restructuredDoc()
+	if d.err != nil || d.root == nil || rootOf(a.trail[0]) == d.root || rootOf(a.trail[0]) == a.Doc.Root {
+		return
+	}
+	var trail []*Node
+	for _, n := range a.trail {
+		m, err := Get(d.root, n.Path())
+		if err != nil || !m.IsContainer() {
+			break
+		}
+		trail = append(trail, m)
+	}
+	if len(trail) == 0 {
+		_ = a.r.Pop() // the value it showed is gone
+		a.trail = nil
+		return
+	}
+	a.trail = trail
+	_ = a.showDetail(max(0, a.detail.Selected()))
 }

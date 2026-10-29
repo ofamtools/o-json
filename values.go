@@ -106,11 +106,12 @@ func (a *App) valueOf(inst *ochazuke.Instance) (valueAt, bool) {
 }
 
 // editableValue is the data pane value a verb may patch on a focus: the
-// edited view shown, data.editable on, the data pane (not the detail),
-// not the raw JSON, no value input open.
+// edited view shown, data.editable on, the data pane or the detail opened
+// from it (its rows are the edited document's), not the raw JSON, no
+// value input open.
 func (a *App) editableValue(focus string) (valueAt, bool) {
 	inst := a.r.Instances[focus]
-	if !a.dataEditable() || !a.editedShown() || a.queryShowing() || a.Raw || a.vedit != nil || a.rowsOf(inst) != a.data {
+	if v := a.rowsOf(inst); !a.dataEditable() || !a.editedShown() || a.queryShowing() || a.Raw || a.vedit != nil || v == nil || v == a.detail && !a.detailEditable() {
 		return valueAt{}, false
 	}
 	return a.valueOf(inst)
@@ -265,24 +266,29 @@ type valueEdit struct {
 	in     *ochazuke.Input
 	what   string // "edit", "key" (a new key's name), "add" (its value), "rename"
 	at     valueAt
-	key    string // add: the new key (an object) once named
-	before string // the text it opened with
-	insert bool   // drawn as a new line below the row
-	above  bool   // add: before the row (O), drawn as a new line above it
+	key    string    // add: the new key (an object) once named
+	before string    // the text it opened with
+	insert bool      // drawn as a new line below the row
+	above  bool      // add: before the row (O), drawn as a new line above it
+	view   *rowsView // the table it is drawn on: the data pane or the detail
 }
 
 // openInput opens the inline input on the focused row, text selected
 // when sel.
 func (a *App) openInput(ve *valueEdit, text string, sel bool) error {
 	row := a.r.Focus
-	if a.rowsOf(a.r.Instances[row]) != a.data {
-		row = a.data.id
+	view := a.rowsOf(a.r.Instances[row])
+	if view == nil {
+		view, row = a.data, a.data.id
+	}
+	if ve.view == nil {
+		ve.view = view
 	}
 	if a.r.Instances[valueInputID] != nil {
 		_ = a.r.RemoveInstance(valueInputID)
 	}
 	in := ochazuke.NewInput(valueInputID, text, false)
-	if err := a.r.AddInput(in, ochazuke.Parent(a.data.id), ochazuke.Kind("value-input"), ochazuke.FocusOnClose(row)); err != nil {
+	if err := a.r.AddInput(in, ochazuke.Parent(ve.view.id), ochazuke.Kind("value-input"), ochazuke.FocusOnClose(row)); err != nil {
 		return err
 	}
 	in.Cursor = len(in.Text)
@@ -342,7 +348,7 @@ func (a *App) accept() error {
 			key = a.freeValueKey(ve.at.parent)
 		}
 		key = freeKey(key, taken)
-		return a.openInput(&valueEdit{what: "add", at: ve.at, key: key, insert: true, above: ve.above}, "null", true)
+		return a.openInput(&valueEdit{what: "add", at: ve.at, key: key, insert: true, above: ve.above, view: ve.view}, "null", true)
 	case "add":
 		raw, _ := inferValue(text)
 		return a.addPatch(addBeside(ve.at, ve.key, raw, ve.above))
@@ -394,11 +400,15 @@ func (ve *valueEdit) label() string {
 // row (or a new line below it), body the pane as drawn.
 func (a *App) inputBlock(body string, w int) ochazuke.Block {
 	ve := a.vedit
+	v := ve.view
+	if v == nil {
+		v = a.data
+	}
 	lines := strings.Split(body, "\n")
 	row := 0
-	if a.scalar == nil {
-		row = a.data.Selected() - a.data.off
-		if len(a.data.src.columns) > 0 {
+	if v != a.data || a.scalar == nil {
+		row = v.Selected() - v.off
+		if len(v.src.columns) > 0 {
 			row++ // the header
 		}
 	}
