@@ -35,6 +35,11 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | The restructure page: its two trees, node meta (origin by node id), the edits (send, indent, dedent, wrap, add-key, array/object, rename) as one undo step each, new keys opened selected with a placeholder, the origin highlight, the live mapping, write | `page.go` |
 | Editing the structure in place: the viewer's structure pane is the restructured tree (lent to the open page, `placeTree`), the copy a document starts with (`identity`), the restructured document the data pane shows, `T` (`flip`), `structure.editable`, the restructure page's empty start | `inplace.go` |
 | Yank, delete and put on the restructured tree through ochazuke's registers (nodes as `o-json.nodes` text; a put keeps ids that are free, so delete + put is a move and yank + put a copy), where a put lands (`putPlace`), the V selection's `d`/`y` | `put.go` |
+| The jq engine (gojq): `queryDoc` (path(Q) to the document's own nodes, else gojq's values), error positions, the builtins and their arity | `jq.go` |
+| The live query: its input (the only query state), the runner (a Component: pause, one job slot), the answers, `jq.*` verbs, `/` focus and leave, `query.line` | `query.go` |
+| The query line: the tokenizer (chips: field references, slots), drawing, the error caret | `queryline.go` |
+| Query mode (`m`): the context at the anchor (`jqContextAt`), how a field is written there (`fieldTerm`), the jq-character verbs | `querymode.go` |
+| The function picker and argument slots | `queryfunc.go` |
 | The search prompt, the system clipboard | `prompt.go`, `clipboard.go` |
 
 ## Invariants
@@ -52,6 +57,8 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 - The restructured tree's first node is the document (no parent, path "."). It is identified by having no parent, never by its id, and every edit keeps it the only parentless node: an edit that would put a node beside it (dedent, wrap, a sibling key) does not apply.
 - One restructure state: the restructured tree (`rsTreeID`) is both the viewer's edited structure pane and the restructure page's right tree. It is one tree instance lent to whichever page is open (`placeTree`, from each page's `OnOpen`), never a second tree or a copy of its nodes, so the keys, the undo stack and the mapping are one. The viewer's original structure tree (`treeID`) and the page's original tree stay read-only.
 - The restructure page's state is its mapping (`mappingOf` over the tree's nodes and `meta`): nothing else holds it, so the panel, `restructure.write` and `o-json restructure --map` agree (`TestLiveMappingIsWhatRestructureRuns`). A node's origin lives in `meta` by node id and is never dropped, so undo brings it back; o-json's edits go on the outline's undo stack as `TreeAction`s holding the nodes and `meta` before and after. A JSON rule is availability (`node-indent`, `node-dedent`), never a guard row.
+
+- The query line's text is the only query state: results, chips, the anchor and the context all derive from it; runs are off the loop in one job slot (`TestQueryRunSupersededIsDropped`). A path query's results are the document's own nodes (`TestQueryPathKeepsOrder`); `o-json query` must agree with jq (`TestQueryCLIAgreesWithJQ`).
 
 ## Checks
 
