@@ -204,9 +204,9 @@ func TestForceWrite(t *testing.T) {
 	press(t, a, "M")
 	sendPaths(t, a, ".name")
 	want := "{\n  \"name\": \"o-json sample\"\n}\n"
-	// W without a path opens the args form, as w does.
+	// W without a path opens the path chooser, as w does.
 	press(t, a, "W")
-	if a.r.TopModal() != ochazuke.ArgsFormID {
+	if a.r.TopModal() != "path-chooser" {
 		t.Fatalf("W: modal %q", a.r.TopModal())
 	}
 	press(t, a, "esc")

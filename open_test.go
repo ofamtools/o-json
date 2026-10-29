@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/unixsuperhero/ochazuke"
 )
@@ -90,14 +91,15 @@ func TestOpenWithAPath(t *testing.T) {
 	}
 }
 
-// e without a path opens the args form; its path field offers the recent
-// files first, then the files beside the current one; filling it opens
-// the file.
+// e without a path opens the path chooser directly (its one missing
+// argument is a path: ochazuke's forms.single-path); typing finds a file
+// beside the current one, and picking it opens the file.
 func TestOpenWithoutAPathOpensTheForm(t *testing.T) {
 	a := empty(t)
 	viewerDo(t, a, "open", ochazuke.Arguments{"path": sample})
-	press(t, a, "e")
-	if a.r.TopModal() != ochazuke.ArgsFormID {
+	finish(a, Press(a.m, "e")) // the folder's listing is the chooser's job
+	settle(a)
+	if a.r.TopModal() != "path-chooser" {
 		t.Fatalf("e: modal %q", a.r.TopModal())
 	}
 	// The field is a path: the chooser starts in the open file's folder
@@ -111,18 +113,12 @@ func TestOpenWithoutAPathOpensTheForm(t *testing.T) {
 		t.Fatalf("browse starts in %q", got)
 	}
 	other := filepath.Join("testdata", "duplicate-keys.json")
-	// The field opens the path chooser (path.field picker): typing finds
-	// the file in the open file's folder once the folder is listed.
-	finish(a, Press(a.m, "enter"))
-	settle(a)
-	if a.r.TopModal() != "path-chooser" {
-		t.Fatalf("the path field: modal %q", a.r.TopModal())
+	// Typing finds the file in the open file's folder once it is listed.
+	finish(a, Type(a.m, "duplicate-keys"))
+	for i := 0; i < 20 && (strings.Contains(view(a), "loading") || strings.Contains(view(a), "nothing matches")); i++ {
+		settle(a)
+		time.Sleep(20 * time.Millisecond)
 	}
-	Type(a.m, "duplicate-keys")
-	settle(a)
-	view(a)
-	finish(a, Press(a.m, "enter"))
-	settle(a)
 	finish(a, Press(a.m, "enter"))
 	settle(a)
 	if a.r.TopModal() != "" || !strings.HasSuffix(a.Path, other) {
@@ -223,7 +219,7 @@ func TestRestructureAPastedBuffer(t *testing.T) {
 	press(t, a, "q")
 	// w writes the buffer itself; the buffer is then that file.
 	press(t, a, "w")
-	if a.r.TopModal() != ochazuke.ArgsFormID {
+	if a.r.TopModal() != "path-chooser" {
 		t.Fatalf("w: modal %q", a.r.TopModal())
 	}
 	press(t, a, "esc")
@@ -297,5 +293,20 @@ func TestBracketedPasteOpensBuffer(t *testing.T) {
 	view(a)
 	if a.Doc == nil || a.Doc.Shape.Find(".pasted") == nil || a.m.Status != "" {
 		t.Fatalf("paste did not open the buffer (status %q)\n%s", a.m.Status, view(a))
+	}
+}
+
+// e, w and :w (one path parameter) open ochazuke's path chooser directly,
+// not the args form first (ochazuke v0.46.0, forms.single-path).
+func TestPathVerbsOpenTheChooser(t *testing.T) {
+	for _, keys := range [][]string{{"e"}, {"w"}, {":", "w", "enter"}} {
+		a := open(t, nestDoc, 120, 30)
+		for _, k := range keys {
+			finish(a, Press(a.m, k))
+			view(a)
+		}
+		if a.r.TopModal() != "path-chooser" || a.r.Focus != "path-chooser/query" {
+			t.Errorf("%v: top %q focus %q", keys, a.r.TopModal(), a.r.Focus)
+		}
 	}
 }

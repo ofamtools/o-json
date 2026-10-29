@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/unixsuperhero/ochazuke"
 )
@@ -54,18 +55,32 @@ func TestAliases(t *testing.T) {
 			t.Fatalf("%s with no path: %v modal %q", word, err, a.r.TopModal())
 		}
 	}
+	// :w! with no path opens the path chooser at once (ochazuke's
+	// forms.single-path), keeping the preset force: picking the existing
+	// file replaces it without asking.
+	press(t, a, "<", "<")
 	press(t, a, ":")
 	for _, ch := range "w!" {
 		press(t, a, string(ch))
 	}
 	press(t, a, "enter")
-	if a.r.TopModal() != ochazuke.ArgsFormID || a.r.Focus != ochazuke.ArgsFormID+"/path" {
+	if a.r.TopModal() != "path-chooser" || a.r.Focus != "path-chooser/query" {
 		t.Fatalf(":w! with no path: modal %q focus %q", a.r.TopModal(), a.r.Focus)
 	}
-	if ed := a.r.RecordEditor(ochazuke.ArgsFormID); ed == nil || ed.Values()["force"] != "true" {
-		t.Fatalf(":w! form lost its preset force")
+	for range 2 { // browse, recent, then typed
+		finish(a, Press(a.m, "tab"))
+		settle(a)
 	}
-	press(t, a, "esc", "esc", "esc")
+	finish(a, Type(a.m, out))
+	for i := 0; i < 20 && strings.Contains(view(a), "loading"); i++ {
+		settle(a)
+		time.Sleep(20 * time.Millisecond)
+	}
+	finish(a, Press(a.m, "enter"))
+	settle(a)
+	if a.r.TopModal() != "" || a.unsaved() {
+		t.Fatalf(":w! picked lost its force: modal %q unsaved %v status %q", a.r.TopModal(), a.unsaved(), a.m.Status)
+	}
 	// wq and x write, then quit.
 	for _, word := range []string{"wq", "x"} {
 		a := open(t, sample, 120, 30)

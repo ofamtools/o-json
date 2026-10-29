@@ -1,12 +1,11 @@
 {
   "name": "o-json: . with nothing to repeat is a plain message or nothing, never an Error (R6.4)",
   "area": "ux2",
-  "skip": "gap: ochazuke F3/F4 (fixed upstream in a parallel lane; drop this skip on the release)",
   "width": 100,
   "height": 20,
   "page": {"id": "o-json"},
   "script": ["."],
   "expect": [
-    {"after": 1, "lacks": ["Error: nothing to repeat"]}
+    {"after": 1, "contains": ["nothing to repeat"], "lacks": ["Error: nothing to repeat"]}
   ]
 }

@@ -369,7 +369,7 @@ func TestWriteRefusesTheSource(t *testing.T) {
 	sendPaths(t, a, ".name")
 	// w without a path opens the args form for it.
 	press(t, a, "w")
-	if a.r.TopModal() != ochazuke.ArgsFormID {
+	if a.r.TopModal() != "path-chooser" {
 		t.Fatalf("w: modal %q", a.r.TopModal())
 	}
 	press(t, a, "esc")

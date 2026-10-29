@@ -163,7 +163,7 @@ func TestWriteFromTheViewer(t *testing.T) {
 		t.Fatal("an edit wrote the source")
 	}
 	press(t, a, "w")
-	if a.r.TopModal() != ochazuke.ArgsFormID {
+	if a.r.TopModal() != "path-chooser" {
 		t.Fatalf("w: modal %q", a.r.TopModal())
 	}
 	press(t, a, "esc")

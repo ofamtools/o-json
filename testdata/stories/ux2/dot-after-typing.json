@@ -1,7 +1,6 @@
 {
   "name": "o-json: . after a rename's typing never replays the typing outside an input (R9.5)",
   "area": "ux2",
-  "skip": "gap: ochazuke F3/F4 (fixed upstream in a parallel lane; drop this skip on the release)",
   "width": 100,
   "height": 20,
   "page": {"id": "o-json"},
