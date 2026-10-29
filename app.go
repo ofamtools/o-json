@@ -138,6 +138,12 @@ const bigStructure = 150
 
 func shapeID(s *Shape) string { return "s:" + s.Path }
 
+// toneDuplicateKey tones the label of a field some objects repeat. It is
+// the built-in errored tone, the scheme's error role as the foreground;
+// a background tone of its own (json.duplicate-key) waits for the library
+// to draw backgrounds.
+const toneDuplicateKey = ochazuke.ToneErrored
+
 // rebuild sets the tree's nodes from the shapes the filters keep.
 func (a *App) rebuild() error {
 	if a.Doc == nil {
@@ -155,8 +161,12 @@ func (a *App) rebuild() error {
 			name += "?"
 		}
 		id := shapeID(s)
+		var tones []ochazuke.ToneSpan
+		if s.Duplicates != nil {
+			tones = []ochazuke.ToneSpan{ochazuke.CellTone(0, toneDuplicateKey)}
+		}
 		nodes = append(nodes, ochazuke.TreeNode{ID: id, Parent: parent, Label: name, Noun: "shape", Data: s,
-			Cells: []string{name, s.Types(), s.Presence()}})
+			Cells: []string{name, s.Types(), s.Presence()}, Tones: tones})
 		shown := 0
 		for _, c := range s.Children {
 			if c.IsField() && shown >= maxFields {

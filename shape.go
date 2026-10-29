@@ -25,16 +25,35 @@ type Shape struct {
 	Of    int          `json:"of,omitempty"` // a field: the objects at its parent
 	Kinds map[Kind]int `json:"types"`
 	// Arrays among the values: the fewest and most items.
-	MinItems int      `json:"min_items,omitempty"`
-	MaxItems int      `json:"max_items,omitempty"`
-	Optional bool     `json:"optional,omitempty"`
-	Children []*Shape `json:"children,omitempty"`
+	MinItems int  `json:"min_items,omitempty"`
+	MaxItems int  `json:"max_items,omitempty"`
+	Optional bool `json:"optional,omitempty"`
+	// Duplicates is set on a field some objects repeat.
+	Duplicates *Duplicates `json:"duplicates,omitempty"`
+	Children   []*Shape    `json:"children,omitempty"`
 
 	parent *Shape
 	values []*Node
 	fields map[string]*Shape
 	items  *Shape
-	first  int // order of first appearance among the parent's fields
+	first  int   // order of first appearance among the parent's fields
+	in     *Node // the object add last took this field from
+}
+
+// Duplicates counts the objects that repeat a field's key. jq, and every
+// parser that builds a map, keeps the last value; o-json shows the first.
+type Duplicates struct {
+	Objects int `json:"objects"` // objects that repeat the key
+	Most    int `json:"most"`    // the most times one object has it
+}
+
+// DuplicateNote is the warning a duplicated field carries, "" for none:
+// `duplicate key "id" (2): jq keeps the last`.
+func (s *Shape) DuplicateNote() string {
+	if s.Duplicates == nil {
+		return ""
+	}
+	return fmt.Sprintf("duplicate key %s (%d): jq keeps the last", quote(s.Key), s.Duplicates.Most)
 }
 
 // Values are the nodes at this path, in document order.
@@ -72,6 +91,9 @@ func (s *Shape) Note() string {
 	if s.Optional {
 		parts = append(parts, "optional")
 	}
+	if s.Duplicates != nil {
+		parts = append(parts, fmt.Sprintf("duplicate key (%d)", s.Duplicates.Most))
+	}
 	if s.Kinds[KArray] > 0 {
 		if s.MinItems == s.MaxItems {
 			parts = append(parts, fmt.Sprintf("%d items", s.MaxItems))
@@ -96,6 +118,11 @@ func (s *Shape) add(n *Node) {
 	s.values = append(s.values, n)
 	switch n.Kind {
 	case KObject:
+		// A key counts once per object, so Count, Of and Optional stay
+		// true when an object repeats a key. The first value is the one
+		// the shape takes, as Node.Field does; the repeats are recorded
+		// in the field's Duplicates.
+		var repeats map[string]int
 		for _, c := range n.Children {
 			f := s.fields[c.Key]
 			if f == nil {
@@ -105,7 +132,23 @@ func (s *Shape) add(n *Node) {
 				f = &Shape{Key: c.Key, Path: joinPath(s.Path, keyStep(c.Key)), Kinds: map[Kind]int{}, parent: s, first: len(s.fields)}
 				s.fields[c.Key] = f
 			}
+			if f.in == n {
+				if repeats == nil {
+					repeats = map[string]int{}
+				}
+				repeats[c.Key]++
+				continue
+			}
+			f.in = n
 			f.add(c)
+		}
+		for key, extra := range repeats {
+			f := s.fields[key]
+			if f.Duplicates == nil {
+				f.Duplicates = &Duplicates{}
+			}
+			f.Duplicates.Objects++
+			f.Duplicates.Most = max(f.Duplicates.Most, extra+1)
 		}
 	case KArray:
 		k := len(n.Children)

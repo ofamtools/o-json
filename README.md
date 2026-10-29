@@ -43,7 +43,9 @@ $ o-json structure testdata/sample.json
     source      null         1/1
 ```
 
-`--format json` prints the same tree as JSON (`{key, path, count, of, types, min_items, max_items, optional, children}`).
+A key an object repeats (`{"id": 3, "id": 33}`) counts once for that object, so the count and the optional flag stay true. The shape, the table and `get` take the first value; jq, and any parser that builds a map, keeps the last. The structure notes `duplicate key (N)`, N being the most times one object has it, and the viewer tones the field's name with the error colour and says `duplicate key "id" (2): jq keeps the last` on the breadcrumb.
+
+`--format json` prints the same tree as JSON (`{key, path, count, of, types, min_items, max_items, optional, duplicates: {objects, most}, children}`).
 
 ## Tables
 

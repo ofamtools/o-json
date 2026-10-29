@@ -101,6 +101,9 @@ func (a *App) breadcrumb() string {
 			info += " optional"
 		}
 		parts = append(parts, s.Path+" ("+info+")")
+		if note := s.DuplicateNote(); note != "" {
+			parts = append(parts, note)
+		}
 		if n := a.dataNode(); n != nil && a.data.list.Focused() {
 			parts = append(parts, "row "+n.Path())
 		}
