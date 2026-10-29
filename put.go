@@ -352,6 +352,10 @@ func (a *App) registerPutVerbs() {
 		id := a.focusedNode(ev.Focus)
 		return id != "" && a.current().parent(id) != ""
 	})
+	r.DefineGuard("node-deletable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		id := a.focusedNode(ev.Focus)
+		return id != "" && !a.refuses(id, ochazuke.TreeDelete)
+	})
 	r.DefineGuard("node-puttable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.focusedNode(ev.Focus) != ""
 	})
@@ -361,7 +365,7 @@ func (a *App) registerPutVerbs() {
 	r.Define("node").
 		Verb("delete", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.yankNodes(c, subjectIDs(c), true)
-		}, "Delete the nodes and their children from the restructure into the register (\"a d d into a; the document node stays); p puts them back where the cursor is (a move: they keep their origin), u undoes").Many().When("node-yankable").
+		}, "Delete the nodes and their children from the restructure into the register (\"a d d into a; the document node stays); p puts them back where the cursor is (a move: they keep their origin), u undoes").Many().When("node-deletable").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.yankNodes(c, subjectIDs(c), false)
 		}, "Yank the nodes and their children into the register (\"a y y into a); p puts a copy, the same shapes mapped again").Many().When("node-yankable").

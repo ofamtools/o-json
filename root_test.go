@@ -260,3 +260,34 @@ func TestForceWrite(t *testing.T) {
 		t.Fatal("n wrote the source")
 	}
 }
+
+// The document node is Fixed (rename, move, delete) and an array's item
+// refuses a rename, from every path: the palette's ochazuke.outline verbs
+// on the root are refused and change nothing, and their keys drop out.
+func TestFixedRootRefusesOutlineVerbs(t *testing.T) {
+	a := openPut(t)
+	onRoot(t, a)
+	before := output(t, a)
+	for _, verb := range []string{"delete", "edit", "indent", "outdent"} {
+		if a.available("ochazuke.outline", verb) {
+			t.Errorf("ochazuke.outline.%s available on the root", verb)
+		}
+		if _, err := a.r.Execute(ochazuke.Request{Noun: "ochazuke.outline", Verb: verb, Target: rsRootID}); err == nil {
+			t.Errorf("ochazuke.outline.%s on the root was not refused", verb)
+		}
+	}
+	if got := output(t, a); got != before || len(a.rs.tree.Nodes()) == 0 {
+		t.Fatalf("the root changed: %s", got)
+	}
+	if a.available("node", "delete") || a.available("node", "rename") {
+		t.Fatal("node.delete / node.rename available on the root")
+	}
+	// An array item refuses a rename.
+	b := openRestructure(t, 120, 30)
+	sendPaths(t, b, ".items[].id")
+	press(t, b, "tab")
+	selectIn(t, b, b.rs.tree, func(n ochazuke.TreeNode) bool { return b.rs.meta[n.ID].item })
+	if b.available("node", "rename") || b.available("ochazuke.outline", "edit") {
+		t.Fatal("an item can be renamed")
+	}
+}

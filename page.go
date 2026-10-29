@@ -152,7 +152,7 @@ func (a *App) registerRestructure() error {
 	tree.NewID = a.newNodeID
 	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, shown: rsOrigID, dirty: true, base: mappingKey(&Mapping{Map: []MapEntry{}})}
 	a.registerRestructureVerbs()
-	if err := tree.SetNodes([]ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}); err != nil {
+	if err := tree.SetNodes([]ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node", Fixed: rootFixed}}); err != nil {
 		return err
 	}
 	page, err := r.AddPage(rsPageID, "Restructure", a.renderRestructure, ochazuke.Focus(rsOrigID))
@@ -880,13 +880,48 @@ func (a *App) commitWith(label, focus string, e edit, patches []Patch) error {
 	set := func(to edit, p []Patch) func() error {
 		return func() error {
 			a.rs.meta, a.rs.dirty, a.rs.patches = maps.Clone(to.meta), true, slices.Clone(p)
-			return a.rs.tree.SetNodes(to.nodes)
+			return a.rs.tree.SetNodes(fixNodes(slices.Clone(to.nodes), to.meta))
 		}
 	}
 	if err := set(e, patches)(); err != nil {
 		return err
 	}
 	return a.rs.tree.Record(ochazuke.TreeAction{ID: focus, Label: label, Undo: set(before, was), Redo: set(e, patches)})
+}
+
+// The changes a restructure node refuses (TreeNode.Fixed), from every
+// path (keys, the palette's ochazuke.outline verbs, the CLI): the
+// document node is not renamed, moved or deleted; an array's item has no
+// key to rename.
+var (
+	rootFixed = []string{ochazuke.TreeRename, ochazuke.TreeMove, ochazuke.TreeDelete}
+	itemFixed = []string{ochazuke.TreeRename}
+)
+
+// fixNodes sets each node's Fixed from what it is (data: no parent, an
+// item), so the tree's own guards and refusals judge the row.
+func fixNodes(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) []ochazuke.TreeNode {
+	for i, n := range nodes {
+		switch {
+		case n.Parent == "":
+			nodes[i].Fixed = rootFixed
+		case meta[n.ID].item:
+			nodes[i].Fixed = itemFixed
+		default:
+			nodes[i].Fixed = nil
+		}
+	}
+	return nodes
+}
+
+// refuses reports whether node id refuses the change op (its Fixed).
+func (a *App) refuses(id, op string) bool {
+	for _, n := range a.rs.tree.Nodes() {
+		if n.ID == id {
+			return n.Refuses(op)
+		}
+	}
+	return true
 }
 
 // decorate gives every restructure node its cells (key, type, from) after
@@ -929,7 +964,7 @@ func (a *App) decorate() {
 		}
 		nodes[i].Noun, nodes[i].Cells = "node", []string{label, typ, md.from}
 	}
-	_ = a.rs.tree.SetNodes(nodes)
+	_ = a.rs.tree.SetNodes(fixNodes(nodes, a.rs.meta))
 }
 
 // highlight marks, on one tree, the other tree's selected node: the
@@ -1060,7 +1095,7 @@ func (a *App) registerRestructureVerbs() {
 	// and is always there (deleting it neither: node-yankable, put.go).
 	r.DefineGuard("node-renamable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		id := a.focusedNode(ev.Focus)
-		return id != "" && !a.rs.meta[id].item && a.current().parent(id) != ""
+		return id != "" && !a.refuses(id, ochazuke.TreeRename)
 	})
 	r.DefineGuard("shape-sendable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		inst := r.Instances[ev.Focus]
