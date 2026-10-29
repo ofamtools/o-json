@@ -467,6 +467,9 @@ func (a *App) registerValueVerbs() {
 		return ochazuke.Done(a.patchList())
 	}
 	target := func(c ochazuke.Ctx) (valueAt, error) {
+		if err := a.settleEdited(); err != nil {
+			return valueAt{}, err
+		}
 		v, ok := a.editableValue(c.Instance.ID)
 		if !ok {
 			return v, errors.New("no value to edit here (the edited view's data pane, data.editable)")

@@ -247,6 +247,27 @@ func (a *App) shownDoc() *restructured {
 	return a.restructuredDoc()
 }
 
+// settleEdited makes the shown restructured document the current one
+// before a value edit acts on it. While a slow rebuild runs off the loop
+// the data pane shows the previous result, and a patch must never name
+// a path of that one: the rebuild is done on the loop now (the job
+// cancelled), the data pane and the detail follow, and the edit acts on
+// the row at the cursor in the current document. Only a value edit made
+// in that window waits; a structure edit never does.
+func (a *App) settleEdited() error {
+	if !a.rb.slow || a.Doc == nil || a.ed == nil || a.ed.doc != a.Doc || a.ed.key == mappingKey(a.Mapping()) {
+		return nil
+	}
+	a.rb.cancel()
+	a.restructuredDoc()
+	a.rb.slow = true // still a large document: later rebuilds stay off the loop
+	if err := a.sync(); err != nil {
+		return err
+	}
+	a.refreshDetail()
+	return nil
+}
+
 // rebuildOnLoop is the longest rebuild the loop waits for: once one takes
 // longer (a large document), the next rebuilds run off the loop.
 const rebuildOnLoop = 20 * time.Millisecond
