@@ -325,6 +325,14 @@ func TestQueryModeKeysBuildAQuery(t *testing.T) {
 	if !a.queryModeOn() || !strings.Contains(view(a), "· query") {
 		t.Fatalf("m: mode %q\n%s", a.r.BaseMode(), view(a))
 	}
+	// query extends normal (bindings.json "modes"): the viewer's and the
+	// app's normal rows answer there without tables of their own.
+	if a.r.ModeParent(queryMode) != "normal" {
+		t.Fatalf("query extends %q", a.r.ModeParent(queryMode))
+	}
+	if got := a.answer(t, "q"); got != "app.quit" {
+		t.Fatalf("q in query mode answers %q", got)
+	}
 	selectPath(t, a, ".people[]")
 	press(t, a, "|")
 	selectPath(t, a, ".people[].email")
@@ -478,4 +486,15 @@ func TestQueryFunctionSlots(t *testing.T) {
 	if toks := jqTokens([]rune("sub(□; □)")); toks[2].Kind != tokSlot {
 		t.Fatalf("slot token %+v", toks)
 	}
+}
+
+// answer is the verb the first row of keys answers with at the focus.
+func (a *App) answer(t *testing.T, keys string) string {
+	t.Helper()
+	for _, b := range a.r.ListBindings(a.r.Focus) {
+		if b.Keys == keys && !b.Unbind {
+			return a.r.CanonicalKey(b.Request.Key())
+		}
+	}
+	return ""
 }
