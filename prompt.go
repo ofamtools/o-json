@@ -41,10 +41,7 @@ func (a *App) registerPrompt() {
 			}
 			a.ask = nil
 			return nil, r.Pop()
-		}, "Close the prompt without running the question").
-		Mode("insert").
-		Bind("enter", ochazuke.Do("query.commit")).
-		Bind("esc", ochazuke.Do("query.cancel"))
+		}, "Close the prompt without running the question")
 	// The prompt asks only for a search, so committing it is a view move.
 	setHistory(r, ochazuke.HistoryAction, "query.commit", "query.cancel")
 	a.in = ochazuke.NewInput(fieldID, "", false)

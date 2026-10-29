@@ -1,0 +1,74 @@
+// o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers. A user's bindings.json overrides them; o-json bindings list prints the effective rows.
+{
+  "bindings": [
+    {"context": "rows/normal", "bindings": [
+      {"key": "j", "action": "rows.move", "args": {"motion": "down"}, "from": {"steps": "count"}},
+      {"key": "down", "action": "rows.move", "args": {"motion": "down"}, "from": {"steps": "count"}},
+      {"key": "k", "action": "rows.move", "args": {"motion": "up"}, "from": {"steps": "count"}},
+      {"key": "up", "action": "rows.move", "args": {"motion": "up"}, "from": {"steps": "count"}},
+      {"key": "ctrl+d", "action": "rows.move", "args": {"motion": "half-down"}, "from": {"steps": "count"}},
+      {"key": "ctrl+u", "action": "rows.move", "args": {"motion": "half-up"}, "from": {"steps": "count"}},
+      {"key": "ctrl+f", "action": "rows.move", "args": {"motion": "page-down"}, "from": {"steps": "count"}},
+      {"key": "pgdown", "action": "rows.move", "args": {"motion": "page-down"}, "from": {"steps": "count"}},
+      {"key": "ctrl+b", "action": "rows.move", "args": {"motion": "page-up"}, "from": {"steps": "count"}},
+      {"key": "pgup", "action": "rows.move", "args": {"motion": "page-up"}, "from": {"steps": "count"}},
+      {"key": "g g", "action": "rows.move", "args": {"motion": "top"}, "from": {"line": "line"}},
+      {"key": "home", "action": "rows.move", "args": {"motion": "top"}, "from": {"line": "line"}},
+      {"key": "G", "action": "rows.move", "args": {"motion": "bottom"}, "from": {"line": "line"}},
+      {"key": "end", "action": "rows.move", "args": {"motion": "bottom"}, "from": {"line": "line"}},
+      {"key": "h", "action": "ochazuke.list.column", "args": {"delta": -1}, "from": {"steps": "count"}},
+      {"key": "left", "action": "ochazuke.list.column", "args": {"delta": -1}, "from": {"steps": "count"}},
+      {"key": "l", "action": "ochazuke.list.column", "args": {"delta": 1}, "from": {"steps": "count"}},
+      {"key": "right", "action": "ochazuke.list.column", "args": {"delta": 1}, "from": {"steps": "count"}},
+      {"key": "0", "action": "ochazuke.list.column", "args": {"to": "first"}, "when": "no-count"},
+      {"key": "^", "action": "ochazuke.list.column", "args": {"to": "first"}},
+      {"key": "$", "action": "ochazuke.list.column", "args": {"to": "last"}},
+      {"key": "|", "action": "ochazuke.list.column", "from": {"index": "count"}},
+      {"key": "g c", "action": "ochazuke.list.choose-column"},
+      {"key": "z >", "action": "ochazuke.list.resize-column", "args": {"delta": 1}, "from": {"steps": "count"}, "hidden": true},
+      {"key": "z <", "action": "ochazuke.list.resize-column", "args": {"delta": -1}, "from": {"steps": "count"}, "hidden": true},
+      {"key": "z =", "action": "ochazuke.list.reset-columns", "hidden": true},
+      {"key": "z p", "action": "ochazuke.list.toggle-pin-column", "hidden": true}
+    ]},
+    {"context": "rows/count_pending", "extends": "normal", "bindings": []},
+    {"context": "viewer/normal", "bindings": [
+      {"key": "/", "action": "viewer.search"},
+      {"key": "n", "action": "viewer.next"},
+      {"key": "N", "action": "viewer.previous"},
+      {"key": "t", "action": "viewer.type"},
+      {"key": "v", "action": "viewer.raw"},
+      {"key": "esc", "action": "viewer.clear"},
+      {"key": "R", "action": "viewer.load"},
+      {"key": "q", "action": "app.quit"}
+    ]},
+    {"context": "shape/normal", "bindings": [
+      {"key": "enter", "action": "outline.fold"},
+      {"key": "y", "action": "shape.yank"}
+    ]},
+    {"context": "item/normal", "bindings": [
+      {"key": "enter", "action": "item.open"},
+      {"key": "y", "action": "item.yank"}
+    ]},
+    {"context": "field/normal", "bindings": [
+      {"key": "enter", "action": "field.open"},
+      {"key": "y", "action": "field.yank"}
+    ]},
+    {"context": "line/normal", "bindings": [
+      {"key": "y", "action": "line.yank"}
+    ]},
+    {"context": "entry/normal", "bindings": [
+      {"key": "enter", "action": "entry.open"},
+      {"key": "l", "action": "entry.open"},
+      {"key": "h", "action": "entry.up"},
+      {"key": "backspace", "action": "entry.up"},
+      {"key": "y", "action": "entry.yank"}
+    ]},
+    {"context": "detail/normal", "bindings": [
+      {"key": "q", "action": "modal.pop"}
+    ]},
+    {"context": "query/insert", "bindings": [
+      {"key": "enter", "action": "query.commit"},
+      {"key": "esc", "action": "query.cancel"}
+    ]}
+  ]
+}

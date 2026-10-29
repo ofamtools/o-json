@@ -26,7 +26,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | The windowed table (the list holds only the rows on screen), `rows.move`, column fitting | `rows.go` |
 | The page: breadcrumb, panels, the divider (`PaneLayout` + `Divide`, so `>` `<` `=` resize) | `view.go` |
 | Verbs | `verbs.go` |
-| Key rows | `bindings.go` |
+| Key rows: `bindings.json` (embedded, one row per line; the only place a default key is written), loaded by `bindings.go` | `bindings.json`, `bindings.go` |
 | The detail modal (drill in and out) | `detail.go` |
 | The search prompt, the system clipboard | `prompt.go`, `clipboard.go` |
 
@@ -42,10 +42,12 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 
 ## Checks
 
+`TestNoDeprecatedOchazuke` (ochazuke's `strictcheck`) fails on any deprecated ochazuke name (`ctx.Status`: use `ctx.Info` or `ctx.Error`). Give a verb availability (`.When(guard)`) rather than a guard on its rows.
+
 ```sh
 gofmt -l . && go vet ./... && GOWORK=off go test -race ./...
 go run . --smoke testdata/sample.json
 go run . catalog >/dev/null
 ```
 
-ochazuke (`v0.31.0`) and oden (`v0.1.1`) are required at their tags. An untracked `go.work` (`go work init . ../ochazuke ../oden`) builds against the sibling checkouts, and `GOWORK=off` builds from the tags as a fresh clone does. Never commit `go.work` or a `replace`.
+ochazuke (`v0.37.0`) and oden (`v0.1.1`) are required at their tags. An untracked `go.work` (`go work init . ../ochazuke ../oden`) builds against the sibling checkouts, and `GOWORK=off` builds from the tags as a fresh clone does. Never commit `go.work` or a `replace`.

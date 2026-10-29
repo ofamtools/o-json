@@ -85,7 +85,9 @@ func New() (*App, error) {
 	a.registerPrompt()
 	a.registerDetail()
 	a.registerVerbs()
-	a.bind()
+	if err := a.bind(); err != nil {
+		return nil, err
+	}
 	if _, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID)); err != nil {
 		return nil, err
 	}

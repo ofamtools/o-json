@@ -12,6 +12,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/unixsuperhero/ochazuke"
+	"github.com/unixsuperhero/ochazuke/strictcheck"
 )
 
 func open(t *testing.T, path string, width, height int) *App {
@@ -567,3 +568,5 @@ func TestDataTableMovesByCell(t *testing.T) {
 		t.Fatalf("z =: widths %v, want none", got)
 	}
 }
+
+func TestNoDeprecatedOchazuke(t *testing.T) { strictcheck.Check(t) }
