@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -10,8 +12,7 @@ import (
 )
 
 // A key repeated in one object counts once: .items[].id is 3/3, not 4/3,
-// and the shape takes the first value, as Node.Field (and so the table)
-// does.
+// and the shape takes the last value, as jq does.
 func TestDuplicateKeyCountsOncePerObject(t *testing.T) {
 	s := Infer(load(t, "testdata/duplicate-keys.json"))
 	id := s.Find(".items[].id")
@@ -22,7 +23,7 @@ func TestDuplicateKeyCountsOncePerObject(t *testing.T) {
 	for _, v := range id.Values() {
 		values = append(values, v.Value)
 	}
-	if got := strings.Join(values, " "); got != "1 2 3" {
+	if got := strings.Join(values, " "); got != "1 2 33" {
 		t.Errorf("values %s", got)
 	}
 	if id.Duplicates == nil || id.Duplicates.Objects != 1 || id.Duplicates.Most != 2 {
@@ -101,4 +102,54 @@ func TestViewerShowsDuplicateKey(t *testing.T) {
 	if strings.Contains(view(a), "duplicate key") {
 		t.Error("the note follows the selection")
 	}
+}
+
+// Every read shows a repeated key's last value, as jq does, at the
+// position of the first: the parsed document, get, table, structure's
+// values, the viewer's table and fields, and restructure.
+func TestEveryReadShowsTheLastValue(t *testing.T) {
+	const file = "testdata/duplicate-keys.json"
+	root := load(t, file)
+	item := root.Field("items").Children[2]
+	if len(item.Children) != 2 || item.Children[0].Key != "id" || item.Children[0].Value != "33" || item.Children[0].Repeats != 2 {
+		t.Fatalf("item %s", Compact(item, 0))
+	}
+	run := func(args ...string) string {
+		var b strings.Builder
+		if err := Main(args, nil, &b, &b); err != nil {
+			t.Fatalf("%v: %v", args, err)
+		}
+		return b.String()
+	}
+	if got := run("get", file, ".items[2]"); !strings.Contains(got, `"id": 33`) || strings.Contains(got, `"id": 3,`) {
+		t.Errorf("get %s", got)
+	}
+	if got := run("get", file, ".items[].id"); strings.Fields(got)[2] != "33" {
+		t.Errorf("get [] %s", got)
+	}
+	if got := run("table", file, ".items"); !strings.Contains(got, "33") {
+		t.Errorf("table %s", got)
+	}
+	if got := run("restructure", file, "--map", writeMap(t, `{"map":[{"from":".items[]","to":".r[]"},{"from":".items[].id","to":".r[].id"}]}`)); !strings.Contains(got, `"id": 33`) {
+		t.Errorf("restructure %s", got)
+	}
+	a := open(t, file, 120, 30)
+	selectPath(t, a, ".items")
+	if row := line(view(a), "gamma"); !strings.Contains(row, "33") {
+		t.Errorf("viewer table row %q", row)
+	}
+	selectPath(t, a, ".items[].id")
+	frame := view(a)
+	if !strings.Contains(frame, "33") || !strings.Contains(frame, `duplicate key "id" (2): jq keeps the last`) {
+		t.Errorf("viewer values\n%s", frame)
+	}
+}
+
+func writeMap(t *testing.T, mapping string) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), "map.json")
+	if err := os.WriteFile(p, []byte(mapping), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return p
 }

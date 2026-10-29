@@ -43,6 +43,10 @@ type Node struct {
 	Children []*Node
 	Parent   *Node
 	Depth    int
+	// Repeats is how many times the object holding this node named its
+	// key, 0 when once: the parser reads a repeated key as jq does, the
+	// last value at the first key's position.
+	Repeats int
 }
 
 // IsContainer reports an object or an array.
@@ -182,16 +186,35 @@ func parseValue(dec *json.Decoder, key string, index int, parent *Node) (*Node, 
 	case json.Delim:
 		if t == '{' {
 			n.Kind = KObject
-			for i := 0; dec.More(); i++ {
+			// A repeated key is read as jq reads it: it keeps the position
+			// of its first occurrence and takes the last value, so every
+			// read (the viewer, the tables, get, restructure) agrees with
+			// jq. The repeat count stays on the node (Repeats), for the
+			// duplicate-key warning.
+			var at map[string]int
+			for dec.More() {
 				kt, err := dec.Token()
 				if err != nil {
 					return nil, err
 				}
 				k, _ := kt.(string)
+				i, seen := at[k]
+				if !seen {
+					i = len(n.Children)
+				}
 				c, err := parseValue(dec, k, i, n)
 				if err != nil {
 					return nil, err
 				}
+				if seen {
+					c.Repeats = max(n.Children[i].Repeats, 1) + 1
+					n.Children[i] = c
+					continue
+				}
+				if at == nil {
+					at = map[string]int{}
+				}
+				at[k] = i
 				n.Children = append(n.Children, c)
 			}
 		} else {

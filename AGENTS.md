@@ -19,7 +19,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | Reading a file or stdin (`ReadDoc`, `splitFile`) | `input.go` |
 | `main`, oden dispatch (a file word opens the viewer), the help note | `main.go` |
 | The text commands `structure`, `table`, `get`, `restructure` | `commands.go` |
-| Restructure: the mapping, `Plan` (check, `Apply`, `JQ`, `Complete`), `Dedupe`, `writeNew`/`writeAtomic` | `restructure.go` |
+| Restructure: the mapping, `Plan` (check, `Apply`, `JQ`, `Complete`), `writeNew`/`writeAtomic` | `restructure.go` |
 | The `doc` noun (JSON; `doc rows` answers rows with cells, so `--format` table, markdown and toon print tables) and `catalog` | `shell.go` |
 | `view`, flags, `--smoke`, the program | `tui.go` |
 | `App` state, `New`, `Load`/`setDoc`, the tree's nodes and filters, what the data panel shows | `app.go` |
@@ -32,8 +32,9 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 
 ## Invariants
 
+- A repeated key reads as jq reads it, everywhere: the parser (`Build`) keeps one child at the first key's position with the last value, and `Node.Repeats` counts the repeats for the duplicate-key warning (`Shape.Duplicates`). Nothing reads the earlier values, so the viewer, the tables, `get`, the shape and `restructure` agree with jq. `TestEveryReadShowsTheLastValue` pins it.
 - The source is never written: the viewer writes nothing, and the one write, `restructure --out`, goes through `writeNew` (an existing file, the source among them, only with `--overwrite`) and `writeAtomic` (a temp file beside the target, then rename; copied from o-csv). `TestViewerNeverWritesTheSource` and `TestRestructureNeverWritesTheSource` pin this.
-- Restructuring maps shapes, not values (`restructure.go`): the Go result and the generated jq program read the document as jq does (`Dedupe`: a repeated key's last value) and must agree; the program never fails on an optional or mixed-type shape. `TestRestructureCasesAgreeWithJQ` runs it through `jq` when it is on PATH.
+- Restructuring maps shapes, not values (`restructure.go`): the Go result and the generated jq program read the document as jq does and must agree; the program never fails on an optional or mixed-type shape. `TestRestructureCasesAgreeWithJQ` runs it through `jq` when it is on PATH.
 - Reads run off the loop: `viewer.load` and every `doc` verb are `Pending`. The `doc` verbs must stay pending: reading a document is I/O, kept off the loop. (Key order is not the reason any more; an immediate array would print one compact element per line and a failure would lose its `job #N doc.VERB failed` line.)
 - The data panel and the detail are `rowsView`s. Their ochazuke list holds the rows on screen and nothing more, and row IDs are positions in the window. Do not give a list one item per array element: ochazuke's List measures every row each frame and removes rows one instance scan at a time. Motions in those tables are `rows.move`, not `list.move`.
 - The tree is the structure (one node per shape), never the document, so its size is the number of distinct paths. Keep the `maxFields` cap: ochazuke's tree is quadratic in its node count.

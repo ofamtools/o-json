@@ -36,12 +36,11 @@ type Shape struct {
 	values []*Node
 	fields map[string]*Shape
 	items  *Shape
-	first  int   // order of first appearance among the parent's fields
-	in     *Node // the object add last took this field from
+	first  int // order of first appearance among the parent's fields
 }
 
-// Duplicates counts the objects that repeat a field's key. jq, and every
-// parser that builds a map, keeps the last value; o-json shows the first.
+// Duplicates counts the objects that repeat a field's key. o-json reads
+// the last value, as jq and every parser that builds a map do.
 type Duplicates struct {
 	Objects int `json:"objects"` // objects that repeat the key
 	Most    int `json:"most"`    // the most times one object has it
@@ -118,11 +117,10 @@ func (s *Shape) add(n *Node) {
 	s.values = append(s.values, n)
 	switch n.Kind {
 	case KObject:
-		// A key counts once per object, so Count, Of and Optional stay
-		// true when an object repeats a key. The first value is the one
-		// the shape takes, as Node.Field does; the repeats are recorded
-		// in the field's Duplicates.
-		var repeats map[string]int
+		// The parser already read a repeated key as jq does (one child,
+		// the last value), so a key counts once per object and the shape
+		// takes the value jq would; the child's Repeats feeds the
+		// field's Duplicates.
 		for _, c := range n.Children {
 			f := s.fields[c.Key]
 			if f == nil {
@@ -132,23 +130,14 @@ func (s *Shape) add(n *Node) {
 				f = &Shape{Key: c.Key, Path: joinPath(s.Path, keyStep(c.Key)), Kinds: map[Kind]int{}, parent: s, first: len(s.fields)}
 				s.fields[c.Key] = f
 			}
-			if f.in == n {
-				if repeats == nil {
-					repeats = map[string]int{}
+			if c.Repeats > 1 {
+				if f.Duplicates == nil {
+					f.Duplicates = &Duplicates{}
 				}
-				repeats[c.Key]++
-				continue
+				f.Duplicates.Objects++
+				f.Duplicates.Most = max(f.Duplicates.Most, c.Repeats)
 			}
-			f.in = n
 			f.add(c)
-		}
-		for key, extra := range repeats {
-			f := s.fields[key]
-			if f.Duplicates == nil {
-				f.Duplicates = &Duplicates{}
-			}
-			f.Duplicates.Objects++
-			f.Duplicates.Most = max(f.Duplicates.Most, extra+1)
 		}
 	case KArray:
 		k := len(n.Children)

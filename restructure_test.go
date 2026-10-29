@@ -21,12 +21,11 @@ func plan(t *testing.T, doc, mapping string) (*Plan, *Node) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	src := Dedupe(root)
-	p, err := NewPlan(m, Infer(src))
+	p, err := NewPlan(m, Infer(root))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return p, src
+	return p, root
 }
 
 // runJQ runs a program through the jq binary, skipping without one.
@@ -152,7 +151,7 @@ func TestMappingErrors(t *testing.T) {
 		m, err := ReadMapping([]byte(c.mapping))
 		if err == nil {
 			root, _ := Build([]byte(doc))
-			_, err = NewPlan(m, Infer(Dedupe(root)))
+			_, err = NewPlan(m, Infer(root))
 		}
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: error %v, want %q", c.mapping, err, c.want)

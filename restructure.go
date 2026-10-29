@@ -40,7 +40,7 @@ import (
 // on a document of this shape. Keys in the new document come in the order
 // the mapping first names them.
 //
-// Duplicate keys: a document is read here as jq reads it (Dedupe), the
+// Duplicate keys: the parser reads a document as jq reads it (Build), the
 // last value of a repeated key at the position of the first, so the Go
 // result and the jq program agree.
 
@@ -129,7 +129,7 @@ type Plan struct {
 	root    *target
 }
 
-// NewPlan checks a mapping against a shape (Infer of a Dedupe'd document).
+// NewPlan checks a mapping against a document's shape (Infer).
 func NewPlan(m *Mapping, shape *Shape) (*Plan, error) {
 	p := &Plan{mapping: m, shape: shape, root: &target{path: "."}}
 	for i, e := range m.Map {
@@ -277,7 +277,7 @@ func shapesAlong(from *Shape, steps []pathStep) []*Shape {
 	return out
 }
 
-// Apply builds the new document from a (Dedupe'd) document.
+// Apply builds the new document from a document.
 func (p *Plan) Apply(root *Node) *Node {
 	v, ok := p.value(p.root, root)
 	if !ok {
@@ -347,34 +347,6 @@ func stream(n *Node, steps []pathStep) []*Node {
 func rekey(n *Node, key string) *Node {
 	c := *n
 	c.Key = key
-	return &c
-}
-
-// Dedupe is the document as jq reads it: in an object that repeats a key,
-// the key keeps its first position and takes its last value.
-func Dedupe(n *Node) *Node {
-	c := *n
-	c.Children = nil
-	switch n.Kind {
-	case KObject:
-		at := map[string]int{}
-		for _, ch := range n.Children {
-			d := Dedupe(ch)
-			if i, ok := at[ch.Key]; ok {
-				c.Children[i] = d
-				continue
-			}
-			at[ch.Key] = len(c.Children)
-			c.Children = append(c.Children, d)
-		}
-	case KArray:
-		for _, ch := range n.Children {
-			c.Children = append(c.Children, Dedupe(ch))
-		}
-	}
-	for i, ch := range c.Children {
-		ch.Index, ch.Parent = i, &c
-	}
 	return &c
 }
 
@@ -605,8 +577,8 @@ func (p *Plan) Complete() *Mapping {
 
 // restructureOutput is what the restructure command prints or writes.
 func restructureOutput(doc *Doc, m *Mapping, as string) ([]byte, error) {
-	src := Dedupe(doc.Root)
-	plan, err := NewPlan(m, Infer(src))
+	src := doc.Root
+	plan, err := NewPlan(m, doc.Shape)
 	if err != nil {
 		return nil, err
 	}
