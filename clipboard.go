@@ -23,3 +23,21 @@ func systemClipboard() func(string) error {
 	}
 	return nil
 }
+
+// systemPaste is a read function for the first clipboard tool on PATH
+// (pbpaste, wl-paste, xclip, xsel), or nil when there is none. viewer.paste
+// runs it off the loop.
+func systemPaste() func() (string, error) {
+	for _, tool := range [][]string{{"pbpaste"}, {"wl-paste", "--no-newline"}, {"xclip", "-selection", "clipboard", "-o"}, {"xsel", "--clipboard", "--output"}} {
+		path, err := exec.LookPath(tool[0])
+		if err != nil {
+			continue
+		}
+		args := tool[1:]
+		return func() (string, error) {
+			out, err := exec.Command(path, args...).Output()
+			return string(out), err
+		}
+	}
+	return nil
+}

@@ -238,7 +238,7 @@ func TestLargeArrayWindow(t *testing.T) {
 	}
 }
 
-// The TUI schedules viewer.load before the program starts; the model's
+// The TUI schedules viewer.open before the program starts; the model's
 // first update hands the job to Bubble Tea and its completion fills the
 // viewer (the read runs off the loop).
 func TestStartupLoadThroughTheModel(t *testing.T) {
@@ -246,7 +246,7 @@ func TestStartupLoadThroughTheModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "load", Target: pageID, Args: ochazuke.Arguments{"path": sample}}); err != nil {
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "open", Target: pageID, Args: ochazuke.Arguments{"path": sample}}); err != nil {
 		t.Fatal(err)
 	}
 	if a.Loading != sample {

@@ -74,6 +74,9 @@ type restructureState struct {
 	meta      map[string]nodeMeta
 	seq       int
 	dirty     bool
+	// saved is the mapping (mappingKey) the last write or export-map
+	// wrote, so viewer.new asks only about edits nothing saved.
+	saved string
 	// shown is the tree a single layout draws when the focus is in
 	// neither: the last one that held it.
 	shown string
@@ -1071,7 +1074,7 @@ func (a *App) registerRestructureVerbs() {
 			if err != nil {
 				return ochazuke.Failed(err)
 			}
-			return a.writeFile(c, path, []byte(text), writeNewFile, "the mapping", "")
+			return a.writeFile(c, path, []byte(text), writeNewFile, "the mapping", "", func(string) { a.markSaved() })
 		}, "Write the mapping (the --mapping form, o-json restructure --map reads it) to a new file").
 		Verb("mapping", func(c ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.Mapping()) }, "The restructure's mapping, {map: [{from, to}]}").Fetch().
 		Verb("layout", func(c ochazuke.Ctx) ochazuke.Result {
@@ -1228,14 +1231,15 @@ func (a *App) write(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 		}
 		return ochazuke.Done(v)
 	}
-	return a.writeFile(c, path, []byte(Pretty(p.Apply(a.Doc.Root))+"\n"), mode, "the restructured document", "restructure.overwrite")
+	return a.writeFile(c, path, []byte(Pretty(p.Apply(a.Doc.Root))+"\n"), mode, "the restructured document", "restructure.overwrite", func(string) { a.markSaved() })
 }
 
 // writeFile writes data to path off the loop through writeNew. The source
 // only with writeSource; an existing file with writeReplace, writeForce or
 // writeSource. With writeNewFile a file that exists runs the confirming
-// verb ask with the path (none: the write is refused).
-func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, mode writeMode, what, ask string) ochazuke.Result {
+// verb ask with the path (none: the write is refused). done, when set,
+// runs on the loop after a write that succeeded.
+func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, mode writeMode, what, ask string, done func(path string)) ochazuke.Result {
 	if strings.TrimSpace(path) == "" {
 		return ochazuke.Failed(errors.New("path is required"))
 	}
@@ -1261,6 +1265,9 @@ func (a *App) writeFile(c ochazuke.Ctx, path string, data []byte, mode writeMode
 		case err != nil:
 			c.Error(err.Error())
 		default:
+			if done != nil {
+				done(path)
+			}
 			c.Info("wrote " + what + " to " + path)
 		}
 	})

@@ -18,8 +18,8 @@ import (
 func viewCommand(stdin io.Reader, stdout, stderr io.Writer) oden.Command {
 	return oden.Command{
 		Name: "view", Summary: "open the viewer: the structure tree on the left, the selected path's data on the right",
-		Usage: "[--smoke] [--width N] [--height N] FILE|-", Source: "o-json",
-		Details: "o-json FILE opens it too. Keys: ? in the viewer lists them; README.md has the table.",
+		Usage: "[--smoke] [--width N] [--height N] [FILE|-]", Source: "o-json",
+		Details: "o-json FILE opens it too; with no file (and stdin a terminal) the viewer opens an empty document. Keys: ? in the viewer lists them; README.md has the table.",
 		Run: func(_ context.Context, args []string) error {
 			return runTUI(args, stdin, stdout, stderr)
 		},
@@ -45,23 +45,26 @@ func runTUI(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		path = words[0]
 	case !isTerminal(stdin):
 		path = "-"
-	default:
-		return errors.New("a file is required (- reads stdin)")
 	}
+	// No file and stdin a terminal: an empty document, "[no file]", as vim
+	// opens an empty buffer.
 	a, err := New()
 	if err != nil {
 		return err
 	}
 	a.Stdin = stdin
 	if *smoke {
-		if err := a.Load(path); err != nil {
-			return err
+		if path != "" {
+			if err := a.Load(path); err != nil {
+				return err
+			}
 		}
 		a.m.Width, a.m.Height = *width, *height
 		_, err := fmt.Fprintln(stdout, ansi.Strip(a.m.View().Content))
 		return err
 	}
 	a.Clipboard = systemClipboard()
+	a.Paste = systemPaste()
 	var opts []tea.ProgramOption
 	if path == "-" {
 		tty, err := os.Open("/dev/tty")
@@ -71,8 +74,10 @@ func runTUI(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		defer tty.Close()
 		opts = append(opts, tea.WithInput(tty))
 	}
-	if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "load", Target: pageID, Args: ochazuke.Arguments{"path": path}}); err != nil {
-		return err
+	if path != "" {
+		if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "open", Target: pageID, Args: ochazuke.Arguments{"path": path}}); err != nil {
+			return err
+		}
 	}
 	_, err = tea.NewProgram(a.m, opts...).Run()
 	return err

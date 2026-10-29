@@ -41,6 +41,9 @@ type App struct {
 
 	// Clipboard copies text to the system clipboard; nil when there is none.
 	Clipboard func(string) error
+	// Paste reads the system clipboard (viewer.paste); nil when there is
+	// no tool for it.
+	Paste func() (string, error)
 	// Stdin is what a "-" path reads.
 	Stdin interface{ Read([]byte) (int, error) }
 
@@ -67,7 +70,8 @@ type App struct {
 
 // New builds the viewer on a fresh runtime: the page with the structure
 // tree and the data panel, the detail modal, the search prompt, the nouns,
-// verbs and bindings. It starts empty; Load or viewer.load fills it.
+// verbs and bindings. It starts empty ("[no file]"); Load,
+// viewer.open or viewer.paste fills it.
 func New() (*App, error) {
 	r := ochazuke.NewRuntime()
 	a := &App{r: r}
@@ -88,6 +92,9 @@ func New() (*App, error) {
 	a.registerDetail()
 	a.registerVerbs()
 	if err := declareSettings(r); err != nil {
+		return nil, err
+	}
+	if err := declareOpenSettings(r); err != nil {
 		return nil, err
 	}
 	if _, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID)); err != nil {

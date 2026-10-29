@@ -1,9 +1,10 @@
 # o-json
 
-A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
+A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out`, the viewer's `w` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
 
 ```sh
 o-json data.json                        # open the viewer (also: o-json view data.json)
+o-json                                  # an empty document: e opens a file, p pastes JSON
 curl -s https://... | o-json            # or read stdin (also: o-json -)
 o-json structure data.json              # the shape as a tree
 o-json table data.json .items           # an array as a table, optional columns last
@@ -146,7 +147,17 @@ The viewer has a breadcrumb line and then two panels. The breadcrumb shows the f
 - **Right: the selected path's data.** One array, or the values of a `[]` path, is a table with a `#` column, columns in frequency order and optional ones last. One object is labeled `field  type  value` rows, and one scalar is shown as is. Column widths come from the first 2,000 rows, so they hold still while you scroll. On a narrow screen the widest columns narrow first, and after that columns drop from the right, so the optional columns go first. Only the rows on screen are in the table, so a 100,000-row array costs one screen per key.
 - **Detail**: `enter` on a table row, or on a field that holds an object or an array, opens it in a modal as labeled rows. `enter` (or `l`) on a nested object or array steps into it, and `h` or `backspace` steps back out.
 
-The file is read off the event loop (`viewer.load`), and the screen says `loading …` until it is done. A parse error gives the line and column. The panels sit side by side from 60 columns up and stack below that. `>` and `<` move the divider (the tree's width, or its height when stacked) and `=` puts it back; the divider is remembered in `~/.local/state/o-json/panes.json`.
+The file is read off the event loop (`viewer.open`, and `viewer.load` reads it again), and the screen says `loading …` until it is done. A parse error gives the line and column. The panels sit side by side from 60 columns up and stack below that. `>` and `<` move the divider (the tree's width, or its height when stacked) and `=` puts it back; the divider is remembered in `~/.local/state/o-json/panes.json`.
+
+### Files and the empty document
+
+The viewer holds one document, like a vim buffer.
+
+- **No file:** `o-json` with no file (and stdin a terminal) opens an empty document; the breadcrumb reads `[no file]` and names the keys that fill it. `: viewer new` empties the viewer from inside; when the restructure page has edits no write or export-map saved, it asks first (`viewer.discard`, and `u` on the restructure page brings the edits back).
+- **Open:** `e` (`viewer.open {path}`) asks for the path in the args form. The field is free text with suggestions (`ctrl+space`, or `enter` in normal mode, opens them): the recently opened files, newest first, then the files in the current file's folder (the working directory for a document of no file). The suggestions are a list, not completion as you type: the form has no completion source that sees the typed text yet. `R` (`viewer.load`) reads the current file again.
+- **Recent files:** every file opened is recorded, newest first, in `~/.local/state/o-json/recent.json` (`$XDG_STATE_HOME` if set). The setting `recent.size` (default 10; 0 keeps none) is how many; a file that is gone is left out. `: viewer recent` lists them.
+- **Paste:** `p` (`viewer.paste`) parses the system clipboard (pbpaste, wl-paste, xclip or xsel) into the buffer, a document of no file. Invalid JSON is an error naming its line and column, and the buffer stays as it was. `viewer.paste {text}` pastes the text given (the palette, a script).
+- **Write:** `w` (`viewer.write {path}`, args form) writes the shown document as indented JSON to a new file; an existing file asks first (`viewer.overwrite`) and the source is never written. A document of no file is then that file. The restructure page works on a pasted document as on a file.
 
 ### Keys
 
@@ -173,6 +184,9 @@ The file is read off the event loop (`viewer.load`), and the screen says `loadin
 | `v` | tree, data | show the selected path's values as indented JSON (toggle; cut at 4 MB) |
 | `y` | anywhere | copy: the path on the tree, the row or value as JSON in the data and the detail. The copy goes to the ochazuke registers (`"a y` names one) and to the system clipboard (pbcopy, wl-copy, xclip or xsel, whichever is on PATH). The status line says what was copied; a clipboard tool that fails is a footer notice, and the registers still hold the copy. `.` copies again at the focus (`y j .` copies the next row) |
 | `R` | tree, data | read the file again |
+| `e` | tree, data | open a file (args form; suggestions: recent files, then the current folder) |
+| `p` | tree, data | paste JSON from the clipboard into the buffer |
+| `w` | tree, data | write the shown document to a new file |
 | `s` | tree | send the shape to the restructure (below) |
 | `M` | tree, data | open the restructure page |
 | `:` | anywhere | the command palette: every verb, by name |
@@ -217,4 +231,4 @@ go run . --smoke testdata/sample.json
 go run . catalog >/dev/null
 ```
 
-The tests cover structure inference on mixed and optional data, column order, a 50 MB document (100,000 items; 10,000 under `-race`), the viewer through its keys, frames at 80 and 120 columns (`testdata/view-*.golden`, `UPDATE_GOLDEN=1` rewrites them), the windowed table at 100,000 rows, and `ValidateBindings`.
+The tests cover structure inference on mixed and optional data, column order, a 50 MB document (100,000 items; 10,000 under `-race`), the viewer through its keys, the empty document, open, paste, new and the recent list, frames at 80 and 120 columns (`testdata/view-*.golden`, `UPDATE_GOLDEN=1` rewrites them), the windowed table at 100,000 rows, and `ValidateBindings`.

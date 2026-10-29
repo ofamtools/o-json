@@ -89,7 +89,7 @@ func (a *App) breadcrumb() string {
 	case a.LoadErr != nil && a.Doc == nil:
 		return "error: " + a.LoadErr.Error()
 	case a.Doc == nil:
-		return "no document"
+		return a.emptyCrumb()
 	}
 	parts := []string{a.Doc.Name}
 	if s := a.shown; s != nil {
@@ -181,4 +181,16 @@ func (a *App) dataBody(w, h int) string {
 // wrap breaks text at the width.
 func wrap(text string, width int) string {
 	return ansi.Hardwrap(text, max(1, width), true)
+}
+
+// emptyCrumb is the breadcrumb of the empty document: "[no file]" and the
+// keys that fill it, from the bindings (a verb with no key is left out).
+func (a *App) emptyCrumb() string {
+	parts := []string{noFile}
+	for _, v := range []struct{ verb, what string }{{"viewer.open", "open a file"}, {"viewer.paste", "paste JSON"}, {"restructure.open", "restructure"}} {
+		if key := a.keyFor(v.verb); key != "" {
+			parts = append(parts, key+" "+v.what)
+		}
+	}
+	return strings.Join(parts, "  ·  ")
 }

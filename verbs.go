@@ -9,10 +9,10 @@ import (
 )
 
 // The nouns and verbs. Keys are bound in bindings.go; a verb without a
-// key is reached through the palette (:). Nothing here writes a file: the
-// viewer is read-only.
+// key is reached through the palette (:). Nothing here writes a file; the
+// document verbs (open.go) write only viewer.write's new file.
 //
-//	viewer   the page: load, search, next/previous match, type filter, raw, clear, state
+//	viewer   the page: open, load (reload), new, paste, write, files, recent, search, next/previous match, type filter, raw, clear, state
 //	shape    a structure tree row: yank (the path)
 //	rows     a windowed table (data panel, detail): move
 //	item     a data table row: open (the detail), yank (the row as JSON)
@@ -51,22 +51,10 @@ func (a *App) registerVerbs() {
 		Verb("load", func(c ochazuke.Ctx) ochazuke.Result {
 			p := ochazuke.StringArg(c.Args, "path", a.Path)
 			if p == "" {
-				return ochazuke.Failed(errors.New("no file to load"))
+				return ochazuke.Failed(errors.New("no file to load: e (viewer.open) opens one"))
 			}
-			stdin := a.Stdin
-			a.Loading, a.LoadErr = p, nil
-			return ochazuke.Pending(func(context.Context) (any, error) { return ReadDoc(p, stdin) }).
-				Replacing("load").
-				Then(func(_ ochazuke.Ctx, v any, err error) {
-					if err != nil {
-						a.Loading, a.LoadErr = "", err
-						return
-					}
-					if err := a.setDoc(p, v.(*Doc)); err != nil {
-						a.LoadErr = err
-					}
-				})
-		}, "Read a JSON file off the loop and show it (path defaults to the current file; - is stdin)").
+			return a.read(p)
+		}, "Read the current file again off the loop and show it (R); with path, that file, as viewer.open does (- is stdin)").When("viewer-file").
 		Verb("search", func(c ochazuke.Ctx) ochazuke.Result {
 			if q, ok := c.Args["query"].(string); ok {
 				return done(a.search(q))
@@ -102,6 +90,7 @@ func (a *App) registerVerbs() {
 	params("viewer.type", map[string]ochazuke.Parameter{"kind": {Type: "string", Enum: []string{"string", "number", "bool", "null", "object", "array", ""}, Description: "omit to step to the next type"}})
 	// load reads the file and shows it: a fetch, as the framework's reloads are.
 	setHistory(r, ochazuke.HistoryFetch, "viewer.load")
+	a.registerOpenVerbs(params)
 	setHistory(r, ochazuke.HistoryAction, "viewer.search", "viewer.next", "viewer.previous", "viewer.type", "viewer.raw", "viewer.clear")
 
 	r.Define("shape").

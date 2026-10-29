@@ -38,7 +38,10 @@
       {"key": "t", "action": "viewer.type"},
       {"key": "v", "action": "viewer.raw"},
       {"key": "esc", "action": "viewer.clear"},
-      {"key": "R", "action": "viewer.load"},
+      {"key": "R", "action": "viewer.load", "hint": "reload"},
+      {"key": "e", "action": "viewer.open", "hint": "open"},
+      {"key": "p", "action": "viewer.paste", "hint": "paste"},
+      {"key": "w", "action": "viewer.write", "hint": "write"},
       {"key": "M", "action": "restructure.open", "hint": "restructure"},
       {"key": "q", "action": "app.quit"}
     ]},
