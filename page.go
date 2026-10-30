@@ -1813,8 +1813,11 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 	th := max(3, bh*3/5)
 	mh := bh - th
 	var body string
-	if a.layout() == "single" {
+	if only := a.sideOnly(); a.layout() == "single" || only != "" {
 		shown := a.rs.shown
+		if only != "" {
+			shown = only
+		}
 		body = treePanel(shown, width, th).Text + "\n" + mapPanel(width, mh).Text
 	} else {
 		lw := l.Divide(width/2, width-1, ochazuke.PaneMinWidth)

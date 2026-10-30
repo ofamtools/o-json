@@ -49,6 +49,9 @@ type App struct {
 	// folds is the JSON view's folded containers (document paths) per
 	// shown structure path.
 	folds map[string]map[string]bool
+	// only is the viewer pane ctrl+w o keeps alone (panes.go), rsOnly
+	// the restructure page's side; "" shows both.
+	only, rsOnly string
 
 	// Clipboard copies text to the system clipboard; nil when there is
 	// none (ochazuke then sends OSC 52). Only ochazuke's registers call it
@@ -138,6 +141,7 @@ func New() (*App, error) {
 	a.registerClipboard()
 	a.registerVerbs()
 	a.registerLineVerbs()
+	a.registerPaneVerbs()
 	if err := a.registerQuery(); err != nil {
 		return nil, err
 	}

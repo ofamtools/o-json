@@ -61,7 +61,12 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	var left, right ochazuke.Block
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth
-	if stacked {
+	only := a.paneOnly(treeFocused || a.r.Focus == jqFieldID, dataFocused)
+	if only != "" {
+		// ctrl+w o (viewer.only): one pane takes the page.
+		stacked = false
+		lw, lh, rw, rh = width, bh, width, bh
+	} else if stacked {
 		lw, lh = width, l.Divide(bh*2/5, bh, ochazuke.PaneMinHeight)
 		rw, rh = width, bh-lh
 	} else {
@@ -89,7 +94,11 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	right = l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), rw, rh, dataFocused)
 	var body string
 	cursor := right.Offset(lw+1, 1)
-	if stacked {
+	if only == paneData {
+		body, cursor = right.Text, right.Offset(0, 1)
+	} else if only == paneStructure {
+		body = left.Text
+	} else if stacked {
 		body = left.Text + "\n" + right.Text
 		cursor = right.Offset(0, 1+lh)
 	} else {

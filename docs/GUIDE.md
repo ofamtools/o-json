@@ -236,7 +236,7 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 |---|---|
 | `?` | every key the focus answers to |
 | `:` | the command palette: every verb by name |
-| `}` `ctrl+w w` `ctrl+a o` `ctrl+w l` | the other panel |
+| `}` `ctrl+w w` `ctrl+a o` | the other panel |
 | `q` | quit (asks when edits are unsaved) |
 | `Q` | quit without asking |
 

@@ -6,8 +6,9 @@
       {"key": "tab", "unbind": true},
       {"key": "shift+tab", "unbind": true},
       {"key": "ctrl+a o", "action": "ochazuke.focus.next", "hint": "other pane"},
-      {"key": "ctrl+w h", "action": "ochazuke.focus.previous", "hint": "left pane"},
-      {"key": "ctrl+w l", "action": "ochazuke.focus.next", "hint": "right pane"},
+      {"key": "ctrl+w h", "action": "viewer.pane", "args": {"to": "left"}, "hint": "left pane"},
+      {"key": "ctrl+w l", "action": "viewer.pane", "args": {"to": "right"}, "hint": "right pane"},
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "focused"}, "hint": "only this pane"},
       {"key": "ctrl+w w", "action": "ochazuke.focus.next", "hidden": true},
       {"key": "ctrl+w v", "action": "restructure.open", "hint": "split structure"},
       {"key": "ctrl+w >", "action": "ochazuke.pane.grow", "hint": "ctrl+w >/< resize", "from": {"steps": "count"}},
@@ -67,7 +68,8 @@
     ]},
     {"context": "rows/count_pending", "extends": "normal", "bindings": []},
     {"context": "viewer/normal", "bindings": [
-	  {"key": "g m", "action": "viewer.mode", "hint": "choose mode"},
+      {"key": "g m", "action": "viewer.mode", "hint": "choose mode"},
+      {"key": "ctrl+w =", "action": "viewer.restore", "hidden": true},
       {"key": "/", "action": "jq.focus", "hint": "jq query"},
       {"key": "/", "action": "viewer.search"},
       {"key": "n", "action": "viewer.next"},
@@ -91,6 +93,21 @@
       {"key": "ctrl+r", "action": "restructure.redo", "hidden": true},
       {"key": "q", "action": "app.quit"},
       {"key": "Q", "action": "app.quit", "args": {"force": true}, "hint": "quit without writing", "hidden": true}
+    ]},
+    {"context": "viewer/shape", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"}
+    ]},
+    {"context": "viewer/table", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+    ]},
+    {"context": "viewer/nested", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+    ]},
+    {"context": "viewer/flat", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+    ]},
+    {"context": "viewer/json", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
     ]},
     {"context": "viewer/count_pending", "extends": "normal", "bindings": [
       {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}},
@@ -125,6 +142,7 @@
     ]},
     {"context": "restructure/normal", "bindings": [
       {"key": "ctrl+a o", "action": "restructure.show", "hint": "other side"},
+      {"key": "ctrl+w =", "action": "viewer.restore", "hidden": true},
       {"key": "L", "action": "restructure.layout", "hint": "layout"},
       {"key": "g j", "action": "jq-panel.toggle", "hint": "jq panel"},
       {"key": "u", "action": "restructure.undo", "hint": "u/ctrl+r undo/redo"},
@@ -249,13 +267,13 @@
       {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
       {"key": "y", "action": "line.yank"}
     ]},
-    {"context": "line/flat", "bindings": [
+    {"context": "line/flat", "extends": "normal", "bindings": [
       {"key": "y y", "action": "line.yank-part", "args": {"part": "line"}, "hint": "y y/p/v line/path/value"},
       {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
       {"key": "y v", "action": "line.yank-part", "args": {"part": "value"}, "hidden": true},
       {"key": "enter", "action": "line.jump", "hint": "go to path"}
     ]},
-    {"context": "line/json", "bindings": [
+    {"context": "line/json", "extends": "normal", "bindings": [
       {"key": "y y", "action": "line.yank-part", "args": {"part": "value"}, "hint": "y y/p value/path"},
       {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
       {"key": "enter", "action": "line.jump", "hint": "go to path"},

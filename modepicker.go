@@ -83,7 +83,7 @@ func (a *App) gotoMode(name string) error {
 		if a.r.Page == rsPageID {
 			return a.rs.orig.Focus()
 		}
-		return a.tree.Focus()
+		return a.focusStructure()
 	case "TABLE", "FLAT", "JSON":
 		if a.r.Page == rsPageID {
 			if err := a.r.OpenPage(pageID); err != nil {
@@ -104,7 +104,7 @@ func (a *App) gotoMode(name string) error {
 				return err
 			}
 		}
-		if err := a.tree.Focus(); err != nil {
+		if err := a.focusStructure(); err != nil {
 			return err
 		}
 		return a.r.SetMode(queryMode)
