@@ -247,7 +247,9 @@ func TestSearchAndTypeFilter(t *testing.T) {
 func TestRawToggle(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	selectPath(t, a, ".items[].owner")
-	press(t, a, "v")
+	// v on the structure tree selects lines (as V); from the data pane it
+	// shows the values as JSON.
+	press(t, a, "tab", "v")
 	frame := view(a)
 	if !strings.Contains(frame, "JSON .items[].owner") || !strings.Contains(frame, `"email": "ann@example.com"`) {
 		t.Fatalf("raw\n%s", frame)
