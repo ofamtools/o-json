@@ -24,7 +24,7 @@ import (
 const settingStableColumns = "table.stable-columns"
 
 func declareColumnSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingStableColumns, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "A value edit keeps the data table's column order: a renamed key's column stays where the old one was and a new key's column goes beside the one it was added next to, and the cursor follows the edited key; off orders the columns by how many rows have them (optional last) after every edit",
 	})

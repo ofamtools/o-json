@@ -527,7 +527,7 @@ func declareExportSettings(r *ochazuke.Runtime) error {
 		{Name: settingExportNull, Type: ochazuke.SettingString, Default: nullEmpty, Enum: []string{nullEmpty, nullNull},
 			Description: "How an export writes null: an empty cell, or the text null (a missing field is always an empty cell)"},
 	} {
-		if err := r.DeclareSetting(s); err != nil {
+		if err := declareOwn(r, s); err != nil {
 			return err
 		}
 	}

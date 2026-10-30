@@ -48,6 +48,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | The function picker and argument slots | `queryfunc.go` |
 | Path completion after `.` in the query line (the trigger, the shape snapshot the off-loop search reads, `query.complete-paths`) | `querycomplete.go` |
 | The story tester (`//go:build monogatari`): o-json as a monogatari app (`storyApp`, fixtures `nest`/`viewer`/`empty`, the seed's `doc`/`send`/`on`, the temp document and state dir), the `o-json story` mount (`host.Command`), the embedded stories and testdata documents; the normal build's empty mount; `host.Test` over `testdata/stories/<area>/<name>.json` | `story.go`, `story_off.go`, `story_test.go` |
+| Where the Settings page files o-json's settings: the o-json tab, its sections and groups (`settingSections`), `declareOwn` (every o-json setting declares through it) | `settings_layout.go` |
 | The search prompt, the system clipboard | `prompt.go`, `clipboard.go` |
 
 ## Invariants

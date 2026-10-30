@@ -312,7 +312,7 @@ const (
 )
 
 func declarePutSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingVisualPut, Type: ochazuke.SettingString, Default: "replace", Enum: []string{"replace", "below"},
 		Description: "p over a V selection on the restructured tree: replace deletes the selected nodes into the register and puts what it held in their place (Vim's V p); below puts after the last selected node and keeps them",
 	}, ochazuke.Setting{

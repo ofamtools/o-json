@@ -62,7 +62,7 @@ func declareValueSettings(r *ochazuke.Runtime) error {
 	if err := declareDetailSettings(r); err != nil {
 		return err
 	}
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingDataEditable, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "In the viewer's edited view the data pane edits single values (r, d d, o, K, p), as value patches applied after the restructure; off keeps the data pane read-only",
 	}, ochazuke.Setting{

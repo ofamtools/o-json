@@ -635,7 +635,7 @@ func pasteLoads(mode, text string) bool {
 // declareOpenSettings declares recent.size, paste.on-tree and
 // paste.text-on-tree.
 func declareOpenSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingRecent, Type: ochazuke.SettingInteger, Default: 10,
 		Description: "How many recently opened files o-json remembers (viewer.open's first choices); 0 keeps none",
 	}, ochazuke.Setting{

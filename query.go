@@ -40,7 +40,7 @@ const (
 )
 
 func declareQuerySettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingQueryLine, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "The jq query line above the structure pane (/ focuses it) and the structure pane's query mode; off, / is the path search (viewer.search) and the data pane follows the tree alone",
 	}, ochazuke.Setting{

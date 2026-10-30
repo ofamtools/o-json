@@ -288,7 +288,7 @@ func declareReshapeSettings(r *ochazuke.Runtime) error {
 		{Name: settingMarksCount, Type: ochazuke.SettingBoolean, Default: true,
 			Description: "The structure pane's title counts the marked nodes (\"3 marked\"); off leaves it out"},
 	} {
-		if err := r.DeclareSetting(s); err != nil {
+		if err := declareOwn(r, s); err != nil {
 			return err
 		}
 	}

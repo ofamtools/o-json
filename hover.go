@@ -56,7 +56,7 @@ const (
 )
 
 func declareHoverSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingNested, Type: ochazuke.SettingString, Default: nestedHover, Enum: []string{nestedHover, nestedSummary},
 		Description: "A data pane cell holding an object or an array: hover opens a sub-table of it under the row while the cursor rests on it (j/k walk into its lines, h/l along them); summary shows only its summary ({N keys}, [N]) and enter drills in the detail",
 	}, ochazuke.Setting{

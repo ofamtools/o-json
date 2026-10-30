@@ -50,7 +50,7 @@ const (
 )
 
 func declareValueEditorSetting(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingValueEditor, Type: ochazuke.SettingString, Default: editorModal, Enum: []string{editorModal, editorInline},
 		Description: "How r / i, K and o / O edit a value in the data pane and the detail: modal opens a compact editor over the table (the value's path, its type as typed, the old value; enter sets, esc cancels); inline draws the input over the row (enter or esc sets)",
 	})

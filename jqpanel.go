@@ -47,7 +47,7 @@ type jqPanel struct {
 }
 
 func declareJQPanelSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingJQPanel, Type: ochazuke.SettingString, Default: "split", Enum: []string{"off", "split", "modal"},
 		Description: "Where g j (jq-panel.toggle) shows the live jq program and mapping: split under the panes (the default: it stays while you edit the structure beside it), modal over the page, off not at all",
 	}, ochazuke.Setting{

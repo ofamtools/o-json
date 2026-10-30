@@ -305,7 +305,7 @@ No function keys are bound.
 
 ### Settings
 
-Every setting o-json declares (`: settings`, or `settings.json`), the default first. A choice between ways of doing one thing is a setting with every way built.
+Every setting o-json declares (`: settings`, or `settings.json`), the default first. The Settings page (`: settings edit`) files them under an o-json tab, beside ochazuke's, in the sections Viewer, Data, jq, Restructure, Reshape and Export (`settingSections` in `settings_layout.go`). A choice between ways of doing one thing is a setting with every way built.
 
 | Setting | Values | What it decides |
 |---|---|---|

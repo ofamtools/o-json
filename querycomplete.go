@@ -25,7 +25,7 @@ import (
 const settingCompletePaths = "query.complete-paths"
 
 func declareCompleteSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingCompletePaths, Type: ochazuke.SettingBoolean, Default: false,
 		Description: "On, typing . in the jq query line offers the field keys of the shape the query reads there (after | the stage's input, after .a. the keys of .a); off (the default), . just types a dot and nothing opens",
 	})

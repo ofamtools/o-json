@@ -106,13 +106,16 @@ type restructureState struct {
 }
 
 func declareSettings(r *ochazuke.Runtime) error {
+	if err := declareSettingLayout(r); err != nil {
+		return err
+	}
 	if err := declarePutSettings(r); err != nil {
 		return err
 	}
 	if err := declareToneSettings(r); err != nil {
 		return err
 	}
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingLayout, Type: ochazuke.SettingString, Default: "split", Enum: []string{"split", "single"},
 		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, tab swaps them",
 	}, ochazuke.Setting{

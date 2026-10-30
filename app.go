@@ -243,7 +243,7 @@ func shapeID(s *Shape) string { return "s:" + s.Path }
 const settingDuplicateTone = "json.duplicate-tone"
 
 func declareToneSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingDuplicateTone, Type: ochazuke.SettingString, Default: "background", Enum: []string{"background", "foreground"},
 		Description: "How a key some objects repeat (jq keeps the last value) is marked in the structure trees: background puts its label on the error background; foreground colours it in the error colour",
 	})

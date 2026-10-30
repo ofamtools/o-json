@@ -40,7 +40,7 @@ const (
 )
 
 func declareEditSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
+	return declareOwn(r, ochazuke.Setting{
 		Name: settingEditable, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "The viewer's structure pane is the restructure editor, a copy of the document's shape (T shows the original); off keeps the viewer read-only and the restructure page (M) alone edits. Takes effect on the next document",
 	}, ochazuke.Setting{
