@@ -1,0 +1,16 @@
+{
+  "name": "o-jj: the edited structure's edit keys need EDIT too (i on the structure, esc leaves)",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "values": {"modes.edit-gate": true},
+  "script": ["j", "j", "S", "i", "d", "d", "esc"],
+  "expect": [
+    {"after": 3, "mode": "shape", "contains": ["press i first (EDIT)"]},
+    {"after": 4, "mode": "edit", "contains": ["EDIT: > < nest"]},
+    {"after": 6, "mode": "edit", "contains": ["deleted 1 node(s)", "sample.json [+]"]},
+    {"mode": "shape"}
+  ]
+}

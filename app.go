@@ -56,8 +56,8 @@ type App struct {
 	// sr is the search line's type and hits, overlay the view over the
 	// structure's own (search.go): results, jq or "".
 	sr searchState
-	// editing is EDIT on the data pane (edit.go).
-	editing bool
+	// editing is EDIT (edit.go), on the structure pane when editTree.
+	editing, editTree bool
 	// raw is the open RAW edit (raw.go), nil when none.
 	raw *rawSession
 	// sort is s ic: the data pane's table sorted (operate.go).

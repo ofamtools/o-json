@@ -258,6 +258,11 @@
       {"key": "l", "action": "ochazuke.outline.expand"},
       {"key": "right", "action": "ochazuke.outline.expand", "hidden": true}
     ]},
+    {"context": "ochazuke.outline/shape", "extends": "normal", "bindings": [
+      {"key": "o", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "O", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "a", "action": "viewer.needs-edit", "hidden": true}
+    ]},
     {"context": "ochazuke.outline/normal", "bindings": [
       {"key": "o", "action": "restructure.add-key", "args": {"where": "below"}, "hint": "o/O new key"},
       {"key": "O", "action": "restructure.add-key", "args": {"where": "above"}, "hidden": true},
@@ -282,9 +287,35 @@
     {"context": "node/shape", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/! op"},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "edit-open", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "edit-open", "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "i", "action": "viewer.edit", "hint": "i EDIT"},
+      {"key": "d", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "c", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "> j", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "> k", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "> >", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "< <", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "g >", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "S", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "t", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "r", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "p", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "P", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "F", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "g p", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "g k", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "g v", "action": "viewer.needs-edit", "hidden": true},
+      {"key": "g e", "action": "viewer.needs-edit", "hidden": true}
+    ]},
+    {"context": "node/edit", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"},
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/! op"},
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "hidden": true},
-      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "esc", "action": "viewer.edit-leave", "hint": "leave EDIT"}
     ]},
     {"context": "item/table", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},

@@ -101,12 +101,15 @@ func (a *App) syncDeclaredMode() {
 	switch {
 	case a.tree.List().Focused() || a.rs.tree.List().Focused() || a.rs.orig.List().Focused() || a.r.Focus == treeID || a.r.Focus == rsTreeID || a.r.Focus == rsOrigID:
 		want = "shape"
+		if a.editing && a.editTree {
+			want = "edit"
+		}
 		if a.r.Page == rsPageID {
 			want = "split"
 		}
 	case a.data.list.Focused() || a.r.Focus == dataID:
 		want = a.viewName
-		if a.editing {
+		if a.editing && !a.editTree {
 			want = "edit"
 			break
 		}
@@ -121,8 +124,8 @@ func (a *App) syncDeclaredMode() {
 			want = "nested"
 		}
 	}
-	if want != "edit" && a.vedit == nil && a.r.Focus != valueInputID {
-		a.editing = false // EDIT is per pane: leaving the data pane leaves it
+	if want != "edit" && a.vedit == nil && a.r.Focus != valueInputID && !a.renaming() {
+		a.editing = false // EDIT is per pane: leaving the pane leaves it
 	}
 	if want == "" {
 		return

@@ -57,7 +57,7 @@ Updated as each item lands; the sections below describe what is built.
 | Item | Keys | Status |
 |---|---|---|
 | Value keys need EDIT | `x`, `d d`, `o`, `O`, `K`, `p` | done |
-| Structure edits under EDIT (question 22) | | missing (left live in SHAPE, as recommended for the trial) |
+| Structure edits under EDIT (question 22) | `i` on the edited structure; `> < S t c d o O a p P F g p g k g v g e` need it | done (the original tree stays read-only; the SPLIT page keeps its keys live) |
 
 ### RAW
 
@@ -110,7 +110,7 @@ its trial colour (o-jj colours the application accent by mode).
 | JSON | `JSON` | `D`/`tab` to the JSON view | `z a` `z o` `z c` fold the value under the line, `z M` fold all, `z R` open all, `%` matching bracket, `y y` value, `y p` path, `enter` jump |
 | SEARCH | `SEARCH · SUBSTR` / `· FUZZY` / `· REGEX` on the line, `SEARCH` on the Results | `/` | on the line: `tab`/`shift+tab` type, `ctrl+n`/`ctrl+p` hits, `enter` shows the Results, `esc` cancels; on the Results: `n`/`N`, `enter` jumps the structure (the pane stays), `y y` value, `y p` path, `esc` clears |
 | JQ | `INSERT` on the line, `JQ` on the result | `/` then `shift+tab` (jq is last in the cycle), `m` on the structure | on the line: `ctrl+n`/`ctrl+p` slots, `ctrl+f` function; the result is a table view; `esc` on the pane clears it |
-| EDIT | `EDIT` | `i`, `r` on the data pane | `r`/`i` edit, `x`/`d d` delete, `o`/`O` add, `K` rename, `p` put, `esc` leaves; leaving the pane leaves EDIT |
+| EDIT | `EDIT` | `i`, `r` on the data pane; `i` on the edited structure | data: `r`/`i` edit, `x`/`d d` delete, `o`/`O` add, `K` rename, `p` put; structure: its edit keys; `esc` leaves; leaving the pane leaves EDIT |
 | VISUAL | `VISUAL LINE` | `v`, `V` in either pane | ochazuke's |
 | RAW | (the editor has the terminal) | `g r` | the editor's own |
 | SPLIT | `SPLIT` | `ctrl+w v` | `d p` push the shape (or the visual selection) to the restructured side, `d o` pull the original's shape; `v j j {` / `[` wrap; `ctrl+w o` keeps the focused side |
@@ -180,7 +180,7 @@ answer.
 ## Settings (defaults)
 
 - `modes.declared` `on`: off keeps the plain NORMAL badge (view keys still work).
-- `modes.edit-gate` `on`: off lets the value keys answer in TABLE as in o-json.
+- `modes.edit-gate` `on`: off lets the value keys answer in TABLE and the structure's edit keys in SHAPE, as in o-json.
 - `search.type` `substring`: the type `/` opens in (`substring`, `fuzzy`, `regex`, `jq`).
 - `raw.editor` empty: the editor command line for `g r`.
 - `raw.pane` `auto`: a tuios window inside tuios, else the foreground; `foreground` always suspends.
