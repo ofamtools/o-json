@@ -374,3 +374,15 @@ func TestReloadKeepsPlace(t *testing.T) {
 		t.Fatalf("R with reload.keep-place off kept the place: shape %v focus %q", s, a.r.Focus)
 	}
 }
+
+// o-json - reads the document from stdin as - after a flag does: the word
+// is a file word, never a command word oden resolves (it printed the
+// usage). --smoke after it renders without a terminal.
+func TestDashIsStdin(t *testing.T) {
+	for _, args := range [][]string{{"-", "--smoke"}, {"--smoke", "-"}} {
+		var out strings.Builder
+		if err := Main(args, strings.NewReader(`{"a": 1}`), &out, &out); err != nil || !strings.Contains(out.String(), "stdin  ·  . (object") {
+			t.Fatalf("%v: %v\n%s", args, err, out.String())
+		}
+	}
+}

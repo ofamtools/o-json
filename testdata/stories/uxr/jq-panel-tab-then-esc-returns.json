@@ -1,0 +1,15 @@
+{
+ "name": "o-json: g j, tab to the mapping, then one esc gives the focus back to the pane g j came from (R4.3)",
+ "area": "uxr",
+ "width": 120,
+ "height": 30,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "sample.json"
+ },
+ "script": ["tab", "g", "j", "tab", "esc"],
+ "expect": [
+  {"after": 4, "contains": ["mapping"]},
+  {"focus": "data/0", "mode": "normal"}
+ ]
+}

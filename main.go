@@ -37,12 +37,14 @@ func progName() string {
 	return "o-json"
 }
 
-// Main runs one invocation. A first word that is an existing file opens it
-// in the viewer even when it shadows a command name; otherwise oden
+// Main runs one invocation. A first word that is an existing file (or -,
+// stdin) opens it in the viewer even when it shadows a command name; otherwise oden
 // resolves the command words, and anything it does not know (flags, -, a
 // path) reaches the viewer.
 func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
-	if len(args) > 0 && isFile(args[0]) {
+	if len(args) > 0 && (args[0] == "-" || isFile(args[0])) {
+		// "-" is stdin, a file word too: oden would resolve it as a
+		// command word and print the usage.
 		return runTUI(args, stdin, stdout, stderr)
 	}
 	app := oden.New("o-json", args, oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
