@@ -148,6 +148,7 @@ The data panel shows the reshaped document as you edit. `T` flips between the or
 1. Run `: restructure export-map` and type a file name (`people.map.json`).
 2. Run it again on any document of the same shape: `o-json restructure data.json --map people.map.json`.
 3. Get the same thing as a jq program: `o-json restructure data.json --map people.map.json --jq`.
+4. Or, without leaving the viewer, run `: restructure jq`: the program opens in a read-only view (move, `v` to select, `y` to copy, `q` to close) and is copied too. `: restructure mapping` shows the mapping the same way, and `g j` keeps the program on screen beside your edits.
 
 **What you'll see:** the breadcrumb shows `to ← from` for a node that moved. A key that would break the mapping does nothing. For example, `r` on an array item `[]` is ignored, because an item has no key.
 
