@@ -219,6 +219,7 @@ func TestHoverYankAndOpenTheCell(t *testing.T) {
 // line, and the write is one undoable value edit; p and d d act there too.
 func TestHoverEditsTheSubTableCell(t *testing.T) {
 	a := hoverAt(t, 120, 30, 6)
+	inlineEditor(t, a)
 	editHints := []string{"r/i edit", "d d delete", "o/O add", "K rename key", "p put"}
 	edits := []string{"value.edit", "value.delete", "value.add", "value.rename", "value.paste"}
 	hints := func() string { return ochazuke.BindingHints(a.r, a.r.Focus) }

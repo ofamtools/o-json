@@ -29,7 +29,10 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if !a.editedShown() && a.sideOf(r.Focus) == rsTreeID {
 		_ = a.tree.Focus() // the edited structure is not shown (structure.editable went off)
 	}
-	if a.vedit != nil && a.vedit.view != a.detail && r.Focus != valueInputID {
+	if ve := a.vedit; ve != nil && ve.modal != nil && r.Instances[valueEditorID] == nil {
+		a.vedit = nil // the value editor was closed another way: nothing changed
+	}
+	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view != a.detail && r.Focus != valueInputID {
 		// The focus left the inline input (a click, a page): its text is
 		// the edit, as enter would make it.
 		if err := a.accept(); err != nil {
@@ -79,7 +82,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	}
 	left = l.PanelBlock(a.treeTitle(), inner, lw, lh, treeFocused || a.r.Focus == jqFieldID)
 	cw, ch = ochazuke.PanelContentSize(rw, rh)
-	right = l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), rw, rh, dataFocused)
+	right = l.PanelBlock(a.dataTitle(), a.beneathDetail(a.dataBlock(cw, ch)), rw, rh, dataFocused)
 	var body string
 	cursor := right.Offset(lw+1, 1)
 	if stacked {
@@ -232,7 +235,7 @@ func (a *App) dataTitle() string {
 // edit (values.go) drawn on its row and carrying the cursor.
 func (a *App) dataBlock(w, h int) ochazuke.Block {
 	body := a.dataBody(w, h)
-	if a.vedit == nil || a.r.Instances[valueInputID] == nil || a.vedit.view != nil && a.vedit.view != a.data {
+	if a.vedit == nil || a.vedit.modal != nil || a.r.Instances[valueInputID] == nil || a.vedit.view != nil && a.vedit.view != a.data {
 		return ochazuke.Text(body)
 	}
 	return a.inputBlock(body, w)

@@ -1,0 +1,13 @@
+{
+  "name": "o-json: u and ctrl+r undo and redo a value edit inside the detail, and its footer lists them (6-edit.tape: u did nothing there)",
+  "area": "edit",
+  "width": 120,
+  "height": 30,
+  "page": {"id": "o-json-nested"},
+  "script": ["tab", "enter", "G", "o", {"type": "rank"}, "enter", {"type": "1"}, "enter", "u", "ctrl+r"],
+  "expect": [
+    {"after": 8, "modal": "detail", "contains": ["rank", "1 value edit", "u/ctrl+r undo/redo"]},
+    {"after": 9, "modal": "detail", "lacks": ["rank", "1 value edit"]},
+    {"after": 10, "modal": "detail", "contains": ["rank", "1 value edit"]}
+  ]
+}

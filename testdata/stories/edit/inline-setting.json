@@ -1,0 +1,13 @@
+{
+  "name": "o-json: value.editor inline keeps the input drawn over the row, its type in the prefix (enter or esc sets)",
+  "area": "edit",
+  "width": 120,
+  "height": 30,
+  "page": {"id": "o-json-nested"},
+  "settings": [{"name": "value.editor", "type": "string", "default": "inline"}],
+  "script": ["tab", "l", "l", "r", {"type": "Zed"}, "esc"],
+  "expect": [
+    {"after": 4, "modal": "", "focus": "data/value-input", "contains": ["name (string): Ada A"]},
+    {"after": 6, "modal": "", "cell": "Zed", "contains": ["1 value edit"]}
+  ]
+}

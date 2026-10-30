@@ -1,0 +1,12 @@
+{
+  "name": "o-json: renaming one object's key keeps the column where it was: the new key's column beside the old one, the cursor on the edited cell (6-edit.tape: both jumped right among the optional columns)",
+  "area": "edit",
+  "width": 120,
+  "height": 30,
+  "page": {"id": "o-json-nested"},
+  "script": ["tab", "l", "l", "K", "ctrl+u", {"type": "label"}, "enter", "u"],
+  "expect": [
+    {"after": 7, "order": ["#", "id", "name?", "label?", "active", "tags"], "cell": "Ada A"},
+    {"after": 8, "order": ["#", "id", "name", "active", "tags"], "lacks": ["label?"]}
+  ]
+}

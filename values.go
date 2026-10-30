@@ -18,9 +18,11 @@ import (
 // concrete path, as one undo step each on the restructure's undo stack,
 // held in memory until w writes (the [+] marker covers them):
 //
-//	r, i      value.edit    edit the value in place: an inline input, its
-//	                        text selected (rename.select), the type
-//	                        inferred from the text on accept
+//	r, i      value.edit    edit the value: the value editor, a modal over
+//	                        the table (valuemodal.go; value.editor inline:
+//	                        an input on the row), its text selected
+//	                        (rename.select), the type inferred from the
+//	                        text on accept
 //	d d       value.delete  delete the field or item
 //	o         value.add     add a field (its key first, a placeholder
 //	                        selected) or an item, after this one
@@ -51,6 +53,15 @@ const (
 )
 
 func declareValueSettings(r *ochazuke.Runtime) error {
+	if err := declareValueEditorSetting(r); err != nil {
+		return err
+	}
+	if err := declareColumnSettings(r); err != nil {
+		return err
+	}
+	if err := declareDetailSettings(r); err != nil {
+		return err
+	}
 	return r.DeclareSetting(ochazuke.Setting{
 		Name: settingDataEditable, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "In the viewer's edited view the data pane edits single values (r, d d, o, K, p), as value patches applied after the restructure; off keeps the data pane read-only",
@@ -300,7 +311,11 @@ func (a *App) commitPatches(label string, patches []Patch) error {
 
 // addPatch adds one patch as one undo step.
 func (a *App) addPatch(p Patch) error {
-	return a.commitPatches(p.Op+" "+p.Path, append(slices.Clone(a.rs.patches), p))
+	if err := a.commitPatches(p.Op+" "+p.Path, append(slices.Clone(a.rs.patches), p)); err != nil {
+		return err
+	}
+	a.followPatch(p)
+	return nil
 }
 
 // setValue patches v to raw: a set, or an add for a cell the row lacks.
@@ -363,17 +378,21 @@ type valueEdit struct {
 	in     *ochazuke.Input
 	what   string // "edit", "key" (a new key's name), "add" (its value), "rename"
 	at     valueAt
-	key    string    // add: the new key (an object) once named
-	before string    // the text it opened with
-	insert bool      // drawn as a new line below the row
-	above  bool      // add: before the row (O), drawn as a new line above it
-	view   *rowsView // the table it is drawn on: the data pane or the detail
-	sub    bool      // opened in a hover sub-table: drawn on its cursor line
+	key    string      // add: the new key (an object) once named
+	before string      // the text it opened with
+	insert bool        // drawn as a new line below the row
+	above  bool        // add: before the row (O), drawn as a new line above it
+	view   *rowsView   // the table it is drawn on: the data pane or the detail
+	sub    bool        // opened in a hover sub-table: drawn on its cursor line
+	modal  *valueModal // value.editor modal: the editor (valuemodal.go)
 }
 
 // openInput opens the inline input on the focused row, text selected
 // when sel.
 func (a *App) openInput(ve *valueEdit, text string, sel bool) error {
+	if a.modalEditor() {
+		return a.openModal(ve, text, sel)
+	}
 	row := a.r.Focus
 	view := a.rowsOf(a.r.Instances[row])
 	if view == nil {
@@ -543,6 +562,7 @@ func (a *App) registerValueVerbs() {
 	r := a.r
 	r.Define("value")
 	r.Define("value-input").Pin("insert")
+	a.registerValueEditor()
 	guard := func(name string, ok func(valueAt) bool) {
 		r.DefineGuard(name, func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 			v, found := a.editableValue(ev.Focus)
@@ -603,7 +623,7 @@ func (a *App) registerValueVerbs() {
 				sel = b
 			}
 			return done(a.openInput(&valueEdit{what: "edit", at: v}, editText(v.node), sel))
-		}, "Edit the value in place: an inline input, its text selected (select; omitted, the rename.select setting decides) so typing replaces it. On enter or esc the text is the new value: a number, true, false, null, an object or array in JSON, \"…\" for a string that would read as another type, else the text as a string (the prefix shows the type it reads as). With text, set it at once. A cell the row lacks is added").When("value-editable").
+		}, "Edit the value: the value editor over the table (value.editor modal: its path, the old value, a badge with the type the text reads as; enter sets, esc cancels) or an input on the row (inline: enter or esc sets), its text selected (select; omitted, the rename.select setting decides) so typing replaces it. The text is the new value: a number, true, false, null, an object or array in JSON, \"…\" for a string that would read as another type, else the text as a string. With text, set it at once. A cell the row lacks is added").When("value-editable").
 		Verb("delete", func(c ochazuke.Ctx) ochazuke.Result {
 			v, err := target(c)
 			if err != nil {
@@ -657,7 +677,7 @@ func (a *App) registerValueVerbs() {
 				return done(a.onValue(v, func(v valueAt) error { return a.renameValue(v, key) }))
 			}
 			return done(a.openInput(&valueEdit{what: "rename", at: v}, v.key, a.r.RenameSelect()))
-		}, "Rename this key in this one object (the structure's keys stay): an inline input, the key selected; with key, at once").When("value-renamable").
+		}, "Rename this key in this one object (the structure's keys stay): the value editor (or the inline input), the key selected; with key, at once").When("value-renamable").
 		Verb("paste", func(c ochazuke.Ctx) ochazuke.Result {
 			v, err := target(c)
 			if err != nil {

@@ -87,6 +87,7 @@ func field(t *testing.T, a *App, path string) string {
 // the data pane keeps the row.
 func TestEditValueTypes(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	inlineEditor(t, a)
 	onData(t, a, ".", "version")
 	press(t, a, "r")
 	if a.r.Focus != valueInputID || a.r.Mode.Name != "insert" {
@@ -157,6 +158,7 @@ func TestValueTypeInferenceAndForcedString(t *testing.T) {
 		}
 	}
 	a := open(t, sample, 120, 30)
+	inlineEditor(t, a)
 	onData(t, a, ".", "version")
 	press(t, a, "r")
 	typeText(t, a, `"7"`)
@@ -206,6 +208,7 @@ func TestDeleteFieldAndItem(t *testing.T) {
 // row.
 func TestAddField(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	inlineEditor(t, a)
 	onData(t, a, ".", "name")
 	press(t, a, "o")
 	if sel := selected(a); sel != "new-key" || !strings.Contains(view(a), "new key: new-key") {
@@ -237,6 +240,7 @@ func TestAddField(t *testing.T) {
 // row's index; the input is drawn above the row.
 func TestAddBefore(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	inlineEditor(t, a)
 	onData(t, a, ".", "version")
 	press(t, a, "O")
 	if sel := selected(a); sel != "new-key" {
@@ -268,6 +272,7 @@ func TestAddBefore(t *testing.T) {
 // structure's mapping is unchanged.
 func TestRenameOneKey(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	inlineEditor(t, a)
 	before := mappingKey(&Mapping{Map: a.Mapping().Map})
 	onData(t, a, ".items", ".items[0]")
 	press(t, a, "l", "l", "K")
@@ -506,6 +511,7 @@ func TestQuitAsksWithValueEdits(t *testing.T) {
 // inline input carries the terminal cursor.
 func TestEditAScalarShownAlone(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	inlineEditor(t, a)
 	a.on(t, ".meta.count")
 	view(a)
 	if err := a.data.list.Focus(); err != nil {
@@ -528,6 +534,7 @@ func TestEditAScalarShownAlone(t *testing.T) {
 // deletes, K renames; the detail follows each edit.
 func TestValueEditsInTheDetail(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	inlineEditor(t, a)
 	onData(t, a, ".items", ".items[0]")
 	press(t, a, "enter")
 	if a.r.TopModal() != detailID {

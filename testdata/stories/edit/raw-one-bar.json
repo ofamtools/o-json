@@ -1,0 +1,12 @@
+{
+  "name": "o-json: the raw JSON view (v) has no header line and its cursor is one even bar, no cell inside it (6-edit.tape: a json header, the first line's bar uneven)",
+  "area": "edit",
+  "width": 120,
+  "height": 30,
+  "page": {"id": "o-json-nested"},
+  "script": ["tab", "v", "j"],
+  "expect": [
+    {"after": 2, "lacks": ["┃ json"], "highlighted": 1, "cell": "", "highlightedText": "["},
+    {"after": 3, "highlighted": 1, "cell": "", "highlightedText": "{"}
+  ]
+}

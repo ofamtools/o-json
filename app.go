@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/charmbracelet/x/ansi"
+	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/unixsuperhero/ochazuke"
 )
 
@@ -82,6 +82,9 @@ type App struct {
 	carry    *rowCarry    // the data pane's row and column the next show keeps (T)
 
 	vedit *valueEdit // the data pane's open inline input (values.go)
+	// followKey is the column the next show puts the cursor on: the key a
+	// rename or an add on a table row made (columns.go).
+	followKey string
 	// queued are the value edits made while a rebuild ran off the loop,
 	// under rebuild.value-edit queue: applied when it lands (values.go).
 	queued []queuedEdit
@@ -415,6 +418,12 @@ func (a *App) show(s *Shape) error {
 	if c := a.carry; c != nil {
 		sel, col, a.carry = c.sel, c.col, nil
 	}
+	var prevCols []TableColumn
+	if prev := a.shown; prev != nil && prev.Path == s.Path && a.tab != nil && a.r.Settings().Bool(settingStableColumns) {
+		prevCols = a.tab.Columns
+	}
+	follow := a.followKey
+	a.followKey = ""
 	a.shown, a.tab, a.fields, a.lines, a.scalar = s, nil, nil, nil, nil
 	values := s.Values()
 	set := func(src rowSource) error {
@@ -438,6 +447,16 @@ func (a *App) show(s *Shape) error {
 		return a.data.set(rowSource{}, 0)
 	}
 	a.tab = NewTable(s.Path, values, len(values) != 1)
+	if prevCols != nil {
+		// The same table again (a value edit, an undo): its columns
+		// keep their order (columns.go).
+		a.tab.Columns = stableColumns(prevCols, a.tab.Columns, a.columnAnchors())
+	}
+	if follow != "" {
+		if j := slices.IndexFunc(a.tab.Columns, func(c TableColumn) bool { return !c.Self && c.Name == follow }); j >= 0 {
+			col = j + 1
+		}
+	}
 	return set(tableSource(a.tab))
 }
 
@@ -535,13 +554,19 @@ func rawLines(values []*Node, many bool) []string {
 	return lines
 }
 
+// linesSource is the raw JSON as rows of the line noun. It has no
+// columns, so no header: a list of lines whose labels are padded to the
+// widest line, so the cursor is one even bar on every line.
 func linesSource(lines []string) rowSource {
+	w := 0
+	for _, l := range lines {
+		w = max(w, ansi.StringWidth(l))
+	}
 	return rowSource{
 		n: len(lines), noun: "line",
-		columns: []ochazuke.Column{{Title: "json"}},
-		cells:   func(i int) []string { return []string{lines[i]} },
-		data:    func(i int) any { return lines[i] },
-		label:   func(i int) string { return lines[i] },
+		cells: func(i int) []string { return []string{lines[i]} },
+		data:  func(i int) any { return lines[i] },
+		label: func(i int) string { return pad(lines[i], w) },
 	}
 }
 

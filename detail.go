@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/unixsuperhero/ochazuke"
 )
@@ -76,7 +77,7 @@ func (a *App) detailView(r *ochazuke.Runtime, _ *ochazuke.Instance, w, h int) oc
 	if a.detail == nil || r.Instances[rowsID] == nil {
 		return ochazuke.Text("")
 	}
-	if a.vedit != nil && a.vedit.view == a.detail && r.Focus != valueInputID {
+	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view == a.detail && r.Focus != valueInputID {
 		// The focus left the detail's inline input: its text is the edit.
 		if err := a.accept(); err != nil {
 			a.LoadErr = err
@@ -88,7 +89,7 @@ func (a *App) detailView(r *ochazuke.Runtime, _ *ochazuke.Instance, w, h int) oc
 		return ochazuke.Text("(empty)")
 	}
 	body := a.detail.view(w, h)
-	if a.vedit != nil && a.vedit.view == a.detail && r.Instances[valueInputID] != nil {
+	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view == a.detail && r.Instances[valueInputID] != nil {
 		return a.inputBlock(body, w)
 	}
 	return ochazuke.Text(body)
@@ -139,4 +140,77 @@ func (a *App) refreshDetail() {
 	}
 	a.trail = trail
 	_ = a.showDetail(max(0, a.detail.Selected()))
+}
+
+// settingDetailBackdropCursor keeps the data pane's cursor drawn beneath
+// the detail.
+const settingDetailBackdropCursor = "detail.backdrop-cursor"
+
+func declareDetailSettings(r *ochazuke.Runtime) error {
+	return r.DeclareSetting(ochazuke.Setting{
+		Name: settingDetailBackdropCursor, Type: ochazuke.SettingBoolean, Default: false,
+		Description: "Beneath the detail the data pane keeps its cursor bar (dimmed with the page); off draws that row plain there, as the detail shows the row and the bar would only peek out beside it",
+	})
+}
+
+// beneathDetail is the data pane's body as drawn beneath the detail: the
+// cursor's marks (reverse video, the current cell's underline) taken out
+// unless detail.backdrop-cursor (the detail shows that row; its bar would
+// peek out beside the modal).
+//
+// A workaround: ochazuke keeps a page's highlight under a modal (Model
+// beneath) and its backdrop dims colours but not reverse video, so a bar
+// the modal does not cover reads as a stray highlight. A per-modal option
+// in ochazuke would replace this.
+func (a *App) beneathDetail(b ochazuke.Block) ochazuke.Block {
+	if a.r.Instances[detailID] == nil || a.r.Settings().Bool(settingDetailBackdropCursor) {
+		return b
+	}
+	return b.WithText(unreverse(b.Text))
+}
+
+// unreverse drops reverse video and underline (SGR 7, 27, 4, 24: the
+// cursor's bar and its cell) from text's escape sequences, colour parameters (38/48/58 with 5;N or 2;R;G;B) kept whole.
+func unreverse(text string) string {
+	var out strings.Builder
+	for {
+		i := strings.Index(text, "\x1b[")
+		if i < 0 {
+			out.WriteString(text)
+			return out.String()
+		}
+		j := i + 2
+		for j < len(text) && (text[j] >= '0' && text[j] <= '9' || text[j] == ';' || text[j] == ':') {
+			j++
+		}
+		if j >= len(text) || text[j] != 'm' {
+			out.WriteString(text[:j])
+			text = text[j:]
+			continue
+		}
+		out.WriteString(text[:i])
+		params := strings.Split(text[i+2:j], ";")
+		var kept []string
+		for k := 0; k < len(params); k++ {
+			p := params[k]
+			switch {
+			case p == "7" || p == "27" || p == "4" || p == "24":
+				continue
+			case (p == "38" || p == "48" || p == "58") && k+1 < len(params):
+				n := 2
+				if params[k+1] == "2" {
+					n = 4
+				}
+				end := min(len(params), k+1+n)
+				kept = append(kept, params[k:end]...)
+				k = end - 1
+				continue
+			}
+			kept = append(kept, p)
+		}
+		if len(kept) > 0 || len(params) == 1 && params[0] == "" {
+			out.WriteString("\x1b[" + strings.Join(kept, ";") + "m")
+		}
+		text = text[j+1:]
+	}
 }
