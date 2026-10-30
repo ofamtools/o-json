@@ -76,7 +76,7 @@
       {"key": "p", "action": "viewer.needs-edit", "hidden": true}
     ]},
     {"context": "rows/edit", "extends": "normal", "bindings": [
-      {"key": "esc", "action": "viewer.edit-leave", "hint": "leave EDIT"}
+      {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "declared"}, "hint": "leave EDIT"}
     ]},
     {"context": "rows/count_pending", "extends": "normal", "bindings": []},
     {"context": "rows/visual-line", "bindings": [
@@ -315,7 +315,7 @@
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "hidden": true},
       {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
-      {"key": "esc", "action": "viewer.edit-leave", "hint": "leave EDIT"}
+      {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "declared"}, "hint": "leave EDIT"}
     ]},
     {"context": "item/table", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},

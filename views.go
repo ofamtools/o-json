@@ -75,77 +75,85 @@ const (
 // object; the other views work for every selected path.
 var dataViewOrder = []string{viewTable, objectFields, viewFlat, viewJSON}
 
-// syncDeclaredMode uses the focus stop and the active data view as the
-// local mode declaration. Ochazuke currently pins modes by noun only;
-// this app-side declaration is the trial equivalent of an instance pin.
+// syncDeclaredMode declares each pane's mode as an ochazuke instance pin
+// (Runtime.PinInstance, v0.61.0): the structure trees declare SHAPE (SPLIT
+// on the restructure page), the data pane the mode of its view (TABLE,
+// NESTED while a sub-table is open under the cursor, FLAT, JSON, SEARCH
+// on the Results, JQ on the jq result). The library applies a pin when
+// the focus lands on the pane, and a re-pin of the focused pane at once
+// unless the user lifted into another mode (EDIT, VISUAL, a pending
+// mode); esc rows return with mode.set {mode: declared}. It runs after
+// each event (the jq runner's PendingCommand) and after a view change;
+// it sets no mode itself. modes.declared off drops the pins: every pane
+// declares normal.
 func (a *App) syncDeclaredMode() {
-	if a.r.Settings().String(settingDeclaredModes) == "off" {
-		switch a.r.BaseMode() {
-		case "shape", "table", "nested", "flat", "json", "jq", "split", "search", "edit":
-			_ = a.r.SetMode("normal")
+	off := a.r.Settings().String(settingDeclaredModes) == "off"
+	pin := func(id, mode string) {
+		if off {
+			mode = ""
 		}
-		return
-	}
-	if len(a.r.Modals()) > 0 || a.r.Mode.Payload.Prefix != "" || a.r.Mode.Name != a.r.BaseMode() {
-		return // a modal, or a prefix or count waiting for its next key
-	}
-	if a.r.Focus == jqFieldID {
-		// The search line: the type's mode, while it is in insert.
-		// o-jj workaround (ochazuke v0.61.0's Input.SelectText forces the
-		// mode named insert): while a slot is selected for typing over,
-		// the line stays in insert, or the transition would drop the
-		// selection.
-		if _, _, selecting := a.q.in.SelectedText(); selecting {
-			return
+		if inst := a.r.Instances[id]; inst != nil && inst.Pin != mode {
+			_ = a.r.PinInstance(id, mode)
 		}
-		if base := a.r.BaseMode(); (base == "insert" || slices.Contains(lineModes(), base)) && base != a.lineMode() {
-			_ = a.r.SetMode(a.lineMode())
-		}
-		return
 	}
-	want := ""
+	tree := "shape"
+	if a.r.Page == rsPageID {
+		tree = "split"
+	}
+	pin(treeID, tree)
+	pin(rsTreeID, tree)
+	pin(rsOrigID, "split")
+	if a.data != nil {
+		pin(a.data.id, a.dataMode())
+	}
+	if a.editing && (!a.onEditPane() || a.r.Mode.Name == a.r.DeclaredMode(a.r.Focus) && a.r.Input(a.r.Focus) == nil) {
+		// EDIT is per pane: leaving the pane leaves it, and so does the
+		// esc row back to the declared mode (mode.set {mode: declared}).
+		a.editing = false
+	}
+	// o-jj workaround: ochazuke's own rows that end a lifted mode (the
+	// list's visual end, the outline's input) set normal, not the
+	// declared mode; a frame in normal on a pane that declares another
+	// goes to it.
+	if a.r.Mode.Name == "normal" && len(a.r.Modals()) == 0 && a.r.Input(a.r.Focus) == nil && a.r.DeclaredMode(a.r.Focus) != "normal" {
+		_ = a.r.SetMode(a.backMode())
+	}
+}
+
+// dataMode is the mode the data pane's view declares.
+func (a *App) dataMode() string {
 	switch {
-	case a.tree.List().Focused() || a.rs.tree.List().Focused() || a.rs.orig.List().Focused() || a.r.Focus == treeID || a.r.Focus == rsTreeID || a.r.Focus == rsOrigID:
-		want = "shape"
-		if a.editing && a.editTree {
-			want = "edit"
-		}
-		if a.r.Page == rsPageID {
-			want = "split"
-		}
-	case a.data.list.Focused() || a.r.Focus == dataID:
-		want = a.viewName
-		if a.editing && !a.editTree {
-			want = "edit"
-			break
-		}
-		if want == "" || want == objectFields || want == objectRow {
-			want = "table"
-		}
-		if a.queryShowing() {
-			want = "jq"
-		} else if a.overlay == overlayResults && a.shown == a.sr.view {
-			want = "search"
-		} else if a.hoverIn() {
-			want = "nested"
-		}
+	case a.queryShowing():
+		return "jq"
+	case a.overlay == overlayResults && a.shown == a.sr.view:
+		return "search"
+	case a.hoverIn():
+		return "nested"
+	case a.viewName == viewFlat || a.viewName == viewJSON:
+		return a.viewName
 	}
-	if want != "edit" && a.vedit == nil && a.r.Focus != valueInputID && !a.renaming() {
-		a.editing = false // EDIT is per pane: leaving the pane leaves it
+	return "table"
+}
+
+// onEditPane reports the focus still on the pane EDIT was entered on (or
+// in what it opened there: the value editor, a rename, a modal).
+func (a *App) onEditPane() bool {
+	switch {
+	case len(a.r.Modals()) > 0, a.vedit != nil, a.r.Focus == valueInputID, a.renaming(), a.r.Focus == jqFieldID:
+		return true
+	case a.editTree:
+		return a.structureFocused()
 	}
-	if want == "" {
-		return
+	return a.inData(a.r.Focus)
+}
+
+// backMode is the mode a lifted mode returns to: EDIT while it is on,
+// else the focus's declared mode.
+func (a *App) backMode() string {
+	if a.editing {
+		return "edit"
 	}
-	base := a.r.BaseMode()
-	if base == queryMode && want == "shape" {
-		return // m explicitly lifted the structure pane into JQ
-	}
-	if base != "normal" && base != "shape" && base != "table" && base != "nested" && base != "flat" && base != "json" && base != "jq" && base != "split" && base != "search" && base != "edit" {
-		return // an explicit edit, query or selection mode is on top
-	}
-	if base != want {
-		_ = a.r.SetMode(want)
-	}
+	return ochazuke.ModeDeclared
 }
 
 // trialModeAccents are the badge hues of o-jj's modes (light, dark),

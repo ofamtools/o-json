@@ -47,8 +47,7 @@ func (a *App) enterEdit(c ochazuke.Ctx, open bool) ochazuke.Result {
 // leaveEdit is esc in EDIT: back to the pane's declared mode.
 func (a *App) leaveEdit() ochazuke.Result {
 	a.editing = false
-	_ = a.r.SetMode("normal")
-	a.syncDeclaredMode()
+	_ = a.r.SetMode(ochazuke.ModeDeclared)
 	return ochazuke.Done(nil)
 }
 

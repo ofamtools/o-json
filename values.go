@@ -437,9 +437,7 @@ func (a *App) closeInput() (*valueEdit, string) {
 	if a.r.Instances[valueInputID] != nil {
 		_ = a.r.RemoveInstance(valueInputID)
 	}
-	if a.r.Mode.Name != "normal" {
-		_ = a.r.SetMode("normal")
-	}
+	_ = a.r.SetMode(a.backMode())
 	return ve, text
 }
 

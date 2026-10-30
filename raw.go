@@ -95,7 +95,7 @@ func (a *App) selectedRows() []*Node {
 	}
 	l.EndVisual()
 	if a.r.SelectionShape(a.r.BaseMode()) != "" {
-		_ = a.r.SetMode("normal")
+		_ = a.r.SetMode(a.backMode())
 	}
 	return out
 }

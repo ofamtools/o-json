@@ -83,8 +83,8 @@ Updated as each item lands; the sections below describe what is built.
 | Item | Status |
 |---|---|
 | Bump to v0.61.0 | done |
-| Instance pin: data rows pinned per view, structure pinned to `shape` (no per-event mode setting) | missing |
-| `esc` rows: `mode.set {mode: declared}` | missing |
+| Instance pin: data rows pinned per view, structure pinned to `shape` (no per-event mode setting) | done (`PinInstance` from `syncDeclaredMode`, which sets no mode; one workaround: a frame left in `normal` by a library row goes to the declared mode) |
+| `esc` rows: `mode.set {mode: declared}` | done (EDIT's `esc`; `viewer.edit-leave` kept as a verb) |
 | Badge colours: `SetModeTone` per mode (no whole-accent recolour) | done |
 | SEARCH / JQ line modes extend insert (completion, per-session undo, `JQ` badge while typing) | done |
 | `ctrl+w o` / `ctrl+w =`: `ochazuke.pane.only` / `pane.restore`, `SplitFocusBlock` | missing |
@@ -274,10 +274,16 @@ answer.
 - The test suite runs with `modes.edit-gate` off by default (it was
   written for o-json's ungated edits, `editGateDefault` in TestMain); the
   EDIT tests and stories turn it on.
-- Needs ochazuke later: an instance mode pin (the declared mode is set by
-  o-jj after each event and in render), declarable `mode.<name>` badge
-  tones (o-jj recolours the whole accent), insert-like modes that
-  completion and the input's undo grouping accept, a lower-case badge tag,
-  and a pane "only" in the layout (o-jj draws it itself).
+- The declared modes are ochazuke instance pins (v0.61.0,
+  `syncDeclaredMode` in views.go): the structure trees pin `shape`
+  (`split` on the restructure page), the data pane pins its view's mode.
+  The pins are recomputed after each event and before a frame draws (a
+  view, the hover chain or an overlay changed); the library applies them.
+  Workaround (for the ochazuke lane): ochazuke rows that end a lifted
+  mode (the list's visual end) set `normal`, not the declared mode, so a
+  frame in `normal` on a pane that declares another goes to it (EDIT
+  when EDIT is on).
+- Still needs ochazuke: a lower-case badge tag (`SEARCH · substr`), and
+  `Input.SelectText` keeping an insert-like mode.
 - `:mode` cannot be a bare alias while ochazuke owns the `mode` noun;
   `:viewer mode` opens the chooser.

@@ -455,7 +455,7 @@ func (a *App) registerQueryMode() error {
 				}
 			}
 			if to == "edit" {
-				return r.SetMode("normal")
+				return r.SetMode(a.backMode())
 			}
 			// JQ mode writes the query: the line's type is jq.
 			a.sr.typ = "jq"

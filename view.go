@@ -43,7 +43,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if err := a.sync(); err != nil {
 		a.LoadErr = err
 	}
-	a.syncDeclaredMode()
+	a.syncDeclaredMode() // the pins of a view the event changed, before the badge draws
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := a.r.PaneLayout(pageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.breadcrumb(), width, "…"))

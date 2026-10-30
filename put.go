@@ -297,7 +297,7 @@ func (a *App) selected() []string {
 	}
 	l.EndVisual()
 	if a.r.SelectionShape(a.r.BaseMode()) == ochazuke.SelectionLine {
-		_ = a.r.SetMode("normal")
+		_ = a.r.SetMode(a.backMode())
 	}
 	return ids
 }
