@@ -226,8 +226,14 @@ func (a *App) registerVerbs() {
 	r.Define("field").
 		Verb("open", open, "Open the field's object or array in the detail").
 		Verb("yank", yankValue, "Copy the field's value (JSON for an object or array) into the registers and the system clipboard (value.yank); p puts it with its type")
+	// l and enter on a scalar entry stand aside: nothing to step into, so
+	// nothing happens (an edge is quiet), never an error.
+	r.DefineGuard("entry-container", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
+		n := nodeAt(r.Instances[r.Focus])
+		return n != nil && n.IsContainer()
+	})
 	r.Define("entry").
-		Verb("open", func(c ochazuke.Ctx) ochazuke.Result { return done(a.drill(nodeAt(c.Instance))) }, "Step into the entry's object or array").
+		Verb("open", func(c ochazuke.Ctx) ochazuke.Result { return done(a.drill(nodeAt(c.Instance))) }, "Step into the entry's object or array (available on one)").When("entry-container").
 		Verb("up", func(ochazuke.Ctx) ochazuke.Result { return done(a.up()) }, "Step back out to the containing value; at the top, close the detail").
 		Verb("yank", yankNode, "Copy the entry's value (JSON for an object or array) into the registers and the system clipboard")
 	r.Define("line").

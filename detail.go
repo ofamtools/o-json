@@ -24,6 +24,18 @@ func (a *App) openDetail(n *Node) error {
 	if n == nil || !n.IsContainer() {
 		return errors.New("only an object or an array opens in the detail")
 	}
+	if a.r.Instances[detailID] != nil && a.detail != nil && a.r.Instances[rowsID] != nil {
+		// Open already (item.open from the palette over it): re-target it
+		// to n, from the top, as a second open of any view does (R4.8).
+		a.trail = []*Node{n}
+		if err := a.showDetail(0); err != nil {
+			return err
+		}
+		if a.r.TopModal() != detailID {
+			return nil // the palette over it gives the focus back as it closes
+		}
+		return a.detail.list.Focus()
+	}
 	if _, err := a.r.OpenModal(detailID, ochazuke.Payload{Prompt: n.Path()}); err != nil {
 		return err
 	}

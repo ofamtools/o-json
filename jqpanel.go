@@ -97,6 +97,11 @@ func (a *App) openJQPanel(view string) error {
 		a.jqp.view = view
 	}
 	if a.jqp.open {
+		// Focused from elsewhere: esc gives the focus back to where it
+		// came from this time, not where the panel was first opened.
+		if a.r.Focus != jqPanelTextID && a.r.Instances[a.r.Focus] != nil {
+			a.jqp.back = a.r.Focus
+		}
 		return a.r.SetFocus(jqPanelTextID)
 	}
 	a.jqp.back, a.jqp.where, a.jqp.key = a.r.Focus, where, ""

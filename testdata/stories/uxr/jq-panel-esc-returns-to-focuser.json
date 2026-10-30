@@ -1,0 +1,33 @@
+{
+ "name": "o-json: g j on an open jq panel from the tree, then esc, gives the focus back to the tree, not to where the panel was first opened (R4.3, P4)",
+ "area": "uxr",
+ "width": 120,
+ "height": 30,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "sample.json"
+ },
+ "script": [
+  "tab",
+  "g",
+  "j",
+  "esc",
+  "shift+tab",
+  "g",
+  "j",
+  "esc"
+ ],
+ "expect": [
+  {
+   "after": 5,
+   "contains": [
+    "\u256d\u2501 Structure"
+   ]
+  },
+  {
+   "contains": [
+    "\u256d\u2501 Structure"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,43 @@
+{
+ "name": "o-json: item.open from the palette while the detail is open re-targets it, never 'already open' (R4.8)",
+ "area": "uxr",
+ "width": 120,
+ "height": 30,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "sample.json"
+ },
+ "script": [
+  "j",
+  "j",
+  "j",
+  "j",
+  "tab",
+  "0",
+  "enter",
+  ":",
+  "i",
+  "t",
+  "e",
+  "m",
+  "space",
+  "o",
+  "p",
+  "e",
+  "n",
+  "enter"
+ ],
+ "expect": [
+  {
+   "after": 7,
+   "contains": [
+    "object{4}"
+   ]
+  },
+  {
+   "lacks": [
+    "already open"
+   ]
+  }
+ ]
+}
