@@ -124,6 +124,9 @@ func (a *App) operate(c ochazuke.Ctx, pane string) ochazuke.Result {
 			return a.forward(c, "value", "rename")
 		}
 		if object == "row" {
+			if len(o.nodes) == 0 {
+				return noValues(op, object)
+			}
 			o.at = valueAt{node: o.nodes[0], parent: o.nodes[0].Parent, key: o.nodes[0].Key}
 		}
 		if err := a.openInput(&valueEdit{what: "edit", at: o.at}, editText(o.at.node), a.r.RenameSelect()); err != nil {
@@ -136,6 +139,18 @@ func (a *App) operate(c ochazuke.Ctx, pane string) ochazuke.Result {
 		return a.operateJQ(object, inner, o)
 	}
 	return ochazuke.Failed(fmt.Errorf("%s: no such operator", op))
+}
+
+// noValues is an operator's answer when its object resolved to no values
+// (the # column's "column" is the table's order, not values): a message,
+// nothing changed. Every operator that reads o.nodes or o.array checks
+// first (TestOperatorOnNoValuesIsAMessage).
+func noValues(op, object string) ochazuke.Result {
+	name := object
+	if object == "motion" {
+		name = "rows"
+	}
+	return ochazuke.Failed(fmt.Errorf("%s: no %s here", op, name))
 }
 
 func objectName(object string) string {
@@ -339,6 +354,9 @@ func (a *App) operateYank(c ochazuke.Ctx, object string, o operand) ochazuke.Res
 	case o.what == "the subtree":
 		return a.forward(c, "node", "yank")
 	}
+	if len(o.nodes) == 0 {
+		return noValues("y", object)
+	}
 	n := o.nodes[0]
 	if len(o.nodes) != 1 || object == "motion" || object == "column" {
 		n = arrayOf(o.nodes)
@@ -373,6 +391,9 @@ func (a *App) operateDelete(c ochazuke.Ctx, object string, o operand) ochazuke.R
 			patches = append(patches, Patch{Op: opDelete, Path: n.Path()})
 		}
 	}
+	if len(patches) == 0 {
+		return noValues("d", object)
+	}
 	if !a.editedShown() || !a.dataEditable() {
 		return ochazuke.Failed(errors.New("d: values change on the edited view (T), with data.editable on"))
 	}
@@ -397,10 +418,19 @@ func (a *App) operateJQ(object string, inner bool, o operand) ochazuke.Result {
 			q = o.what
 		}
 	case "column":
+		if o.array == nil || o.col == "" {
+			return noValues("!", object)
+		}
 		q = arrayItems(o.array.Path()) + keyStep(o.col)
 	case "array", "table":
+		if len(o.nodes) == 0 {
+			return noValues("!", object)
+		}
 		q = arrayItems(o.nodes[0].Path())
 	default:
+		if len(o.nodes) == 0 {
+			return noValues("!", object)
+		}
 		q = o.nodes[0].Path()
 	}
 	if !inner && object != "path" {
@@ -461,6 +491,9 @@ func (a *App) operateSort(c ochazuke.Ctx, object string, o operand, reverse bool
 		}
 		c.Info(fmt.Sprintf("sorted by %s %s (a view: the document keeps its order) · s on # clears", o.col, dir))
 		return ochazuke.Done(nil)
+	}
+	if len(o.nodes) == 0 {
+		return noValues("s", object)
 	}
 	n := o.nodes[0]
 	if !a.editedShown() || !a.dataEditable() {

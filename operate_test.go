@@ -127,6 +127,36 @@ func TestOperatorSortAndJQ(t *testing.T) {
 	}
 }
 
+// An operator whose object resolved to no values says so and does
+// nothing (the key-outline lane's crash: y i c on the # column read an
+// empty operand). s on # is the one that acts there: it clears the sort.
+func TestOperatorOnNoValuesIsAMessage(t *testing.T) {
+	a := open(t, "testdata/sample.json", 110, 30)
+	gated(t, a)
+	selectPath(t, a, ".items")
+	press(t, a, "ctrl+w", "l") // the # column
+	before := yanked(t, a, "")
+	for _, op := range []string{"y", "!"} {
+		keys(a, op, "i", "c")
+		if want := op + ": no column here"; a.m.Status != want {
+			t.Fatalf("%s i c on #: status %q, want %q", op, a.m.Status, want)
+		}
+		if a.r.BaseMode() != "table" {
+			t.Fatalf("%s i c on #: mode %q", op, a.r.BaseMode())
+		}
+	}
+	if got := yanked(t, a, ""); got != before {
+		t.Fatalf("y i c on # yanked %q", got)
+	}
+	press(t, a, "i")
+	for _, ks := range [][]string{{"d", "i", "c"}, {"d", "a", "c"}} {
+		keys(a, ks...)
+		if a.m.Status != "d: no column here" || len(a.rs.patches) != 0 {
+			t.Fatalf("%v on #: status %q patches %+v", ks, a.m.Status, a.rs.patches)
+		}
+	}
+}
+
 // On the structure, y p copies the path, y i v the values at it, ! !
 // opens the jq line with it.
 func TestOperatorOnTheStructure(t *testing.T) {

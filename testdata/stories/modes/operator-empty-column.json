@@ -1,0 +1,15 @@
+{
+  "name": "o-jj: an operator on the # column (no column's values) says so and does nothing: y i c, ! i c, and d i c in EDIT (key-outline crash: y i c read an empty operand)",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "values": {"modes.edit-gate": true},
+  "script": ["j", "j", "j", "ctrl+w", "l", "y", "i", "c", "!", "i", "c", "i", "d", "i", "c"],
+  "expect": [
+    {"after": 8, "mode": "table", "contains": ["y: no column here"]},
+    {"after": 11, "mode": "table", "contains": ["!: no column here"]},
+    {"mode": "edit", "contains": ["d: no column here"], "lacks": ["value edit"]}
+  ]
+}
