@@ -78,6 +78,17 @@ Updated as each item lands; the sections below describe what is built.
 | Push / pull | `d p`, `d o` | done |
 | Wrap the selection | `v j j j {`, `[`, `}`, `]` | done |
 
+### ochazuke v0.61.0 (the library features replace o-jj's workarounds)
+
+| Item | Status |
+|---|---|
+| Bump to v0.61.0 | done |
+| Instance pin: data rows pinned per view, structure pinned to `shape` (no per-event mode setting) | missing |
+| `esc` rows: `mode.set {mode: declared}` | missing |
+| Badge colours: `SetModeTone` per mode (no whole-accent recolour) | missing |
+| SEARCH / JQ line modes extend insert (completion, per-session undo, `JQ` badge while typing) | missing |
+| `ctrl+w o` / `ctrl+w =`: `ochazuke.pane.only` / `pane.restore`, `SplitFocusBlock` | missing |
+
 ### Grammar inside SHAPE / TABLE / NESTED (Design B)
 
 | Item | Keys | Status |
