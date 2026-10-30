@@ -32,6 +32,9 @@ const (
 	// file again (R): the focus, each tree's selection by path, the data
 	// pane's row and column. Off, a reload starts at the root.
 	settingReloadPlace = "reload.keep-place"
+	// settingEmptyHint: with no document open the data pane says so and
+	// names the keys that open one (emptyHint); off, an empty list.
+	settingEmptyHint = "empty.hint"
 	// settingPasteOnTree says what a bracketed paste on the restructured
 	// tree runs (node.paste): pasteOnJSON, pasteOnOutline or pasteOnViewer.
 	settingPasteOnTree = "paste.on-tree"
@@ -538,6 +541,52 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	if err := a.addAliases(); err != nil {
 		panic(err) // o-json's own rows: a bad one is a bug
 	}
+	a.registerDocVerbs()
+}
+
+// docVerbs are the doc noun's verbs that are the viewer's document verbs
+// under the document's name: one operation each (AliasAction), so the
+// handler, the parameters (doc.open's path chooser), the confirm and the
+// history are the viewer verb's. doc.open {path} replaces the open
+// document the way viewer.open does, asking first (viewer.discard) when
+// the restructure has edits no write saved.
+var docVerbs = []ochazuke.ActionAlias{
+	{Alias: "doc.open", Action: "viewer.open"},
+	{Alias: "doc.reload", Action: "viewer.load"},
+	{Alias: "doc.new", Action: "viewer.new"},
+	{Alias: "doc.paste", Action: "viewer.paste"},
+	{Alias: "doc.write", Action: "viewer.write"},
+}
+
+// registerDocVerbs defines the doc noun, the open document: its file is
+// App.Path ("" for none, or a document of no file), doc.show reads it, and
+// docVerbs name the viewer's document verbs on it. The command line's doc
+// noun (shell.go) is another runtime's: it reads a FILE per call.
+func (a *App) registerDocVerbs() {
+	r := a.r
+	r.Define("doc").
+		Verb("show", func(ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.docState()) },
+			"The open document: its file (path, empty for none or a document of no file, such as a pasted one), its name, whether one is open, its size, a read in progress and whether the restructure has edits no write saved").Fetch()
+	for _, al := range docVerbs {
+		if err := r.AddActionAlias(al); err != nil {
+			panic(err) // o-json's own rows: a bad one is a bug
+		}
+	}
+}
+
+// docState is doc.show's answer.
+func (a *App) docState() map[string]any {
+	out := map[string]any{"path": a.Path, "open": a.Doc != nil, "unsaved": a.unsaved()}
+	if a.Doc != nil {
+		out["name"], out["size"] = a.Doc.Name, a.Doc.Size
+	}
+	if a.Loading != "" {
+		out["loading"] = a.Loading
+	}
+	if a.LoadErr != nil {
+		out["error"] = a.LoadErr.Error()
+	}
+	return out
 }
 
 // aliases are o-json's alias rows, vim's ex words: bare names that run a
@@ -729,8 +778,8 @@ func pasteLoads(mode, text string) bool {
 	return json.Valid([]byte(text))
 }
 
-// declareOpenSettings declares recent.size, paste.on-tree and
-// paste.text-on-tree.
+// declareOpenSettings declares recent.size, reload.keep-place,
+// empty.hint, paste.on-tree and paste.text-on-tree.
 func declareOpenSettings(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingRecent, Type: ochazuke.SettingInteger, Default: 10,
@@ -738,6 +787,9 @@ func declareOpenSettings(r *ochazuke.Runtime) error {
 	}, ochazuke.Setting{
 		Name: settingReloadPlace, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "Reading the open file again (R, viewer.load) keeps the focused pane, each structure tree's selection by path and the data pane's row and column where they are still there, as Vim's :e! keeps the cursor; off, a reload starts at the root as opening a file does",
+	}, ochazuke.Setting{
+		Name: settingEmptyHint, Type: ochazuke.SettingBoolean, Default: true,
+		Description: "With no document open, the data pane says so and lists the keys that open one (doc.open, doc.paste, restructure.open, from the bindings); off, it shows an empty list. Nothing opens by itself either way",
 	}, ochazuke.Setting{
 		Name: settingPasteOnTree, Type: ochazuke.SettingString, Default: pasteOnJSON, Enum: []string{pasteOnJSON, pasteOnOutline, pasteOnViewer},
 		Description: "A bracketed paste on the restructured tree: json loads valid JSON as the buffer, as on the viewer, and does with anything else what paste.text-on-tree says; outline always adds keys below the node, one per line, nested by indent; viewer always loads (invalid JSON is an error)",

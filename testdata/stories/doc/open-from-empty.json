@@ -1,0 +1,13 @@
+{
+  "name": "o-json: doc.open from the palette in the empty document opens the path chooser and shows the picked file",
+  "area": "doc",
+  "width": 100,
+  "height": 18,
+  "fixture": "empty",
+  "seed": {"files": ["sample.json"]},
+  "script": [":", "d", "o", "c", "space", "o", "p", "e", "n", "enter", "tab", "enter", {"job": "viewer.open", "state": "done"}],
+  "expect": [
+    {"after": 10, "contains": ["Run doc.open", "choose path"]},
+    {"contains": ["sample.json", "o-json sample"], "lacks": ["No document is open.", "[no file]"]}
+  ]
+}

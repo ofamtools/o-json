@@ -1,0 +1,13 @@
+{
+  "name": "o-json: doc.open over an open document replaces it with the picked file",
+  "area": "doc",
+  "width": 100,
+  "height": 18,
+  "fixture": "viewer",
+  "seed": {"doc": "nest.json", "files": ["sample.json"]},
+  "script": [":", "d", "o", "c", "space", "o", "p", "e", "n", "enter", "tab", "enter", {"job": "viewer.open", "state": "done"}],
+  "expect": [
+    {"after": 1, "contains": ["nest.json"]},
+    {"contains": ["sample.json", "o-json sample"], "lacks": ["nest.json"]}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "o-json: empty.hint off leaves the empty document's data pane an empty list",
+  "area": "doc",
+  "width": 100,
+  "height": 16,
+  "fixture": "empty",
+  "values": {"empty.hint": false},
+  "expect": [
+    {"contains": ["(empty list)", "[no file]"], "lacks": ["No document is open."]}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "o-json: with no document the data pane says none is open and names the keys that open one (doc.open, from the bindings)",
+  "area": "doc",
+  "width": 100,
+  "height": 16,
+  "fixture": "empty",
+  "expect": [
+    {"contains": ["No document is open.", "e     open a JSON file (doc.open)", "p     paste JSON from the clipboard (doc.paste)", "M     build a structure from nothing (restructure.open)"], "lacks": ["(empty list)", "file is required"]}
+  ]
+}

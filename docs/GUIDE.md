@@ -24,8 +24,8 @@ You can open a file, read stdin, or start with nothing and pick a file later. Us
 
 1. Open a file: `o-json sample.json`.
 2. Or read stdin: `curl -s https://… | o-json`. (`o-json -` reads stdin too.)
-3. Or start empty: `o-json`. The top line reads `[no file]  ·  e open a file  ·  p paste JSON  ·  M restructure`.
-4. Press `e` to open a file. The path chooser has three sources: `browse` (the current folder), `recent` (files you opened before) and `typed` (type a path). `tab` switches source. Type to narrow the list, then press `enter`.
+3. Or start empty: `o-json`. The top line reads `[no file]  ·  e open a file  ·  p paste JSON  ·  M restructure`, and the data pane says `No document is open.` with the same keys.
+4. Press `e` (or `: doc open`) to open a file. The path chooser has three sources: `browse` (the current folder), `recent` (files you opened before) and `typed` (type a path). `tab` switches source. Type to narrow the list, then press `enter`.
 5. Or press `p` to paste JSON from the system clipboard. Pasting into the terminal works too: the pasted JSON becomes the document. (`p` pastes a document only in the empty document and the original view, after `T`. In the edited view, `p` puts things: chapters 5 and 6.)
 6. `R` reads the file again from disk, keeping your place: the same panel, path, row and column.
 

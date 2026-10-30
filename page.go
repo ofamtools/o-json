@@ -1519,6 +1519,9 @@ func (a *App) sendKey() string {
 // arguments), "" when none does.
 func (a *App) keyFor(verb string) string {
 	key := a.r.CanonicalKey(verb)
+	if al, ok := a.r.ActionAlias(key); ok { // doc.open: viewer.open's row
+		key = a.r.CanonicalKey(al.Action)
+	}
 	for _, b := range a.r.ListBindings(a.r.Focus) {
 		if b.Keys != "" && len(b.Request.Args) == 0 && a.r.CanonicalKey(b.Request.Key()) == key {
 			return b.Keys

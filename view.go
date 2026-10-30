@@ -265,6 +265,9 @@ func (a *App) dataBody(w, h int) string {
 	case a.shown == nil && a.note != "" && a.editedShown():
 		a.r.Placed(dataID)
 		return wrap(a.note, w)
+	case a.Doc == nil && a.shown == nil && a.scalar == nil && a.r.Settings().Bool(settingEmptyHint):
+		a.r.Placed(dataID)
+		return wrap(a.emptyHint(), w)
 	case a.scalar != nil:
 		a.r.Placed(dataID)
 		return wrap(Pretty(a.scalar), w)
@@ -278,6 +281,21 @@ func (a *App) dataBody(w, h int) string {
 // wrap breaks text at the width.
 func wrap(text string, width int) string {
 	return ansi.Hardwrap(text, max(1, width), true)
+}
+
+// emptyHint is the data pane of the empty document: that no document is
+// open, and the keys that fill it, from the bindings (a verb with no key
+// is named by its action, which the palette runs).
+func (a *App) emptyHint() string {
+	lines := []string{"No document is open.", ""}
+	for _, v := range []struct{ verb, what string }{{"doc.open", "open a JSON file"}, {"doc.paste", "paste JSON from the clipboard"}, {"restructure.open", "build a structure from nothing"}} {
+		key := a.keyFor(v.verb)
+		if key == "" {
+			key = ":" + strings.Replace(v.verb, ".", " ", 1)
+		}
+		lines = append(lines, fmt.Sprintf("  %-5s %s (%s)", key, v.what, v.verb))
+	}
+	return strings.Join(lines, "\n")
 }
 
 // emptyCrumb is the breadcrumb of the empty document: "[no file]" and the

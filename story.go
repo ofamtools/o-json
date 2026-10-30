@@ -57,6 +57,10 @@ type storySeed struct {
 	// there (default .y).
 	Send []string `json:"send"`
 	On   string   `json:"on"`
+	// Files are testdata documents the empty and viewer fixtures copy into the temp
+	// dir and records in the recent list, opening none: the path
+	// chooser's first choices, for a story that opens one (doc.open).
+	Files []string `json:"files"`
 }
 
 // storyApp is o-json for stories: the real viewer, its document written
@@ -68,17 +72,18 @@ func storyApp() monogatari.App {
 		Summary: "the o-json viewer on a testdata document (seed doc), or with none",
 		Fixtures: []monogatari.Fixture{
 			{Name: "nest", Summary: "the restructure page on the seed's document (nest.json): its send shapes (.a .x .y .z) sent, the focus on the restructured tree's on node (.y)", Build: buildNest},
-			{Name: "viewer", Summary: "a fresh viewer on the seed's document (nest.json), as it opens", Build: buildViewer},
-			{Name: "empty", Summary: "the viewer with no document, as o-json with no file opens", Build: buildEmpty},
+			{Name: "viewer", Summary: "a fresh viewer on the seed's document (nest.json), as it opens; the seed's files are in its temp dir and recent list", Build: buildViewer},
+			{Name: "empty", Summary: "the viewer with no document, as o-json with no file opens; the seed's files are in its temp dir and recent list, none open", Build: buildEmpty},
 		},
 	}
 }
 
 // storySession is one fixture's app and the temp dir it owns.
 type storySession struct {
-	a   *App
-	dir string
-	doc string
+	a      *App
+	dir    string
+	doc    string
+	staged map[string]bool // the seed's files: not writes
 }
 
 func (s *storySession) built() monogatari.Built {
@@ -106,7 +111,7 @@ func (d drawEach) View() tea.View { return d.m.View() }
 func (s *storySession) writes() []string {
 	var out []string
 	filepath.WalkDir(s.dir, func(path string, d fs.DirEntry, err error) error {
-		if err == nil && !d.IsDir() && path != s.doc {
+		if err == nil && !d.IsDir() && path != s.doc && !s.staged[path] {
 			rel, _ := filepath.Rel(s.dir, path)
 			out = append(out, rel)
 		}
@@ -186,11 +191,45 @@ func (s *storySession) load(name string) error {
 }
 
 func buildEmpty(env monogatari.Env) (monogatari.Built, error) {
+	seed, err := seedOf(env)
+	if err != nil {
+		return monogatari.Built{}, err
+	}
 	s, err := newStorySession(env)
 	if err != nil {
 		return monogatari.Built{}, err
 	}
+	if err := s.stage(seed.Files); err != nil {
+		s.built().Close()
+		return monogatari.Built{}, err
+	}
 	return s.built(), nil
+}
+
+// stage copies testdata documents into the temp dir and records them in
+// the recent list (the first named newest), so the path chooser offers
+// them; it opens none.
+func (s *storySession) stage(names []string) error {
+	state, size := s.a.stateDir(), s.a.recentSize()
+	for i := len(names) - 1; i >= 0; i-- {
+		data, err := storyDocs.ReadFile("testdata/" + names[i])
+		if err != nil {
+			return fmt.Errorf("seed file %q is not a testdata document", names[i])
+		}
+		p := filepath.Join(s.dir, names[i])
+		if err := os.WriteFile(p, data, 0o644); err != nil {
+			return err
+		}
+		if s.staged == nil {
+			s.staged = map[string]bool{}
+		}
+		s.staged[p] = true
+		if err := recordRecent(state, p, size); err != nil {
+			return err
+		}
+	}
+	s.a.LoadRecent()
+	return nil
 }
 
 func buildViewer(env monogatari.Env) (monogatari.Built, error) {
@@ -200,6 +239,10 @@ func buildViewer(env monogatari.Env) (monogatari.Built, error) {
 	}
 	s, err := newStorySession(env)
 	if err != nil {
+		return monogatari.Built{}, err
+	}
+	if err := s.stage(seed.Files); err != nil {
+		s.built().Close()
 		return monogatari.Built{}, err
 	}
 	if err := s.load(seed.Doc); err != nil {
