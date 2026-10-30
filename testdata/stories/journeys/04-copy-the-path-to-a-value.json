@@ -1,0 +1,49 @@
+{
+  "values": {"modes.edit-gate": true},
+  "name": "journey 04: copy the path to a value (cell path, structure path, a named register, a nested cell, the path into jq, a flat line)",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "jobs/orders.min.json"},
+  "area": "journeys",
+  "script": [
+    "j", "ctrl+w", "l", "3", "j", "l", "l", "y", "p", "y", "a", "p",
+    "\"", "a", "y", "i", "p", "l", "j", "l", "y", "p", "esc", "!",
+    "i", "p", {"job": "jq.run", "state": "done"}, "enter", "esc", "tab", "5", "j", "y", "p", "y", "v",
+    "q"
+  ],
+  "expect": [
+    {"after": 3, "mode": "table", "contains": ["Table .data  1/25"]},
+    {"after": 7, "contains": ["Table .data  4/25", "row .data[3]"]},
+    {"after": 9, "register": ".data[3].status", "contains": ["copied the path"]},
+    {"after": 12, "register": ".data[].status"},
+    {"after": 17, "register": ".data[3].status"},
+    {"after": 19, "mode": "nested", "contains": ["name      email", "Aiko Abe  null"]},
+    {"after": 22, "register": ".data[3].customer.email"},
+    {"after": 23, "mode": "table"},
+    {"after": 26, "mode": "jq_·_line", "contains": ["jq .data[3].customer"]},
+    {"after": 28, "mode": "jq", "contains": ["Aiko Abe"]},
+    {"after": 29, "contains": ["Table .data"]},
+    {"after": 32, "mode": "flat", "contains": [".data[0].items[0].qty = 3"]},
+    {"after": 34, "register": ".data[0].items[0].qty", "contains": ["copied the path .data[0].items[0].qty"]},
+    {"after": 36, "register": "3"},
+    {"quit": true}
+  ],
+  "notes": [
+    {"after": 3, "keys": "j ctrl+w l", "note": "opened as `o-json orders.min.json`; j onto .data, ctrl+w l into its table"},
+    {"after": 7, "keys": "3 j l l", "note": "3 j to order 3, l l to its status cell"},
+    {"after": 9, "keys": "y p", "note": "y p yanks the concrete path of the cell"},
+    {"after": 12, "keys": "y a p", "note": "y a p (around path) yanks the structure path instead: every order's status"},
+    {"after": 17, "keys": "\" a y i p", "note": "\"a y i p yanks the concrete path into register a (and the unnamed one), as Vim's \"a does"},
+    {"after": 19, "keys": "l j", "note": "l to the customer cell; j steps into its sub-table (NESTED): order 3 has email null"},
+    {"after": 22, "keys": "l y p", "note": "l to email, y p: the path reaches inside the nested object"},
+    {"after": 23, "keys": "esc", "note": "esc leaves the sub-table"},
+    {"after": 26, "keys": "! i p", "note": "! i p puts the cell's path on the jq line (JQ · LINE), ready to extend"},
+    {"after": 28, "keys": "job jq.run enter", "note": "the query runs; enter moves into its result (JQ)"},
+    {"after": 29, "keys": "esc", "note": "esc clears the jq result"},
+    {"after": 32, "keys": "tab 5 j", "note": "tab to FLAT, 5 j down the path = value lines"},
+    {"after": 34, "keys": "y p", "note": "y p on a flat line yanks its path"},
+    {"after": 36, "keys": "y v", "note": "y v yanks its value"},
+    {"after": 37, "keys": "q", "note": "q quits"}
+  ]
+}

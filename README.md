@@ -474,6 +474,8 @@ bin/o-json-story story explore edit          # the state explorer
 bin/o-json-story story fixture list          # nest, viewer, empty
 ```
 
+`testdata/stories/journeys` walks each common JSON job from opening the file to quitting (its README lists them and how to watch them).
+
 It reads and writes no user config and no state but its own (recordings under `$XDG_DATA_HOME/o-json-story`, user stories under `$XDG_CONFIG_HOME/o-json-story/stories`); every session's document and state directory are temp dirs.
 
 ## License

@@ -1,0 +1,45 @@
+{
+  "values": {"modes.edit-gate": true},
+  "name": "journey 06: read an array of records as a table, sort it and export it (columns, nested items, the detail, sort up and down, export to csv)",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "jobs/orders.min.json"},
+  "area": "journeys",
+  "script": [
+    "j", "ctrl+w", "l", "4", "l", "j", "j", "$", "y", "p", "esc", "l",
+    "s", "i", "c", "s", "s", "j", "j", "j", "0", "enter", "q", "w",
+    {"type": "orders-by-total.csv"}, "enter", {"job": "restructure.write", "state": "done"}, ":", {"type": "sort"}, "enter", "q"
+  ],
+  "expect": [
+    {"after": 3, "mode": "table", "contains": ["Table .data  1/25", "#  id       status   customer  items  total  created_at  coupon?"]},
+    {"after": 5, "contains": ["#  sku      qty  price", "0  TEA-MAT  3    6"]},
+    {"after": 6, "mode": "nested"},
+    {"after": 10, "register": ".data[0].items[1].price"},
+    {"after": 11, "mode": "table"},
+    {"after": 15, "contains": ["sorted by total ↑ (a view: the document keeps its order)", " 9  ORD-10…  pending  {1}       [1]    16"]},
+    {"after": 17, "contains": ["sorted by total ↓", " 8  ORD-10…  refund…  {2}       [3]    316"]},
+    {"after": 20, "contains": ["Table .data  4/25", "row .data[19]"]},
+    {"after": 22, "focus": "detail/rows/0", "contains": ["ORD-1020  paid    {2}       [3]    234    2026-10-07T08:00:00Z"]},
+    {"after": 23, "mode": "table", "focus": "data/3"},
+    {"after": 27, "contains": ["wrote the export of the restructured document to"], "writes": ["jobs/orders-by-total.csv", "state/tables.json"]},
+    {"after": 30, "contains": ["sort cleared: the document's order", " 3  ORD-10…  shipped  {2}       [3]    159"]},
+    {"quit": true}
+  ],
+  "notes": [
+    {"after": 3, "keys": "j ctrl+w l", "note": "opened as `o-json orders.min.json`; j onto .data, ctrl+w l into the table"},
+    {"after": 5, "keys": "4 l", "note": "4 l to the items column: the first order's items open below it as a sub-table"},
+    {"after": 6, "keys": "j", "note": "j steps into the sub-table (NESTED)"},
+    {"after": 10, "keys": "j $ y p", "note": "j to the second item, $ to its price, y p yanks its path"},
+    {"after": 11, "keys": "esc", "note": "esc back to the orders (TABLE)"},
+    {"after": 12, "keys": "l", "note": "l to total"},
+    {"after": 15, "keys": "s i c", "note": "s i c sorts the table by the column, smallest first; a view, the document keeps its order"},
+    {"after": 17, "keys": "s s", "note": "s s on the same column reverses it"},
+    {"after": 20, "keys": "j j j", "note": "j j j: the fourth biggest order"},
+    {"after": 22, "keys": "0 enter", "note": "0 to the # column, enter opens the row in the detail"},
+    {"after": 23, "keys": "q", "note": "q closes the detail"},
+    {"after": 27, "keys": "w type \"orders-by-total.csv\" enter job restructure.write", "note": "w with a .csv name exports the rows as shown (sorted) next to the source"},
+    {"after": 30, "keys": ": type \"sort\" enter", "note": ":sort (Vim's ex word) on the # column clears the sort: the document's order is back"},
+    {"after": 31, "keys": "q", "note": "q quits: an export is not an edit, nothing to ask"}
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "values": {"modes.edit-gate": true},
+  "name": "journey 03: find a key or a value anywhere (search values, step the hits, jump, yank a hit's path, search a key fuzzy)",
+  "width": 120,
+  "height": 30,
+  "fixture": "empty",
+  "seed": {"files": ["jobs/orders.min.json"]},
+  "area": "journeys",
+  "script": [
+    ":", {"type": "e"}, "enter", "ctrl+o", "enter", {"job": "viewer.open", "state": "done"}, "/", {"type": "refunded"}, "enter", "n", "n", "N",
+    "y", "p", "enter", "esc", "ctrl+w", "h", "/", {"type": "cpn"}, "tab", "enter", "j", "y",
+    "y", "G", "esc", "q"
+  ],
+  "expect": [
+    {"after": 3, "focus": "path-chooser/query", "contains": ["choose path"]},
+    {"after": 6, "mode": "shape", "contains": ["Object .", "[25]  {2}"]},
+    {"after": 8, "mode": "search_·_substr", "focus": "jq-field", "contains": ["Results /refunded  1/7", ".data[2].status │ \"refunded\""]},
+    {"after": 9, "mode": "search", "contains": ["/refunded: 7 hits", ".data[5].status │ \"refunded\""]},
+    {"after": 12, "contains": ["Results /refunded  2/7"]},
+    {"after": 14, "register": ".data[5].status"},
+    {"after": 15, "mode": "search", "contains": ["Results /refunded  2/7"]},
+    {"after": 16, "mode": "table", "contains": ["search cleared", "Table .data[]"], "lacks": ["Results /refunded"]},
+    {"after": 18, "mode": "shape"},
+    {"after": 20, "mode": "search_·_substr"},
+    {"after": 21, "mode": "search_·_fuzzy", "contains": ["Results /cpn  1/6"]},
+    {"after": 22, "mode": "search", "contains": ["/cpn: 6 hits", ".data[1].coupon │ \"AUTUMN5\""]},
+    {"after": 25, "register": "WELCOME10", "contains": ["copied the value of .data[5].coupon"]},
+    {"after": 26, "contains": ["Results /cpn  6/6"]},
+    {"after": 27, "lacks": ["Results /cpn"]},
+    {"quit": true}
+  ],
+  "notes": [
+    {"after": 3, "keys": ": type \"e\" enter", "note": "the Vim way in: :e opens the path chooser"},
+    {"after": 6, "keys": "ctrl+o enter job viewer.open", "note": "ctrl+o to the recent files, enter opens the newest"},
+    {"after": 8, "keys": "/ type \"refunded\"", "note": "/ opens the search line (SEARCH · SUBSTR); the hits show as you type"},
+    {"after": 9, "keys": "enter", "note": "enter keeps the hits as the Results view and moves into it (SEARCH)"},
+    {"after": 12, "keys": "n n N", "note": "n, n, N step through the hits"},
+    {"after": 14, "keys": "y p", "note": "y p yanks the hit's path"},
+    {"after": 15, "keys": "enter", "note": "enter moves the structure cursor to the hit; the Results stay"},
+    {"after": 16, "keys": "esc", "note": "esc clears the search; the data pane goes back to its table"},
+    {"after": 18, "keys": "ctrl+w h", "note": "back to the tree (searching again from the table keeps TABLE's keys: see the README's bugs)"},
+    {"after": 20, "keys": "/ type \"cpn\"", "note": "a key this time, typed loosely"},
+    {"after": 21, "keys": "tab", "note": "tab cycles the match type to fuzzy: cpn finds coupon"},
+    {"after": 22, "keys": "enter", "note": "enter shows the six orders with a coupon"},
+    {"after": 25, "keys": "j y y", "note": "j to the second hit, y y yanks its value"},
+    {"after": 26, "keys": "G", "note": "G to the last hit"},
+    {"after": 27, "keys": "esc", "note": "esc clears it"},
+    {"after": 28, "keys": "q", "note": "q quits"}
+  ]
+}

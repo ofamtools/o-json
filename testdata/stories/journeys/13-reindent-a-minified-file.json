@@ -1,0 +1,42 @@
+{
+  "values": {"modes.edit-gate": true},
+  "name": "journey 13: re-indent a minified file (preview the indented text, fold it, write it indented from the original view, back to the edited view, quit)",
+  "width": 120,
+  "height": 30,
+  "fixture": "empty",
+  "seed": {"files": ["jobs/orders.min.json"]},
+  "area": "journeys",
+  "script": [
+    "e", "ctrl+o", "enter", {"job": "viewer.open", "state": "done"}, "tab", "tab", "tab", "ctrl+w", "l", "j", "z", "c",
+    "z", "R", "G", "g", "g", "ctrl+w", "h", "T", "w", "alt+o", {"type": "orders.pretty.json"}, "enter",
+    {"job": "viewer.write", "state": "done"}, "T", "q"
+  ],
+  "expect": [
+    {"after": 4, "mode": "shape", "contains": ["/jobs/orders.min.json", "Object ."]},
+    {"after": 7, "contains": ["JSON .", "\"data\": [", "\"id\": \"ORD-1001\","]},
+    {"after": 9, "mode": "json"},
+    {"after": 12, "contains": ["\"data\": [… 25 items],", "\"page\": {"]},
+    {"after": 14, "contains": ["\"id\": \"ORD-1001\","]},
+    {"after": 15, "contains": ["\"total\": 25"]},
+    {"after": 19, "mode": "shape"},
+    {"after": 20, "contains": ["Structure · original"]},
+    {"after": 22, "focus": "path-chooser/query", "contains": ["Run viewer.write", "[browse /"]},
+    {"after": 25, "contains": ["wrote the document to"], "writes": ["jobs/orders.pretty.json", "state/recent.json"]},
+    {"after": 26, "contains": ["Structure · unchanged"]},
+    {"quit": true}
+  ],
+  "notes": [
+    {"after": 4, "keys": "e ctrl+o enter job viewer.open", "note": "e, ctrl+o to the recent files, enter opens the newest: orders.min.json, one long line"},
+    {"after": 7, "keys": "tab tab tab", "note": "tab through the views (fields, flat) to JSON: the indented text it will write"},
+    {"after": 9, "keys": "ctrl+w l", "note": "into the text (JSON)"},
+    {"after": 12, "keys": "j z c", "note": "j, z c folds the data array: the whole file is two keys"},
+    {"after": 14, "keys": "z R", "note": "z R opens everything again"},
+    {"after": 15, "keys": "G", "note": "G to the end: the page object closes the file"},
+    {"after": 19, "keys": "g g ctrl+w h", "note": "g g back to the top, ctrl+w h to the tree"},
+    {"after": 20, "keys": "T", "note": "T: the original document, exactly as read (the edited view would write the restructured document)"},
+    {"after": 22, "keys": "w alt+o", "note": "w writes the shown document; the chooser opens on the recent files, alt+o steps back to browsing the file's folder"},
+    {"after": 25, "keys": "type \"orders.pretty.json\" enter job viewer.write", "note": "type a new name, enter: written indented, a new file beside the source"},
+    {"after": 26, "keys": "T", "note": "T back to the edited view: nothing was edited, so nothing asks on the way out"},
+    {"after": 27, "keys": "q", "note": "q quits"}
+  ]
+}

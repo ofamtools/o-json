@@ -1,0 +1,40 @@
+{
+  "values": {"modes.edit-gate": true},
+  "name": "journey 08: find where a file is broken (open a file with a trailing comma, read the line and column, paste the excerpt, paste it fixed, check the spot)",
+  "width": 200,
+  "height": 30,
+  "fixture": "empty",
+  "seed": {"files": ["jobs/orders-broken.json", "jobs/orders.min.json"]},
+  "area": "journeys",
+  "script": [
+    "e", "ctrl+o", {"type": "broken"}, "enter", {"job": "viewer.open", "state": "failed"}, {"paste": "{\n  \"data\": [\n    {\n      \"id\": \"ORD-1001\",\n      \"status\": \"shipped\",\n      \"customer\": {\n        \"name\": \"Kai Jade\",\n        \"email\": \"kai.jade@example.com\"\n      },\n      \"items\": [\n        {\n          \"sku\": \"TEA-MAT\",\n          \"qty\": 3,\n          \"price\": 6,\n        },\n        {\n          \"sku\": \"CUP-01\",\n          \"qty\": 4,\n          \"price\": 35\n        }\n      ],\n      \"total\": 158,\n      \"created_at\": \"2026-10-01T19:00:00Z\"\n    }\n  ]\n}\n"}, {"paste": "{\n  \"data\": [\n    {\n      \"id\": \"ORD-1001\",\n      \"status\": \"shipped\",\n      \"customer\": {\n        \"name\": \"Kai Jade\",\n        \"email\": \"kai.jade@example.com\"\n      },\n      \"items\": [\n        {\n          \"sku\": \"TEA-MAT\",\n          \"qty\": 3,\n          \"price\": 6\n        },\n        {\n          \"sku\": \"CUP-01\",\n          \"qty\": 4,\n          \"price\": 35\n        }\n      ],\n      \"total\": 158,\n      \"created_at\": \"2026-10-01T19:00:00Z\"\n    }\n  ]\n}\n"}, "j", "ctrl+w", "l", "4", "l",
+    "tab", "6", "j", "y", "p", "tab", "ctrl+w", "h", "T", "/", {"type": "price"}, "enter",
+    "esc", "q"
+  ],
+  "expect": [
+    {"after": 5, "mode": "shape", "contains": ["viewer.open failed", "orders-broken.json: invalid JSON at line 14, column 22", "No document is open."]},
+    {"after": 6, "contains": ["Error: invalid JSON at line 14, column 22: invalid character ','", "No document is open."]},
+    {"after": 7, "contains": ["[no file]", "Object .", "Structure · unchanged"], "lacks": ["No document is open."]},
+    {"after": 10, "mode": "table", "contains": ["Table .data  1/1"]},
+    {"after": 12, "contains": ["#  sku      qty  price", "0  TEA-MAT  3    6"]},
+    {"after": 13, "mode": "flat", "contains": [".data[0].items[0].price = 6", ".data[0].items[1].sku = \"CUP-01\""]},
+    {"after": 17, "register": ".data[0].items[0].price"},
+    {"after": 18, "mode": "json", "contains": ["\"price\": 6", "\"price\": 35"]},
+    {"after": 21, "mode": "shape", "contains": ["Structure · original", "2/2"]},
+    {"after": 24, "mode": "search", "contains": ["/price: 2 hits", ".data[0].items[0].price │ 6"]},
+    {"quit": true}
+  ],
+  "notes": [
+    {"after": 5, "keys": "e ctrl+o type \"broken\" enter job viewer.open", "note": "e, the recent files, the broken one: the open fails and says where (wide window: the message follows a long temp path)"},
+    {"after": 6, "keys": "paste", "note": "paste the first order, copied out of the file in an editor: the paste reports the same line and column and opens nothing"},
+    {"after": 7, "keys": "paste", "note": "paste it again with the comma after \"price\": 6 removed: it opens"},
+    {"after": 10, "keys": "j ctrl+w l", "note": "j onto .data, ctrl+w l into the one order"},
+    {"after": 12, "keys": "4 l", "note": "4 l to its items: the line that was broken reads as a row"},
+    {"after": 13, "keys": "tab", "note": "tab to FLAT: every leaf, the fixed one among them"},
+    {"after": 17, "keys": "6 j y p", "note": "6 j to that line, y p yanks its path"},
+    {"after": 18, "keys": "tab", "note": "tab to JSON: the text as it should have been"},
+    {"after": 21, "keys": "ctrl+w h T", "note": "ctrl+w h, T: the original structure counts both items' price"},
+    {"after": 24, "keys": "/ type \"price\" enter", "note": "/price: both prices, the fixed one first"},
+    {"after": 26, "keys": "esc q", "note": "esc clears the search, q quits: a pasted document with no edits does not ask"}
+  ]
+}

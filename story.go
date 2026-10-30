@@ -28,9 +28,10 @@ import (
 //go:embed testdata/stories
 var storyFiles embed.FS
 
-// storyDocs are the documents a story's seed can name ("doc": "nested.json").
+// storyDocs are the documents a story's seed can name ("doc": "nested.json",
+// "jobs/orders.min.json": the job journeys' shared sample).
 //
-//go:embed testdata/*.json
+//go:embed testdata/*.json testdata/jobs/*.json
 var storyDocs embed.FS
 
 // storyCommands is the tester's story command (host.Command).
@@ -68,7 +69,10 @@ type storySeed struct {
 // directory a temp dir, and no clipboard.
 func storyApp() monogatari.App {
 	return monogatari.App{
-		Name:    "o-json",
+		Name: "o-json",
+		// notes: a story's narration, one line per step ({after, note}),
+		// read by people (the journeys), not by the tester.
+		Fields:  []string{"notes"},
 		Summary: "the o-json viewer on a testdata document (seed doc), or with none",
 		Fixtures: []monogatari.Fixture{
 			{Name: "nest", Summary: "the restructure page on the seed's document (nest.json): its send shapes (.a .x .y .z) sent, the focus on the restructured tree's on node (.y)", Build: buildNest},
@@ -149,6 +153,10 @@ func newStorySession(env monogatari.Env) (s *storySession, err error) {
 		}
 		a.r.Config().StateDir = state
 	}
+	// The jq runner's pause is o-json's own timer, which the tester
+	// cannot deliver (it delivers jobs and the library's ticks): a story
+	// runs a query at once and delivers it as {"job": "jq.run"}.
+	a.q.run.Debounce = 0
 	a.m.Width, a.m.Height = env.Width, env.Height
 	a.m.View()
 	return &storySession{a: a, dir: dir}, nil
@@ -175,7 +183,7 @@ func (s *storySession) load(name string) error {
 		return fmt.Errorf("seed doc %q is not a testdata document", name)
 	}
 	s.doc = filepath.Join(s.dir, name)
-	if err := os.WriteFile(s.doc, data, 0o644); err != nil {
+	if err := writeStaged(s.doc, data); err != nil {
 		return err
 	}
 	doc, err := ReadDoc(s.doc, nil)
@@ -217,7 +225,7 @@ func (s *storySession) stage(names []string) error {
 			return fmt.Errorf("seed file %q is not a testdata document", names[i])
 		}
 		p := filepath.Join(s.dir, names[i])
-		if err := os.WriteFile(p, data, 0o644); err != nil {
+		if err := writeStaged(p, data); err != nil {
 			return err
 		}
 		if s.staged == nil {
@@ -230,6 +238,15 @@ func (s *storySession) stage(names []string) error {
 	}
 	s.a.LoadRecent()
 	return nil
+}
+
+// writeStaged writes a seed document into the temp dir, making the
+// folder a name like "jobs/orders.min.json" needs.
+func writeStaged(path string, data []byte) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
 }
 
 func buildViewer(env monogatari.Env) (monogatari.Built, error) {

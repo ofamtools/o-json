@@ -1,0 +1,21 @@
+{
+  "name": "tea-shop",
+  "version": "1.4.2",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": "\u003e=20"
+  }
+}
