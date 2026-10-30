@@ -1,0 +1,225 @@
+{
+  "name": "o-json: select two fields in SPLIT",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "empty",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "setup": [
+    {
+      "key": "e",
+      "note": "Start o-json with no file. Press e to choose the tutorial document."
+    },
+    "ctrl+o",
+    {
+      "type": "tutorial-selection"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
+    {
+      "key": "M",
+      "note": "M opens SPLIT: the source on the left, a new structure on the right."
+    },
+    "G",
+    "k",
+    "k",
+    "k",
+    "y",
+    "g",
+    "g",
+    "j",
+    "s",
+    "ctrl+w",
+    "l",
+    "j",
+    "j",
+    "j",
+    "j",
+    "V",
+    "j"
+  ],
+  "expect": {
+    "mode": "visual-line",
+    "contains": [
+      "VISUAL-LINE",
+      "first",
+      "last"
+    ]
+  },
+  "actions": [
+    {
+      "label": "Mark the selected fields",
+      "caption": "space marks both selected fields so you can flatten or keep them later, even after leaving VISUAL. Watch the marked count.",
+      "keys": [
+        "space"
+      ],
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "2 marked"
+        ]
+      },
+      "id": "node.mark"
+    },
+    {
+      "label": "Leave VISUAL",
+      "caption": "esc leaves VISUAL without changing the structure. Use it when the selection is ready and you want to move normally.",
+      "keys": [
+        "esc"
+      ],
+      "expect": {
+        "mode": "split",
+        "lacks": [
+          "VISUAL-LINE"
+        ],
+        "contains": [
+          "first",
+          "last"
+        ]
+      },
+      "id": "ochazuke.list.end-visual"
+    },
+    {
+      "label": "Put a field in the right structure",
+      "caption": "p puts the saved city field into the right structure, replacing first and last. Use VISUAL put to swap a group of fields in one step; u can undo it.",
+      "keys": [
+        "p"
+      ],
+      "expect": {
+        "mode": "split",
+        "highlightedText": "city"
+      },
+      "id": "node.put"
+    },
+    {
+      "label": "Copy the selected fields",
+      "caption": "y copies both selected fields for reuse in a structure. It leaves VISUAL and keeps the fields where they are.",
+      "keys": [
+        "y"
+      ],
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "first",
+          "last"
+        ],
+        "lacks": [
+          "VISUAL-LINE"
+        ]
+      },
+      "id": "node.yank"
+    },
+    {
+      "label": "Delete the selected fields",
+      "caption": "d removes both selected fields in one undo step. Use it to leave out private names before sharing the restructured JSON.",
+      "keys": [
+        "d"
+      ],
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "Restructured  7 nodes"
+        ]
+      },
+      "id": "node.delete"
+    },
+    {
+      "label": "Flatten names into rows",
+      "caption": "F flattens the two selected fields into one row per customer. The name wrapper disappears, making first and last easy to export as columns.",
+      "keys": [
+        "F"
+      ],
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "flatten",
+          "first",
+          "last"
+        ]
+      },
+      "id": "node.flatten"
+    },
+    {
+      "label": "Wrap the fields in an object",
+      "caption": "S wraps both selected fields in one new object. Type fullName, then esc: the wrapper groups first and last under a useful name.",
+      "keys": [
+        "S",
+        {
+          "type": "fullName"
+        },
+        "esc"
+      ],
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "fullName"
+        ]
+      },
+      "id": "node.wrap"
+    },
+    {
+      "label": "Wrap the values in an array",
+      "caption": "[ wraps the selected values into an array. Type parts, then esc: first and last become ordered values, useful when the output needs a name-parts list.",
+      "keys": [
+        "[",
+        {
+          "type": "parts"
+        },
+        "esc"
+      ],
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "parts"
+        ]
+      },
+      "id": "node.wrap {\"as\":\"array\"}"
+    },
+    {
+      "label": "Move the fields out one level",
+      "caption": "< moves both fields out of name by one level. They become direct customer fields, saving a nested lookup in the output.",
+      "keys": [
+        "<"
+      ],
+      "expect": {
+        "mode": "split",
+        "highlightedText": "first",
+        "contains": [
+          "last",
+          "name"
+        ]
+      },
+      "id": "node.dedent"
+    },
+    {
+      "label": "Finish a selection at an edge",
+      "caption": "> nests a selection into the object above. Here there is no sibling object above these fields, so it ends VISUAL and leaves them in place.",
+      "keys": [
+        ">"
+      ],
+      "expect": {
+        "mode": "split",
+        "lacks": [
+          "VISUAL-LINE"
+        ]
+      },
+      "id": "restructure.at-edge"
+    }
+  ],
+  "seed": {
+    "files": [
+      "tutorial-selection.json"
+    ]
+  },
+  "notes": [
+    {
+      "after": 23,
+      "note": "Reset point: first and last are selected in the right structure. Each lesson starts here again."
+    }
+  ]
+}

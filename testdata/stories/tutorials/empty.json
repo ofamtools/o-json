@@ -1,0 +1,73 @@
+{
+  "name": "o-json: empty document · structure pane",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "empty",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [],
+  "expect": {
+    "mode": "shape"
+  },
+  "actions": [
+    {
+      "label": "viewer.clear",
+      "caption": "",
+      "keys": [
+        "esc"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.clear"
+    },
+    {
+      "label": "viewer.next",
+      "caption": "",
+      "keys": [
+        "n"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.next"
+    },
+    {
+      "label": "viewer.previous",
+      "caption": "",
+      "keys": [
+        "N"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.previous"
+    },
+    {
+      "label": "viewer.search",
+      "caption": "",
+      "keys": [
+        "/"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "viewer.search"
+    },
+    {
+      "label": "viewer.type",
+      "caption": "",
+      "keys": [
+        "t"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.type"
+    }
+  ]
+}

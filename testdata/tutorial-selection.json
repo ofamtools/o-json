@@ -1,0 +1,7 @@
+{
+  "customers": [
+    {"name": {"first": "Ada", "last": "Lovelace"}, "contact": {"city": "London", "country": "UK"}, "id": 1},
+    {"name": {"first": "Grace", "last": "Hopper"}, "contact": {"city": "New York", "country": "US"}, "id": 2}
+  ],
+  "source": "tutorial"
+}

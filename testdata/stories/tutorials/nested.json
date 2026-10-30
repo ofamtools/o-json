@@ -1,0 +1,119 @@
+{
+  "name": "o-json: Viewer page · data pane · NESTED (hover sub-table)",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "viewer",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [
+    "j",
+    "j",
+    "j",
+    "ctrl+w",
+    "l",
+    "l",
+    "l",
+    "l",
+    "j"
+  ],
+  "expect": {
+    "mode": "nested"
+  },
+  "actions": [
+    {
+      "label": "rows.column",
+      "caption": "",
+      "keys": [
+        "|"
+      ],
+      "expect": {
+        "mode": "nested"
+      },
+      "id": "rows.column"
+    },
+    {
+      "label": "rows.column {\"delta\":-1}",
+      "caption": "",
+      "keys": [
+        "h"
+      ],
+      "expect": {
+        "mode": "nested"
+      },
+      "id": "rows.column {\"delta\":-1}"
+    },
+    {
+      "label": "rows.column {\"delta\":1}",
+      "caption": "",
+      "keys": [
+        "l"
+      ],
+      "expect": {
+        "mode": "nested"
+      },
+      "id": "rows.column {\"delta\":1}"
+    },
+    {
+      "label": "rows.column {\"to\":\"first\"}",
+      "caption": "",
+      "keys": [
+        "0"
+      ],
+      "expect": {
+        "mode": "nested"
+      },
+      "id": "rows.column {\"to\":\"first\"}"
+    },
+    {
+      "label": "rows.column {\"to\":\"last\"}",
+      "caption": "",
+      "keys": [
+        "$"
+      ],
+      "expect": {
+        "mode": "nested"
+      },
+      "id": "rows.column {\"to\":\"last\"}"
+    },
+    {
+      "label": "rows.out",
+      "caption": "",
+      "keys": [
+        "esc"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.out"
+    },
+    {
+      "label": "rows.out {\"levels\":\"one\"}",
+      "caption": "",
+      "keys": [
+        "-"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.out {\"levels\":\"one\"}"
+    },
+    {
+      "label": "rows.show-nested",
+      "caption": "",
+      "keys": [
+        "D"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.show-nested"
+    }
+  ],
+  "seed": {
+    "doc": "sample.json"
+  }
+}

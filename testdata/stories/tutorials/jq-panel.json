@@ -1,0 +1,314 @@
+{
+  "name": "o-json: jq panel (g j), focused",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "viewer",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [
+    "g",
+    "j"
+  ],
+  "expect": {
+    "mode": "normal"
+  },
+  "actions": [
+    {
+      "label": "jq-panel.close",
+      "caption": "",
+      "keys": [
+        "q"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "jq-panel.close"
+    },
+    {
+      "label": "jq-panel.leave",
+      "caption": "",
+      "keys": [
+        "esc"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "jq-panel.leave"
+    },
+    {
+      "label": "jq-panel.view",
+      "caption": "",
+      "keys": [
+        "tab"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "jq-panel.view"
+    },
+    {
+      "label": "jq-panel.yank",
+      "caption": "",
+      "keys": [
+        "Y"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "jq-panel.yank"
+    },
+    {
+      "label": "ochazuke.bindings.help",
+      "caption": "",
+      "keys": [
+        "?"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.bindings.help"
+    },
+    {
+      "label": "ochazuke.detail.scroll {\"lines\":-1}",
+      "caption": "",
+      "keys": [
+        "K"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.detail.scroll {\"lines\":-1}"
+    },
+    {
+      "label": "ochazuke.detail.scroll {\"lines\":1}",
+      "caption": "",
+      "keys": [
+        "J"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.detail.scroll {\"lines\":1}"
+    },
+    {
+      "label": "ochazuke.focus.next {\"scope\":\"region\"}",
+      "caption": "",
+      "keys": [
+        ")"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.focus.next {\"scope\":\"region\"}"
+    },
+    {
+      "label": "ochazuke.focus.previous {\"scope\":\"region\"}",
+      "caption": "",
+      "keys": [
+        "("
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.focus.previous {\"scope\":\"region\"}"
+    },
+    {
+      "label": "ochazuke.history.repeat",
+      "caption": "",
+      "keys": [
+        "."
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.history.repeat"
+    },
+    {
+      "label": "ochazuke.input.move {\"motion\":\"last-line\"}",
+      "caption": "",
+      "keys": [
+        "G"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.input.move {\"motion\":\"last-line\"}"
+    },
+    {
+      "label": "ochazuke.input.move {\"motion\":\"word-backward\"}",
+      "caption": "",
+      "keys": [
+        "b"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.input.move {\"motion\":\"word-backward\"}"
+    },
+    {
+      "label": "ochazuke.input.move {\"motion\":\"word-end\"}",
+      "caption": "",
+      "keys": [
+        "e"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.input.move {\"motion\":\"word-end\"}"
+    },
+    {
+      "label": "ochazuke.input.move {\"motion\":\"word-forward\"}",
+      "caption": "",
+      "keys": [
+        "w"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.input.move {\"motion\":\"word-forward\"}"
+    },
+    {
+      "label": "ochazuke.input.select {\"shape\":\"block\"}",
+      "caption": "",
+      "keys": [
+        "ctrl+v"
+      ],
+      "expect": {
+        "mode": "visual-block"
+      },
+      "id": "ochazuke.input.select {\"shape\":\"block\"}"
+    },
+    {
+      "label": "ochazuke.input.select {\"shape\":\"line\"}",
+      "caption": "",
+      "keys": [
+        "V"
+      ],
+      "expect": {
+        "mode": "visual-line"
+      },
+      "id": "ochazuke.input.select {\"shape\":\"line\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"g_pending\"}",
+      "caption": "",
+      "keys": [
+        "g"
+      ],
+      "expect": {
+        "mode": "normal g"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"g_pending\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"register_pending\"}",
+      "caption": "",
+      "keys": [
+        "\""
+      ],
+      "expect": {
+        "mode": "register_pending"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"register_pending\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"replay_pending\"}",
+      "caption": "",
+      "keys": [
+        "@"
+      ],
+      "expect": {
+        "mode": "replay_pending"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"replay_pending\"}"
+    },
+    {
+      "label": "ochazuke.page.next",
+      "caption": "",
+      "keys": [
+        "ctrl+j"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "ochazuke.page.next"
+    },
+    {
+      "label": "ochazuke.page.pick",
+      "caption": "",
+      "keys": [
+        "'"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.page.pick"
+    },
+    {
+      "label": "ochazuke.page.previous",
+      "caption": "",
+      "keys": [
+        "ctrl+k"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "ochazuke.page.previous"
+    },
+    {
+      "label": "ochazuke.pane.grow",
+      "caption": "",
+      "keys": [
+        "ctrl+w",
+        ">"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.pane.grow"
+    },
+    {
+      "label": "ochazuke.pane.reset",
+      "caption": "",
+      "keys": [
+        "ctrl+w",
+        "="
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.pane.reset"
+    },
+    {
+      "label": "ochazuke.pane.shrink",
+      "caption": "",
+      "keys": [
+        "ctrl+w",
+        "<"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.pane.shrink"
+    },
+    {
+      "label": "ochazuke.yank-history.open",
+      "caption": "",
+      "keys": [
+        "g",
+        "y"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.yank-history.open"
+    }
+  ],
+  "seed": {
+    "doc": "sample.json"
+  }
+}

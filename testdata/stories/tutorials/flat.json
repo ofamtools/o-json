@@ -1,0 +1,86 @@
+{
+  "name": "o-json: Viewer page · data pane · FLAT",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "viewer",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [
+    "j",
+    "j",
+    "j",
+    "ctrl+w",
+    "l",
+    "D"
+  ],
+  "expect": {
+    "mode": "flat"
+  },
+  "actions": [
+    {
+      "label": "line.jump",
+      "caption": "",
+      "keys": [
+        "enter"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "line.jump"
+    },
+    {
+      "label": "line.yank",
+      "caption": "",
+      "keys": [
+        "y"
+      ],
+      "expect": {
+        "mode": "flat y"
+      },
+      "id": "line.yank"
+    },
+    {
+      "label": "line.yank-part {\"part\":\"line\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "y"
+      ],
+      "expect": {
+        "mode": "flat"
+      },
+      "id": "line.yank-part {\"part\":\"line\"}"
+    },
+    {
+      "label": "line.yank-part {\"part\":\"path\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "p"
+      ],
+      "expect": {
+        "mode": "flat"
+      },
+      "id": "line.yank-part {\"part\":\"path\"}"
+    },
+    {
+      "label": "line.yank-part {\"part\":\"value\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "v"
+      ],
+      "expect": {
+        "mode": "flat"
+      },
+      "id": "line.yank-part {\"part\":\"value\"}"
+    }
+  ],
+  "seed": {
+    "doc": "sample.json"
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "name": "o-json: command palette (:)",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "viewer",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [
+    ":"
+  ],
+  "expect": {
+    "mode": "insert"
+  },
+  "actions": [
+    {
+      "label": "ochazuke.palette.cancel",
+      "caption": "",
+      "keys": [
+        "esc"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.palette.cancel"
+    },
+    {
+      "label": "ochazuke.palette.close",
+      "caption": "",
+      "keys": [
+        "ctrl+c"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.palette.close"
+    },
+    {
+      "label": "ochazuke.palette.complete",
+      "caption": "",
+      "keys": [
+        "tab"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.palette.complete"
+    },
+    {
+      "label": "ochazuke.palette.move {\"delta\":-1}",
+      "caption": "",
+      "keys": [
+        "ctrl+p"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.palette.move {\"delta\":-1}"
+    },
+    {
+      "label": "ochazuke.palette.move {\"delta\":1}",
+      "caption": "",
+      "keys": [
+        "ctrl+n"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.palette.move {\"delta\":1}"
+    },
+    {
+      "label": "ochazuke.palette.open",
+      "caption": "",
+      "keys": [
+        "ctrl+space"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.palette.open"
+    },
+    {
+      "label": "ochazuke.palette.recall {\"delta\":-1}",
+      "caption": "",
+      "keys": [
+        "down"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.palette.recall {\"delta\":-1}"
+    },
+    {
+      "label": "ochazuke.palette.recall {\"delta\":1}",
+      "caption": "",
+      "keys": [
+        "up"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.palette.recall {\"delta\":1}"
+    },
+    {
+      "label": "ochazuke.palette.run",
+      "caption": "",
+      "keys": [
+        "enter"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.palette.run"
+    }
+  ],
+  "seed": {
+    "doc": "sample.json"
+  }
+}

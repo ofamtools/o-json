@@ -1,0 +1,177 @@
+{
+  "name": "o-json: Viewer page · structure pane · JQ (query mode, m)",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "viewer",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [
+    "m"
+  ],
+  "expect": {
+    "mode": "jq"
+  },
+  "actions": [
+    {
+      "label": "jq.anchor",
+      "caption": "",
+      "keys": [
+        "a"
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.anchor"
+    },
+    {
+      "label": "jq.comma",
+      "caption": "",
+      "keys": [
+        ","
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.comma"
+    },
+    {
+      "label": "jq.erase",
+      "caption": "",
+      "keys": [
+        "backspace"
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.erase"
+    },
+    {
+      "label": "jq.function",
+      "caption": "",
+      "keys": [
+        "ctrl+f"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "jq.function"
+    },
+    {
+      "label": "jq.iterate",
+      "caption": "",
+      "keys": [
+        "]"
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.iterate"
+    },
+    {
+      "label": "jq.mode",
+      "caption": "",
+      "keys": [
+        "m"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "jq.mode"
+    },
+    {
+      "label": "jq.mode {\"to\":\"edit\"}",
+      "caption": "",
+      "keys": [
+        "esc"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "jq.mode {\"to\":\"edit\"}"
+    },
+    {
+      "label": "jq.open {\"bracket\":\"(\"}",
+      "caption": "",
+      "keys": [
+        "("
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.open {\"bracket\":\"(\"}"
+    },
+    {
+      "label": "jq.open {\"bracket\":\"[\"}",
+      "caption": "",
+      "keys": [
+        "["
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.open {\"bracket\":\"[\"}"
+    },
+    {
+      "label": "jq.open {\"bracket\":\"{\"}",
+      "caption": "",
+      "keys": [
+        "{"
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.open {\"bracket\":\"{\"}"
+    },
+    {
+      "label": "jq.path",
+      "caption": "",
+      "keys": [
+        "."
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.path"
+    },
+    {
+      "label": "jq.pipe",
+      "caption": "",
+      "keys": [
+        "|"
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.pipe"
+    },
+    {
+      "label": "jq.redo",
+      "caption": "",
+      "keys": [
+        "ctrl+r"
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.redo"
+    },
+    {
+      "label": "jq.undo",
+      "caption": "",
+      "keys": [
+        "u"
+      ],
+      "expect": {
+        "mode": "jq"
+      },
+      "id": "jq.undo"
+    }
+  ],
+  "seed": {
+    "doc": "sample.json"
+  }
+}

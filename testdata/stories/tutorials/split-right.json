@@ -1,0 +1,160 @@
+{
+  "name": "o-json: Restructure page · SPLIT · right (restructured) side",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "viewer",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [
+    "ctrl+w",
+    "v",
+    "ctrl+w",
+    "l"
+  ],
+  "expect": {
+    "mode": "split"
+  },
+  "actions": [
+    {
+      "label": "node.array",
+      "caption": "",
+      "keys": [
+        "t"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "node.array"
+    },
+    {
+      "label": "restructure.add-key {\"where\":\"above\"}",
+      "caption": "",
+      "keys": [
+        "O"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "restructure.add-key {\"where\":\"above\"}"
+    },
+    {
+      "label": "restructure.add-key {\"where\":\"below\"}",
+      "caption": "",
+      "keys": [
+        "o"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "restructure.add-key {\"where\":\"below\"}"
+    },
+    {
+      "label": "restructure.add-key {\"where\":\"child\"}",
+      "caption": "",
+      "keys": [
+        "a"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "restructure.add-key {\"where\":\"child\"}"
+    },
+    {
+      "label": "restructure.close",
+      "caption": "",
+      "keys": [
+        "q"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "restructure.close"
+    },
+    {
+      "label": "restructure.layout",
+      "caption": "",
+      "keys": [
+        "L"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "restructure.layout"
+    },
+    {
+      "label": "restructure.one-way",
+      "caption": "",
+      "keys": [
+        "d",
+        "p"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "restructure.one-way"
+    },
+    {
+      "label": "restructure.open",
+      "caption": "",
+      "keys": [
+        "ctrl+w",
+        "v"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "restructure.open"
+    },
+    {
+      "label": "restructure.redo",
+      "caption": "",
+      "keys": [
+        "ctrl+r"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "restructure.redo"
+    },
+    {
+      "label": "restructure.undo",
+      "caption": "",
+      "keys": [
+        "u"
+      ],
+      "expect": {
+        "mode": "split"
+      },
+      "id": "restructure.undo"
+    },
+    {
+      "label": "restructure.write",
+      "caption": "",
+      "keys": [
+        "w"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "restructure.write"
+    },
+    {
+      "label": "restructure.write {\"force\":true}",
+      "caption": "",
+      "keys": [
+        "W"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "restructure.write {\"force\":true}"
+    }
+  ],
+  "seed": {
+    "doc": "sample.json"
+  }
+}

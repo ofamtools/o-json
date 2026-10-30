@@ -1,0 +1,608 @@
+{
+  "name": "o-json: Viewer page · structure pane (edited) · SHAPE",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "viewer",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [
+    "j",
+    "j",
+    "j"
+  ],
+  "expect": {
+    "mode": "shape"
+  },
+  "actions": [
+    {
+      "label": "app.quit",
+      "caption": "",
+      "keys": [
+        "ctrl+c"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "app.quit"
+    },
+    {
+      "label": "app.quit {\"force\":true}",
+      "caption": "",
+      "keys": [
+        "Q"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "app.quit {\"force\":true}"
+    },
+    {
+      "label": "jq-panel.toggle",
+      "caption": "",
+      "keys": [
+        "g",
+        "j"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "jq-panel.toggle"
+    },
+    {
+      "label": "node.operate {\"object\":\"k\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "k"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "node.operate {\"object\":\"k\"}"
+    },
+    {
+      "label": "node.operate {\"object\":\"p\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "p"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "node.operate {\"object\":\"p\"}"
+    },
+    {
+      "label": "node.operate {\"object\":\"s\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "s"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "node.operate {\"object\":\"s\"}"
+    },
+    {
+      "label": "node.operate {\"object\":\"v\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "v"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "node.operate {\"object\":\"v\"}"
+    },
+    {
+      "label": "ochazuke.count.append",
+      "caption": "",
+      "keys": [
+        "y",
+        "2"
+      ],
+      "id": "ochazuke.count.append"
+    },
+    {
+      "label": "ochazuke.count.append {\"digit\":0}",
+      "caption": "",
+      "keys": [
+        "y",
+        "0"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.count.append {\"digit\":0}"
+    },
+    {
+      "label": "ochazuke.focus.next",
+      "caption": "",
+      "keys": [
+        "l"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.focus.next"
+    },
+    {
+      "label": "ochazuke.focus.previous",
+      "caption": "",
+      "keys": [
+        "h"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.focus.previous"
+    },
+    {
+      "label": "ochazuke.key.ignore",
+      "caption": "",
+      "keys": [
+        "<"
+      ],
+      "expect": {
+        "mode": "shape <"
+      },
+      "id": "ochazuke.key.ignore"
+    },
+    {
+      "label": "ochazuke.list.fit-columns",
+      "caption": "",
+      "keys": [
+        "z",
+        "F"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.fit-columns"
+    },
+    {
+      "label": "ochazuke.list.goto {\"position\":\"first\"}",
+      "caption": "",
+      "keys": [
+        "g",
+        "g"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.goto {\"position\":\"first\"}"
+    },
+    {
+      "label": "ochazuke.list.goto {\"position\":\"last\"}",
+      "caption": "",
+      "keys": [
+        "G"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.goto {\"position\":\"last\"}"
+    },
+    {
+      "label": "ochazuke.list.mark",
+      "caption": "",
+      "keys": [
+        "2",
+        "space"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.mark"
+    },
+    {
+      "label": "ochazuke.list.move {\"delta\":-1}",
+      "caption": "",
+      "keys": [
+        "k"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.move {\"delta\":-1}"
+    },
+    {
+      "label": "ochazuke.list.move {\"delta\":1}",
+      "caption": "",
+      "keys": [
+        "j"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.move {\"delta\":1}"
+    },
+    {
+      "label": "ochazuke.list.scroll {\"delta\":-1,\"half\":true}",
+      "caption": "",
+      "keys": [
+        "ctrl+u"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.scroll {\"delta\":-1,\"half\":true}"
+    },
+    {
+      "label": "ochazuke.list.scroll {\"delta\":-1}",
+      "caption": "",
+      "keys": [
+        "ctrl+b"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.scroll {\"delta\":-1}"
+    },
+    {
+      "label": "ochazuke.list.scroll {\"delta\":1,\"half\":true}",
+      "caption": "",
+      "keys": [
+        "ctrl+d"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.scroll {\"delta\":1,\"half\":true}"
+    },
+    {
+      "label": "ochazuke.list.scroll {\"delta\":1}",
+      "caption": "",
+      "keys": [
+        "ctrl+f"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.scroll {\"delta\":1}"
+    },
+    {
+      "label": "ochazuke.list.yank {\"what\":\"row\"}",
+      "caption": "",
+      "keys": [
+        "Y"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.list.yank {\"what\":\"row\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"!\"}",
+      "caption": "",
+      "keys": [
+        "!"
+      ],
+      "expect": {
+        "mode": "operator_pending"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"!\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"c\"}",
+      "caption": "",
+      "keys": [
+        "c"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"c\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"d\"}",
+      "caption": "",
+      "keys": [
+        "d"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"d\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"y\"}",
+      "caption": "",
+      "keys": [
+        "y"
+      ],
+      "expect": {
+        "mode": "operator_pending"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"y\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending_a\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "a"
+      ],
+      "expect": {
+        "mode": "operator_pending_a"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending_a\"}"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending_i\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i"
+      ],
+      "expect": {
+        "mode": "operator_pending_i"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending_i\"}"
+    },
+    {
+      "label": "ochazuke.mode.leave",
+      "caption": "",
+      "keys": [
+        "y",
+        "esc"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.mode.leave"
+    },
+    {
+      "label": "ochazuke.outline.collapse",
+      "caption": "",
+      "keys": [
+        "h"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.outline.collapse"
+    },
+    {
+      "label": "ochazuke.outline.expand",
+      "caption": "",
+      "keys": [
+        "l"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.outline.expand"
+    },
+    {
+      "label": "ochazuke.outline.move {\"delta\":-1}",
+      "caption": "",
+      "keys": [
+        "K"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.outline.move {\"delta\":-1}"
+    },
+    {
+      "label": "ochazuke.outline.move {\"delta\":1}",
+      "caption": "",
+      "keys": [
+        "J"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.outline.move {\"delta\":1}"
+    },
+    {
+      "label": "ochazuke.outline.zoom-in",
+      "caption": "",
+      "keys": [
+        "z",
+        "+"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.outline.zoom-in"
+    },
+    {
+      "label": "ochazuke.outline.zoom-out",
+      "caption": "",
+      "keys": [
+        "z",
+        "-"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.outline.zoom-out"
+    },
+    {
+      "label": "ochazuke.outline.zoom-reset",
+      "caption": "",
+      "keys": [
+        "z",
+        "0"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.outline.zoom-reset"
+    },
+    {
+      "label": "ochazuke.pane.only",
+      "caption": "",
+      "keys": [
+        "ctrl+w",
+        "o"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.pane.only"
+    },
+    {
+      "label": "ochazuke.pane.restore",
+      "caption": "",
+      "keys": [
+        "ctrl+w",
+        "o"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "ochazuke.pane.restore"
+    },
+    {
+      "label": "ochazuke.register.select",
+      "caption": "",
+      "keys": [
+        "\"",
+        "a"
+      ],
+      "id": "ochazuke.register.select"
+    },
+    {
+      "label": "viewer.edit",
+      "caption": "",
+      "keys": [
+        "i"
+      ],
+      "expect": {
+        "mode": "edit"
+      },
+      "id": "viewer.edit"
+    },
+    {
+      "label": "viewer.load",
+      "caption": "",
+      "keys": [
+        "R"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.load"
+    },
+    {
+      "label": "viewer.mode",
+      "caption": "",
+      "keys": [
+        "g",
+        "m"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "viewer.mode"
+    },
+    {
+      "label": "viewer.needs-edit",
+      "caption": "",
+      "keys": [
+        "p"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.needs-edit"
+    },
+    {
+      "label": "viewer.open",
+      "caption": "",
+      "keys": [
+        "e"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "viewer.open"
+    },
+    {
+      "label": "viewer.pane {\"to\":\"left\"}",
+      "caption": "",
+      "keys": [
+        "ctrl+w",
+        "h"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.pane {\"to\":\"left\"}"
+    },
+    {
+      "label": "viewer.pane {\"to\":\"right\"}",
+      "caption": "",
+      "keys": [
+        "ctrl+w",
+        "l"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "viewer.pane {\"to\":\"right\"}"
+    },
+    {
+      "label": "viewer.paste",
+      "caption": "",
+      "keys": [
+        "2",
+        "p"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.paste"
+    },
+    {
+      "label": "viewer.raw-edit",
+      "caption": "",
+      "keys": [
+        "g",
+        "r"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.raw-edit"
+    },
+    {
+      "label": "viewer.view",
+      "caption": "",
+      "keys": [
+        "D"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.view"
+    },
+    {
+      "label": "viewer.view {\"steps\":-1}",
+      "caption": "",
+      "keys": [
+        "shift+tab"
+      ],
+      "expect": {
+        "mode": "shape"
+      },
+      "id": "viewer.view {\"steps\":-1}"
+    }
+  ],
+  "seed": {
+    "doc": "sample.json"
+  }
+}

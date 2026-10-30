@@ -69,10 +69,7 @@ type storySeed struct {
 // directory a temp dir, and no clipboard.
 func storyApp() monogatari.App {
 	return monogatari.App{
-		Name: "o-json",
-		// notes: a story's narration, one line per step ({after, note}),
-		// read by people (the journeys), not by the tester.
-		Fields:  []string{"notes"},
+		Name:    "o-json",
 		Summary: "the o-json viewer on a testdata document (seed doc), or with none",
 		Fixtures: []monogatari.Fixture{
 			{Name: "nest", Summary: "the restructure page on the seed's document (nest.json): its send shapes (.a .x .y .z) sent, the focus on the restructured tree's on node (.y)", Build: buildNest},
@@ -144,6 +141,10 @@ func newStorySession(env monogatari.Env) (s *storySession, err error) {
 	if err := env.Sandbox(a.m); err != nil {
 		return nil, err
 	}
+	// Story keys never attach an editor to the owner's running tuios.
+	// The regular viewer discovers it lazily; stories use no live server.
+	a.getenv = func(string) string { return "" }
+	a.tuios = func(...string) ([]byte, error) { return nil, errors.New("story: no live tuios") }
 	// A story with no state of its own still never reaches the user's
 	// state directory (the recent list).
 	if a.r.Config().StateDir == "" {

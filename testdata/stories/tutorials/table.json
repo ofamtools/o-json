@@ -1,0 +1,507 @@
+{
+  "name": "o-json: Viewer page · data pane · TABLE (.items)",
+  "area": "tutorials",
+  "app": "o-json",
+  "fixture": "viewer",
+  "width": 110,
+  "height": 32,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
+  "setup": [
+    "j",
+    "j",
+    "j",
+    "ctrl+w",
+    "l"
+  ],
+  "expect": {
+    "mode": "table"
+  },
+  "actions": [
+    {
+      "label": "item.open",
+      "caption": "",
+      "keys": [
+        "enter"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "item.open"
+    },
+    {
+      "label": "item.operate {\"inner\":false,\"object\":\"key\",\"op\":\"d\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "d"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"inner\":false,\"object\":\"key\",\"op\":\"d\"}"
+    },
+    {
+      "label": "item.operate {\"inner\":false,\"object\":\"row\",\"op\":\"y\"}",
+      "caption": "",
+      "keys": [
+        "Y"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"inner\":false,\"object\":\"row\",\"op\":\"y\"}"
+    },
+    {
+      "label": "item.operate {\"motion\":\"down\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "j"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"motion\":\"down\"}"
+    },
+    {
+      "label": "item.operate {\"motion\":\"up\"}",
+      "caption": "",
+      "keys": [
+        "s",
+        "k"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"motion\":\"up\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"a\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "a"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"a\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"c\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "c"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"c\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"column\",\"op\":\"s\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "s"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"column\",\"op\":\"s\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"k\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "k"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"k\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"key\",\"op\":\"y\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "k"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"key\",\"op\":\"y\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"o\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "o"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"o\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"p\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "p"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"p\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"path\",\"op\":\"y\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "p"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"path\",\"op\":\"y\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"r\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "r"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"r\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"t\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "t"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"t\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"v\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "i",
+        "v"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"v\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"value\",\"op\":\"!\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "!"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"value\",\"op\":\"!\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"value\",\"op\":\"c\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "c"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"value\",\"op\":\"c\"}"
+    },
+    {
+      "label": "item.operate {\"object\":\"value\",\"op\":\"y\"}",
+      "caption": "",
+      "keys": [
+        "y",
+        "y"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "item.operate {\"object\":\"value\",\"op\":\"y\"}"
+    },
+    {
+      "label": "ochazuke.list.choose-column",
+      "caption": "",
+      "keys": [
+        "g",
+        "c"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "ochazuke.list.choose-column"
+    },
+    {
+      "label": "ochazuke.list.column",
+      "caption": "",
+      "keys": [
+        "|"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "ochazuke.list.column"
+    },
+    {
+      "label": "ochazuke.list.column {\"delta\":-1}",
+      "caption": "",
+      "keys": [
+        "h"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "ochazuke.list.column {\"delta\":-1}"
+    },
+    {
+      "label": "ochazuke.list.column {\"delta\":1}",
+      "caption": "",
+      "keys": [
+        "l"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "ochazuke.list.column {\"delta\":1}"
+    },
+    {
+      "label": "ochazuke.list.column {\"to\":\"first\"}",
+      "caption": "",
+      "keys": [
+        "0"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "ochazuke.list.column {\"to\":\"first\"}"
+    },
+    {
+      "label": "ochazuke.list.column {\"to\":\"last\"}",
+      "caption": "",
+      "keys": [
+        "$"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "ochazuke.list.column {\"to\":\"last\"}"
+    },
+    {
+      "label": "ochazuke.list.resize-column {\"delta\":-1}",
+      "caption": "",
+      "keys": [
+        "z",
+        "<"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "ochazuke.list.resize-column {\"delta\":-1}"
+    },
+    {
+      "label": "ochazuke.list.resize-column {\"delta\":1}",
+      "caption": "",
+      "keys": [
+        "z",
+        ">"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "ochazuke.list.resize-column {\"delta\":1}"
+    },
+    {
+      "label": "ochazuke.list.toggle-pin-column",
+      "caption": "",
+      "keys": [
+        "z",
+        "p"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "ochazuke.list.toggle-pin-column"
+    },
+    {
+      "label": "ochazuke.list.visual",
+      "caption": "",
+      "keys": [
+        "v"
+      ],
+      "expect": {
+        "mode": "visual-line"
+      },
+      "id": "ochazuke.list.visual"
+    },
+    {
+      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"s\"}",
+      "caption": "",
+      "keys": [
+        "s"
+      ],
+      "expect": {
+        "mode": "operator_pending"
+      },
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"s\"}"
+    },
+    {
+      "label": "ochazuke.search.focus",
+      "caption": "",
+      "keys": [
+        "/"
+      ],
+      "expect": {
+        "mode": "search_·_substr"
+      },
+      "id": "ochazuke.search.focus"
+    },
+    {
+      "label": "restructure.show",
+      "caption": "",
+      "keys": [
+        "T"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "restructure.show"
+    },
+    {
+      "label": "rows.move {\"motion\":\"bottom\"}",
+      "caption": "",
+      "keys": [
+        "G"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.move {\"motion\":\"bottom\"}"
+    },
+    {
+      "label": "rows.move {\"motion\":\"down\"}",
+      "caption": "",
+      "keys": [
+        "j"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.move {\"motion\":\"down\"}"
+    },
+    {
+      "label": "rows.move {\"motion\":\"half-down\"}",
+      "caption": "",
+      "keys": [
+        "ctrl+d"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.move {\"motion\":\"half-down\"}"
+    },
+    {
+      "label": "rows.move {\"motion\":\"half-up\"}",
+      "caption": "",
+      "keys": [
+        "ctrl+u"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.move {\"motion\":\"half-up\"}"
+    },
+    {
+      "label": "rows.move {\"motion\":\"page-down\"}",
+      "caption": "",
+      "keys": [
+        "ctrl+f"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.move {\"motion\":\"page-down\"}"
+    },
+    {
+      "label": "rows.move {\"motion\":\"page-up\"}",
+      "caption": "",
+      "keys": [
+        "ctrl+b"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.move {\"motion\":\"page-up\"}"
+    },
+    {
+      "label": "rows.move {\"motion\":\"top\"}",
+      "caption": "",
+      "keys": [
+        "home"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.move {\"motion\":\"top\"}"
+    },
+    {
+      "label": "rows.move {\"motion\":\"up\"}",
+      "caption": "",
+      "keys": [
+        "k"
+      ],
+      "expect": {
+        "mode": "table"
+      },
+      "id": "rows.move {\"motion\":\"up\"}"
+    },
+    {
+      "label": "viewer.edit {\"open\":true}",
+      "caption": "",
+      "keys": [
+        "r"
+      ],
+      "expect": {
+        "mode": "insert"
+      },
+      "id": "viewer.edit {\"open\":true}"
+    }
+  ],
+  "seed": {
+    "doc": "sample.json"
+  }
+}
