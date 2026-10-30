@@ -137,3 +137,47 @@ func TestTrialDeclaredModesCanBeDisabled(t *testing.T) {
 		t.Fatalf("view cycle with declaration off = %q", a.viewName)
 	}
 }
+
+// The picker enters every mode it lists.
+func TestTrialModePickerEntersEveryMode(t *testing.T) {
+	want := map[string]string{
+		"SHAPE": "shape", "TABLE": "table", "NESTED": "nested", "FLAT": "flat", "JSON": "json",
+		"SEARCH": "search_·_substr", "JQ": "insert", "EDIT": "edit", "VISUAL": "visual-line", "SPLIT": "split",
+	}
+	for _, c := range modeChoices {
+		if c.name == "RAW" {
+			continue // TestTrialModePickerRAW
+		}
+		t.Run(c.name, func(t *testing.T) {
+			a := open(t, "testdata/sample.json", 110, 30)
+			if err := a.r.Settings().Set(settingEditGate, true); err != nil {
+				t.Fatal(err)
+			}
+			selectPath(t, a, ".items")
+			press(t, a, "g", "m")
+			for _, ch := range strings.ToLower(c.name) {
+				press(t, a, string(ch))
+			}
+			press(t, a, "enter")
+			view(a)
+			if got := a.r.BaseMode(); got != want[c.name] {
+				t.Fatalf("%s: mode %q hover %v focus %q col %d cell %v", c.name, got, a.hover.path, a.r.Focus, a.data.list.Column(), a.dataCell())
+			}
+		})
+	}
+}
+
+func TestTrialModePickerRAW(t *testing.T) {
+	a := open(t, "testdata/sample.json", 110, 30)
+	if err := a.r.Settings().Set(settingRawEditor, "fake-editor"); err != nil {
+		t.Fatal(err)
+	}
+	var argv [][]string
+	rawEditorFake(a, func(s string) string { return s }, &argv)
+	press(t, a, "g", "m", "r", "a", "w")
+	finish(a, Press(a.m, "enter"))
+	settle(a)
+	if len(argv) != 1 || argv[0][0] != "fake-editor" {
+		t.Fatalf("RAW from the picker ran %v", argv)
+	}
+}
