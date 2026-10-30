@@ -186,6 +186,10 @@ func TestPasteJSON(t *testing.T) {
 	if !strings.Contains(a.m.Status, "line 2, column") || a.Doc == nil || a.Doc.Root.Children[0].Key != "pasted" {
 		t.Fatalf("invalid paste: status %q", a.m.Status)
 	}
+	// The job failed, as the status line says: never "done" beside it.
+	if jobs := a.r.Jobs(); len(jobs) == 0 || jobs[len(jobs)-1].Verb != "viewer.paste" || jobs[len(jobs)-1].State != "failed" {
+		t.Fatalf("invalid paste: jobs %+v", jobs)
+	}
 	a.Paste = func() (string, error) { return "", errors.New("no clipboard") }
 	finish(a, Press(a.m, "p"))
 	settle(a)
@@ -307,6 +311,40 @@ func TestPathVerbsOpenTheChooser(t *testing.T) {
 		}
 		if a.r.TopModal() != "path-chooser" || a.r.Focus != "path-chooser/query" {
 			t.Errorf("%v: top %q focus %q", keys, a.r.TopModal(), a.r.Focus)
+		}
+	}
+}
+
+// A failed open is one plain Error on the status line, cleared by the
+// next key; the breadcrumb and the data pane keep the document shown (or
+// the empty document's guidance) (F9).
+func TestFailedOpenIsOnePlainError(t *testing.T) {
+	for _, loaded := range []bool{true, false} {
+		var a *App
+		if loaded {
+			a = openOriginal(t, sample, 120, 30)
+		} else {
+			a = empty(t)
+		}
+		crumb := a.breadcrumb()
+		missing := filepath.Join(t.TempDir(), "nope.json")
+		res, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "open", Target: pageID, Args: ochazuke.Arguments{"path": missing}})
+		_ = res
+		if err != nil {
+			t.Fatal(err)
+		}
+		finish(a, a.r.PendingCommands())
+		settle(a)
+		frame := view(a)
+		if !strings.Contains(a.m.Status, "nope.json not found") || strings.Contains(a.m.Status, "no such file") {
+			t.Fatalf("loaded %v: status %q", loaded, a.m.Status)
+		}
+		if a.breadcrumb() != crumb || strings.Count(frame, "nope.json not found") > 2 {
+			t.Fatalf("loaded %v: breadcrumb %q (was %q)\n%s", loaded, a.breadcrumb(), crumb, frame)
+		}
+		press(t, a, "j")
+		if a.m.Status != "" || strings.Contains(view(a), "Error:") {
+			t.Fatalf("loaded %v: the error outlived the next key: %q", loaded, a.m.Status)
 		}
 	}
 }

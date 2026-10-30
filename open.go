@@ -62,16 +62,19 @@ func (a *App) read(p string) ochazuke.Result {
 		return doc, err
 	}).
 		Replacing("load").
-		Then(func(_ ochazuke.Ctx, v any, err error) {
+		Then(func(c ochazuke.Ctx, v any, err error) {
 			if err != nil {
-				a.Loading, a.LoadErr = "", err
+				// The job's failure is the one report: the status line's
+				// Error (cleared by the next key) and the ticker. The
+				// document shown, and its breadcrumb, stay as they were.
+				a.Loading = ""
 				return
 			}
 			if recent != nil {
 				a.recent = recent
 			}
 			if err := a.setDoc(p, v.(*Doc)); err != nil {
-				a.LoadErr = err
+				c.Error(err.Error())
 			}
 		})
 }
@@ -115,12 +118,24 @@ func (a *App) pasteDoc(c ochazuke.Ctx) ochazuke.Result {
 	if read == nil {
 		return ochazuke.Failed(errors.New("no clipboard tool (pbpaste, wl-paste, xclip, xsel) on PATH"))
 	}
-	return ochazuke.Pending(func(context.Context) (any, error) { return read() }).
+	// Read and parse off the loop, so text that is not JSON fails the
+	// job (the ticker says failed, the status line why), never "done".
+	return ochazuke.Pending(func(context.Context) (any, error) {
+		text, err := read()
+		if err != nil {
+			return nil, fmt.Errorf("paste: %w", err)
+		}
+		root, err := Build([]byte(text))
+		if err != nil {
+			return nil, fmt.Errorf("paste: %w", err)
+		}
+		return &Doc{Name: noFile, Size: len(text), Root: root, Shape: Infer(root)}, nil
+	}).
 		Then(func(c ochazuke.Ctx, v any, err error) {
-			if err == nil {
-				err = a.paste(v.(string))
-			}
 			if err != nil {
+				return // the job's failure reports it
+			}
+			if err := a.setDoc("", v.(*Doc)); err != nil {
 				c.Error("paste: " + err.Error())
 				return
 			}
@@ -141,7 +156,8 @@ func (a *App) beforeQuit() error {
 	})
 }
 
-// paste parses text as the buffer's document, a document of no file.
+// paste parses text as the buffer's document, a document of no file (the
+// text argument; the clipboard's is parsed off the loop, pasteDoc).
 func (a *App) paste(text string) error {
 	root, err := Build([]byte(text))
 	if err != nil {

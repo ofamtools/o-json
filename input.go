@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 
 	"github.com/charmbracelet/x/term"
@@ -37,13 +38,30 @@ func ReadDoc(path string, stdin io.Reader) (*Doc, error) {
 		data, err = os.ReadFile(path)
 	}
 	if err != nil {
-		return nil, err
+		return nil, plainReadErr(name, err)
 	}
 	root, err := Build(data)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", name, err)
 	}
 	return &Doc{Name: name, Size: len(data), Root: root, Shape: Infer(root)}, nil
+}
+
+// plainReadErr says a failed read in plain words: the file's name and
+// what went wrong, without the system call ("open x: no such file or
+// directory" is "x not found").
+func plainReadErr(name string, err error) error {
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return fmt.Errorf("%s not found", name)
+	case errors.Is(err, fs.ErrPermission):
+		return fmt.Errorf("%s: permission denied", name)
+	}
+	var pe *fs.PathError
+	if errors.As(err, &pe) {
+		return fmt.Errorf("%s: %v", name, pe.Err)
+	}
+	return err
 }
 
 // splitFile takes the file from the front of words: "-", an existing
