@@ -20,5 +20,5 @@
   ┃ 1–12 / 25                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  S wrap · t array · r rename · d d delete · y y yank · p/P put · m query mode · space mark · F flatten · g p pick · …  
+  S wrap · t array · r rename · d d delete · u/ctrl+r undo/redo · y y yank · p/P put · m query mode · space mark · F …  
                                                                                                                         

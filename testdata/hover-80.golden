@@ -20,5 +20,5 @@
   │ 1–12 / 28                  │ ┃  6       {"sou…  {"city"…  []             ┃  
   ╰────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────  
-  enter item.open · y item.yank · r/i edit · d d delete · o/O add · p put · /…  
+  enter item.open · y item.yank · r/i edit · d d delete · u/ctrl+r undo/redo …  
                                                                                 

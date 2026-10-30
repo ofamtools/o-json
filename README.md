@@ -282,7 +282,7 @@ The viewer holds one document, like a vim buffer.
 | `K` | data, detail (edited) | rename this key in this one object |
 | `enter` / `esc`, `tab` / `shift+tab` | value editor | set / cancel; next / previous field (`o` in an object: key, value). On an object or array value `enter` is a new line, `esc` normal mode, then `enter` sets and `esc` cancels |
 | `p` | data (edited) | put the register's value over this one (`y` yanked it with its type) |
-| `u` / `ctrl+r` | tree, data, detail (edited) | undo / redo the last edit (value or structure); at the copy the document opened with there is nothing older: `u` changes nothing and says `already at oldest change` (setting `undo.at-start`: `info`, the default, or `silent`). After `e`, `R` or `: viewer new` dropped edits, `u` brings them back |
+| `u` / `ctrl+r` | tree, data, detail (edited) | undo / redo the last edit (value or structure), on the hint line beside `d d` (`u/ctrl+r undo/redo`; a row with `"hidden": true` in your `bindings.json` hides it); at the copy the document opened with there is nothing older: `u` changes nothing and says `already at oldest change` (setting `undo.at-start`: `info`, the default, or `silent`). After `e`, `R` or `: viewer new` dropped edits, `u` brings them back |
 | `w` / `W` | tree, data (edited) | write the restructured document to a new file / replacing a file, the source after one confirm |
 | `w` | tree, data (original) | write the shown document to a new file |
 | node keys | tree (edited) | as on the restructure page's restructured tree (below) |

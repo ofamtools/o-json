@@ -20,5 +20,5 @@
   │ 1–12 / 28                                  │ ┃  6       Gil G   false   ["b2b…  {"sou…  {"city"…  []             ┃  
   ╰────────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  enter item.open · y item.yank · r/i edit · d d delete · o/O add · p put · / jq query · v viewer.raw · R reload · e …  
+  enter item.open · y item.yank · r/i edit · d d delete · u/ctrl+r undo/redo · o/O add · p put · / jq query · v viewe…  
                                                                                                                         
