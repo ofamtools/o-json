@@ -283,10 +283,6 @@
     ]},
     {"context": "jq-panel-text/normal", "bindings": [
       {"key": "tab", "action": "jq-panel.view", "hint": "jq/mapping"},
-      {"key": "w", "action": "ochazuke.input.move", "args": {"motion": "word-forward"}, "from": {"line": "line", "steps": "count"}, "hidden": true},
-      {"key": "e", "action": "ochazuke.input.move", "args": {"motion": "word-end"}, "from": {"line": "line", "steps": "count"}, "hidden": true},
-      {"key": "v", "action": "ochazuke.input.select", "args": {"shape": "char"}, "hint": "select"},
-      {"key": "p", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "R", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "T", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "M", "action": "ochazuke.key.ignore", "hidden": true},
@@ -295,8 +291,6 @@
       {"key": "t", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "/", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "W", "action": "ochazuke.key.ignore", "hidden": true},
-      {"key": "u", "action": "ochazuke.key.ignore", "hidden": true},
-      {"key": "ctrl+r", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "Y", "action": "jq-panel.yank", "hint": "copy all"},
       {"key": "esc", "action": "jq-panel.leave", "hint": "back"},
       {"key": "q", "action": "jq-panel.close", "hint": "close"},
@@ -307,9 +301,6 @@
     ]},
     {"context": "jq-panel-text/visual-line", "bindings": [
       {"key": "y", "action": "jq-panel.yank", "hint": "copy"},
-      {"key": "w", "action": "ochazuke.input.move", "args": {"motion": "word-forward"}, "from": {"line": "line", "steps": "count"}, "hidden": true},
-      {"key": "e", "action": "ochazuke.input.move", "args": {"motion": "word-end"}, "from": {"line": "line", "steps": "count"}, "hidden": true},
-      {"key": "p", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "R", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "T", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "M", "action": "ochazuke.key.ignore", "hidden": true},
@@ -317,9 +308,7 @@
       {"key": "N", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "t", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "/", "action": "ochazuke.key.ignore", "hidden": true},
-      {"key": "W", "action": "ochazuke.key.ignore", "hidden": true},
-      {"key": "u", "action": "ochazuke.key.ignore", "hidden": true},
-      {"key": "ctrl+r", "action": "ochazuke.key.ignore", "hidden": true}
+      {"key": "W", "action": "ochazuke.key.ignore", "hidden": true}
     ]},
     {"context": "query/insert", "bindings": [
       {"key": "enter", "action": "query.commit"},

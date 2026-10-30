@@ -112,8 +112,9 @@ func TestJQPanelModalAndOff(t *testing.T) {
 
 // The panel is a read-only input (ochazuke.ReadOnly): the keys that edit
 // stand aside, and neither they nor the viewer's page keys behind them
-// (the page's rows answer after the panel's own, so bindings.json shadows
-// p R T M n N t / W u ctrl+r and keeps w e v as the input's motions) change
+// (the editor's keys answer before the page's on a read-only input, so
+// bindings.json shadows only the page keys the editor does not bind:
+// R T M n N t / W) change
 // the text, the restructure, the focus or the page: split or modal, in
 // normal, visual and visual-line mode, over the edited and the original
 // view (where n, N and t are the viewer's).
