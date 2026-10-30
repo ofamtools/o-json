@@ -58,6 +58,7 @@ func TestDocOpenReplacesTheDocument(t *testing.T) {
 	// Edits no write saved: doc.open asks first, and n keeps them and
 	// the document.
 	press(t, a, "M")
+	cleared(t, a) // the page opens on the copy; build from nothing
 	sendPaths(t, a, ".name")
 	press(t, a, "q")
 	docDo(t, a, "open", ochazuke.Arguments{"path": other})

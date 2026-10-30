@@ -136,6 +136,7 @@ func TestNewClearsTheDocument(t *testing.T) {
 	// With restructure edits no write saved, it asks once.
 	viewerDo(t, a, "open", ochazuke.Arguments{"path": sample})
 	press(t, a, "M")
+	cleared(t, a) // the page opens on the copy; build from nothing
 	sendPaths(t, a, ".name")
 	press(t, a, "q")
 	viewerDo(t, a, "new", nil)
@@ -156,6 +157,7 @@ func TestNewClearsTheDocument(t *testing.T) {
 	dir := t.TempDir()
 	viewerDo(t, a, "open", ochazuke.Arguments{"path": sample})
 	press(t, a, "M")
+	cleared(t, a) // the page opens on the copy; build from nothing
 	sendPaths(t, a, ".name")
 	if _, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "write", Args: ochazuke.Arguments{"path": filepath.Join(dir, "out.json")}}); err != nil {
 		t.Fatal(err)
@@ -210,6 +212,7 @@ func TestRestructureAPastedBuffer(t *testing.T) {
 	data, _ := os.ReadFile(sample)
 	viewerDo(t, a, "paste", ochazuke.Arguments{"text": string(data)})
 	press(t, a, "M")
+	cleared(t, a) // the page opens on the copy; build from nothing
 	sendPaths(t, a, ".name")
 	dir := t.TempDir()
 	out := filepath.Join(dir, "new.json")

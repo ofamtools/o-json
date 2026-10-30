@@ -202,6 +202,7 @@ func TestForceWrite(t *testing.T) {
 	}
 	a := open(t, src, 120, 30)
 	press(t, a, "M")
+	cleared(t, a) // the page opens on the copy; build from nothing
 	sendPaths(t, a, ".name")
 	want := "{\n  \"name\": \"o-json sample\"\n}\n"
 	// W without a path opens the path chooser, as w does.
