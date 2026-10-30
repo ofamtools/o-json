@@ -16,7 +16,7 @@ Updated as each item lands; the sections below describe what is built.
 | SEARCH on the line (`SEARCH · SUBSTR`), SEARCH on the Results | `/`, `tab`, `enter` | done |
 | Search badge tag lower case (`SEARCH · substr`) | | missing (ochazuke upper-cases the badge) |
 | JQ: `m` on the structure, the jq result view declares JQ | `m`, `/` `shift+tab` | done |
-| JQ badge while typing the jq line (prototype `JQ`) | `/` `shift+tab` | missing (INSERT: completion needs insert) |
+| JQ badge while typing the jq line (prototype `JQ`) | `/` `shift+tab` | done (`JQ · LINE`: the mode `jq` is the result's; INSERT while a function slot is selected) |
 | EDIT entered by `i`, `r` (+ value editor); `esc` / leaving the pane leaves | `i`, `r`, `esc` | done |
 | VISUAL in both panes | `v`, `V`; data pane `j k g g G ctrl+d ctrl+u` extend | done |
 | SPLIT badge on the restructure page | `ctrl+w v` | done |
@@ -50,7 +50,7 @@ Updated as each item lands; the sections below describe what is built.
 | `esc` on the line cancels; `esc` on a pane clears | `esc` | done |
 | `:sort`, `:sort!`, `:find` aliases | `:sort` | done (`:raw` would shadow `viewer.raw`: `g r`) |
 | Hits computed off the event loop | | done (documents over 20000 nodes; the breadcrumb says `searching…`) |
-| Undo groups per search typing session | `u` on the line | done (o-jj folds the session on leaving: `groupLineSession`, a workaround) |
+| Undo groups per search typing session | `u` on the line | done (the line modes extend insert, ochazuke v0.61.0; a `tab` to another type starts a new group) |
 | jq slots on `ctrl+n`/`ctrl+p` | | done |
 
 ### EDIT
@@ -86,7 +86,7 @@ Updated as each item lands; the sections below describe what is built.
 | Instance pin: data rows pinned per view, structure pinned to `shape` (no per-event mode setting) | missing |
 | `esc` rows: `mode.set {mode: declared}` | missing |
 | Badge colours: `SetModeTone` per mode (no whole-accent recolour) | missing |
-| SEARCH / JQ line modes extend insert (completion, per-session undo, `JQ` badge while typing) | missing |
+| SEARCH / JQ line modes extend insert (completion, per-session undo, `JQ` badge while typing) | done |
 | `ctrl+w o` / `ctrl+w =`: `ochazuke.pane.only` / `pane.restore`, `SplitFocusBlock` | missing |
 
 ### Grammar inside SHAPE / TABLE / NESTED (Design B)
@@ -121,7 +121,7 @@ its trial colour (o-jj colours the application accent by mode).
 | FLAT | `FLAT` | `D`/`tab` to the Flat view | `y y` line, `y p` path, `y v` value, `enter` moves the structure cursor to the path |
 | JSON | `JSON` | `D`/`tab` to the JSON view | `z a` `z o` `z c` fold the value under the line, `z M` fold all, `z R` open all, `%` matching bracket, `y y` value, `y p` path, `enter` jump |
 | SEARCH | `SEARCH · SUBSTR` / `· FUZZY` / `· REGEX` on the line, `SEARCH` on the Results | `/` | on the line: `tab`/`shift+tab` type, `ctrl+n`/`ctrl+p` hits, `enter` shows the Results, `esc` cancels; on the Results: `n`/`N`, `enter` jumps the structure (the pane stays), `y y` value, `y p` path, `esc` clears |
-| JQ | `INSERT` on the line, `JQ` on the result | `/` then `shift+tab` (jq is last in the cycle), `m` on the structure | on the line: `ctrl+n`/`ctrl+p` slots, `ctrl+f` function; the result is a table view; `esc` on the pane clears it |
+| JQ | `JQ · LINE` on the line, `JQ` on the result | `/` then `shift+tab` (jq is last in the cycle), `m` on the structure | on the line: `ctrl+n`/`ctrl+p` slots, `ctrl+f` function; the result is a table view; `esc` on the pane clears it |
 | EDIT | `EDIT` | `i`, `r` on the data pane; `i` on the edited structure | data: `r`/`i` edit, `x`/`d d` delete, `o`/`O` add, `K` rename, `p` put; structure: its edit keys; `esc` leaves; leaving the pane leaves EDIT |
 | VISUAL | `VISUAL LINE` | `v`, `V` in either pane | ochazuke's |
 | RAW | (the editor has the terminal) | `g r` | the editor's own |
@@ -231,16 +231,14 @@ answer.
 
 ## Rough or missing
 
-- While typing in the jq type of the line the badge reads `INSERT`:
-  ochazuke's completion list opens only in a mode named `insert`, so the
-  jq line keeps it (path completion would break otherwise). The search
-  types use `search_·_substr`, `search_·_fuzzy` and `search_·_regex`
-  modes that extend insert, which is how their badges read `SEARCH ·
-  SUBSTR` (upper case; the tag is not lower case as in the prototype).
-  The input groups undo only in a mode named insert, so o-jj folds a
-  whole search typing session (from `/` to leaving, a `tab` between
-  types too) into one undo step itself (`groupLineSession`, search.go,
-  marked as the workaround to drop for ochazuke's insert-like modes).
+- The search line's modes (`search_·_substr`, `_fuzzy`, `_regex`,
+  `jq_·_line`) extend insert (ochazuke v0.61.0), so the path completion,
+  the input's undo groups and the badge (`SEARCH · SUBSTR`, `JQ · LINE`)
+  all work; the badge is upper case (ochazuke upper-cases it; the
+  prototype's tag is lower case). While a jq function's slot is selected
+  to type over, the line is in plain insert: ochazuke's
+  `Input.SelectText` sets the mode named insert (a library bug, worked
+  around in views.go).
 - The hits (capped at 5000) are computed on the event loop for a
   document of up to 20000 nodes (`searchLoopNodes`), off it for a larger
   one: the last hits stay, the breadcrumb says `searching…`, and an

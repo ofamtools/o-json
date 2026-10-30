@@ -92,6 +92,13 @@ func (a *App) syncDeclaredMode() {
 	}
 	if a.r.Focus == jqFieldID {
 		// The search line: the type's mode, while it is in insert.
+		// o-jj workaround (ochazuke v0.61.0's Input.SelectText forces the
+		// mode named insert): while a slot is selected for typing over,
+		// the line stays in insert, or the transition would drop the
+		// selection.
+		if _, _, selecting := a.q.in.SelectedText(); selecting {
+			return
+		}
 		if base := a.r.BaseMode(); (base == "insert" || slices.Contains(lineModes(), base)) && base != a.lineMode() {
 			_ = a.r.SetMode(a.lineMode())
 		}

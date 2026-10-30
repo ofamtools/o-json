@@ -217,7 +217,8 @@ func TestQuerySlashFocusesAndEscLeaves(t *testing.T) {
 	a := openQuery(t, sample)
 	from := a.r.Focus
 	press(t, a, "/")
-	if a.r.Focus != jqFieldID || a.q.in.Mode != a.lineMode() {
+	// insert while a slot is selected (ochazuke's SelectText; views.go).
+	if a.r.Focus != jqFieldID || a.q.in.Mode != "insert" && a.q.in.Mode != a.lineMode() {
 		t.Fatalf("/ focus %q mode %q", a.r.Focus, a.q.in.Mode)
 	}
 	finish(a, Type(a.m, ".name"))
@@ -477,7 +478,8 @@ func TestQueryFunctionSlots(t *testing.T) {
 	if n := strings.Count(a.queryText(), "□"); n != 2 {
 		t.Fatalf("%d slots", n)
 	}
-	if a.r.Focus != jqFieldID || a.q.in.Mode != a.lineMode() {
+	// insert while a slot is selected (ochazuke's SelectText; views.go).
+	if a.r.Focus != jqFieldID || a.q.in.Mode != "insert" && a.q.in.Mode != a.lineMode() {
 		t.Fatalf("back in the line: focus %q mode %q", a.r.Focus, a.q.in.Mode)
 	}
 	Type(a.m, `"t"`)

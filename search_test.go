@@ -126,8 +126,9 @@ func TestSearchLargeDocumentRunsOffTheLoop(t *testing.T) {
 	}
 }
 
-// A search typing session is one undo step: leaving the line folds its
-// edits (and a tab between types) into one history node.
+// A search typing session is one undo step: the line's modes extend
+// insert, so the input groups the session (a tab to another type starts
+// a new one, as a mode change does).
 func TestSearchTypingSessionIsOneUndoStep(t *testing.T) {
 	a := openQuery(t, "testdata/sample.json")
 	if err := a.r.Settings().Set(settingSearchType, "substring"); err != nil {
@@ -136,9 +137,7 @@ func TestSearchTypingSessionIsOneUndoStep(t *testing.T) {
 	in := a.q.in
 	before := in.History[in.Head].Text
 	press(t, a, "/")
-	Type(a.m, "re")
-	press(t, a, "tab")
-	Type(a.m, "d")
+	Type(a.m, "red")
 	press(t, a, "enter")
 	head := in.History[in.Head]
 	if head.Text != "red" || head.Parent < 0 || in.History[head.Parent].Text != before {

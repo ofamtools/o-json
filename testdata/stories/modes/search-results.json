@@ -10,7 +10,7 @@
     {"after": 4, "mode": "search_·_substr", "contains": ["Results /red", ".items[0].tags[0] │ \"red\""]},
     {"after": 5, "mode": "search_·_fuzzy"},
     {"after": 6, "mode": "search_·_regex"},
-    {"after": 7, "mode": "insert", "contains": ["jq red"]},
+    {"after": 7, "mode": "jq_·_line", "contains": ["jq red", "JQ · LINE"]},
     {"after": 9, "mode": "search", "contains": ["2 hits", "Results /red  1/2"]},
     {"after": 11, "mode": "search", "contains": ["structure → .items[3].tags[0]", "Results /red  2/2"]},
     {"mode": "table", "contains": ["search cleared"], "lacks": ["Results /red"]}

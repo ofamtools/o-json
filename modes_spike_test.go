@@ -142,7 +142,7 @@ func TestTrialDeclaredModesCanBeDisabled(t *testing.T) {
 func TestTrialModePickerEntersEveryMode(t *testing.T) {
 	want := map[string]string{
 		"SHAPE": "shape", "TABLE": "table", "NESTED": "nested", "FLAT": "flat", "JSON": "json",
-		"SEARCH": "search_·_substr", "JQ": "insert", "EDIT": "edit", "VISUAL": "visual-line", "SPLIT": "split",
+		"SEARCH": "search_·_substr", "JQ": "jq_·_line", "EDIT": "edit", "VISUAL": "visual-line", "SPLIT": "split",
 	}
 	for _, c := range modeChoices {
 		if c.name == "RAW" {
