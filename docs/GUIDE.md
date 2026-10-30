@@ -288,8 +288,8 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 
 | Keys | Does |
 |---|---|
-| `r` `i` | edit the value |
-| `d d` | delete the field or item |
+| `i` `r` | edit the value |
+| `x` `d d` | delete the field or item |
 | `o` | add after |
 | `O` | add before |
 | `K` | rename the key |

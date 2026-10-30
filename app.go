@@ -54,7 +54,9 @@ type App struct {
 	only, rsOnly string
 	// sr is the search line's type and hits, overlay the view over the
 	// structure's own (search.go): results, jq or "".
-	sr      searchState
+	sr searchState
+	// editing is EDIT on the data pane (edit.go).
+	editing bool
 	overlay string
 
 	// Clipboard copies text to the system clipboard; nil when there is
@@ -150,6 +152,9 @@ func New() (*App, error) {
 		return nil, err
 	}
 	if err := a.registerSearch(); err != nil {
+		return nil, err
+	}
+	if err := a.registerEdit(); err != nil {
 		return nil, err
 	}
 	if err := a.registerQueryMode(); err != nil {

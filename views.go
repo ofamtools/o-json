@@ -82,7 +82,7 @@ func (a *App) syncDeclaredMode() {
 	defer a.syncModeAccent()
 	if a.r.Settings().String(settingDeclaredModes) == "off" {
 		switch a.r.BaseMode() {
-		case "shape", "table", "nested", "flat", "json", "jq", "split", "search":
+		case "shape", "table", "nested", "flat", "json", "jq", "split", "search", "edit":
 			_ = a.r.SetMode("normal")
 		}
 		return
@@ -106,6 +106,10 @@ func (a *App) syncDeclaredMode() {
 		}
 	case a.data.list.Focused() || a.r.Focus == dataID:
 		want = a.viewName
+		if a.editing {
+			want = "edit"
+			break
+		}
 		if want == "" || want == objectFields || want == objectRow {
 			want = "table"
 		}
@@ -117,6 +121,9 @@ func (a *App) syncDeclaredMode() {
 			want = "nested"
 		}
 	}
+	if want != "edit" && a.vedit == nil && a.r.Focus != valueInputID {
+		a.editing = false // EDIT is per pane: leaving the data pane leaves it
+	}
 	if want == "" {
 		return
 	}
@@ -124,7 +131,7 @@ func (a *App) syncDeclaredMode() {
 	if base == queryMode && want == "shape" {
 		return // m explicitly lifted the structure pane into JQ
 	}
-	if base != "normal" && base != "shape" && base != "table" && base != "nested" && base != "flat" && base != "json" && base != "jq" && base != "split" && base != "search" {
+	if base != "normal" && base != "shape" && base != "table" && base != "nested" && base != "flat" && base != "json" && base != "jq" && base != "split" && base != "search" && base != "edit" {
 		return // an explicit edit, query or selection mode is on top
 	}
 	if base != want {

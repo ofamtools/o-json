@@ -1,0 +1,16 @@
+{
+  "name": "o-jj: value edits need EDIT (i), esc leaves it",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "values": {"modes.edit-gate": true},
+  "script": ["j", "j", "j", "ctrl+w", "l", "d", "d", "i", "j", "l", "x", "esc"],
+  "expect": [
+    {"after": 7, "mode": "table", "contains": ["press i first (EDIT)"]},
+    {"after": 8, "mode": "edit", "contains": ["EDIT: r/i edit"]},
+    {"after": 11, "mode": "edit", "contains": ["1 value edit"]},
+    {"mode": "table"}
+  ]
+}

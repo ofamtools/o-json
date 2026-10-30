@@ -84,6 +84,9 @@ var rebuildWindowItems = map[bool]int{false: 60_000, true: 6_000}[raceOn]
 var offLoopWindows, offLoopTries atomic.Int32
 
 func TestMain(m *testing.M) {
+	// The suite was written for o-json's ungated value edits; the EDIT
+	// tests (edit_test.go) and stories turn modes.edit-gate on.
+	editGateDefault = false
 	code := m.Run()
 	if code == 0 && offLoopTries.Load() > 0 && offLoopWindows.Load() == 0 {
 		fmt.Fprintf(os.Stderr, "FAIL: %d inRebuildWindow calls, none ran the rebuild off the loop (rebuildOnLoop %v)\n", offLoopTries.Load(), rebuildOnLoop)

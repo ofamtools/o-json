@@ -220,7 +220,7 @@ func (a *App) valueOf(inst *ochazuke.Instance) (valueAt, bool) {
 // (hover.go), so the value keys and hints drop out there.
 func (a *App) editableValue(focus string) (valueAt, bool) {
 	inst := a.r.Instances[focus]
-	if v := a.rowsOf(inst); !a.dataEditable() || !a.editedShown() || a.queryShowing() || a.Raw || a.vedit != nil || v == nil || v == a.detail && !a.detailEditable() {
+	if v := a.rowsOf(inst); !a.dataEditable() || !a.editedShown() || a.queryShowing() || a.Raw || a.vedit != nil || v == nil || v == a.detail && !a.detailEditable() || v == a.data && a.editGated() {
 		return valueAt{}, false
 	}
 	return a.valueOf(inst)
