@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -114,7 +113,7 @@ func (a *App) registerVerbs() {
 				return ochazuke.Failed(errors.New("not a path"))
 			}
 			return a.copyText(c, strings.Join(paths, "\n"), strings.Join(paths, ", "))
-		}, "Copy the structure path (one per line over a V selection) into the registers and the system clipboard; p / P on the restructured tree put those shapes there").Many()
+		}, "Copy the structure path (one per line over a V selection) into the registers (and the system clipboard, as the clipboard setting says); p / P on the restructured tree put those shapes there").Many()
 
 	// rows.move is the windowed tables' motion: the list holds only the
 	// rows on screen, so list.move would stop at the screen's edge.
@@ -222,10 +221,10 @@ func (a *App) registerVerbs() {
 	yankValue := func(c ochazuke.Ctx) ochazuke.Result { return a.yankValue(c) }
 	r.Define("item").
 		Verb("open", open, "Open the row's item in the detail as labeled fields").
-		Verb("yank", yankValue, "Copy the value under the cursor into the registers and the system clipboard: the cell on a field column, the row's item as JSON on # (value.yank); p puts it with its type")
+		Verb("yank", yankValue, "Copy the value under the cursor into the registers (and the system clipboard, as the clipboard setting says): the cell on a field column, the row's item as JSON on # (value.yank); p puts it with its type")
 	r.Define("field").
 		Verb("open", open, "Open the field's object or array in the detail").
-		Verb("yank", yankValue, "Copy the field's value (JSON for an object or array) into the registers and the system clipboard (value.yank); p puts it with its type")
+		Verb("yank", yankValue, "Copy the field's value (JSON for an object or array) into the registers (and the system clipboard, as the clipboard setting says) (value.yank); p puts it with its type")
 	// l and enter on a scalar entry stand aside: nothing to step into, so
 	// nothing happens (an edge is quiet), never an error.
 	r.DefineGuard("entry-container", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
@@ -235,12 +234,12 @@ func (a *App) registerVerbs() {
 	r.Define("entry").
 		Verb("open", func(c ochazuke.Ctx) ochazuke.Result { return done(a.drill(nodeAt(c.Instance))) }, "Step into the entry's object or array (available on one)").When("entry-container").
 		Verb("up", func(ochazuke.Ctx) ochazuke.Result { return done(a.up()) }, "Step back out to the containing value; at the top, close the detail").
-		Verb("yank", yankNode, "Copy the entry's value (JSON for an object or array) into the registers and the system clipboard")
+		Verb("yank", yankNode, "Copy the entry's value (JSON for an object or array) into the registers (and the system clipboard, as the clipboard setting says)")
 	r.Define("line").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {
 			line, _ := c.Instance.Data.(string)
 			return a.copyText(c, line, "the line")
-		}, "Copy the JSON line into the registers and the system clipboard")
+		}, "Copy the JSON line into the registers (and the system clipboard, as the clipboard setting says)")
 	setHistory(r, ochazuke.HistoryAction, "item.open", "field.open", "entry.open", "entry.up")
 	// A yank writes the registers and the clipboard, as input.yank does.
 	setHistory(r, ochazuke.HistoryChange, "shape.yank", "item.yank", "field.yank", "entry.yank", "line.yank")
@@ -261,9 +260,9 @@ func (a *App) rowsOf(inst *ochazuke.Instance) *rowsView {
 }
 
 // copyText stores text in the registers (the request's register, else
-// the active or unnamed one) and copies it to the system clipboard off the
-// loop (from o-csv). The status line names what was copied; a clipboard
-// failure is a notice, since the registers still hold the text.
+// the active or unnamed one); ochazuke copies it to the system clipboard
+// as the clipboard setting says (registerClipboard). The status line
+// names what was copied.
 func (a *App) copyText(c ochazuke.Ctx, text, what string) ochazuke.Result {
 	return a.copyYank(c, ochazuke.Yank{Text: text}, what)
 }
@@ -278,7 +277,6 @@ func (a *App) copyYank(c ochazuke.Ctx, y ochazuke.Yank, what string) ochazuke.Re
 // text view.
 func (a *App) copyAnswering(c ochazuke.Ctx, y ochazuke.Yank, what string, answer any) ochazuke.Result {
 	register := ochazuke.StringArg(c.Args, "register", "")
-	text := y.Text
 	if err := a.r.StoreYank(y, register, false); err != nil {
 		return ochazuke.Failed(err)
 	}
@@ -286,19 +284,8 @@ func (a *App) copyAnswering(c ochazuke.Ctx, y ochazuke.Yank, what string, answer
 	if register != "" {
 		said += " into register " + register
 	}
-	clip := a.Clipboard
-	if clip == nil {
-		c.Info(said)
-		return ochazuke.Done(answer)
-	}
-	return ochazuke.Pending(func(context.Context) (any, error) { return answer, clip(text) }).
-		Then(func(c ochazuke.Ctx, _ any, err error) {
-			if err != nil {
-				c.Notify("clipboard: " + err.Error() + " (the registers have " + what + ")")
-				return
-			}
-			c.Info(said)
-		})
+	c.Info(said)
+	return ochazuke.Done(answer)
 }
 
 // search sets the query, filters the tree and jumps to the first match.

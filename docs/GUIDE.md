@@ -106,7 +106,7 @@ Value edits work in the data panel of the edited view, which is the default. (Af
 5. `d d` deletes the field (or, on `#`, the whole item).
 6. `o` adds after and `O` before. In an object, the editor asks for the key, then `tab` (or `enter`) moves to the value. In an array, it adds an item.
 7. `K` renames the key in that one object. If the object already has the key you type, the editor says which name it will use instead (`id-2`), as `o` does.
-8. `y` copies the value under the cursor (it also goes to the system clipboard), and `p` puts it over another value.
+8. `y` copies the value under the cursor (it also goes to the system clipboard, unless `: settings set clipboard none`; then only `"+y` does), and `p` puts it over another value.
 9. `u` undoes and `ctrl+r` redoes, in the table and in the detail.
 10. To save, press `w`, type a new file name in the path chooser, and press `enter`. If the file already exists, `w` asks first. `W` replaces a file without asking. On the file you opened, `W` asks you to confirm once.
 
@@ -148,7 +148,7 @@ The data panel shows the reshaped document as you edit. `T` flips between the or
 1. Run `: restructure export-map` and type a file name (`people.map.json`).
 2. Run it again on any document of the same shape: `o-json restructure data.json --map people.map.json`.
 3. Get the same thing as a jq program: `o-json restructure data.json --map people.map.json --jq`.
-4. Or, without leaving the viewer, run `: restructure jq`: the program opens in a read-only view (move, `v` to select, `y` to copy, `q` to close) and is copied too. `: restructure mapping` shows the mapping the same way, and `g j` keeps the program on screen beside your edits.
+4. Or, without leaving the viewer, run `: restructure jq`: the program opens in a read-only view (move, `v` to select, `y` to copy, `q` to close). Opening it copies nothing; `y` does. `: restructure mapping` shows the mapping the same way, and `g j` keeps the program on screen beside your edits.
 
 **What you'll see:** the breadcrumb shows `to ← from` for a node that moved. A key that would break the mapping does nothing. For example, `r` on an array item `[]` is ignored, because an item has no key.
 

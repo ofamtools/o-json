@@ -22,7 +22,7 @@ import (
 // a one-line program and several for the mapping, so its motions, visual
 // mode and y{motion} (into the registers) work as in any input and an
 // edit is a silent no-op; y over a visual selection and Y (jq-panel.yank)
-// copy into the registers and the system clipboard.
+// copy into the registers (and the system clipboard, as the clipboard setting says).
 
 const (
 	jqPanelID      = "jq-panel"
@@ -315,7 +315,7 @@ func (a *App) registerJQPanel() {
 				}
 			}
 			return a.copyText(c, text, what)
-		}, "Copy the jq panel's selection, or all of it, into the registers and the system clipboard").When("jq-panel-open")
+		}, "Copy the jq panel's selection, or all of it, into the registers (and the system clipboard, as the clipboard setting says)").When("jq-panel-open")
 	params := func(key string, p map[string]ochazuke.Parameter) {
 		op := r.Operations[r.CanonicalKey(key)]
 		op.Parameters = p

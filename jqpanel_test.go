@@ -71,8 +71,8 @@ func TestJQPanelSplitFollowsEditsAndYanks(t *testing.T) {
 	if a.jqp.open || a.r.Instances[jqPanelTextID] != nil {
 		t.Fatal("q left the panel")
 	}
-	// restructure jq still copies the program.
-	if _, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "jq"}); err != nil {
+	// restructure jq {yank} copies the program.
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "jq", Args: ochazuke.Arguments{"yank": true}}); err != nil {
 		t.Fatal(err)
 	}
 	settle(a)
@@ -167,7 +167,7 @@ func TestJQPanelKeysChangeNothing(t *testing.T) {
 
 // : restructure jq and : restructure mapping open what they answer in
 // ochazuke's text view (TextResult): the program as it is, the mapping as
-// indented JSON; restructure jq still copies the program, q closes the
+// indented JSON; opening the view copies nothing (y there does), q closes the
 // view back on the tree, and palette.text-results plain shows neither.
 func TestRestructureTextResultsOpenTheTextView(t *testing.T) {
 	a := openReshape(t, 120, 30)
@@ -185,8 +185,8 @@ func TestRestructureTextResultsOpenTheTextView(t *testing.T) {
 	if in := a.r.Input(a.r.Focus); in == nil || string(in.Text) != strings.TrimRight(p.JQ(), "\n") || !in.ReadOnly {
 		t.Fatalf("the text view does not hold the program read-only: %+v", in)
 	}
-	if y, _ := a.r.ReadYank(""); y.Text != p.JQ() {
-		t.Fatalf("restructure jq copied %q", y.Text)
+	if y, _ := a.r.ReadYank(""); y.Text != "" {
+		t.Fatalf("opening restructure jq copied %q", y.Text)
 	}
 	press(t, a, "q")
 	if a.r.TopModal() != "" || a.r.Focus != focus {

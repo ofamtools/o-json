@@ -439,7 +439,7 @@ func finishWithin(a *App, cmd tea.Cmd, d time.Duration) {
 			for _, c := range msg {
 				finishWithin(a, c, d)
 			}
-		case ochazuke.Completion, ochazuke.ForegroundMsg:
+		case ochazuke.Completion, ochazuke.ForegroundMsg, clipFailed:
 			_, next := a.m.Update(msg)
 			finishWithin(a, next, d)
 		}

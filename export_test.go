@@ -299,7 +299,7 @@ func TestExportJQAgreesWithGo(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	onData(t, a, ".items", ".items[2]")
 	press(t, a, "d", "d")
-	v, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "jq", Args: ochazuke.Arguments{"format": "csv", "of": ".items"}})
+	v, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "jq", Args: ochazuke.Arguments{"format": "csv", "of": ".items", "yank": true}})
 	if err != nil {
 		t.Fatal(err)
 	}

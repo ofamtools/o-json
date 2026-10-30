@@ -1395,20 +1395,26 @@ func (a *App) registerRestructureVerbs() {
 		Verb("overwrite-source", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, writeSource) },
 			"Replace the source document with the restructured one (as o-json restructure --out SOURCE --overwrite does); it always asks first").Confirm("Overwrite the source {{path}} with the restructured document?").
 		Verb("jq", func(c ochazuke.Ctx) ochazuke.Result {
+			program, what := "", "the jq program"
 			if f := ochazuke.StringArg(c.Args, "format", ""); f != "" {
 				text, err := a.exportJQText(f, ochazuke.StringArg(c.Args, "of", ""), ochazuke.StringArg(c.Args, "columns", ""))
 				if err != nil {
 					return ochazuke.Failed(err)
 				}
-				return a.copyAnswering(c, ochazuke.Yank{Text: text}, "the jq program of the "+f+" export", text)
+				program, what = text, "the jq program of the "+f+" export"
+			} else {
+				p, err := a.plan()
+				if err != nil {
+					return ochazuke.Failed(err)
+				}
+				program = p.JQ()
 			}
-			p, err := a.plan()
-			if err != nil {
-				return ochazuke.Failed(err)
+			// Showing it copies nothing; yank (or y in the text view) does.
+			if b, _ := c.Args["yank"].(bool); b {
+				return a.copyAnswering(c, ochazuke.Yank{Text: program}, what, program)
 			}
-			program := p.JQ()
-			return a.copyAnswering(c, ochazuke.Yank{Text: program}, "the jq program", program)
-		}, "Copy the jq program that makes the restructured document into the registers and the system clipboard, and answer it (the palette shows it in the text view); with format (csv or tsv) it ends in the export's @csv / @tsv step (of and columns as viewer.export takes them), so jq -r makes the export").TextResult().
+			return ochazuke.Done(program)
+		}, "Answer the jq program that makes the restructured document (the palette shows it in the text view, where y copies); with yank also copy it into the registers (and the system clipboard as the clipboard setting says); with format (csv or tsv) it ends in the export's @csv / @tsv step (of and columns as viewer.export takes them), so jq -r makes the export").TextResult().
 		Verb("export-map", func(c ochazuke.Ctx) ochazuke.Result {
 			path := ochazuke.StringArg(c.Args, "path", "")
 			text, err := a.mappingText()
@@ -1435,6 +1441,7 @@ func (a *App) registerRestructureVerbs() {
 		"format":  {Type: "string", Enum: []string{"csv", "tsv"}, Description: "end in the export's @csv / @tsv step; omit for the restructure alone"},
 		"of":      {Type: "string", Description: "with format, the array's structure path; omit for the one under the cursor"},
 		"columns": {Type: "string", Description: "with format, the columns to keep, separated by commas"},
+		"yank":    {Type: "boolean", Description: "also copy the program into the registers (and the system clipboard as the clipboard setting says); omitted, it is only shown"},
 	})
 	params("restructure.export-map", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "the mapping file to write, e.g. NAME.map.json"}})
 	params("restructure.add", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "a structure path, e.g. .items[].id"}})

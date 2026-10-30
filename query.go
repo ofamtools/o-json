@@ -261,7 +261,7 @@ func (a *App) registerQuery() error {
 				return ochazuke.Failed(errors.New("no query to copy"))
 			}
 			return a.copyText(c, q, "the query")
-		}, "Copy the jq query into the registers and the system clipboard").When("query-line").
+		}, "Copy the jq query into the registers (and the system clipboard, as the clipboard setting says)").When("query-line").
 		Verb("focus", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.queryDone(a.focusQuery())
 		}, "Focus the jq query line, typing at its end (/); esc goes back where it came from, the query kept").When("query-line").

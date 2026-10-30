@@ -45,7 +45,10 @@ type App struct {
 	// table or fields.
 	Raw bool
 
-	// Clipboard copies text to the system clipboard; nil when there is none.
+	// Clipboard copies text to the system clipboard; nil when there is
+	// none (ochazuke then sends OSC 52). Only ochazuke's registers call it
+	// (Registers.Copy, registerClipboard), so the clipboard setting and the
+	// "+ register decide which yanks reach it.
 	Clipboard func(string) error
 	// Paste reads the system clipboard (viewer.paste); nil when there is
 	// no tool for it.
@@ -118,6 +121,7 @@ func New() (*App, error) {
 	}
 	a.registerPrompt()
 	a.registerDetail()
+	a.registerClipboard()
 	a.registerVerbs()
 	if err := a.registerQuery(); err != nil {
 		return nil, err
