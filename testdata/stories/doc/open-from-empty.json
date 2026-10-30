@@ -5,7 +5,7 @@
   "height": 18,
   "fixture": "empty",
   "seed": {"files": ["sample.json"]},
-  "script": [":", "d", "o", "c", "space", "o", "p", "e", "n", "enter", "tab", "enter", {"job": "viewer.open", "state": "done"}],
+  "script": [":", "d", "o", "c", "space", "o", "p", "e", "n", "enter", "ctrl+o", "enter", {"job": "viewer.open", "state": "done"}],
   "expect": [
     {"after": 10, "contains": ["Run doc.open", "choose path"]},
     {"contains": ["sample.json", "o-json sample"], "lacks": ["No document is open.", "[no file]"]}
