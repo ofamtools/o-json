@@ -34,6 +34,7 @@ var settingSections = []settingSection{
 	{ochazuke.SettingSection{ID: "data", Title: "Data", Description: "The data pane and the detail: value edits, the value editor, tables and nested data"}, []settingGroup{
 		{"Values", []string{settingDataEditable, settingValueEditor, settingValueLeave, settingValueStableHeight, settingRebuildValueEdit}},
 		{"Tables", []string{settingStableColumns, settingNested, settingHoverRows}},
+		{"FLAT", []string{settingFlatDepthColors, settingFlatPadIndexes}},
 	}},
 	{ochazuke.SettingSection{ID: "query", Title: "Search and jq", Description: "The search line (/: substring, fuzzy, regex or jq), query mode and the jq panel"}, []settingGroup{
 		{"", []string{settingQueryLine, settingSearchType, settingChipFocus, settingCompletePaths}},

@@ -23,6 +23,19 @@ type dataLine struct {
 	partner int
 	// folded is set on a folded container's one line.
 	folded bool
+	// shown is the line as drawn when it differs from text (FLAT's padded
+	// indexes, flat.go), tones its colours; text stays what the line keys,
+	// the filter and export read.
+	shown string
+	tones []ochazuke.ToneSpan
+}
+
+// drawn is the line as the view draws it.
+func (l *dataLine) drawn() string {
+	if l.shown != "" {
+		return l.shown
+	}
+	return l.text
 }
 
 // lineTexts is the views' text, for tests and the text dumps.
@@ -109,8 +122,10 @@ func jsonLines(values []*Node, many bool, folded func(*Node) bool) []dataLine {
 }
 
 // flatLines is one `path = value` line per leaf (an empty object or
-// array is a leaf), in document order, cut at rawLimit as JSON is.
-func flatLines(values []*Node) []dataLine {
+// array is a leaf), in document order, cut at rawLimit as JSON is. look
+// is how the lines are drawn (flat.go): the text is always the plain
+// path.
+func flatLines(values []*Node, look flatLook) []dataLine {
 	var out []dataLine
 	used := 0
 	var walk func(*Node)
@@ -124,8 +139,17 @@ func flatLines(values []*Node) []dataLine {
 			}
 			return
 		}
-		text := n.Path() + " = " + Compact(n, cellLimit)
-		out = append(out, dataLine{text: text, node: n, partner: -1})
+		value := " = " + Compact(n, cellLimit)
+		text := n.Path() + value
+		l := dataLine{text: text, node: n, partner: -1}
+		if look != (flatLook{}) {
+			path, tones := flatPath(n, look)
+			if shown := path + value; shown != text {
+				l.shown = shown
+			}
+			l.tones = tones
+		}
+		out = append(out, l)
 		used += len(text)
 	}
 	for _, n := range values {

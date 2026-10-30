@@ -29,6 +29,9 @@ type rowSource struct {
 	noun    string          // the row instances' noun
 	data    func(i int) any // a row instance's Data
 	label   func(i int) string
+	// tones are row i's own tones (a line view's colours), under the
+	// view's highlight; nil for none.
+	tones func(i int) []ochazuke.ToneSpan
 	// full is row i's cell in list column col written out, as a lit
 	// column shows it (structure.lit-width fit): an array's items joined;
 	// nil, or "", for the cell as cells has it.
@@ -152,6 +155,9 @@ func (v *rowsView) refresh() error {
 			item.Data = v.src.data(i)
 		}
 		item.Tones = v.tones(i, len(item.Cells))
+		if v.src.tones != nil {
+			item.Tones = append(v.src.tones(i), item.Tones...)
+		}
 		items = append(items, item)
 	}
 	if err := v.list.SetItems(items); err != nil {

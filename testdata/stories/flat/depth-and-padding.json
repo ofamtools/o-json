@@ -1,0 +1,19 @@
+{
+  "name": "FLAT over nested arrays: each path step in its depth's tone, all but the innermost dimmed; indexes padded per array; y p yanks the plain path",
+  "area": "flat",
+  "width": 120,
+  "height": 40,
+  "fixture": "viewer",
+  "seed": {"doc": "flat-nested.json"},
+  "theme": "dark",
+  "script": ["2", "D", "ctrl+w", "l", "j", "j", "y", "p", "G"],
+  "expect": [
+    {"after": 4, "mode": "flat", "contains": [".bindings[  0].keys[0] = \"k0\"", ".bindings[  1].keys[1] = \"k1\"", ".bindings[  5].verb = \"v5\""],
+     "lacks": [".bindings[1]."],
+     "styled": {".bindings": "#7CB7E8", "[  1]": "#8BC48A", ".keys": "#E7B673", "[1]": "#C7A2ED", ".verb": "#E7B673"},
+     "attrs": {".bindings[  1].keys": "faint,fg", "[1] = \"k1\"": "-faint,fg", ".verb = \"v0\"": "-faint,fg", " = \"k1\"": "-faint,-fg"}},
+    {"after": 6, "highlightedText": ".bindings[  1].keys[0] = \"k0\""},
+    {"after": 8, "register": ".bindings[1].keys[0]"},
+    {"after": 9, "contains": [".bindings[234].verb = \"v234\"", ".bindings[233].keys[5] = \"k5\""]}
+  ]
+}

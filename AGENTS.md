@@ -54,6 +54,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | Where the Settings page files o-json's settings: the o-json tab, its sections and groups (`settingSections`), `declareOwn` (every o-json setting declares through it) | `settings_layout.go` |
 | The search prompt, the system clipboard | `prompt.go`, `clipboard.go` |
 | o-jj trial (Design D): the line views' records and keys (FLAT, JSON: `dataLine`, `line.yank-part`/`jump`/`fold`/`bracket`, `jumpStructure`) | `lines.go` |
+| o-jj trial: the FLAT view's look (`flatPath`: depth tones `flat.depth.N`/`.N.dim` per path step, padded indexes; `flatLook`, `flat.depth-colors`, `flat.pad-indexes`); a line's `text` stays the plain path, `shown`/`tones` are what is drawn | `flat.go` |
 | o-jj trial: the window keys (`viewer.only` per mode, `viewer.restore`, `viewer.pane` stopping at the edge) | `panes.go` |
 | o-jj trial: the one search line (`searchTypes`: substring, fuzzy, regex, jq; the Results view; the overlay over the structure's view; `search.*`) | `search.go` |
 | o-jj trial: EDIT (`viewer.edit`, `viewer.edit-leave`, `viewer.needs-edit`, `modes.edit-gate`) | `edit.go` |

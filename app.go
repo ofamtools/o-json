@@ -97,7 +97,9 @@ type App struct {
 	detailTab *Table
 	// objectView is the object.view the data pane last showed with.
 	objectView string
-	trail      []*Node // the detail modal's drill path, innermost last
+	// flatDrawn is the FLAT look the lines were last built with (flat.go).
+	flatDrawn flatLook
+	trail     []*Node // the detail modal's drill path, innermost last
 
 	r    *ochazuke.Runtime
 	m    *ochazuke.Model
@@ -139,6 +141,7 @@ func New() (*App, error) {
 	a := &App{r: r, viewByPath: make(map[string]string), folds: make(map[string]map[string]bool)}
 	a.m = ochazuke.NewModel(r)
 	a.declareModeTones()
+	a.declareFlatTones()
 	r.Settings().Observe(settingDeclaredModes, func(string, any) { a.syncDeclaredMode() })
 	a.m.Title = appName()
 	r.Instance(pageID, ochazuke.Kind("viewer"))
@@ -202,6 +205,9 @@ func New() (*App, error) {
 		return nil, err
 	}
 	if err := declareJQPanelSettings(r); err != nil {
+		return nil, err
+	}
+	if err := declareFlatSettings(r); err != nil {
 		return nil, err
 	}
 	if err := declareFollowSettings(r); err != nil {
@@ -448,6 +454,17 @@ func (a *App) selectedShape() *Shape {
 // sync points the data panel at the selected shape when it moved, or
 // when an edit made the restructured document again.
 func (a *App) sync() error {
+	if a.viewName == viewFlat && a.shown != nil && a.lines != nil {
+		if look := a.flatLook(); look != a.flatDrawn {
+			// flat.depth-colors, flat.pad-indexes or the theme changed:
+			// draw the same lines again, the cursor kept.
+			a.flatDrawn = look
+			a.lines = flatLines(a.shown.Values(), look)
+			if err := a.data.set(linesSource(a.lines), a.data.Selected()); err != nil {
+				return err
+			}
+		}
+	}
 	if v := a.r.Settings().String(settingObjectView); v != a.objectView {
 		// object.view changed (the Settings page, the palette): show the
 		// same path again in the other form, the cursor kept.
@@ -535,7 +552,8 @@ func (a *App) show(s *Shape) error {
 		a.lines = jsonLines(values, len(values) != 1, a.jsonFolded)
 		return a.data.set(linesSource(a.lines), 0)
 	case view == viewFlat:
-		a.lines = flatLines(values)
+		a.flatDrawn = a.flatLook()
+		a.lines = flatLines(values, a.flatDrawn)
 		return a.data.set(linesSource(a.lines), 0)
 	case len(values) == 1 && !values[0].IsContainer():
 		a.scalar = values[0]
@@ -644,14 +662,15 @@ const rawLimit = 4 << 20
 // widest line, so the cursor is one even bar on every line.
 func linesSource(lines []dataLine) rowSource {
 	w := 0
-	for _, l := range lines {
-		w = max(w, ansi.StringWidth(l.text))
+	for i := range lines {
+		w = max(w, ansi.StringWidth(lines[i].drawn()))
 	}
 	return rowSource{
 		n: len(lines), noun: "line",
 		cells: func(i int) []string { return []string{lines[i].text} },
 		data:  func(i int) any { return &lines[i] },
-		label: func(i int) string { return pad(lines[i].text, w) },
+		label: func(i int) string { return pad(lines[i].drawn(), w) },
+		tones: func(i int) []ochazuke.ToneSpan { return lines[i].tones },
 	}
 }
 

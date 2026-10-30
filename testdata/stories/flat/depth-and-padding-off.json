@@ -1,0 +1,15 @@
+{
+  "name": "FLAT with flat.depth-colors and flat.pad-indexes off: plain lines, indexes as they are",
+  "area": "flat",
+  "width": 120,
+  "height": 40,
+  "fixture": "viewer",
+  "seed": {"doc": "flat-nested.json"},
+  "theme": "dark",
+  "values": {"flat.depth-colors": false, "flat.pad-indexes": false},
+  "script": ["2", "D", "ctrl+w", "l"],
+  "expect": [
+    {"after": 4, "mode": "flat", "contains": [".bindings[0].keys[0] = \"k0\"", ".bindings[1].keys[1] = \"k1\""], "lacks": ["[  0]"],
+     "attrs": {".bindings[1].keys[1]": "-faint,-fg"}}
+  ]
+}
