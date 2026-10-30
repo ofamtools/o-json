@@ -43,6 +43,22 @@ func TestTrialViewCycleAndDeclaredMode(t *testing.T) {
 	}
 }
 
+func TestTrialModePickerChoosesFuzzyViewAndSplit(t *testing.T) {
+	a := open(t, "testdata/sample.json", 120, 32)
+	press(t, a, "g", "m")
+	if a.r.Chooser(modeChooser) == nil {
+		t.Fatal("g m did not open the mode picker")
+	}
+	press(t, a, "s", "o", "n", "enter")
+	if a.viewName != viewJSON || !a.inData(a.r.Focus) || a.r.BaseMode() != "json" {
+		t.Fatalf("fuzzy JSON choice: view %q focus %q mode %q", a.viewName, a.r.Focus, a.r.BaseMode())
+	}
+	press(t, a, "g", "m", "s", "p", "l", "enter")
+	if a.r.Page != rsPageID || a.r.BaseMode() != "split" {
+		t.Fatalf("SPLIT choice: page %q mode %q", a.r.Page, a.r.BaseMode())
+	}
+}
+
 func TestTrialPaneKeysAndSplitBadge(t *testing.T) {
 	a := open(t, "testdata/sample.json", 100, 30)
 	shapeColour := fmt.Sprint(a.m.Appearance.Accent)

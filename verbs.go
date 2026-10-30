@@ -52,6 +52,7 @@ func (a *App) registerVerbs() {
 	}
 
 	r.Define("viewer").
+		Verb("mode", func(ochazuke.Ctx) ochazuke.Result { return done(a.openModePicker()) }, "Choose a mode by name (g m, :viewer mode); the chooser shows each mode's purpose and entry key").
 		Verb("load", func(c ochazuke.Ctx) ochazuke.Result {
 			p := ochazuke.StringArg(c.Args, "path", a.Path)
 			if p == "" {
@@ -106,7 +107,7 @@ func (a *App) registerVerbs() {
 	// load reads the file and shows it: a fetch, as the framework's reloads are.
 	setHistory(r, ochazuke.HistoryFetch, "viewer.load")
 	a.registerOpenVerbs(params)
-	setHistory(r, ochazuke.HistoryAction, "viewer.search", "viewer.next", "viewer.previous", "viewer.type", "viewer.raw", "viewer.view", "viewer.clear")
+	setHistory(r, ochazuke.HistoryAction, "viewer.mode", "viewer.search", "viewer.next", "viewer.previous", "viewer.type", "viewer.raw", "viewer.view", "viewer.clear")
 
 	r.Define("shape").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {

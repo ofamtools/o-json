@@ -67,6 +67,7 @@
     ]},
     {"context": "rows/count_pending", "extends": "normal", "bindings": []},
     {"context": "viewer/normal", "bindings": [
+	  {"key": "g m", "action": "viewer.mode", "hint": "choose mode"},
       {"key": "/", "action": "jq.focus", "hint": "jq query"},
       {"key": "/", "action": "viewer.search"},
       {"key": "n", "action": "viewer.next"},

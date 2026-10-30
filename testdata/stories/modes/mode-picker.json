@@ -1,0 +1,13 @@
+{
+  "name": "o-jj mode picker filters by mode name and enters JSON",
+  "area": "modes",
+  "width": 120,
+  "height": 32,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["g", "m", "s", "o", "n", "enter"],
+  "expect": [
+    {"after": 2, "modal": "mode-picker", "contains": ["Modes", "SHAPE", "JSON"]},
+    {"modal": "", "mode": "json", "contains": ["JSON ."]}
+  ]
+}

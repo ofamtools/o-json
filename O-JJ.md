@@ -21,6 +21,10 @@ under `~`). It does not use the installed `o-json` directories.
   either pane. `viewer.raw` remains available from the command palette.
 - `ctrl+a o` cycles viewer panes or restructure sides. `ctrl+w h`, `l`, and
   `w` move pane focus; `ctrl+w v` opens the existing restructure split.
+- `g m` opens the fuzzy mode picker. Each row shows the mode, its trial
+  colour, purpose, and entry key. Choosing SHAPE, TABLE, FLAT, JSON, JQ,
+  or SPLIT moves to that mode. The picker lists the later modes too and
+  explains when their entry action is not yet available.
 - `modes.declared=off` keeps the normal badge. The view keys still work.
 
 ## Compared with Vim
@@ -32,12 +36,16 @@ under `~`). It does not use the installed `o-json` directories.
 | `tab` | `:help CTRL-I` | Different: cycle data views, not jump to an older position. |
 | `ctrl+w h`, `ctrl+w l`, `ctrl+w w` | `:help windows` | Similar: move focus between o-jj's two panes. |
 | `ctrl+w v` | `:help CTRL-W_v` | Similar: opens the existing original and edited structure split on a separate page. |
+| `g m` | n/a | o-jj's mode chooser; fuzzy by name. |
 
 ## Rough or missing
 
 This is an early slice of Design D. FLAT and JSON are read-only lines; their
-line yank, jump and fold keys are not implemented. Search results, a mode
-picker, EDIT gating, `ctrl+w o` and split push/pull, RAW/Neovim integration
+line yank, jump and fold keys are not implemented. SEARCH, NESTED, EDIT,
+VISUAL, and RAW are listed but do not yet have picker entry actions. `:mode`
+cannot be a bare alias while ochazuke owns the `mode` noun; `:viewer mode`
+opens the chooser. Search results, EDIT gating, `ctrl+w o`, split push/pull,
+and RAW/Neovim integration
 are not implemented. JQ results use the current table view and query line;
 the unified search line is not implemented.
 `ctrl+w h` and `l` currently use ochazuke's wrapping previous/next focus
