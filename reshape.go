@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -70,12 +69,6 @@ type Stage struct {
 	Missing    string     `json:"missing,omitempty"`
 	Map        []MapEntry `json:"map,omitempty"`
 	Patches    []Patch    `json:"patches,omitempty"`
-}
-
-// op is the stage without its map and patches: the reshape step alone.
-func (s Stage) op() Stage {
-	s.Map, s.Patches = nil, nil
-	return s
 }
 
 // defaults fills what a stage leaves out and checks the rest.
@@ -710,9 +703,31 @@ func stageName(s Stage) string {
 
 // formatStage writes a stage on one line, its map and patches below.
 func formatStage(s Stage, str func(string) string) string {
-	head, _ := json.Marshal(s.op())
+	var fields []string
+	add := func(k, v string) { fields = append(fields, quote(k)+": "+v) }
+	add("op", str(s.Op))
+	if len(s.Paths) > 0 {
+		paths := make([]string, len(s.Paths))
+		for i, p := range s.Paths {
+			paths[i] = str(p)
+		}
+		add("paths", "["+strings.Join(paths, ", ")+"]")
+	}
+	for _, kv := range [][2]string{{"path", s.Path}, {"field", s.Field}, {"arrays", s.Arrays}, {"join", s.Join}, {"names", s.Names}} {
+		if kv[1] != "" || kv[0] == "join" && s.Op == opFlatten && s.Arrays == arraysJoin {
+			add(kv[0], str(kv[1]))
+		}
+	}
+	if s.Drop {
+		add("drop", "true")
+	}
+	for _, kv := range [][2]string{{"duplicates", s.Duplicates}, {"missing", s.Missing}} {
+		if kv[1] != "" {
+			add(kv[0], str(kv[1]))
+		}
+	}
 	var b strings.Builder
-	b.WriteString("  " + strings.TrimSuffix(string(head), "}"))
+	b.WriteString("  {" + strings.Join(fields, ", "))
 	if len(s.Map) > 0 {
 		b.WriteString(`, "map": [` + "\n")
 		for i, e := range s.Map {

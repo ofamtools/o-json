@@ -145,6 +145,34 @@ A mapping is `{"map": [entries]}` and an entry is `{"from": PATH, "to": PATH}`. 
 
 `set` replaces a value (`"path": "."` the whole document); `delete` removes a field or an item; `add` adds a key the object lacks (after the key `after`, else last) or inserts an item at an index (at most the array's length); `rename` renames one key in that one object. A patch applies only where its target is there: every step of its path (for `add`, the container, without that key); a `rename` onto a key the object has is not there either. A patch whose target is not there is **orphaned**: kept, skipped, never an error, and it applies again once its path is back. `--jq` appends each patch as a guarded `setpath` / `delpaths` step after the restructure, testing the same thing, so the program's output equals the Go result.
 
+**Reshape steps.** Some restructures make rows or keys out of values, which a map of shapes cannot say. A mapping may end with `"then": [...]`, steps applied in order after the map and its patches; each step reads the document the ones before it made, and carries its own `map` and `patches`, which read the step's output as the first map reads the source (a step without a `map` copies its output). The viewer makes them (`F`, `g k`, `g v`, `g e`, below), and `--map` and `--jq` run them:
+
+```json
+{"map": [...],
+"then": [
+  {"op": "flatten", "paths": [".people[].name", ".people[].address.city", ".people[].tags"], "arrays": "join", "join": ";", "names": "leaf"},
+  {"op": "key-by", "path": ".", "field": "name", "duplicates": "rename", "missing": "_missing", "map": [
+    {"from": ".Ann", "to": ".first"}
+  ]}
+]}
+```
+
+- `flatten` makes a flat array of objects, one per item of the paths' nearest common array (their longest common prefix, cut back to its last `[]`; the document itself when they share none, one row; a marked array stands for its items). Each row holds only the marked fields, under the dotted path from the item (`address.city`), or with `names` `leaf` (the default) the last key where no other field ends in it (`city`). An item missing a field leaves it out of its row; an item with none of them is an empty row, never dropped. An array among the fields follows `arrays`, the export's rule (`export.arrays`): `join` joins each column's values across the items with `join` between them (`tags: "a;b"`, `orders.sku: "s1;s2"`), `json` writes them as compact JSON (`["a","b"]`), and `rows` makes one row per item with the other fields repeated (several arrays give every combination; an array of objects keeps its fields together per element).
+- `key-by` turns the array at `path` (keys and `[]`; `.groups[].items` keys every group's items) into an object keyed by each item's `field` (its text, as jq's `tostring` writes a scalar). `drop: true` takes the field out of each value. Items that share a key: `duplicates` `rename` (the default) gives the later ones `KEY-2`, `KEY-3` (as o-json names any taken key), `last` keeps the last (jq's `INDEX`), `group` puts every item in an array under its key. Items without the field (not an object, no field, or the field an object or array) go under `missing` (default `_missing`, numbered past a taken key), in an array: nothing is dropped.
+- `values` turns the object at `path` into the array of its values, and `entries` into `{key, value}` pairs: the reverses of `key-by`. A value at `path` of another kind stays as it is, in every step.
+
+`--jq` appends each step as one filter (`(MAP) | (STEP) | (STEP'S MAP)`), so the program's output equals the Go result; `TestReshapeCasesAgreeWithJQ` runs every case through gojq and, when it is on PATH, jq. Compared with jq:
+
+| o-json step | jq |
+|---|---|
+| `flatten` (no arrays among the fields) | `[.people[] \| {name, city: .address.city}]` (absent fields left out rather than `null`) |
+| `flatten` `arrays: join` | `... \| {tags: (.tags \| join(";"))}` per item |
+| `flatten` `arrays: rows` | `[.people[] \| {name} + (.tags[] as $t \| {tags: $t})]`, an empty array keeping its row |
+| `key-by` `duplicates: last` | `INDEX(.[]; .id)` (o-json files items without the key under `_missing`; `INDEX` files them under `"null"`) |
+| `key-by` `duplicates: group` | `group_by(.id) \| map({(.[0].id\|tostring): .}) \| add`, in first-seen order rather than sorted |
+| `values` | `[.[]]` |
+| `entries` | `to_entries` |
+
 `--mapping` prints the mapping with every shape it leaves out added as a drop (`{"from": ".items[].archived", "to": null}`), so it reads as the whole story of the source; the output is itself a mapping, one entry per line.
 
 A key an object repeats is read as jq reads it: the last value, at the first one's position. The Go result, the jq program, the viewer and `table` therefore agree.
@@ -258,6 +286,15 @@ The viewer holds one document, like a vim buffer.
 | `w` / `W` | tree, data (edited) | write the restructured document to a new file / replacing a file, the source after one confirm |
 | `w` | tree, data (original) | write the shown document to a new file |
 | node keys | tree (edited) | as on the restructure page's restructured tree (below) |
+| `space` | tree (edited) | mark the node, at any depth (again: unmark); the title counts the marks (`3 marked`), and they survive collapsing, moves and undo |
+| `F` | tree (edited) | flatten the marked fields (else the node): a flat array, one row per item of their common array (`marks.flatten`, a reshape step) |
+| `g p` | tree (edited) | pick: keep only the marked fields at their paths, with what they are in (`marks.pick`) |
+| `g u` | tree (edited) | clear the marks |
+| `g k` | tree (edited), on an array of objects | key the items by a field (`node.key-by`, a form that offers the items' scalar fields) |
+| `g v` / `g e` | tree (edited), on an object | its values as an array / its `{key, value}` entries (`node.values`, `node.entries`) |
+| `V` … `space` `F` | tree (edited) | mark / flatten every selected node |
+| `g j` | tree, data, restructure page | the live jq panel (`jq-panel.toggle`): open it, focus it when it is open, close it from inside |
+| `tab`, `Y`, `v`/`V` … `y`, `esc`, `q` | jq panel | the mapping / the program; copy all of it / the selection into the registers and the clipboard; give the focus back; close |
 | `s` | tree (original) | send the shape to the restructure (below) |
 | `M` | tree, data | open the restructure page |
 | `:` | anywhere | the command palette: every verb, by name |
@@ -296,6 +333,15 @@ Every setting o-json declares (`: settings`, or `settings.json`), the default fi
 | `export.join` | text, `;` | the separator between joined array items |
 | `export.null` | `empty`, `null` | how an export writes null |
 | `table.nested` | `hover`, `summary` | a data pane cell holding an object or array opens a sub-table under its row while the cursor rests on it, walked with `j`/`k` and `h`/`l`; or shows only its summary (`enter` drills in the detail) |
+| `flatten.arrays` | `join`, `json`, `rows` | how `F` (`marks.flatten`) writes an array among the marked fields (the export's rule) |
+| `flatten.join` | text, `;` | the separator `flatten.arrays join` puts between items |
+| `flatten.names` | `leaf`, `path` | `F`'s field names: the last key where it is unique (`city`), else the dotted path; or always the dotted path (`address.city`) |
+| `key-by.keep-field` | `true`, `false` | `g k` keeps the field in each value, or takes it out |
+| `key-by.duplicates` | `rename`, `last`, `group` | items sharing a key: the later ones `KEY-2`, ...; the last one; all of them in an array |
+| `key-by.missing` | text, `_missing` | the key the items without the field go under |
+| `marks.count` | `true`, `false` | the structure pane's title counts the marked nodes |
+| `jq.panel` | `split`, `modal`, `off` | where `g j` shows the live jq program and mapping: under the panes (the default, so it stays beside the edits), over the page, or not at all |
+| `jq.panel-height` | integer, `8` | the split jq panel's rows, border included: fixed, so the panes never move as the program grows |
 | `table.nested-rows` | integer, `8` | how many lines the first hover sub-table shows before it scrolls (two fewer per deeper level, at least 3) |
 
 ## The restructure page
@@ -311,6 +357,8 @@ Every setting o-json declares (`: settings`, or `settings.json`), the default fi
 - **New keys open selected.** A key the page makes (the wrapper `S` makes, and `o`/`O`/`a`, `restructure.add-key {where}`, an empty object below, above or inside the node) gets a placeholder, `new-key`, opened in select mode: typing replaces it, and `esc` or a motion keeps it. The placeholder is the setting `restructure.new-key`, numbered past its siblings' keys (`new-key-2`, `new-key-3`). A wrapper has no `from` in the mapping. Making the key is one undo step and the typed name another, so `u` first takes the name back and then the key. With `{key}` (from the palette or the CLI) the key is named at once.
 - **Arrays and objects**: `t` (`node.array`) turns a key into an array of itself, its keys or its value becoming the array's `[]` item (`.items[].owner` becomes `.items[].owner[]`, one owner per array). `t` on that array or its item (`node.object`) turns it back. Each applies only where the mapping still checks, so on `.items[]`, whose values are many, `t` does nothing: a key holds one value, and an array whose item fans out has no one value to give it (`?` leaves `t` out there, as it leaves out every key that would not answer).
 - **An array document**: `t` on the empty root makes the top level an array, `. (root) array`, whose `[]` item waits for a shape. The first shape sent fills it with the array it is in: `s` on `.items[]` (or on `.items[].id`) maps `.items[]` to `.[]`, so the output is the array of items (`jq '[.items[] | …]'`). A root holding one array key turns into that array with `t` (the key goes, its item moves up); a root holding other keys becomes an array of itself, `[ {keys} ]` (`{"from": ".", "to": ".[]"}`). `t` on an array root turns it back: under the key it came from (`.[]` from `.items[]` becomes `.items[]`), back to the document's keys, or, for an array document's own array, under one new key, its placeholder opened selected (`{"new-key": [...]}`). Each flip is one undo step, the cursor on the toggled node.
+- **Marks and reshape steps.** `space` marks a node on the restructured tree (`node.mark`; again, `node.unmark`), at any depth; the marks are o-json's, by node, so they survive collapsing a parent (the title still counts them), moving the node and undo, and `g u` clears them. `g p` (`marks.pick`) keeps only the marked nodes, at their paths, with the ancestors they need and what is under them: a tree edit, one undo step. `F` (`marks.flatten`), `g k` (`node.key-by`), `g v` (`node.values`) and `g e` (`node.entries`) are reshape steps (see restructure): the tree so far closes into the mapping's `then`, and the tree becomes the copy of the step's output, editable as the document's copy is (a rename there goes into the step's `map`); `u` brings the closed tree back, marks and all. Without marks, `F` and `g p` act on the node under the cursor (or a `V` selection: `node.flatten`, `node.pick`). After a step, `s` from the original sends nothing (the tree's origins are the step's output; `: restructure add {path}` takes its paths). Unlike Vim's marks (`m{a-z}`, positions to jump to), these are selection marks, like netrw's `mf` or Emacs dired's `m`: they mark things for a command to act on.
+- **The jq panel.** `g j` (`jq-panel.toggle`) shows the live jq program (`Plan.JQ`, what `: restructure jq` copies) under the panes, at a fixed height (`jq.panel-height`), or over the page (`jq.panel modal`); it follows every structure edit, value edit and reshape step. In it `tab` shows the mapping (the `--mapping` form) instead, and the text is an input in normal mode: motions, `v`/`V` select, `y` copies the selection and `Y` all of it into the registers and the system clipboard; `esc` gives the focus back (the split panel stays) and `q` or `g j` closes it. The text is read-only: an edit is put back at once. (ochazuke v0.54.0 has no read-only input yet; o-json undoes edits each frame, in one place, `readOnlyText`.)
 - **Origins light up.** Selecting a node on the restructured tree marks the shape it comes from on the original (the accent colour), and selecting a shape on the original marks the nodes it went to.
 - **Layouts**, setting `restructure.layout` (`L` on the page, `o-json settings set restructure.layout single`, or `: restructure layout`): `split` (default) puts the original on the left and the restructured tree with its mapping on the right, and `tab` moves between them. `single` shows one tree above the mapping, and `tab` swaps the original and the restructured tree. `L` keeps the focused tree, and the breadcrumb names the layout and the key (`split layout (L: single)`).
 - **Output**: `w` (`restructure.write {path}`) writes the restructured document to a new file, asking for the path in a form (for example `NAME.restructured.json`). An existing file asks before it is replaced (`restructure.overwrite`), and the source is never written. `W` (`restructure.write {path, force: true}`) replaces an existing file without asking and, after one confirm (`restructure.overwrite-source`: "Overwrite the source people.json …?"), the source too, as `--out SOURCE --overwrite` does on the command line. `: restructure jq` copies the jq program (`{format: csv}` or `tsv` ends it in the export's step), a `.csv`, `.tsv`, `.jsonl` or `.md` path writes an export (see export), and `: restructure export-map {path}` writes the mapping to a new file.
@@ -339,6 +387,8 @@ Every setting o-json declares (`: settings`, or `settings.json`), the default fi
 | `w` | page | write the restructured document to a new file (an existing file asks; never the source) |
 | `W` | page | write, replacing an existing file without asking; the source after one confirm |
 | `q` | page | back to the viewer |
+| `space`, `F`, `g p`, `g u`, `g k`, `g v`, `g e` | restructured | mark, flatten, pick, clear the marks, key by, values, entries (as in the viewer) |
+| `g j` | page | the jq panel |
 
 ## Checks
 
