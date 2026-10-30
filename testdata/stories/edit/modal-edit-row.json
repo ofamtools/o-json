@@ -1,15 +1,16 @@
 {
-  "name": "o-json: r on a table cell opens the value editor over the table (its path, the old value, the type as typed); enter sets it and the cursor stays on the cell, esc cancels",
+  "name": "o-json: r on a table cell opens the value editor over the table (its path, the old value, the type as typed); enter sets it and the cursor stays on the cell; esc goes to normal mode, the text kept, and q cancels",
   "area": "edit",
   "width": 120,
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
-  "script": ["tab", "l", "l", "r", {"type": "Zed"}, "enter", "r", {"type": "gone"}, "esc"],
+  "script": ["tab", "l", "l", "r", {"type": "Zed"}, "enter", "r", {"type": "gone"}, "esc", "q"],
   "expect": [
-    {"after": 4, "modal": "value-editor", "mode": "insert", "contains": ["[0].name", "was    Ada A", "value  Ada A", "enter set", "esc cancel"], "order": ["#", "id", "name", "active"]},
+    {"after": 4, "modal": "value-editor", "mode": "insert", "contains": ["[0].name", "was    Ada A", "value  Ada A", "enter set", "esc normal"], "order": ["#", "id", "name", "active"]},
     {"after": 5, "contains": ["value  Zed", " string "]},
     {"after": 6, "modal": "", "mode": "normal", "cell": "Zed", "contains": ["1 value edit"]},
+    {"after": 9, "modal": "value-editor", "mode": "normal", "contains": ["value  gone"]},
     {"modal": "", "cell": "Zed", "contains": ["1 value edit"], "lacks": ["gone"]}
   ]
 }

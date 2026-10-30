@@ -11,7 +11,7 @@
   │   ▾ items       array     │ was    beta                                      string  │                           ┃  
   │     ▾ []        object    │ value  omega                                     string  │                           ┃  
   │         id      number    │                                                          │                           ┃  
-  │         name    string    │ enter set · esc cancel                                   │                           ┃  
+  │         name    string    │ enter set · esc normal                                   │                           ┃  
   │       ▾ owner   object    ╰──────────────────────────────────────────────────────────╯                           ┃  
   │           name  string        .items[].ow… │ ┃                                                                   ┃  
   │           ema…  string|null?  .items[].ow… │ ┃                                                                   ┃  
@@ -20,7 +20,7 @@
   │ 1–12 / 18                                  │ ┃                                                                   ┃  
   ╰────────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  enter set · esc cancel                                                                                                
+  enter set · esc normal                                                                                                
                                                                                                                         
   ◆ o-json                                                                                               INSERT         
    › testdata/sample.json  Restructure                                                                                  
@@ -35,7 +35,7 @@
   │   ▾ items       array     │ key    new-key                                           │                           ┃  
   │     ▾ []        object    │ value  null                                        null  │                           ┃  
   │         id      number    │                                                          │                           ┃  
-  │         name    string    │ enter next · esc cancel                                  │                           ┃  
+  │         name    string    │ enter next · esc normal                                  │                           ┃  
   │       ▾ owner   object    ╰──────────────────────────────────────────────────────────╯                           ┃  
   │           name  string        .items[].ow… │ ┃                                                                   ┃  
   │           ema…  string|null?  .items[].ow… │ ┃                                                                   ┃  
@@ -44,5 +44,5 @@
   │ 1–12 / 18                                  │ ┃                                                                   ┃  
   ╰────────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  enter next · esc cancel                                                                                               
+  enter next · esc normal                                                                                               
                                                                                                                         

@@ -1,0 +1,31 @@
+{
+ "name": "o-json: esc in the one-line value editor after typing goes to normal mode and keeps the text; a second esc cancels (P4)",
+ "area": "uxr",
+ "width": 120,
+ "height": 30,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "sample.json"
+ },
+ "script": [
+  "j",
+  "j",
+  "j",
+  "j",
+  "tab",
+  "l",
+  "l",
+  "r",
+  "4",
+  "2",
+  "esc"
+ ],
+ "expect": [
+  {
+   "contains": [
+    "value  42",
+    "NORMAL"
+   ]
+  }
+ ]
+}

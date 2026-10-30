@@ -579,7 +579,7 @@ func (a *App) inputBlock(body string, w int) ochazuke.Block {
 func (a *App) registerValueVerbs() {
 	r := a.r
 	r.Define("value")
-	r.Define("value-input").Pin("insert")
+	r.Define("value-input")
 	a.registerValueEditor()
 	guard := func(name string, ok func(valueAt) bool) {
 		r.DefineGuard(name, func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
@@ -727,11 +727,18 @@ func (a *App) registerValueVerbs() {
 		}, "Forget one value edit (index, from 1, as value.patches lists them), as one undo step")
 	r.Define("value-input").
 		Verb("accept", func(c ochazuke.Ctx) ochazuke.Result { return done(a.accept()) },
-			"Close the inline input and make its text the edit (enter, esc): the value, the new key's name (its value opens next), or the key").When("value-typing").
+			"Close the inline input and make its text the edit (enter): the value, the new key's name (its value opens next), or the key").When("value-typing").
 		Verb("cancel", func(c ochazuke.Ctx) ochazuke.Result {
 			a.closeInput()
 			return done(nil)
-		}, "Close the inline input without changing anything").When("value-typing")
+		}, "Close the inline input without changing anything").When("value-typing").
+		Verb("leave", func(c ochazuke.Ctx) ochazuke.Result {
+			if a.leaveSets() {
+				return done(a.accept())
+			}
+			a.closeInput()
+			return done(nil)
+		}, "Leave the inline input as value.leave says: set (the default) makes its text the edit, cancel closes it with nothing changed (esc in normal mode)").When("value-typing")
 	params("value.edit", map[string]ochazuke.Parameter{
 		"text":   {Type: "string", Description: "the new value as typed (a number, true, false, null, JSON, \"…\" for a string); omit to edit it in place"},
 		"select": {Type: "boolean", Description: "open the input with the text selected; omitted, the rename.select setting decides"},
@@ -743,7 +750,7 @@ func (a *App) registerValueVerbs() {
 	})
 	params("value.rename", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the new key; omit to edit it in place"}})
 	params("value.drop", map[string]ochazuke.Parameter{"index": {Type: "integer", Required: true, Description: "the value edit, from 1, as value.patches lists them"}})
-	setHistory(r, ochazuke.HistoryChange, "value.edit", "value.delete", "value.add", "value.rename", "value.paste", "value.yank", "value.drop", "value-input.accept", "value-input.cancel")
+	setHistory(r, ochazuke.HistoryChange, "value.edit", "value.delete", "value.add", "value.rename", "value.paste", "value.yank", "value.drop", "value-input.accept", "value-input.cancel", "value-input.leave")
 	setHistory(r, ochazuke.HistoryFetch, "value.patches")
 	setRepeatable(r, "value.yank")
 }

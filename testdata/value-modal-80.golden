@@ -11,7 +11,7 @@
   │   ▾ it│ was    beta                                      string  │       ┃  
   │     ▾ │ value  omega                                     string  │       ┃  
   │       │                                                          │       ┃  
-  │       │ enter set · esc cancel                                   │       ┃  
+  │       │ enter set · esc normal                                   │       ┃  
   │       ╰──────────────────────────────────────────────────────────╯       ┃  
   │           name             │ ┃                                           ┃  
   │           email            │ ┃                                           ┃  
@@ -20,7 +20,7 @@
   │ 1–12 / 18                  │ ┃                                           ┃  
   ╰────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────  
-  enter set · esc cancel                                                        
+  enter set · esc normal                                                        
                                                                                 
   ◆ o-json                                                       INSERT         
    › testdata/sample.json  Restructure                                          
@@ -35,7 +35,7 @@
   │   ▾ it│ key    new-key                                           │       ┃  
   │     ▾ │ value  null                                        null  │       ┃  
   │       │                                                          │       ┃  
-  │       │ enter next · esc cancel                                  │       ┃  
+  │       │ enter next · esc normal                                  │       ┃  
   │       ╰──────────────────────────────────────────────────────────╯       ┃  
   │           name             │ ┃                                           ┃  
   │           email            │ ┃                                           ┃  
@@ -44,5 +44,5 @@
   │ 1–12 / 18                  │ ┃                                           ┃  
   ╰────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────  
-  enter next · esc cancel                                                       
+  enter next · esc normal                                                       
                                                                                 

@@ -87,7 +87,8 @@ func assertBehind(t *testing.T, before, during, title string) {
 // r on a table cell opens the value editor over the table, titled with
 // the value's path, the old value dimmed, the text selected and its type
 // as typed; enter sets it (one undo step) and the cursor stays on the
-// cell; esc cancels with nothing changed; unchanged text is no edit.
+// cell; esc goes to normal mode (the text kept), where q cancels and a
+// second esc leaves as value.leave says; unchanged text is no edit.
 func TestValueModalEditsACell(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	onData(t, a, ".items", ".items[1]")
@@ -102,7 +103,7 @@ func TestValueModalEditsACell(t *testing.T) {
 	}
 	frame := view(a)
 	assertBehind(t, before, frame, ".items[1].name")
-	for _, want := range []string{"was    beta", "value  beta", "enter set", "esc cancel"} {
+	for _, want := range []string{"was    beta", "value  beta", "enter set", "esc normal"} {
 		if !strings.Contains(frame, want) {
 			t.Fatalf("no %q in the editor\n%s", want, frame)
 		}
@@ -125,13 +126,39 @@ func TestValueModalEditsACell(t *testing.T) {
 	if len(a.rs.patches) != 1 {
 		t.Fatalf("%d patches, want 1", len(a.rs.patches))
 	}
-	// esc cancels: nothing changes.
+	// esc goes to normal mode, the typing kept; q there cancels:
+	// nothing changes.
 	press(t, a, "r")
 	typeText(t, a, "gone")
 	press(t, a, "esc")
-	if got := field(t, a, ".items[1].name"); got != "42" || len(a.rs.patches) != 1 || a.r.TopModal() != "" {
-		t.Fatalf("esc: %s, %d patches, modal %q", got, len(a.rs.patches), a.r.TopModal())
+	if a.r.TopModal() != valueEditorID || a.r.Mode.Name != "normal" || !strings.Contains(view(a), "value  gone") {
+		t.Fatalf("esc after typing: modal %q mode %q\n%s", a.r.TopModal(), a.r.Mode.Name, view(a))
 	}
+	press(t, a, "q")
+	if got := field(t, a, ".items[1].name"); got != "42" || len(a.rs.patches) != 1 || a.r.TopModal() != "" {
+		t.Fatalf("q: %s, %d patches, modal %q", got, len(a.rs.patches), a.r.TopModal())
+	}
+	// With value.leave cancel a second esc cancels too.
+	if err := a.r.Settings().Set(settingValueLeave, leaveCancel); err != nil {
+		t.Fatal(err)
+	}
+	press(t, a, "r")
+	typeText(t, a, "gone")
+	press(t, a, "esc", "esc")
+	if got := field(t, a, ".items[1].name"); got != "42" || len(a.rs.patches) != 1 || a.r.TopModal() != "" {
+		t.Fatalf("esc esc with value.leave cancel: %s, %d patches, modal %q", got, len(a.rs.patches), a.r.TopModal())
+	}
+	if err := a.r.Settings().Set(settingValueLeave, leaveSet); err != nil {
+		t.Fatal(err)
+	}
+	// value.leave set (the default): a second esc sets, one undo step.
+	press(t, a, "r")
+	typeText(t, a, "kept")
+	press(t, a, "esc", "esc")
+	if got := field(t, a, ".items[1].name"); got != `"kept"` || len(a.rs.patches) != 2 || a.r.TopModal() != "" {
+		t.Fatalf("esc esc with value.leave set: %s, %d patches, modal %q", got, len(a.rs.patches), a.r.TopModal())
+	}
+	press(t, a, "u")
 	// Unchanged text is no edit; u undoes the one step.
 	press(t, a, "r", "enter")
 	if len(a.rs.patches) != 1 {
@@ -191,7 +218,7 @@ func TestValueModalEditsASubTableCell(t *testing.T) {
 	if a.r.Focus != valueKeyID || selected(a) != "city" {
 		t.Fatalf("K: focus %q selected %q", a.r.Focus, selected(a))
 	}
-	press(t, a, "esc")
+	press(t, a, "esc", "esc") // normal, then leave: the key unchanged is no edit
 	if !a.hoverIn() || a.r.TopModal() != "" {
 		t.Fatalf("esc on K: in %v modal %q", a.hoverIn(), a.r.TopModal())
 	}
@@ -289,7 +316,7 @@ func TestValueModalEditsAContainerOnSeveralLines(t *testing.T) {
 	if sel := selected(a); !strings.HasPrefix(sel, "{\n") {
 		t.Fatalf("the JSON is not selected: %q", sel)
 	}
-	press(t, a, "esc", "esc") // normal, then cancel
+	press(t, a, "esc", "esc") // normal, then leave: the text unchanged is no edit
 	valueDo(t, a, "edit", ochazuke.Arguments{"select": false})
 	in := a.vedit.in
 	if !in.Multiline || !strings.Contains(string(in.Text), "\n  \"name\": \"ann\"") {
@@ -365,8 +392,12 @@ func TestValueEditorInlineSetting(t *testing.T) {
 	}
 	typeText(t, a, "3")
 	press(t, a, "esc")
+	if a.r.Focus != valueInputID || a.r.Mode.Name != "normal" || field(t, a, ".version") != "2" {
+		t.Fatalf("inline esc: focus %q mode %q (normal mode, the text kept, nothing set)", a.r.Focus, a.r.Mode.Name)
+	}
+	press(t, a, "esc")
 	if got := field(t, a, ".version"); got != "3" {
-		t.Fatalf("inline esc sets: %s", got)
+		t.Fatalf("inline esc esc sets (value.leave set): %s", got)
 	}
 }
 
@@ -379,7 +410,7 @@ func TestValueModalGolden(t *testing.T) {
 		press(t, a, "l", "l", "r")
 		typeText(t, a, "omega")
 		got := view(a)
-		press(t, a, "esc", "o")
+		press(t, a, "esc", "q", "o") // normal mode, q cancels, o adds
 		got += "\n" + view(a)
 		golden := filepath.Join("testdata", "value-modal-"+itoa(width)+".golden")
 		if os.Getenv("UPDATE_GOLDEN") != "" {

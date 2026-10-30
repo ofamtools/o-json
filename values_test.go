@@ -123,7 +123,7 @@ func TestEditValueTypes(t *testing.T) {
 		if _, kind := inferValue(c.typed); !strings.Contains(view(a), "version ("+string(kind)+"): ") {
 			t.Fatalf("%s: the prefix does not show %s\n%s", c.typed, kind, view(a))
 		}
-		press(t, a, "esc") // esc keeps the typing, as enter does
+		press(t, a, "esc", "esc") // normal, then leave: value.leave set keeps the typing, as enter does
 		if got := field(t, a, ".version"); got != c.want {
 			t.Fatalf("%s: %s, want %s", c.typed, got, c.want)
 		}

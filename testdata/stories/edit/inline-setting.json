@@ -1,14 +1,15 @@
 {
-  "name": "o-json: value.editor inline keeps the input drawn over the row, its type in the prefix (enter or esc sets)",
+  "name": "o-json: value.editor inline keeps the input drawn over the row, its type in the prefix (esc goes to normal mode, the text kept; a second esc sets)",
   "area": "edit",
   "width": 120,
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
   "values": {"value.editor": "inline"},
-  "script": ["tab", "l", "l", "r", {"type": "Zed"}, "esc"],
+  "script": ["tab", "l", "l", "r", {"type": "Zed"}, "esc", "esc"],
   "expect": [
     {"after": 4, "modal": "", "focus": "data/value-input", "contains": ["name (string): Ada A"]},
+    {"after": 6, "mode": "normal", "focus": "data/value-input", "contains": ["name (string): Zed"], "lacks": ["1 value edit"]},
     {"modal": "", "cell": "Zed", "contains": ["1 value edit"]}
   ]
 }

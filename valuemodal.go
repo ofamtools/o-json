@@ -37,8 +37,15 @@ import (
 
 const (
 	settingValueEditor = "value.editor"
-	editorModal        = "modal"
-	editorInline       = "inline"
+	// settingValueLeave is what esc in normal mode does in the value
+	// editor and the inline input: set (the default) makes the text the
+	// edit, as a record editor keeps each change (u undoes it); cancel
+	// closes it unchanged, as a prompt does.
+	settingValueLeave = "value.leave"
+	leaveSet          = "set"
+	leaveCancel       = "cancel"
+	editorModal       = "modal"
+	editorInline      = "inline"
 	// valueEditorID is the modal (its body's id and noun); its inputs are
 	// value-field (one line) and value-text (several lines).
 	valueEditorID = "value-editor"
@@ -53,8 +60,16 @@ const (
 func declareValueEditorSetting(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingValueEditor, Type: ochazuke.SettingString, Default: editorModal, Enum: []string{editorModal, editorInline},
-		Description: "How r / i, K and o / O edit a value in the data pane and the detail: modal opens a compact editor over the table (the value's path, its type as typed, the old value; enter sets, esc cancels); inline draws the input over the row (enter or esc sets)",
+		Description: "How r / i, K and o / O edit a value in the data pane and the detail: modal opens a compact editor over the table (the value's path, its type as typed, the old value); inline draws the input over the row. In both enter sets, esc goes to normal mode with the text kept, and a second esc leaves as value.leave says",
+	}, ochazuke.Setting{
+		Name: settingValueLeave, Type: ochazuke.SettingString, Default: leaveSet, Enum: []string{leaveSet, leaveCancel},
+		Description: "What esc in normal mode does in the value editor and the inline input (the first esc goes from insert to normal, the text kept): set makes the text the edit, one undo step (u undoes it), as a record editor keeps each change; cancel closes it with nothing changed, as a prompt does. q in normal mode always cancels",
 	})
+}
+
+// leaveSets reports value.leave set.
+func (a *App) leaveSets() bool {
+	return a.r.Settings().String(settingValueLeave) != leaveCancel
 }
 
 // modalEditor reports value.editor modal.
@@ -406,7 +421,8 @@ func (vm *valueModal) ModalBlock(s ochazuke.Styles, width, height int) ochazuke.
 // registerValueEditor defines the modal, its inputs and its verbs.
 func (a *App) registerValueEditor() {
 	r := a.r
-	r.Define("value-field").Pin("insert")
+	r.Define("value-field")
+	r.DefineGuard("value-leave-sets", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return a.leaveSets() })
 	r.Define("value-text")
 	field := func(name string, ok func(vm *valueModal, i int) bool) {
 		r.DefineGuard(name, func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
@@ -439,7 +455,13 @@ func (a *App) registerValueEditor() {
 		Verb("previous", func(c ochazuke.Ctx) ochazuke.Result { return done(a.vedit.modal.move(-1)) },
 			"Focus the value editor's previous field").When("value-editor-back").
 		Verb("cancel", func(c ochazuke.Ctx) ochazuke.Result { return done(a.cancelModal()) },
-			"Close the value editor without changing anything").When("value-editor-open")
-	setHistory(r, ochazuke.HistoryChange, valueEditorID+".set")
+			"Close the value editor without changing anything").When("value-editor-open").
+		Verb("leave", func(c ochazuke.Ctx) ochazuke.Result {
+			if a.leaveSets() {
+				return done(a.setModal())
+			}
+			return done(a.cancelModal())
+		}, "Leave the value editor as value.leave says: set (the default) makes its text the edit from any field, cancel closes it with nothing changed (esc in normal mode)").When("value-editor-open")
+	setHistory(r, ochazuke.HistoryChange, valueEditorID+".set", valueEditorID+".leave")
 	setHistory(r, ochazuke.HistoryAction, valueEditorID+".next", valueEditorID+".previous", valueEditorID+".cancel")
 }

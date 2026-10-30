@@ -101,18 +101,18 @@ Value edits work in the data panel of the edited view, which is the default. (Af
 
 1. In the table, move to a cell and press `r` (or `i`). The **value editor** opens over the table. Its title is the value's path, the old value is shown dimmed, and the new text is selected, so typing replaces it.
 2. A badge shows the type the text will get: a number, `true`/`false`, `null`, JSON for an object or array, otherwise a string. To force a string, quote it: `"42"`.
-3. `enter` sets the value; `esc` cancels.
-4. An object or array value opens on several lines. There `enter` adds a new line; press `esc` to go to normal mode, then `enter` sets the value (and `esc` cancels).
+3. `enter` sets the value. `esc` goes to normal mode and keeps what you typed; a second `esc` sets it too, and `q` there cancels. (`: settings set value.leave cancel` makes the second `esc` cancel instead.)
+4. An object or array value opens on several lines. There `enter` adds a new line; press `esc` to go to normal mode, then `enter` (or `esc`) sets the value.
 5. `d d` deletes the field (or, on `#`, the whole item).
 6. `o` adds after and `O` before. In an object, the editor asks for the key, then `tab` (or `enter`) moves to the value. In an array, it adds an item.
-7. `K` renames the key in that one object.
+7. `K` renames the key in that one object. If the object already has the key you type, the editor says which name it will use instead (`id-2`), as `o` does.
 8. `y` copies the value under the cursor (it also goes to the system clipboard), and `p` puts it over another value.
 9. `u` undoes and `ctrl+r` redoes, in the table and in the detail.
 10. To save, press `w`, type a new file name in the path chooser, and press `enter`. If the file already exists, `w` asks first. `W` replaces a file without asking. On the file you opened, `W` asks you to confirm once.
 
 **What you'll see:** the breadcrumb gets `[+]` and counts your edits (`1 value edit`), and the structure's title reads `edited [+]`. After a write, the `[+]` goes away. `q` asks before quitting with unsaved edits; `Q` quits without asking.
 
-If you prefer to edit on the row itself, use `: settings set value.editor inline`: `enter` or `esc` then sets the value.
+If you prefer to edit on the row itself, use `: settings set value.editor inline`. The keys are the same: `enter` sets, `esc` goes to normal mode, and a second `esc` sets.
 
 ![r edits a name, o adds a key, d d and u, then w writes edited.json](img/05-edit.gif)
 
@@ -292,7 +292,9 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 | `K` | rename the key |
 | `p` | put the copied value here |
 | `enter` | editor: set |
-| `esc` | editor: cancel |
+| `esc` | editor: normal mode, the text kept |
+| `esc` | editor: leave (value.leave: set or cancel) |
+| `q` | editor: cancel |
 | `enter` `tab` | editor: key to value |
 | `u` | undo |
 | `ctrl+r` | redo |
