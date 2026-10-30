@@ -79,6 +79,17 @@
       {"key": "esc", "action": "viewer.edit-leave", "hint": "leave EDIT"}
     ]},
     {"context": "rows/count_pending", "extends": "normal", "bindings": []},
+    {"context": "rows/visual-line", "bindings": [
+      {"key": "j", "action": "rows.move", "args": {"motion": "down"}, "from": {"steps": "count"}, "hidden": true},
+      {"key": "down", "action": "rows.move", "args": {"motion": "down"}, "from": {"steps": "count"}, "hidden": true},
+      {"key": "k", "action": "rows.move", "args": {"motion": "up"}, "from": {"steps": "count"}, "hidden": true},
+      {"key": "up", "action": "rows.move", "args": {"motion": "up"}, "from": {"steps": "count"}, "hidden": true},
+      {"key": "ctrl+d", "action": "rows.move", "args": {"motion": "half-down"}, "from": {"steps": "count"}, "hidden": true},
+      {"key": "ctrl+u", "action": "rows.move", "args": {"motion": "half-up"}, "from": {"steps": "count"}, "hidden": true},
+      {"key": "g g", "action": "rows.move", "args": {"motion": "top"}, "from": {"line": "line"}, "hidden": true},
+      {"key": "G", "action": "rows.move", "args": {"motion": "bottom"}, "from": {"line": "line"}, "hidden": true},
+      {"key": "R", "action": "viewer.raw-edit", "hint": "RAW the rows"}
+    ]},
     {"context": "viewer/normal", "bindings": [
       {"key": "g m", "action": "viewer.mode", "hint": "choose mode"},
       {"key": "ctrl+w =", "action": "viewer.restore", "hidden": true},

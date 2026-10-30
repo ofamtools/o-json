@@ -28,7 +28,7 @@ type settingGroup struct {
 
 var settingSections = []settingSection{
 	{ochazuke.SettingSection{ID: "viewer", Title: "Viewer", Description: "Editing the structure in place, the trees, opening, pasting and undo"}, []settingGroup{
-		{"", []string{settingEditable, settingDeclaredModes, settingEditGate, settingRawEditor, settingScalarFollow, settingLitWidth, settingObjectView, settingDuplicateTone, settingRecent, settingReloadPlace, settingEmptyHint, settingUndoAtStart}},
+		{"", []string{settingEditable, settingDeclaredModes, settingEditGate, settingRawEditor, settingRawPane, settingRawDetach, settingRawGrants, settingScalarFollow, settingLitWidth, settingObjectView, settingDuplicateTone, settingRecent, settingReloadPlace, settingEmptyHint, settingUndoAtStart}},
 		{"Paste", []string{settingPasteOnTree, settingPasteText}},
 	}},
 	{ochazuke.SettingSection{ID: "data", Title: "Data", Description: "The data pane and the detail: value edits, the value editor, tables and nested data"}, []settingGroup{

@@ -115,11 +115,11 @@ func TestSearchLargeDocumentRunsOffTheLoop(t *testing.T) {
 	if !a.sr.running || len(a.sr.hits) != 0 {
 		t.Fatalf("large search: running %v hits %d", a.sr.running, len(a.sr.hits))
 	}
-	job := a.searchLaunch()
-	if job == nil {
+	later := a.takeLater()
+	if len(later) != 1 {
 		t.Fatal("no off-loop job")
 	}
-	_, next := a.m.Update(job())
+	_, next := a.m.Update(later[0]())
 	finish(a, next)
 	if a.sr.running || len(a.sr.hits) == 0 || a.overlay != overlayResults {
 		t.Fatalf("landed: running %v hits %d overlay %q", a.sr.running, len(a.sr.hits), a.overlay)

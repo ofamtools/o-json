@@ -152,8 +152,8 @@ func (j *jqRunner) key() (string, string, *Node) {
 // pause is over.
 func (j *jqRunner) PendingCommand() tea.Cmd {
 	j.a.refreshSearch()
-	if job := j.a.searchLaunch(); job != nil {
-		return tea.Batch(job, j.pending())
+	if later := j.a.takeLater(); len(later) > 0 {
+		return tea.Batch(append(later, j.pending())...)
 	}
 	return j.pending()
 }
@@ -210,6 +210,9 @@ func (j *jqRunner) HandleMessage(msg tea.Msg) bool {
 	switch msg := msg.(type) {
 	case searchDone:
 		j.a.searchLanded(msg)
+		return true
+	case rawPaneDone:
+		j.a.rawPaneClosed(msg)
 		return true
 	case jqTick:
 		if msg.seq == j.seq {

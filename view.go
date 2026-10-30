@@ -146,6 +146,9 @@ func (a *App) breadcrumb() string {
 		return a.emptyCrumb()
 	}
 	parts := []string{a.Doc.Name + a.dirtyMark()}
+	if a.raw != nil && a.raw.window != "" {
+		parts = append(parts, "RAW running "+a.raw.path)
+	}
 	// The path the tree's cursor is on: the shape shown, or the plain
 	// values highlighted in it (follow.go).
 	s := a.shown

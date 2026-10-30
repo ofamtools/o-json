@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strconv"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/unixsuperhero/ochazuke"
 )
@@ -58,7 +59,13 @@ type App struct {
 	// editing is EDIT on the data pane (edit.go).
 	editing bool
 	// raw is the open RAW edit (raw.go), nil when none.
-	raw     *rawSession
+	raw *rawSession
+	// tuios runs the tuios command and getenv reads the environment
+	// (RAW's pane, rawpane.go); tests replace both. later is commands a
+	// verb leaves for the loop (takeLater).
+	tuios   tuiosRunner
+	getenv  func(string) string
+	later   []tea.Cmd
 	overlay string
 
 	// Clipboard copies text to the system clipboard; nil when there is

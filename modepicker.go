@@ -144,7 +144,7 @@ func (a *App) gotoMode(name string) ochazuke.Result {
 		if err := toViewer(); err != nil {
 			return fail(err)
 		}
-		return a.startRaw()
+		return a.startRaw(ochazuke.Ctx{Runtime: a.r})
 	case "SPLIT":
 		if err := a.r.OpenPage(rsPageID); err != nil {
 			return fail(err)

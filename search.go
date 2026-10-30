@@ -67,9 +67,8 @@ type searchState struct {
 	view *Shape // the Results view's shape (its title)
 	cur  int    // the hit n / N stand on
 
-	// job is a search to run off the loop (a large document): the jq
-	// runner's PendingCommand launches it; running says one is out.
-	job     tea.Cmd
+	// running says a search runs off the loop (a large document; the
+	// jq runner's PendingCommand launches it from App.later).
 	running bool
 	fresh   bool // the job's search is new: its hits show the Results view
 
@@ -120,7 +119,7 @@ func (a *App) refreshSearch() {
 	}
 	fresh := what != a.sr.what
 	a.sr.key, a.sr.what = key, what
-	a.sr.job, a.sr.running = nil, false
+	a.sr.running = false
 	if a.searchJQ() || text == "" || root == nil || !largerThan(root, searchLoopNodes) {
 		a.sr.hits, a.sr.cut, a.sr.view = nil, false, nil
 	}
@@ -149,10 +148,10 @@ func (a *App) refreshSearch() {
 	}
 	if largerThan(root, searchLoopNodes) {
 		a.sr.running, a.sr.fresh = true, fresh
-		a.sr.job = func() tea.Msg {
+		a.later = append(a.later, func() tea.Msg {
 			hits, cut := searchHits(root, m)
 			return searchDone{key: key, hits: hits, cut: cut}
-		}
+		})
 		return
 	}
 	hits, cut := searchHits(root, m)
@@ -168,13 +167,6 @@ func (a *App) foundHits(text string, hits []dataLine, cut, fresh bool) {
 	if fresh || a.overlay == overlayJQ {
 		a.overlay = overlayResults
 	}
-}
-
-// searchLaunch is the off-loop search refreshSearch left, once.
-func (a *App) searchLaunch() tea.Cmd {
-	job := a.sr.job
-	a.sr.job = nil
-	return job
 }
 
 // searchLanded takes an off-loop search's answer if it is still the

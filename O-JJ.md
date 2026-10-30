@@ -18,9 +18,9 @@ Updated as each item lands; the sections below describe what is built.
 | JQ: `m` on the structure, the jq result view declares JQ | `m`, `/` `shift+tab` | done |
 | JQ badge while typing the jq line (prototype `JQ`) | `/` `shift+tab` | missing (INSERT: completion needs insert) |
 | EDIT entered by `i`, `r` (+ value editor); `esc` / leaving the pane leaves | `i`, `r`, `esc` | done |
-| VISUAL in both panes | `v`, `V` | done |
+| VISUAL in both panes | `v`, `V`; data pane `j k g g G ctrl+d ctrl+u` extend | done |
 | SPLIT badge on the restructure page | `ctrl+w v` | done |
-| RAW | `g r` | partial (foreground only, no badge while the editor has the terminal) |
+| RAW | `g r` | done (foreground, or a tuios pane; no RAW badge while the editor has the terminal) |
 | Mode picker | `g m` | done |
 | Per-mode accent colours | | partial (o-jj recolours the whole accent; ochazuke tones later) |
 | Opt-outs `modes.declared`, `modes.edit-gate` | | done |
@@ -65,9 +65,9 @@ Updated as each item lands; the sections below describe what is built.
 |---|---|---|
 | Document / row value in the editor, foreground | `g r` | done |
 | Invalid → reopen at line, third invalid drops | | done |
-| Edit back as path-addressed patches (a diff), one undo step | `u` | missing (one set patch) |
-| VISUAL `R` opens the selection in RAW | `v j R` | missing |
-| tuios pane, `ctrl+a d` detach, `g r` re-attach (`raw.pane auto/foreground`) | | missing |
+| Edit back as path-addressed patches (a diff), one undo step | `u` | done (a reordered object is one set: no reorder patch) |
+| VISUAL `R` opens the selection in RAW | `V j R` | done (data pane rows; the structure's selection is refused) |
+| tuios pane, `ctrl+a d` detach, `g r` re-attach (`raw.pane auto/foreground`) | `g r`, `ctrl+a d` | done (tested with a fake tuios; not walked in a live session) |
 
 ### SPLIT
 
@@ -144,6 +144,9 @@ its trial colour (o-jj colours the application accent by mode).
 - `modes.edit-gate` `on`: off lets the value keys answer in TABLE as in o-json.
 - `search.type` `substring`: the type `/` opens in (`substring`, `fuzzy`, `regex`, `jq`).
 - `raw.editor` empty: the editor command line for `g r`.
+- `raw.pane` `auto`: a tuios window inside tuios, else the foreground; `foreground` always suspends.
+- `raw.detach` (an nvim/vim `-c` mapping): `ctrl+a d` in the editor's pane focuses o-jj; empty passes nothing.
+- `raw.pane-grants` `read,write`: the editor window's tuios grants.
 
 ## Compared with Vim
 
@@ -193,10 +196,19 @@ its trial colour (o-jj colours the application accent by mode).
   pane then follows the structure (o-json's invariant), so it changes to
   that path's view. The prototype kept the pane on the old view. On the
   Results view the pane stays (the overlay), as in the prototype.
-- RAW replaces the value with one set patch, not a diff into many patches;
-  a key reorder in the editor is kept (the patch is the text's order).
-  `g r` in VISUAL (`R` on a selection) and a tuios pane for the editor
-  (`raw.pane`) are not built; RAW is always foreground.
+- RAW maps the edit back as path-addressed patches (rawdiff.go: a set
+  per changed scalar, a delete or an add beside its neighbour per key,
+  an array's head and tail kept and the middle compared pairwise), all
+  one undo step; an object whose kept keys changed order is one set at
+  its path (there is no reorder patch). `R` in the data pane's VISUAL
+  sends the selected rows as one array, mapped back item by item (a
+  different item count applies nothing). Inside tuios (`raw.pane auto`)
+  the editor runs in a new tuios window (`tuios new-window … --print-id
+  -- nvim -c <raw.detach> +L file`, grants `raw.pane-grants`); o-jj keeps
+  running, the breadcrumb says `RAW running`, `g r` focuses the window,
+  the editor's `ctrl+a d` focuses o-jj's pane, and the window's end
+  reads the file back. Not walked in a live tuios session yet; whether
+  `write` is the grant `focus-window` needs is unchecked.
 - The footer leads with the mode's own keys: they are rows of the focused
   noun's mode table, and ochazuke lists the innermost level first. The
   search line's keys read type, hits, show, leave; `ctrl+f` (functions)
