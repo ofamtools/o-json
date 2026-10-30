@@ -155,6 +155,9 @@ func (a *App) breadcrumb() string {
 	if s != nil && s == a.sr.view {
 		n := len(a.sr.hits)
 		parts = append(parts, fmt.Sprintf("%s: %d hit%s", s.Path, n, plural(n)))
+		if a.sr.running {
+			parts = append(parts, "searching…")
+		}
 		if l := lineAt(a.r.Instances[a.r.Focus]); l != nil && l.node != nil {
 			parts = append(parts, "hit "+l.node.Path())
 		}

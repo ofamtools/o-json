@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -84,5 +87,41 @@ func TestSearchLineJQAndRegexError(t *testing.T) {
 	press(t, a, "esc")
 	if a.queryShowing() || a.queryText() != "" {
 		t.Fatalf("esc on the pane kept %q", a.queryText())
+	}
+}
+
+// A document larger than searchLoopNodes is searched off the loop: the
+// key returns at once with a job, and its answer fills the Results view.
+func TestSearchLargeDocumentRunsOffTheLoop(t *testing.T) {
+	var b strings.Builder
+	b.WriteString(`{"rows":[`)
+	for i := 0; i < searchLoopNodes; i++ {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		fmt.Fprintf(&b, `{"n":%d}`, i)
+	}
+	b.WriteString(`]}`)
+	path := filepath.Join(t.TempDir(), "big.json")
+	if err := os.WriteFile(path, []byte(b.String()), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a := open(t, path, 100, 30)
+	press(t, a, "/")
+	if err := a.setQuery("1234"); err != nil {
+		t.Fatal(err)
+	}
+	a.refreshSearch()
+	if !a.sr.running || len(a.sr.hits) != 0 {
+		t.Fatalf("large search: running %v hits %d", a.sr.running, len(a.sr.hits))
+	}
+	job := a.searchLaunch()
+	if job == nil {
+		t.Fatal("no off-loop job")
+	}
+	_, next := a.m.Update(job())
+	finish(a, next)
+	if a.sr.running || len(a.sr.hits) == 0 || a.overlay != overlayResults {
+		t.Fatalf("landed: running %v hits %d overlay %q", a.sr.running, len(a.sr.hits), a.overlay)
 	}
 }

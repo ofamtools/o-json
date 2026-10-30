@@ -21,6 +21,7 @@ import (
 	"slices"
 	"strings"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/unixsuperhero/ochazuke"
 )
 
@@ -32,6 +33,11 @@ const (
 
 	// maxHits caps the Results view.
 	maxHits = 5000
+
+	// searchLoopNodes is the largest document whose hits are computed on
+	// the event loop; a larger one is searched off it (searchJob), the
+	// last hits staying until the new ones land.
+	searchLoopNodes = 20000
 )
 
 // searchType is one row of the line's type cycle: its name (the
@@ -60,6 +66,19 @@ type searchState struct {
 	cut  bool
 	view *Shape // the Results view's shape (its title)
 	cur  int    // the hit n / N stand on
+
+	// job is a search to run off the loop (a large document): the jq
+	// runner's PendingCommand launches it; running says one is out.
+	job     tea.Cmd
+	running bool
+	fresh   bool // the job's search is new: its hits show the Results view
+}
+
+// searchDone is an off-loop search's answer, for the search key it ran.
+type searchDone struct {
+	key  string
+	hits []dataLine
+	cut  bool
 }
 
 func (a *App) searchTypeRow() searchType {
@@ -97,7 +116,11 @@ func (a *App) refreshSearch() {
 	}
 	fresh := what != a.sr.what
 	a.sr.key, a.sr.what = key, what
-	a.sr.hits, a.sr.err, a.sr.cut, a.sr.view = nil, nil, false, nil
+	a.sr.job, a.sr.running = nil, false
+	if a.searchJQ() || text == "" || root == nil || !largerThan(root, searchLoopNodes) {
+		a.sr.hits, a.sr.cut, a.sr.view = nil, false, nil
+	}
+	a.sr.err = nil
 	if a.searchJQ() {
 		switch {
 		case text == "" && a.overlay == overlayJQ:
@@ -120,12 +143,63 @@ func (a *App) refreshSearch() {
 		a.sr.err = err
 		return
 	}
-	a.sr.hits, a.sr.cut = searchHits(root, m)
+	if largerThan(root, searchLoopNodes) {
+		a.sr.running, a.sr.fresh = true, fresh
+		a.sr.job = func() tea.Msg {
+			hits, cut := searchHits(root, m)
+			return searchDone{key: key, hits: hits, cut: cut}
+		}
+		return
+	}
+	hits, cut := searchHits(root, m)
+	a.foundHits(text, hits, cut, fresh)
+}
+
+// foundHits shows a search's hits: the Results view's shape, the first
+// hit, the overlay for a new search.
+func (a *App) foundHits(text string, hits []dataLine, cut, fresh bool) {
+	a.sr.hits, a.sr.cut = hits, cut
 	a.sr.view = &Shape{Path: "search /" + text, Kinds: map[Kind]int{}}
 	a.sr.cur = 0
 	if fresh || a.overlay == overlayJQ {
 		a.overlay = overlayResults
 	}
+}
+
+// searchLaunch is the off-loop search refreshSearch left, once.
+func (a *App) searchLaunch() tea.Cmd {
+	job := a.sr.job
+	a.sr.job = nil
+	return job
+}
+
+// searchLanded takes an off-loop search's answer if it is still the
+// search the line asks for.
+func (a *App) searchLanded(msg searchDone) {
+	if msg.key != a.sr.key || !a.sr.running {
+		return
+	}
+	a.sr.running = false
+	a.foundHits(strings.TrimSpace(a.queryText()), msg.hits, msg.cut, a.sr.fresh)
+}
+
+// largerThan reports root has more than n nodes, counting no further.
+func largerThan(root *Node, n int) bool {
+	count := 0
+	var walk func(*Node) bool
+	walk = func(x *Node) bool {
+		count++
+		if count > n {
+			return true
+		}
+		for _, c := range x.Children {
+			if walk(c) {
+				return true
+			}
+		}
+		return false
+	}
+	return walk(root)
 }
 
 // searchHits is every node whose key or plain value m matches, in

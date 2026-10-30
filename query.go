@@ -152,6 +152,14 @@ func (j *jqRunner) key() (string, string, *Node) {
 // pause is over.
 func (j *jqRunner) PendingCommand() tea.Cmd {
 	j.a.refreshSearch()
+	if job := j.a.searchLaunch(); job != nil {
+		return tea.Batch(job, j.pending())
+	}
+	return j.pending()
+}
+
+// pending is PendingCommand's jq part.
+func (j *jqRunner) pending() tea.Cmd {
 	// The runner runs after every event: the declared mode (views.go)
 	// follows a focus move here, before the frame draws its badge, as
 	// well as in render.
@@ -200,6 +208,9 @@ func (j *jqRunner) cancel() {
 
 func (j *jqRunner) HandleMessage(msg tea.Msg) bool {
 	switch msg := msg.(type) {
+	case searchDone:
+		j.a.searchLanded(msg)
+		return true
 	case jqTick:
 		if msg.seq == j.seq {
 			j.due = msg.seq

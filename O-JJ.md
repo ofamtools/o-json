@@ -48,7 +48,7 @@ Updated as each item lands; the sections below describe what is built.
 | One line, type cycle substring / fuzzy / regex / jq | `/`, `tab`, `shift+tab` | done |
 | Hits while typing, Results view, n/N, jump, yank | `ctrl+n/p`, `enter`, `n`, `N`, `y y`, `y p` | done |
 | `esc` on the line cancels; `esc` on a pane clears | `esc` | done |
-| Hits computed off the event loop | | missing |
+| Hits computed off the event loop | | done (documents over 20000 nodes; the breadcrumb says `searching…`) |
 | Undo groups per search typing session | `u` on the line | missing |
 | jq slots on `ctrl+n`/`ctrl+p` | | done |
 
@@ -177,8 +177,11 @@ its trial colour (o-jj colours the application accent by mode).
   modes that extend insert, which is how their badges read `SEARCH ·
   SUBSTR` (upper case; the tag is not lower case as in the prototype).
   Their input undo groups per change, not per insert session.
-- The hits are computed on the event loop, capped at 5000; a very large
-  document will feel it. The jq type runs off the loop as before.
+- The hits (capped at 5000) are computed on the event loop for a
+  document of up to 20000 nodes (`searchLoopNodes`), off it for a larger
+  one: the last hits stay, the breadcrumb says `searching…`, and an
+  answer for an older text is dropped. The jq type runs off the loop as
+  before.
 - `esc` on the line cancels a search (the text goes) but keeps a jq query
   (as the query line always did). With a search cycled off its Results
   view, `esc` on the structure still clears it (`search.clear` comes before
