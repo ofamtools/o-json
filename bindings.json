@@ -82,6 +82,7 @@
     {"context": "viewer/normal", "bindings": [
       {"key": "g m", "action": "viewer.mode", "hint": "choose mode"},
       {"key": "ctrl+w =", "action": "viewer.restore", "hidden": true},
+      {"key": "g r", "action": "viewer.raw-edit", "hint": "raw edit"},
       {"key": "/", "action": "search.focus", "hint": "search"},
       {"key": "/", "action": "viewer.search"},
       {"key": "n", "action": "search.next", "hidden": true},

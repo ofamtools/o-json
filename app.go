@@ -57,6 +57,8 @@ type App struct {
 	sr searchState
 	// editing is EDIT on the data pane (edit.go).
 	editing bool
+	// raw is the open RAW edit (raw.go), nil when none.
+	raw     *rawSession
 	overlay string
 
 	// Clipboard copies text to the system clipboard; nil when there is
@@ -155,6 +157,9 @@ func New() (*App, error) {
 		return nil, err
 	}
 	if err := a.registerEdit(); err != nil {
+		return nil, err
+	}
+	if err := a.registerRaw(); err != nil {
 		return nil, err
 	}
 	if err := a.registerQueryMode(); err != nil {
