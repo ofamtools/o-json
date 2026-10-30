@@ -12,7 +12,8 @@
   "j",
   "j",
   "j",
-  "tab",
+  "ctrl+a",
+  "o",
   "0",
   "enter",
   ":",
@@ -29,7 +30,7 @@
  ],
  "expect": [
   {
-   "after": 7,
+   "after": 8,
    "contains": [
     "object{4}"
    ]

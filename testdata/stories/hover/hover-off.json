@@ -6,9 +6,9 @@
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
   "values": {"table.nested": "summary"},
-  "script": ["tab", "j", "j", "l", "l", "l", "l", "l", "l", "j"],
+  "script": ["ctrl+a", "o", "j", "j", "l", "l", "l", "l", "l", "l", "j"],
   "expect": [
-    {"after": 9, "contains": ["Table .  3/20", "{3}"], "lacks": ["Austin", "country"]},
+    {"after": 10, "contains": ["Table .  3/20", "{3}"], "lacks": ["Austin", "country"]},
     {"contains": ["Table .  4/20"], "lacks": ["Austin"]}
   ]
 }

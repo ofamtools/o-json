@@ -18,14 +18,16 @@
   "j",
   "j",
   "j",
-  "tab",
-  "shift+tab",
+  "ctrl+a",
+  "o",
+  "ctrl+a",
+  "o",
   "j",
   "j"
  ],
  "expect": [
   {
-   "after": 11,
+   "after": 12,
    "contains": [
     "Table .items[]",
     "red \u00b7 blue"

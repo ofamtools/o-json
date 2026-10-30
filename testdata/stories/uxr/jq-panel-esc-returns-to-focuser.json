@@ -8,18 +8,20 @@
   "doc": "sample.json"
  },
  "script": [
-  "tab",
+  "ctrl+a",
+  "o",
   "g",
   "j",
   "esc",
-  "shift+tab",
+  "ctrl+w",
+  "h",
   "g",
   "j",
   "esc"
  ],
  "expect": [
   {
-   "after": 5,
+   "after": 7,
    "contains": [
     "\u256d\u2501 Structure"
    ]

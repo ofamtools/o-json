@@ -285,7 +285,7 @@ func TestFixedRootRefusesOutlineVerbs(t *testing.T) {
 	// An array item refuses a rename.
 	b := openRestructure(t, 120, 30)
 	sendPaths(t, b, ".items[].id")
-	press(t, b, "tab")
+	press(t, b, "ctrl+a", "o")
 	selectIn(t, b, b.rs.tree, func(n ochazuke.TreeNode) bool { return b.rs.meta[n.ID].item })
 	if b.available("node", "rename") || b.available("ochazuke.outline", "edit") {
 		t.Fatal("an item can be renamed")

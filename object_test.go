@@ -38,7 +38,7 @@ func TestObjectIsOneRow(t *testing.T) {
 // back out, as on any table.
 func TestObjectNestedCellOpensSubTable(t *testing.T) {
 	a := open(t, catalogDoc, 120, 24)
-	press(t, a, "tab", "l", "l", "l", "l") // nouns
+	press(t, a, "ctrl+a", "o", "l", "l", "l", "l") // nouns
 	frame := view(a)
 	if !strings.Contains(frame, "ochazuke.actions") || !strings.Contains(line(frame, "verbs"), "name") {
 		t.Fatalf("nouns did not open\n%s", frame)
@@ -86,7 +86,7 @@ func TestObjectViewFieldsSetting(t *testing.T) {
 // nested cell, backspace back onto its column; fields keeps labeled rows.
 func TestDetailObjectRow(t *testing.T) {
 	a := open(t, catalogDoc, 120, 24)
-	press(t, a, "tab", "l", "l", "l", "l", "enter", "enter")
+	press(t, a, "ctrl+a", "o", "l", "l", "l", "l", "enter", "enter")
 	frame := view(a)
 	if a.detailTab == nil || !strings.Contains(frame, ".nouns[0]  object{2}") || !strings.Contains(line(frame, "name"), "verbs") {
 		t.Fatalf("the detail's object is not one row\n%s", frame)
@@ -108,7 +108,7 @@ func TestDetailObjectRow(t *testing.T) {
 // Value edits on the row act on the key under the cursor.
 func TestObjectRowEdits(t *testing.T) {
 	a := open(t, catalogDoc, 120, 24)
-	press(t, a, "tab", "l", "d", "d")
+	press(t, a, "ctrl+a", "o", "l", "d", "d")
 	if frame := view(a); strings.Contains(line(frame, "schema"), "name") || !strings.Contains(frame, "1 value edit") {
 		t.Fatalf("d d did not delete name\n%s", frame)
 	}

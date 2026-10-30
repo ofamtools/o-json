@@ -1,0 +1,16 @@
+{
+  "name": "o-jj: pane focus and the data lens declare their modes",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["ctrl+a", "o", "tab", "tab", "ctrl+w", "h", "ctrl+w", "v"],
+  "expect": [
+    {"after": 2, "mode": "table", "contains": ["Object ."]},
+    {"after": 3, "mode": "table", "contains": ["Fields ."]},
+    {"after": 4, "mode": "flat", "contains": ["Flat .", ".name ="]},
+    {"after": 6, "mode": "shape", "contains": ["Structure"]},
+    {"mode": "split", "contains": ["Original", "Restructured"]}
+  ]
+}

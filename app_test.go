@@ -158,7 +158,7 @@ func TestEnterOnRowShowsItemFields(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	fieldsView(t, a)
 	selectPath(t, a, ".items")
-	press(t, a, "tab", "j", "enter")
+	press(t, a, "ctrl+a", "o", "j", "enter")
 	if a.r.TopModal() != detailID {
 		t.Fatalf("no detail open: %q", a.r.TopModal())
 	}
@@ -205,7 +205,7 @@ func TestObjectFieldsAndScalars(t *testing.T) {
 	}
 	// A field holding an object opens in the detail: meta, the root's last.
 	selectPath(t, a, ".")
-	press(t, a, "tab", "G", "enter")
+	press(t, a, "ctrl+a", "o", "G", "enter")
 	if a.r.TopModal() != detailID || !strings.Contains(view(a), "generated") {
 		t.Fatalf("field open\n%s", view(a))
 	}
@@ -247,9 +247,8 @@ func TestSearchAndTypeFilter(t *testing.T) {
 func TestRawToggle(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	selectPath(t, a, ".items[].owner")
-	// v on the structure tree selects lines (as V); from the data pane it
-	// shows the values as JSON.
-	press(t, a, "tab", "v")
+	// v selects in either pane; cycle to the JSON lens with D.
+	press(t, a, "ctrl+a", "o", "2", "D")
 	frame := view(a)
 	if !strings.Contains(frame, "JSON .items[].owner") || !strings.Contains(frame, `"email": "ann@example.com"`) {
 		t.Fatalf("raw\n%s", frame)
@@ -290,7 +289,7 @@ func TestLargeArrayWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := open(t, path, 120, 30)
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	start := time.Now()
 	press(t, a, "G")
 	if got := a.data.Selected(); got != n-1 {
@@ -349,7 +348,7 @@ func TestViewerNeverWritesTheSource(t *testing.T) {
 	data, _ := os.ReadFile(sample)
 	_ = os.WriteFile(path, data, 0o644)
 	a := open(t, path, 100, 30)
-	for _, k := range []string{"j", "j", "j", "l", "h", "enter", "enter", "y", "t", "esc", "v", "v", "tab", "j", "enter", "j", "enter", "h", "q", "y", "R"} {
+	for _, k := range []string{"j", "j", "j", "l", "h", "enter", "enter", "y", "t", "esc", "v", "v", "ctrl+a", "o", "j", "enter", "j", "enter", "h", "q", "y", "R"} {
 		Press(a.m, k)
 		view(a)
 	}
@@ -391,7 +390,7 @@ func TestYankToNamedRegister(t *testing.T) {
 		t.Fatalf(`"a y on the tree stored %q`, y.Text)
 	}
 	selectPath(t, a, ".items")
-	press(t, a, "tab", "2", "G", "y")
+	press(t, a, "ctrl+a", "o", "2", "G", "y")
 	if y, _ := a.r.ReadYank(""); !strings.Contains(y.Text, `"name": "beta"`) {
 		t.Fatalf("y on row 2 stored %q", y.Text)
 	}
@@ -415,7 +414,7 @@ func TestReadOnlyViewsTakeNoMarks(t *testing.T) {
 		if marked := a.tree.List().Marked(); len(marked) != 0 {
 			t.Fatalf("%s: the tree took a mark %v", panel, marked)
 		}
-		press(t, a, "tab")
+		press(t, a, "ctrl+a", "o")
 	}
 }
 
@@ -549,19 +548,19 @@ func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 	key("y", "j", ".")
 	yanked("tree", ".version")
 	selectPath(t, a, ".items")
-	key("tab", "y", "j", ".")
+	key("ctrl+a", "o", "y", "j", ".")
 	if y, _ := a.r.ReadYank(""); !strings.Contains(y.Text, `"name": "beta"`) {
 		t.Fatalf("table: register %q", y.Text)
 	}
 	key("enter", "y", "j", ".")
 	yanked("detail", "beta")
-	key("esc", "tab")
+	key("esc", "ctrl+a", "o")
 	selectPath(t, a, ".meta")
-	key("tab", "y", "j", ".")
+	key("ctrl+a", "o", "y", "j", ".")
 	yanked("fields", "4")
-	key("tab")
+	key("ctrl+a", "o")
 	selectPath(t, a, ".items[].owner")
-	key("v", "tab", "y", "j", ".")
+	key("2", "D", "ctrl+a", "o", "y", "j", ".")
 	yanked("raw lines", "  {")
 	for _, e := range a.r.HistoryOf(0, ochazuke.HistoryChange) {
 		if strings.HasSuffix(e.Request.Key(), ".yank") && len(e.Request.Args) != 0 {
@@ -575,7 +574,7 @@ func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 func TestDotAcrossPanelsFailsCleanly(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
 	selectPath(t, a, ".items")
-	press(t, a, "y", "tab")
+	press(t, a, "y", "ctrl+a", "o")
 	Press(a.m, ".")
 	if a.m.Status != "not a path" {
 		t.Fatalf(". on a table row after a tree yank: status %q", a.m.Status)
@@ -623,7 +622,7 @@ func TestDotRepeatsTheLastChange(t *testing.T) {
 func TestDataTableMovesByCell(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	selectPath(t, a, ".items")
-	press(t, a, "tab", "l", "l")
+	press(t, a, "ctrl+a", "o", "l", "l")
 	if got := a.data.list.Column(); got != 2 {
 		t.Fatalf("l l: column %d, want 2", got)
 	}

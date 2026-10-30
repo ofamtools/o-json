@@ -27,7 +27,7 @@
     },
     {
       "after": 7,
-      "mode": "normal",
+      "mode": "shape",
       "contains": [
         "lifted 2 key(s)"
       ],

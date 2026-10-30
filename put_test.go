@@ -211,7 +211,7 @@ func TestMarkedDeletePutOneUndoStep(t *testing.T) {
 	// lone y acts at once (it does not wait on y y).
 	a.on(t, ".a")
 	press(t, a, "V", "y")
-	if a.rs.tree.List().Visual() || a.r.BaseMode() != "normal" {
+	if a.rs.tree.List().Visual() || a.r.BaseMode() != "split" {
 		t.Fatalf("V y left visual on (mode %s)", a.r.BaseMode())
 	}
 	if y, err := a.r.ReadYank(""); err != nil || !strings.Contains(y.Text, nodesShape) {
@@ -224,7 +224,7 @@ func TestMarkedDeletePutOneUndoStep(t *testing.T) {
 func TestPutRefusedIntoAnArrayItem(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".items[].id", ".name")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
 	press(t, a, "y", "y")
 	before := entries(a.Mapping())
@@ -291,7 +291,7 @@ func TestPutUndoRedoRoundTrip(t *testing.T) {
 func TestPutKeysOnEveryNode(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".items[].owner", ".name")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	kinds := []struct {
 		name  string
 		match func(ochazuke.TreeNode) bool
@@ -453,16 +453,16 @@ func TestYankOnTheOriginalPutsOnTheRight(t *testing.T) {
 	sendPaths(t, a, ".name")
 	selectIn(t, a, a.rs.orig, origPath(".meta"))
 	press(t, a, "y")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	a.on(t, ".name")
 	press(t, a, "p")
 	if got := agrees(t, a); got != `{"name":"o-json sample","meta":{"generated":"2026-10-25","count":4,"source":null}}` {
 		t.Fatalf("p of a yanked shape: %s", got)
 	}
-	press(t, a, "u", "tab")
+	press(t, a, "u", "ctrl+a", "o")
 	selectIn(t, a, a.rs.orig, origPath(".version"))
 	press(t, a, "V", "k", "y")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	a.on(t, ".name")
 	press(t, a, "P")
 	if got := agrees(t, a); got != `{"name-2":"o-json sample","version":2,"name":"o-json sample"}` {

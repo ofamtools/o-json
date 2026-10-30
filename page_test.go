@@ -146,7 +146,7 @@ func TestSendFromTheViewer(t *testing.T) {
 func TestIndentAndDedent(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".items[].owner", ".name", ".version")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	if a.sideOf(a.r.Focus) != rsTreeID {
 		t.Fatalf("tab: focus %q", a.r.Focus)
 	}
@@ -202,7 +202,7 @@ func TestIndentAndDedent(t *testing.T) {
 func TestDedentOutOfAnItemCollects(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".items[].id")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].id"))
 	press(t, a, "<", "<")
 	want := []string{">.id", ".items[].id>.id[]", ".items>.items", ".items[]>.items[]"}
@@ -230,7 +230,7 @@ func TestDedentOutOfAnItemCollects(t *testing.T) {
 func TestRenameKeepsTheOrigin(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".name")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
 	press(t, a, "r")
 	for range len("name") {
@@ -261,7 +261,7 @@ func TestRenameKeepsTheOrigin(t *testing.T) {
 func TestRenameOpensSelected(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".name")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
 	press(t, a, "r")
 	in := a.r.Input(a.r.Focus)
@@ -300,7 +300,7 @@ func TestRenameOpensSelected(t *testing.T) {
 func TestDeleteAndUndo(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".items[].owner", ".name")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].owner"))
 	press(t, a, "d", "d")
 	if got := entries(a.Mapping()); !slices.Equal(got, []string{".items>.items", ".items[]>.items[]", ".name>.name"}) {
@@ -317,7 +317,7 @@ func TestDeleteAndUndo(t *testing.T) {
 func TestLiveMappingIsWhatRestructureRuns(t *testing.T) {
 	a := openRestructure(t, 120, 40)
 	sendPaths(t, a, ".items[].owner", ".name")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].owner.name"))
 	press(t, a, "<", "<")
 	shown, err := a.mappingText()
@@ -438,13 +438,13 @@ func TestSingleLayoutToggles(t *testing.T) {
 	if !strings.Contains(frame, "Original") || strings.Contains(frame, "Restructured") || !strings.Contains(frame, "Mapping") {
 		t.Fatalf("single, original\n%s", frame)
 	}
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	frame = view(a)
 	if strings.Contains(frame, "Original") || !strings.Contains(frame, "Restructured  1 nodes") || a.sideOf(a.r.Focus) != rsTreeID {
 		t.Fatalf("single, restructured\n%s", frame)
 	}
 	t.Logf("single layout, restructured side:\n%s", frame)
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	if a.sideOf(a.r.Focus) != rsOrigID {
 		t.Fatalf("tab back: %q", a.r.Focus)
 	}
@@ -456,7 +456,7 @@ func TestSingleLayoutToggles(t *testing.T) {
 	if !strings.Contains(frame, "Original") || !strings.Contains(frame, "Restructured") {
 		t.Fatalf("split\n%s", frame)
 	}
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	if a.sideOf(a.r.Focus) != rsTreeID {
 		t.Fatalf("split tab: %q", a.r.Focus)
 	}
@@ -477,7 +477,7 @@ func TestVisualSelectionSendsSeveral(t *testing.T) {
 	}
 	// On the restructure tree: V and d delete every selected node.
 	sendPaths(t, a, ".name", ".version", ".meta")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
 	press(t, a, "V", "j", "d")
 	if got := entries(a.Mapping()); len(got) == 0 || got[0] != ".meta>.meta" {
@@ -510,7 +510,7 @@ func TestOpenFocusesTheOriginal(t *testing.T) {
 				t.Fatalf("selected %q", n.ID)
 			}
 			// Leaving from the restructured tree, M still opens on the original.
-			press(t, a, "tab")
+			press(t, a, "ctrl+a", "o")
 			if a.sideOf(a.r.Focus) != rsTreeID {
 				t.Fatalf("tab: focus %q", a.r.Focus)
 			}
@@ -547,7 +547,7 @@ func TestLayoutKeyFlips(t *testing.T) {
 	if !strings.Contains(frame, "single layout (L: split)") {
 		t.Fatalf("single crumb\n%s", frame)
 	}
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	if a.sideOf(a.r.Focus) != rsOrigID {
 		t.Fatalf("single tab swaps: %q", a.r.Focus)
 	}
@@ -556,7 +556,7 @@ func TestLayoutKeyFlips(t *testing.T) {
 	if a.layout() != "split" || a.r.Focus != focus {
 		t.Fatalf("L to split: layout %s focus %q", a.layout(), a.r.Focus)
 	}
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	if a.sideOf(a.r.Focus) != rsTreeID {
 		t.Fatalf("split tab moves: %q", a.r.Focus)
 	}

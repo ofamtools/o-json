@@ -9,6 +9,6 @@
   "script": ["j", "v", "{", "esc", "j", "j", ".", "esc"],
   "expect": [
     {"after": 4, "contains": ["new-key"], "lacks": ["new-key-2"]},
-    {"mode": "normal", "contains": ["new-key", "new-key-2"]}
+    {"mode": "shape", "contains": ["new-key", "new-key-2"]}
   ]
 }

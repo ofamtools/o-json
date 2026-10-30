@@ -7,7 +7,7 @@
   "script": ["V", "j", ">", "u"],
   "expect": [
     {"after": 2, "mode": "visual-line", "contains": ["VISUAL-LINE"]},
-    {"after": 3, "mode": "normal", "contains": [".x.z ← .z"], "lacks": ["VISUAL-LINE"]},
-    {"mode": "normal", "lacks": [".x.z ← .z", ".x.y ← .y"]}
+    {"after": 3, "mode": "split", "contains": [".x.z ← .z"], "lacks": ["VISUAL-LINE"]},
+    {"mode": "split", "lacks": [".x.z ← .z", ".x.y ← .y"]}
   ]
 }

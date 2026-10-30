@@ -5,9 +5,9 @@
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
-  "script": ["tab", "j", "j", "l", "l", "l", "l", "l", "l", "j", "r", {"type": "Lyon"}, "enter"],
+  "script": ["ctrl+a", "o", "j", "j", "l", "l", "l", "l", "l", "l", "j", "r", {"type": "Lyon"}, "enter"],
   "expect": [
-    {"after": 11, "modal": "value-editor", "contains": ["[2].address.city", "was    Austin", "city    zip", "Cy C"]},
+    {"after": 12, "modal": "value-editor", "contains": ["[2].address.city", "was    Austin", "city    zip", "Cy C"]},
     {"modal": "", "contains": ["Lyon  73301  US", "1 value edit"], "order": ["Cy C", "city", "Lyon", "Di D"]}
   ]
 }

@@ -120,7 +120,7 @@ func TestValueModalEditsACell(t *testing.T) {
 	if got := field(t, a, ".items[1].name"); got != "42" {
 		t.Fatalf("set: %s", got)
 	}
-	if a.r.TopModal() != "" || a.r.Mode.Name != "normal" || a.data.Selected() != 1 || a.data.list.Column() != 2 {
+	if a.r.TopModal() != "" || a.r.Mode.Name != "table" || a.data.Selected() != 1 || a.data.list.Column() != 2 {
 		t.Fatalf("after enter: modal %q mode %q row %d column %d", a.r.TopModal(), a.r.Mode.Name, a.data.Selected(), a.data.list.Column())
 	}
 	if len(a.rs.patches) != 1 {

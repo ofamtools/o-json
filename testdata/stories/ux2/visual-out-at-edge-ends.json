@@ -7,6 +7,6 @@
   "script": ["V", "<"],
   "expect": [
     {"after": 1, "mode": "visual-line"},
-    {"mode": "normal", "lacks": ["VISUAL-LINE", "[+]"]}
+    {"mode": "split", "lacks": ["VISUAL-LINE", "[+]"]}
   ]
 }

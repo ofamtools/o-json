@@ -10,8 +10,8 @@ import "embed"
 // enter folds; the viewer owns the search, the type filter and the raw
 // toggle. In the data panel it is [item|field|line row, rows, viewer,
 // app], and in the detail [entry row, rows, detail modal, modal, app]. tab
-// and shift+tab (the app's focus rows) move between the panels. Counts
-// reach rows.move through count_pending, which is exclusive, so the rows
+// and shift+tab cycle data views; ctrl+a o and ctrl+w h/l/w move between
+// the panels. Counts reach rows.move through count_pending, which is exclusive, so the rows
 // noun's count_pending extends its normal table.
 //
 // The rows tables are cell tables (CellSelect), but a list of its own noun

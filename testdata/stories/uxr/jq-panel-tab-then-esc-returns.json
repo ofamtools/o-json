@@ -7,9 +7,9 @@
  "seed": {
   "doc": "sample.json"
  },
- "script": ["tab", "g", "j", "tab", "esc"],
+ "script": ["ctrl+a", "o", "g", "j", "tab", "esc"],
  "expect": [
-  {"after": 4, "contains": ["mapping"]},
-  {"focus": "data/0", "mode": "normal"}
+  {"after": 5, "contains": ["mapping"]},
+  {"focus": "data/0", "mode": "table"}
  ]
 }

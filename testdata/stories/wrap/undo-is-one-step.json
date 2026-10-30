@@ -8,6 +8,6 @@
   "script": ["j", "v", "j", "j", "j", "{", "esc", "u"],
   "expect": [
     {"after": 7, "contains": ["new-key"]},
-    {"mode": "normal", "contains": [".city", ".zip"], "lacks": ["new-key"]}
+    {"mode": "shape", "contains": [".city", ".zip"], "lacks": ["new-key"]}
   ]
 }

@@ -48,7 +48,7 @@ func TestBraceWrapsTheVisualSelection(t *testing.T) {
 	Type(a.m, "person")
 	press(t, a, "enter")
 	wantOut(t, a, `{"person":{"id":7,"name":"Ada","city":"London","zip":"N1"},"tags":["x","y"]}`)
-	if a.r.Mode.Name != "normal" {
+	if a.r.Mode.Name != "shape" {
 		t.Fatalf("mode %q", a.r.Mode.Name)
 	}
 }
@@ -58,7 +58,7 @@ func TestBraceEnterKeepsThePlaceholder(t *testing.T) {
 	a := wrapDoc(t)
 	press(t, a, "v", "j", "{", "enter")
 	wantOut(t, a, `{"new-key":{"id":7,"name":"Ada"},"city":"London","zip":"N1","tags":["x","y"]}`)
-	if a.r.Mode.Name != "normal" {
+	if a.r.Mode.Name != "shape" {
 		t.Fatalf("mode %q", a.r.Mode.Name)
 	}
 }
@@ -67,7 +67,7 @@ func TestBraceEnterKeepsThePlaceholder(t *testing.T) {
 func TestVEndsTheSelection(t *testing.T) {
 	a := wrapDoc(t)
 	press(t, a, "v", "j", "v")
-	if a.r.Mode.Name != "normal" || a.rs.tree.List().Visual() {
+	if a.r.Mode.Name != "shape" || a.rs.tree.List().Visual() {
 		t.Fatalf("mode %q visual %v", a.r.Mode.Name, a.rs.tree.List().Visual())
 	}
 }

@@ -1,13 +1,13 @@
 {
-  "name": "o-json: the raw JSON view (v) has no header line and its cursor is one even bar, no cell inside it (6-edit.tape: a json header, the first line's bar uneven)",
+  "name": "o-json: the raw JSON view (2D) has no header line and its cursor is one even bar, no cell inside it (6-edit.tape: a json header, the first line's bar uneven)",
   "area": "edit",
   "width": 120,
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
-  "script": ["tab", "v", "j"],
+  "script": ["ctrl+a", "o", "2", "D", "j"],
   "expect": [
-    {"after": 2, "lacks": ["┃ json"], "highlighted": 1, "cell": "", "highlightedText": "["},
+    {"after": 4, "lacks": ["┃ json"], "highlighted": 1, "cell": "", "highlightedText": "["},
     {"highlighted": 1, "cell": "", "highlightedText": "{"}
   ]
 }

@@ -5,10 +5,10 @@
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
-  "script": ["tab", "enter", "o", {"type": "rank"}, "enter", {"type": "1"}, "enter"],
+  "script": ["ctrl+a", "o", "enter", "o", {"type": "rank"}, "enter", {"type": "1"}, "enter"],
   "expect": [
-    {"after": 3, "modal": "value-editor", "focus": "value-editor/key", "contains": ["[0] · add after id", "key    new-key", "value  null", "enter next"]},
-    {"after": 5, "focus": "value-editor/value", "contains": ["key    rank", "enter set"]},
+    {"after": 4, "modal": "value-editor", "focus": "value-editor/key", "contains": ["[0] · add after id", "key    new-key", "value  null", "enter next"]},
+    {"after": 6, "focus": "value-editor/value", "contains": ["key    rank", "enter set"]},
     {"modal": "detail", "contains": ["1 value edit"], "order": ["id", "rank", "name", "1", "1", "Ada A"]}
   ]
 }

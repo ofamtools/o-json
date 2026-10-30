@@ -20,7 +20,7 @@ func openNest(t *testing.T, path string, sends ...string) *App {
 	a := open(t, path, 120, 30)
 	press(t, a, "M")
 	sendPaths(t, a, sends...)
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	return a
 }
 
@@ -170,7 +170,7 @@ func TestIndentDirections(t *testing.T) {
 	}
 	a.on(t, ".b")
 	press(t, a, ">", "k")
-	if got := output(t, a); got != `{"a":1,"b":2,"c":{"d":33}}` || a.r.Mode.Name != "normal" {
+	if got := output(t, a); got != `{"a":1,"b":2,"c":{"d":33}}` || a.r.Mode.Name != "split" {
 		t.Fatalf("> k with no object above: %s (mode %q)", got, a.r.Mode.Name)
 	}
 
@@ -190,7 +190,7 @@ func TestIndentDirections(t *testing.T) {
 	press(t, a, "u")
 	a.on(t, ".y")
 	press(t, a, ">", "j")
-	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"z":5}` || a.r.Mode.Name != "normal" {
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"z":5}` || a.r.Mode.Name != "split" {
 		t.Fatalf("> j with no object below: %s (mode %q)", got, a.r.Mode.Name)
 	}
 	press(t, a, ">", ">")

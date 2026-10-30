@@ -33,7 +33,7 @@ func litCells(a *App) map[int]bool {
 func TestScalarKeepsTheTableAndHighlightsItsColumn(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
 	selectPath(t, a, ".items")
-	press(t, a, "tab", "3", "G", "shift+tab")
+	press(t, a, "ctrl+a", "o", "3", "G", "ctrl+a", "o")
 	if a.data.Selected() != 2 {
 		t.Fatalf("row %d", a.data.Selected())
 	}
@@ -116,7 +116,7 @@ func TestScalarFollowShow(t *testing.T) {
 func TestHighlightedColumnScrollsIntoView(t *testing.T) {
 	a := openOriginal(t, sample, 40, 24)
 	selectPath(t, a, ".items")
-	press(t, a, "tab", "2", "G", "shift+tab")
+	press(t, a, "ctrl+a", "o", "2", "G", "ctrl+a", "o")
 	if strings.Contains(view(a), "third") {
 		t.Fatalf("note is on screen at 40 columns\n%s", view(a))
 	}
@@ -147,7 +147,7 @@ func TestValueEditKeepsTheCursorOffTheHighlight(t *testing.T) {
 	if a.shown == nil || a.data.list.Column() != 2 {
 		t.Fatalf("name: shown %v column %d", a.shown, a.data.list.Column())
 	}
-	press(t, a, "tab", "h")
+	press(t, a, "ctrl+a", "o", "h")
 	if a.data.list.Column() != 1 {
 		t.Fatalf("h: column %d", a.data.list.Column())
 	}

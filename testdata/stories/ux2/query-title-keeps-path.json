@@ -6,6 +6,6 @@
   "fixture": "viewer",
   "script": ["j", "m"],
   "expect": [
-    {"mode": "query", "contains": [".a · query"]}
+    {"mode": "jq", "contains": [".a · query"]}
   ]
 }

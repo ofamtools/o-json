@@ -193,7 +193,7 @@ func TestToggleOriginalAndEdited(t *testing.T) {
 		t.Fatal("the edited view's keys")
 	}
 	// From the data pane T flips the data and leaves the focus there.
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	focus := a.r.Focus
 	press(t, a, "T")
 	if a.r.Focus != focus || !strings.Contains(view(a), "Value .meta.count") {

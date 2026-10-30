@@ -6,6 +6,6 @@
   "fixture": "nest",
   "script": ["y", "y", "j", "V", "p"],
   "expect": [
-    {"mode": "normal", "contains": ["y-2"], "lacks": ["z       number  .z"]}
+    {"mode": "split", "contains": ["y-2"], "lacks": ["z       number  .z"]}
   ]
 }

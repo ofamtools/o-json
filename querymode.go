@@ -16,7 +16,7 @@ import (
 // the anchor: what is chosen next attaches after the highlighted field's
 // reference in the query (appended when it has none). backspace takes
 // back the token before the anchor, u and ctrl+r undo and redo the
-// query's edits. The query mode is a mode ("query"), so its keys own the
+// query's edits. The JQ mode owns the
 // pane while it lasts: the edit keys (> > d d r t p ...) do not answer,
 // and m or esc goes back to them.
 //
@@ -27,7 +27,7 @@ import (
 // (.people → .people[].email), after a comma when a term is already
 // there, and as key: path inside an object.
 
-const queryMode = "query"
+const queryMode = "jq"
 
 // jqContext is what the query says at a cursor.
 type jqContext struct {
@@ -458,7 +458,7 @@ func (a *App) registerQueryMode() error {
 				return r.SetMode("normal")
 			}
 			return r.SetMode(queryMode)
-		}), "Switch the structure pane between its edit keys and query mode, where jq's characters build the query from the highlighted field (m); to: edit or query").When("query-structure").
+		}), "Switch the structure pane between its edit keys and JQ mode, where jq's characters build the query from the highlighted field (m); to: edit or jq (query is an alias)").When("query-structure").
 		Verb("path", edit(func(c ochazuke.Ctx) error {
 			return a.queryField(ochazuke.StringArg(c.Args, "path", ""))
 		}), "Write the highlighted field's path into the query at the anchor: relative to what the query reads there, chained onto a path that ends there, after a comma when a term is there, as key: path inside { } (.)").When("query-structure").
@@ -509,7 +509,7 @@ func (a *App) registerQueryMode() error {
 		op.Parameters = p
 		r.Operations[r.CanonicalKey(key)] = op
 	}
-	params("jq.mode", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"edit", "query"}, Description: "omit to switch"}})
+	params("jq.mode", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"edit", "jq", "query"}, Description: "omit to switch; query is an alias of jq"}})
 	params("jq.path", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "a structure path; omit for the highlighted field"}})
 	params("jq.open", map[string]ochazuke.Parameter{"bracket": {Type: "string", Enum: []string{"[", "{", "("}, Description: "the collection to open"}})
 	setHistory(r, ochazuke.HistoryAction, "jq.mode", "jq.close", "jq.anchor")

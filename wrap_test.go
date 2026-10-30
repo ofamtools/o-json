@@ -15,7 +15,7 @@ func wrapped(t *testing.T) *App {
 	t.Helper()
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".name", ".version")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".version"))
 	return a
 }
@@ -44,7 +44,7 @@ func TestWrapUnderAValueThenType(t *testing.T) {
 	if got := entries(a.Mapping()); !slices.Equal(got, []string{".name>.name", ">.meta", ".version>.meta.version"}) {
 		t.Fatalf("mapping %v", got)
 	}
-	if a.r.Mode.Name != "normal" {
+	if a.r.Mode.Name != "split" {
 		t.Fatalf("mode %q", a.r.Mode.Name)
 	}
 	// The typed name undoes first, then the wrap, one step each.
@@ -125,7 +125,7 @@ func TestNewKeyBelowAndAbove(t *testing.T) {
 		t.Fatalf("o on the empty tree: %v", got)
 	}
 	sendPaths(t, a, ".name")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
 	press(t, a, "o")
 	Type(a.m, "below")
@@ -165,7 +165,7 @@ func TestNewKeyBelowAndAbove(t *testing.T) {
 func TestArrayObjectRoundTrip(t *testing.T) {
 	a := openRestructure(t, 120, 40)
 	sendPaths(t, a, ".items[].owner", ".meta")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	start := entries(a.Mapping())
 	// .items is an array whose item fans out: t on its item is not
 	// available (the key would hold many values), so t passes on.
@@ -227,7 +227,7 @@ func TestArrayObjectRoundTrip(t *testing.T) {
 func TestOriginHighlight(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".items[].owner")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].owner.name"))
 	view(a)
 	lit := func(tr *ochazuke.Tree) []string {

@@ -5,12 +5,12 @@
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
-  "script": ["tab", "l", "l", "r", {"type": "Zed"}, "enter", "r", {"type": "gone"}, "esc", "q"],
+  "script": ["ctrl+a", "o", "l", "l", "r", {"type": "Zed"}, "enter", "r", {"type": "gone"}, "esc", "q"],
   "expect": [
-    {"after": 4, "modal": "value-editor", "mode": "insert", "contains": ["[0].name", "was    Ada A", "value  Ada A", "enter set", "esc normal"], "order": ["#", "id", "name", "active"]},
-    {"after": 5, "contains": ["value  Zed", " string "]},
-    {"after": 6, "modal": "", "mode": "normal", "cell": "Zed", "contains": ["1 value edit"]},
-    {"after": 9, "modal": "value-editor", "mode": "normal", "contains": ["value  gone"]},
+    {"after": 5, "modal": "value-editor", "mode": "insert", "contains": ["[0].name", "was    Ada A", "value  Ada A", "enter set", "esc normal"], "order": ["#", "id", "name", "active"]},
+    {"after": 6, "contains": ["value  Zed", " string "]},
+    {"after": 7, "modal": "", "mode": "table", "cell": "Zed", "contains": ["1 value edit"]},
+    {"after": 10, "modal": "value-editor", "mode": "normal", "contains": ["value  gone"]},
     {"modal": "", "cell": "Zed", "contains": ["1 value edit"], "lacks": ["gone"]}
   ]
 }

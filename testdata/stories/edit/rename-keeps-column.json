@@ -5,9 +5,9 @@
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
-  "script": ["tab", "l", "l", "K", "ctrl+u", {"type": "label"}, "enter", "u"],
+  "script": ["ctrl+a", "o", "l", "l", "K", "ctrl+u", {"type": "label"}, "enter", "u"],
   "expect": [
-    {"after": 7, "order": ["#", "id", "name?", "label?", "active", "tags"], "cell": "Ada A"},
+    {"after": 8, "order": ["#", "id", "name?", "label?", "active", "tags"], "cell": "Ada A"},
     {"order": ["#", "id", "name", "active", "tags"], "lacks": ["label?"]}
   ]
 }

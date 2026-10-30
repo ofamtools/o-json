@@ -2,7 +2,7 @@
 
 o-json shows you what a JSON document looks like: its shape, its arrays as tables, and its values. You can also edit it, reshape it, query it with jq and export it. This guide goes task by task. The [README](../README.md) is the full reference, and each chapter links to the part you need.
 
-The viewer has two panels. The **structure** on the left is the document's shape: one row per path, not one per value. The **data** on the right shows whatever the structure has selected. `tab` moves between them. `?` lists every key the focused panel answers to, and `:` opens the command palette, where you can find any verb by name.
+The viewer has two panels. The **structure** on the left is the document's shape: one row per path, not one per value. The **data** on the right shows whatever the structure has selected. `ctrl+a o` moves between them; `tab` cycles data views. `?` lists every key the focused panel answers to, and `:` opens the command palette, where you can find any verb by name.
 
 The viewer never writes the file you opened. A write always goes to a new file unless you ask to replace one.
 
@@ -64,7 +64,7 @@ An array of objects is easiest to read as a table. o-json builds one with a colu
 
 1. Select an array in the structure (`.items`), or a `[]` path (`.items[].owner`).
 2. The data panel shows a table. The `#` column is the index. A column whose title ends in `?` is optional, and optional columns come last. A blank cell means the field is missing, which is not the same as `null`.
-3. Press `tab` to move into the table. `j`/`k` move between rows; `h`/`l` move between columns; `$` goes to the last column. `g g` and `G` go to the first and last row.
+3. Press `ctrl+a o` to move into the table. `j`/`k` move between rows; `h`/`l` move between columns; `$` goes to the last column. `g g` and `G` go to the first and last row.
 4. Widths stay put while you scroll. `z >` and `z <` widen and narrow a column, `z =` makes them all automatic again, and `g c` picks a column by name.
 5. Move the cursor onto a cell that holds an object or an array (`owner`, `tags`). A small **sub-table** of that value opens right under the row.
 6. Press `j` to walk down into the sub-table, line by line, and on out to the next row. `h`/`l` move along a sub-table line. A nested value inside it opens one level deeper.
@@ -142,7 +142,7 @@ The data panel shows the reshaped document as you edit. `T` flips between the or
 
 1. Press `M`. The new shape starts empty. `u` brings back the copy.
 2. On the original, select a shape and press `s` to send it across. It brings the parents it needs and its fields with it.
-3. Press `tab` to go to the restructured tree, and use the keys above (`< <`, `r`, `d d`, …).
+3. Press `ctrl+a o` to go to the restructured tree, and use the keys above (`< <`, `r`, `d d`, …).
 4. Watch the **Mapping** panel. It is the restructure, live: `{"from": ".items[].owner.name", "to": ".items[].owner_name"}`.
 5. Press `w` to write the result to a new file. `L` switches between the split and single layouts. `q` goes back to the viewer, keeping your edits.
 
@@ -236,7 +236,7 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 |---|---|
 | `?` | every key the focus answers to |
 | `:` | the command palette: every verb by name |
-| `}` `tab` `ctrl+w w` | the other panel |
+| `}` `ctrl+w w` `ctrl+a o` `ctrl+w l` | the other panel |
 | `q` | quit (asks when edits are unsaved) |
 | `Q` | quit without asking |
 
@@ -260,7 +260,7 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 | `T` | original / edited structure |
 | `t` | type filter (original) |
 | `esc` | clear the filter |
-| `v` | the values as indented JSON |
+| `D` `tab` | the next data view |
 | `z +` | zoom into the node |
 | `z -` | zoom out a level |
 
@@ -310,7 +310,7 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 |---|---|
 | `M` | open the restructure page |
 | `s` | send a shape across |
-| `tab` | page: the other tree |
+| `ctrl+a o` | page: the other tree |
 | `> j` `g >` | nest into the object below |
 | `> k` `> >` | nest into the object above |
 | `< <` | move out a level |

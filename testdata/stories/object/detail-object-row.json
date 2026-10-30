@@ -8,7 +8,8 @@
   "doc": "catalog-sample.json"
  },
  "script": [
-  "tab",
+  "ctrl+a",
+  "o",
   "l",
   "l",
   "l",
@@ -21,7 +22,7 @@
  ],
  "expect": [
   {
-   "after": 7,
+   "after": 8,
    "contains": [
     ".nouns[0]  object{2}"
    ],
@@ -36,7 +37,7 @@
    ]
   },
   {
-   "after": 9,
+   "after": 10,
    "contains": [
     ".nouns[0].verbs  array[1]"
    ]

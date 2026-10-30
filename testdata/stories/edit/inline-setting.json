@@ -6,10 +6,10 @@
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
   "values": {"value.editor": "inline"},
-  "script": ["tab", "l", "l", "r", {"type": "Zed"}, "esc", "esc"],
+  "script": ["ctrl+a", "o", "l", "l", "r", {"type": "Zed"}, "esc", "esc"],
   "expect": [
-    {"after": 4, "modal": "", "focus": "data/value-input", "contains": ["name (string): Ada A"]},
-    {"after": 6, "mode": "normal", "focus": "data/value-input", "contains": ["name (string): Zed"], "lacks": ["1 value edit"]},
+    {"after": 5, "modal": "", "focus": "data/value-input", "contains": ["name (string): Ada A"]},
+    {"after": 7, "mode": "normal", "focus": "data/value-input", "contains": ["name (string): Zed"], "lacks": ["1 value edit"]},
     {"modal": "", "cell": "Zed", "contains": ["1 value edit"]}
   ]
 }

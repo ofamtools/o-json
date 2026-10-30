@@ -6,6 +6,6 @@
   "fixture": "nest",
   "script": ["g", ">"],
   "expect": [
-    {"mode": "normal", "lacks": [".x.y ← .y", "[+]"]}
+    {"mode": "split", "lacks": [".x.y ← .y", "[+]"]}
   ]
 }

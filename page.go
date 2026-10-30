@@ -117,7 +117,7 @@ func declareSettings(r *ochazuke.Runtime) error {
 	}
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingLayout, Type: ochazuke.SettingString, Default: "split", Enum: []string{"split", "single"},
-		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, tab swaps them",
+		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, ctrl+a o swaps them",
 	}, ochazuke.Setting{
 		Name: settingNewKey, Type: ochazuke.SettingString, Default: "new-key",
 		Description: "The placeholder key a new object key gets on the restructure page (S wrapping a node, o and O): opened selected, typing replaces it; a sibling with it already gives new-key-2, -3, ...",
@@ -1752,6 +1752,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 	a.decorate()
 	a.highlight()
 	a.syncMarks()
+	a.syncDeclaredMode()
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := r.PaneLayout(rsPageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.restructureCrumb(), width, "…"))

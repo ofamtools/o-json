@@ -7,7 +7,11 @@ package main
 // it shows one object or array at a time. A new view is a row here, not a
 // branch in show.
 
-import "slices"
+import (
+	"slices"
+
+	"charm.land/lipgloss/v2"
+)
 
 // cycleDataView changes only the selected path's preferred view. A count
 // walks the applicable views, so a scalar skips Fields.
@@ -48,9 +52,10 @@ var dataViewOrder = []string{viewTable, objectFields, viewFlat, viewJSON}
 // local mode declaration. Ochazuke currently pins modes by noun only;
 // this app-side declaration is the trial equivalent of an instance pin.
 func (a *App) syncDeclaredMode() {
+	defer a.syncModeAccent()
 	if a.r.Settings().String(settingDeclaredModes) == "off" {
 		switch a.r.BaseMode() {
-		case "shape", "table", "flat", "json":
+		case "shape", "table", "nested", "flat", "json", "jq", "split":
 			_ = a.r.SetMode("normal")
 		}
 		return
@@ -60,24 +65,68 @@ func (a *App) syncDeclaredMode() {
 	}
 	want := ""
 	switch {
-	case a.tree.List().Focused() || a.rs.tree.List().Focused() || a.r.Focus == treeID || a.r.Focus == rsTreeID:
+	case a.tree.List().Focused() || a.rs.tree.List().Focused() || a.rs.orig.List().Focused() || a.r.Focus == treeID || a.r.Focus == rsTreeID || a.r.Focus == rsOrigID:
 		want = "shape"
+		if a.r.Page == rsPageID {
+			want = "split"
+		}
 	case a.data.list.Focused() || a.r.Focus == dataID:
 		want = a.viewName
 		if want == "" || want == objectFields || want == objectRow {
 			want = "table"
+		}
+		if a.queryShowing() {
+			want = "jq"
+		} else if a.hoverIn() {
+			want = "nested"
 		}
 	}
 	if want == "" {
 		return
 	}
 	base := a.r.BaseMode()
-	if base != "normal" && base != "shape" && base != "table" && base != "flat" && base != "json" {
+	if base == queryMode && want == "shape" {
+		return // m explicitly lifted the structure pane into JQ
+	}
+	if base != "normal" && base != "shape" && base != "table" && base != "nested" && base != "flat" && base != "json" && base != "jq" && base != "split" {
 		return // an explicit edit, query or selection mode is on top
 	}
 	if base != want {
 		_ = a.r.SetMode(want)
 	}
+}
+
+// Ochazuke exposes one application accent but no app-defined mode tone
+// table. In this trial the accent follows the mode, colouring the badge and
+// focused chrome together. The library can own per-mode badge tones later.
+var trialModeAccents = map[string][2]string{
+	"shape":       {"#266B9A", "#73B6ED"},
+	"table":       {"#237A56", "#72D5A7"},
+	"nested":      {"#596E2E", "#BDD568"},
+	"flat":        {"#8B5A26", "#E7B673"},
+	"json":        {"#7952A3", "#C7A2ED"},
+	"jq":          {"#A45916", "#F2AD64"},
+	"query":       {"#A45916", "#F2AD64"},
+	"split":       {"#166C78", "#74CDD4"},
+	"edit":        {"#A44049", "#F2949A"},
+	"insert":      {"#A44049", "#F2949A"},
+	"visual":      {"#8D4A91", "#E59CE2"},
+	"visual-line": {"#8D4A91", "#E59CE2"},
+	"raw":         {"#516B36", "#9DD077"},
+	"search":      {"#886A1E", "#E9CD6A"},
+}
+
+func (a *App) syncModeAccent() {
+	colours, ok := trialModeAccents[a.r.BaseMode()]
+	if !ok || a.r.Settings().String(settingDeclaredModes) == "off" {
+		a.m.Appearance.Accent = nil
+		return
+	}
+	which := 0
+	if a.m.Appearance.Dark {
+		which = 1
+	}
+	a.m.Appearance.Accent = lipgloss.Color(colours[which])
 }
 
 func viewApplies(name string, values []*Node) bool {

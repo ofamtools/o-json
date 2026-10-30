@@ -6,6 +6,6 @@
   "fixture": "viewer",
   "script": ["m"],
   "expect": [
-    {"mode": "query", "contains": [". path", "| pipe"], "lacks": [". . path", "| | pipe", "[ [", ", , comma", "] ] each"]}
+    {"mode": "jq", "contains": [". path", "| pipe"], "lacks": [". . path", "| | pipe", "[ [", ", , comma", "] ] each"]}
   ]
 }

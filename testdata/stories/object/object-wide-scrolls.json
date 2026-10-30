@@ -8,12 +8,13 @@
   "doc": "wide-object.json"
  },
  "script": [
-  "tab",
+  "ctrl+a",
+  "o",
   "$"
  ],
  "expect": [
   {
-   "after": 1,
+   "after": 2,
    "contains": [
     "key01",
     "24\u203a"

@@ -63,7 +63,7 @@ func TestHoverGridPerKind(t *testing.T) {
 func hoverAt(t *testing.T, width, height, col int) *App {
 	t.Helper()
 	a := open(t, nestedDoc, width, height)
-	press(t, a, "tab", "j", "j")
+	press(t, a, "ctrl+a", "o", "j", "j")
 	for range col {
 		press(t, a, "l")
 	}
@@ -95,7 +95,7 @@ func TestHoverOpensUnderTheRowAndClosesOnMove(t *testing.T) {
 	}
 	// The tree focused: the pane draws no sub-table.
 	press(t, a, "$")
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	if strings.Contains(view(a), "    #  id") {
 		t.Fatalf("a sub-table with the tree focused\n%s", view(a))
 	}
@@ -184,7 +184,7 @@ func TestHoverJumpsLeaveTheSubTable(t *testing.T) {
 		t.Fatalf("G: row %d in %v", a.data.Selected(), a.hoverIn())
 	}
 	b := open(t, nestedDoc, 120, 30)
-	press(t, b, "tab")
+	press(t, b, "ctrl+a", "o")
 	for range 6 {
 		press(t, b, "l")
 	}
@@ -280,7 +280,7 @@ func TestHoverEditsTheSubTableCell(t *testing.T) {
 // A cell an item of a sub-table lacks is added by r, as on a table row.
 func TestHoverEditAddsAMissingCell(t *testing.T) {
 	a := open(t, "testdata/nested.json", 120, 30)
-	press(t, a, "tab")
+	press(t, a, "ctrl+a", "o")
 	// Row 0 has no orders items to lack; build one: an object array whose
 	// second item lacks a key, through a value edit on the row.
 	for range 7 {
@@ -303,7 +303,7 @@ func TestHoverSummarySetting(t *testing.T) {
 	if err := a.r.Settings().Set(settingNested, nestedSummary); err != nil {
 		t.Fatal(err)
 	}
-	press(t, a, "tab", "j", "j", "l", "l", "l", "l", "l", "l")
+	press(t, a, "ctrl+a", "o", "j", "j", "l", "l", "l", "l", "l", "l")
 	frame := view(a)
 	if strings.Contains(frame, "Austin") {
 		t.Fatalf("summary opened a sub-table\n%s", frame)
@@ -393,7 +393,7 @@ func TestEnterOnANestedCellOpensIt(t *testing.T) {
 			t.Fatal(err)
 		}
 		selectPath(t, a, ".items")
-		press(t, a, "tab", "l", "l", "l") // row 0, owner
+		press(t, a, "ctrl+a", "o", "l", "l", "l") // row 0, owner
 		press(t, a, "enter")
 		if a.r.TopModal() != detailID || len(a.trail) != 1 || a.trail[0].Path() != ".items[0].owner" {
 			t.Fatalf("%s: enter on owner opened %v\n%s", nested, a.trail, view(a))

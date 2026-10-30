@@ -8,7 +8,7 @@
   "script": ["j", "g", "v", "g", "e", "g", "k"],
   "expect": [
     {"after": 1, "contains": ["Object ."]},
-    {"after": 3, "mode": "normal", "modal": "", "contains": ["Object ."], "lacks": ["JSON ."]},
-    {"mode": "normal", "modal": "", "contains": ["Object .", "Structure · unchanged"], "lacks": ["JSON .", "Error"]}
+    {"after": 3, "mode": "shape", "modal": "", "contains": ["Object ."], "lacks": ["JSON ."]},
+    {"mode": "shape", "modal": "", "contains": ["Object .", "Structure · unchanged"], "lacks": ["JSON .", "Error"]}
   ]
 }

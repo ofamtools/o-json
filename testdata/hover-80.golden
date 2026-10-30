@@ -1,4 +1,4 @@
-  ◆ o-json                                                       NORMAL         
+  ◆ o-json                                                       NESTED         
    › testdata/nested.json  Restructure                                          
   ────────────────────────────────────────────────────────────────────────────  
   testdata/nested.json  ·  . (array ×1)  ·  row [2]                             
@@ -20,5 +20,5 @@
   │ 1–12 / 28                  │ ┃  6       {2}   {3}       []               ┃  
   ╰────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────  
-  enter item.open · y item.yank · r/i edit · d d delete · u/ctrl+r undo/redo …  
+  enter item.open · y item.yank · D next data view · v select rows · r/i edit…  
                                                                                 

@@ -34,7 +34,7 @@
       ]
     },
     {
-      "mode": "normal",
+      "mode": "shape",
       "contains": [
         "Object .who",
         "who     object",

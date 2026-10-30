@@ -118,7 +118,7 @@ func TestEditValueTypes(t *testing.T) {
 	if got := field(t, a, ".version"); got != "42" {
 		t.Fatalf("number: %s", got)
 	}
-	if a.r.Focus == valueInputID || a.r.Mode.Name != "normal" || a.dataNode() == nil || a.dataNode().Key != "version" {
+	if a.r.Focus == valueInputID || a.r.Mode.Name != "table" || a.dataNode() == nil || a.dataNode().Key != "version" {
 		t.Fatalf("after enter: focus %q mode %q", a.r.Focus, a.r.Mode.Name)
 	}
 	frame := view(a)

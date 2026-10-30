@@ -13,16 +13,18 @@
     "j",
     "j",
     "j",
-    "tab",
+    "ctrl+a",
+    "o",
     "3",
     "G",
-    "shift+tab",
+    "ctrl+a",
+    "o",
     "9",
     "j"
   ],
   "expect": [
     {
-      "after": 7,
+      "after": 8,
       "contains": [
         "Table .items[]  3/4"
       ],

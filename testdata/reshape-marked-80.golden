@@ -1,4 +1,4 @@
-  ◆ o-json                                                       NORMAL         
+  ◆ o-json                                                       SHAPE          
    › testdata/reshape.json  Restructure                                         
   ────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json  ·  .people[].address.city (string 2/2)                 

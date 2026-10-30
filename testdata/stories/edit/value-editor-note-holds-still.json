@@ -5,9 +5,9 @@
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
-  "script": ["tab", "l", "l", "r", {"type": "{"}],
+  "script": ["ctrl+a", "o", "l", "l", "r", {"type": "{"}],
   "expect": [
-    {"after": 4, "modal": "value-editor", "lacks": ["not valid JSON"]},
+    {"after": 5, "modal": "value-editor", "lacks": ["not valid JSON"]},
     {"modal": "value-editor", "order": ["value  {", "· not valid JSON: sets it as a string", "enter set"]}
   ]
 }
