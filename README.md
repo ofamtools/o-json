@@ -364,6 +364,7 @@ Every setting o-json declares (`: settings`, or `settings.json`), the default fi
 | `paste.on-tree` | `json`, `outline`, `viewer` | a bracketed paste on the edited tree: valid JSON loads as the buffer and other text follows `paste.text-on-tree`; always keys; always load |
 | `paste.text-on-tree` | `keys`, `values`, `ignore` | text that is not JSON pasted on the edited tree under `paste.on-tree json`. `keys`: each line a key below the node, nested by indent. `values`: each line a string value, as value patches: appended as items to an array, or as an array of them under a new placeholder key (`restructure.new-key`) inside an object (below a plain value); a node under `[]` stands for every item and refuses. `ignore`: nothing, a plain notice (`not JSON; nothing pasted`). One undo step |
 | `recent.size` | integer, `10` | how many recently opened files are remembered; 0 keeps none |
+| `reload.keep-place` | `true`, `false` | `R` (`viewer.load`) keeps the focused pane, each structure tree's selection by path and the data pane's row and column where they are still there, as Vim's `:e!` keeps the cursor; off, a reload starts at the root |
 | `json.duplicate-tone` | `background`, `foreground` | how a repeated key is marked in the structure trees |
 | `query.line` | `true`, `false` | the jq query line above the structure pane (`/`) and query mode; off, `/` is the path search |
 | `query.chip-focus` | `cursor`, `line` | while the query line is focused, brighten the chip under the cursor, or every chip |

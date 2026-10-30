@@ -348,3 +348,29 @@ func TestFailedOpenIsOnePlainError(t *testing.T) {
 		}
 	}
 }
+
+// R keeps the viewer's place: the focused pane, the tree's path, the data
+// pane's row and column (reload.keep-place); off, it starts at the root
+// as opening a file does (F10).
+func TestReloadKeepsPlace(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	onData(t, a, ".items", ".items[1]")
+	press(t, a, "l", "l")
+	reload := func() {
+		t.Helper()
+		finish(a, Press(a.m, "R"))
+		settle(a)
+		view(a)
+	}
+	reload()
+	if s := a.selectedShape(); s == nil || s.Path != ".items" || !a.data.list.Focused() || a.data.Selected() != 1 || a.data.list.Column() != 2 {
+		t.Fatalf("R: shape %v focus %q row %d column %d", a.selectedShape(), a.r.Focus, a.data.Selected(), a.data.list.Column())
+	}
+	if err := a.r.Settings().Set(settingReloadPlace, false); err != nil {
+		t.Fatal(err)
+	}
+	reload()
+	if s := a.selectedShape(); s == nil || s.Path == ".items" || a.data.list.Focused() {
+		t.Fatalf("R with reload.keep-place off kept the place: shape %v focus %q", s, a.r.Focus)
+	}
+}

@@ -28,6 +28,10 @@ const (
 	noFile        = "[no file]"
 	recentFile    = "recent.json"
 	settingRecent = "recent.size"
+	// settingReloadPlace keeps the viewer's place across reading the open
+	// file again (R): the focus, each tree's selection by path, the data
+	// pane's row and column. Off, a reload starts at the root.
+	settingReloadPlace = "reload.keep-place"
 	// settingPasteOnTree says what a bracketed paste on the restructured
 	// tree runs (node.paste): pasteOnJSON, pasteOnOutline or pasteOnViewer.
 	settingPasteOnTree = "paste.on-tree"
@@ -49,6 +53,11 @@ const (
 // recorded in the recent list on the same goroutine, after it parsed.
 func (a *App) read(p string) ochazuke.Result {
 	stdin := a.Stdin
+	var at *place // the open file read again: where the viewer is
+	if a.Doc != nil && p == a.Path && p != "-" && a.r.Settings().Bool(settingReloadPlace) {
+		pl := a.place()
+		at = &pl
+	}
 	a.Loading, a.LoadErr = p, nil
 	state, size := a.stateDir(), a.recentSize()
 	var recent []string // written on the read's goroutine, read in Then
@@ -75,8 +84,80 @@ func (a *App) read(p string) ochazuke.Result {
 			}
 			if err := a.setDoc(p, v.(*Doc)); err != nil {
 				c.Error(err.Error())
+				return
+			}
+			if at != nil {
+				if err := a.restore(*at); err != nil {
+					c.Error(err.Error())
+				}
 			}
 		})
+}
+
+// place is where the viewer is, by path, so it survives a reload: the
+// focused pane, the side shown, each structure tree's selected path, the
+// data pane's row and column.
+type place struct {
+	focus        string // treeID, rsTreeID, dataID or ""
+	original     bool
+	orig, edited string
+	row, col     int
+}
+
+func (a *App) place() place {
+	p := place{original: a.original, row: max(0, a.data.Selected()), col: a.data.list.Column()}
+	anc := a.r.Ancestry(a.r.Focus)
+	switch {
+	case slices.Contains(anc, dataID):
+		p.focus = dataID
+	case a.sideOf(a.r.Focus) == rsTreeID:
+		p.focus = rsTreeID
+	case slices.Contains(anc, treeID):
+		p.focus = treeID
+	}
+	if s, ok := a.selectedOriginal(); ok {
+		p.orig = s.Path
+	}
+	if n, ok := a.rs.tree.Selected(); ok {
+		p.edited = nodePaths(a.rs.tree.Nodes(), a.rs.meta)[n.ID]
+	}
+	return p
+}
+
+// restore puts the viewer back at p where its paths are still there.
+func (a *App) restore(p place) error {
+	if a.editable() {
+		a.original = p.original
+	}
+	if p.orig != "" && a.shapeAt(p.orig) != nil {
+		_ = a.tree.Select(shapeID(a.shapeAt(p.orig)))
+	}
+	if p.edited != "" {
+		for id, path := range nodePaths(a.rs.tree.Nodes(), a.rs.meta) {
+			if path == p.edited {
+				_ = a.rs.tree.Select(id)
+				break
+			}
+		}
+	}
+	a.shown, a.note = nil, ""
+	a.carry = &rowCarry{sel: p.row, col: p.col}
+	if err := a.sync(); err != nil {
+		return err
+	}
+	switch p.focus {
+	case dataID:
+		return a.data.list.Focus()
+	case rsTreeID:
+		if a.editedShown() {
+			return a.rs.tree.Focus()
+		}
+	case treeID:
+		if !a.editedShown() {
+			return a.tree.Focus()
+		}
+	}
+	return nil
 }
 
 // readAsking reads a file as read does, first asking (viewer.discard)
@@ -654,6 +735,9 @@ func declareOpenSettings(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingRecent, Type: ochazuke.SettingInteger, Default: 10,
 		Description: "How many recently opened files o-json remembers (viewer.open's first choices); 0 keeps none",
+	}, ochazuke.Setting{
+		Name: settingReloadPlace, Type: ochazuke.SettingBoolean, Default: true,
+		Description: "Reading the open file again (R, viewer.load) keeps the focused pane, each structure tree's selection by path and the data pane's row and column where they are still there, as Vim's :e! keeps the cursor; off, a reload starts at the root as opening a file does",
 	}, ochazuke.Setting{
 		Name: settingPasteOnTree, Type: ochazuke.SettingString, Default: pasteOnJSON, Enum: []string{pasteOnJSON, pasteOnOutline, pasteOnViewer},
 		Description: "A bracketed paste on the restructured tree: json loads valid JSON as the buffer, as on the viewer, and does with anything else what paste.text-on-tree says; outline always adds keys below the node, one per line, nested by indent; viewer always loads (invalid JSON is an error)",
