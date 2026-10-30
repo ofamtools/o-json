@@ -53,6 +53,12 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | The story tester (`//go:build monogatari`): o-json as a monogatari app (`storyApp`, fixtures `nest`/`viewer`/`empty`, the seed's `doc`/`send`/`on`, the temp document and state dir), the `o-json story` mount (`host.Command`), the embedded stories and testdata documents; the normal build's empty mount; `host.Test` over `testdata/stories/<area>/<name>.json` | `story.go`, `story_off.go`, `story_test.go` |
 | Where the Settings page files o-json's settings: the o-json tab, its sections and groups (`settingSections`), `declareOwn` (every o-json setting declares through it) | `settings_layout.go` |
 | The search prompt, the system clipboard | `prompt.go`, `clipboard.go` |
+| o-jj trial (Design D): the line views' records and keys (FLAT, JSON: `dataLine`, `line.yank-part`/`jump`/`fold`/`bracket`, `jumpStructure`) | `lines.go` |
+| o-jj trial: the window keys (`viewer.only` per mode, `viewer.restore`, `viewer.pane` stopping at the edge) | `panes.go` |
+| o-jj trial: the one search line (`searchTypes`: substring, fuzzy, regex, jq; the Results view; the overlay over the structure's view; `search.*`) | `search.go` |
+| o-jj trial: EDIT (`viewer.edit`, `viewer.edit-leave`, `viewer.needs-edit`, `modes.edit-gate`) | `edit.go` |
+| o-jj trial: RAW (`viewer.raw-edit`, the temp file, the foreground editor, `raw.editor`) | `raw.go` |
+| o-jj trial: the mode picker (`g m`, `gotoMode`) and the declared modes (`syncDeclaredMode`, `dataViewOrder`, the trial accents) | `modepicker.go`, `views.go` |
 
 ## Invariants
 
