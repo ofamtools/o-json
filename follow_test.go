@@ -1,8 +1,12 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/x/ansi"
+	"github.com/unixsuperhero/ochazuke"
 )
 
 // scalarsAlone sets structure.scalar-follow show: a plain-value shape is
@@ -155,5 +159,47 @@ func TestValueEditKeepsTheCursorOffTheHighlight(t *testing.T) {
 	press(t, a, "9", "enter")
 	if a.data.list.Column() != 1 || !litCells(a)[2] {
 		t.Fatalf("after the edit: column %d lit %v\n%s", a.data.list.Column(), litCells(a), view(a))
+	}
+}
+
+// The lit column and the selected row are highlight layers (ochazuke
+// ToneSpan.Layer): the cell where they cross takes list.cell.intersect,
+// the lit column's header list.header.intersect, and the "#" column is a
+// row-number part (list.rownum), so the crossing and the non-data parts
+// read at a glance.
+func TestLitColumnCrossesTheSelectedRow(t *testing.T) {
+	a := openOriginal(t, sample, 120, 30)
+	selectPath(t, a, ".items[].name")
+	name := 1 + 1 // "#", id, name
+	for _, it := range a.data.list.Items() {
+		for _, tn := range it.Tones {
+			if tn.Tone == toneFollow && tn.Layer != layerColumn {
+				t.Fatalf("lit cell %d without the column layer: %+v", tn.Cell, tn)
+			}
+		}
+	}
+	head := a.data.list.HeaderTones()
+	if len(head) != 1 || head[0].Cell != name || head[0].Layer != layerColumn {
+		t.Fatalf("header tones %+v", head)
+	}
+	if cols := a.data.list.Columns(); cols[0].Title != "#" || cols[0].Part != ochazuke.PartRowNumber {
+		t.Fatalf("# column %+v", cols[0])
+	}
+	// The frame draws the crossing in a background, out of the reverse
+	// bar: the selected row's lit cell is on a background (list.cell.intersect).
+	a.m.Appearance.Theme = "dark"
+	frame := a.m.View().Content
+	sel := ""
+	for _, l := range strings.Split(frame, "\n") {
+		if strings.Contains(l, "\x1b[7m") && strings.Contains(ansi.Strip(l), "alpha") {
+			sel = l
+		}
+	}
+	if !regexp.MustCompile(`48;2;\d+;\d+;\d+(;4)?malpha`).MatchString(sel) { // list.cell.intersect (faded: the pane is unfocused)
+		t.Fatalf("selected row draws no crossing:\n%q", sel)
+	}
+	selectPath(t, a, ".items")
+	if len(a.data.list.HeaderTones()) != 0 {
+		t.Fatalf("a collection keeps the header tones %+v", a.data.list.HeaderTones())
 	}
 }

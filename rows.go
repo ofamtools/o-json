@@ -157,6 +157,7 @@ func (v *rowsView) refresh() error {
 	if err := v.list.SetItems(items); err != nil {
 		return err
 	}
+	v.list.SetHeaderTones(v.headerTones()...)
 	if v.sel >= 0 {
 		return v.list.Select(v.id + "/" + strconv.Itoa(v.sel-v.off))
 	}
@@ -216,14 +217,32 @@ func (v *rowsView) measureLit(width int) int {
 func (v *rowsView) tones(i, cells int) []ochazuke.ToneSpan {
 	var out []ochazuke.ToneSpan
 	if v.litCol >= 0 && v.litCol < cells {
-		out = append(out, ochazuke.CellTone(v.litCol, toneFollow))
+		out = append(out, ochazuke.LayerTone(v.litCol, toneFollow, layerColumn))
 	}
 	if i == v.litRow {
 		for c := range cells {
-			out = append(out, ochazuke.CellTone(c, toneFollow))
+			out = append(out, ochazuke.LayerTone(c, toneFollow, layerRow))
 		}
 	}
 	return out
+}
+
+// The highlight layers the data pane lights (ochazuke ToneSpan.Layer):
+// where two cross (the lit column and the selected row, the lit column
+// and the lit field row) ochazuke draws the cell in its intersect tone
+// (list.cell.intersect; setting list.intersect).
+const (
+	layerColumn = "column"
+	layerRow    = "row"
+)
+
+// headerTones is the lit column's layer on its header, so the header of
+// the highlighted column shows it (list.header.intersect).
+func (v *rowsView) headerTones() []ochazuke.ToneSpan {
+	if v.litCol < 0 || v.litCol >= len(v.src.columns) {
+		return nil
+	}
+	return []ochazuke.ToneSpan{ochazuke.LayerTone(v.litCol, toneFollow, layerColumn)}
 }
 
 // page is half a screen (half) or a screen less one row.
