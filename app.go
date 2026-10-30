@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/unixsuperhero/ochazuke"
@@ -47,6 +46,9 @@ type App struct {
 	// viewByPath remembers the data lens independently for each shape path.
 	viewByPath map[string]string
 	viewName   string
+	// folds is the JSON view's folded containers (document paths) per
+	// shown structure path.
+	folds map[string]map[string]bool
 
 	// Clipboard copies text to the system clipboard; nil when there is
 	// none (ochazuke then sends OSC 52). Only ochazuke's registers call it
@@ -67,10 +69,10 @@ type App struct {
 	// same table), so lighting it again does not move the cursor.
 	litPath string
 	data    *rowsView
-	tab     *Table   // the data panel's table, when it shows one
-	fields  *Node    // the data panel's object, when it shows fields
-	lines   []string // the data panel's raw lines, when Raw
-	scalar  *Node    // the data panel's single scalar
+	tab     *Table     // the data panel's table, when it shows one
+	fields  *Node      // the data panel's object, when it shows fields
+	lines   []dataLine // the data panel's FLAT or JSON lines (lines.go)
+	scalar  *Node      // the data panel's single scalar
 
 	detail *rowsView
 	// detailTab is the detail's one-row table of an object (object.view
@@ -117,7 +119,7 @@ type App struct {
 // viewer.open or viewer.paste fills it.
 func New() (*App, error) {
 	r := ochazuke.NewRuntime()
-	a := &App{r: r, viewByPath: make(map[string]string)}
+	a := &App{r: r, viewByPath: make(map[string]string), folds: make(map[string]map[string]bool)}
 	a.m = ochazuke.NewModel(r)
 	a.m.Title = appName()
 	r.Instance(pageID, ochazuke.Kind("viewer"))
@@ -135,6 +137,7 @@ func New() (*App, error) {
 	a.registerDetail()
 	a.registerClipboard()
 	a.registerVerbs()
+	a.registerLineVerbs()
 	if err := a.registerQuery(); err != nil {
 		return nil, err
 	}
@@ -213,6 +216,7 @@ func (a *App) setDoc(path string, doc *Doc) error {
 	a.Doc, a.Path, a.Loading, a.LoadErr = doc, path, "", nil
 	a.shown = nil
 	a.viewByPath = make(map[string]string)
+	a.folds = make(map[string]map[string]bool)
 	a.viewName = ""
 	a.Raw = false
 	a.forgetQuery()
@@ -485,7 +489,7 @@ func (a *App) show(s *Shape) error {
 	}
 	switch {
 	case view == viewJSON:
-		a.lines = rawLines(values, len(values) != 1)
+		a.lines = jsonLines(values, len(values) != 1, a.jsonFolded)
 		return a.data.set(linesSource(a.lines), 0)
 	case view == viewFlat:
 		a.lines = flatLines(values)
@@ -587,82 +591,19 @@ func fieldsSource(n *Node, noun string) rowSource {
 // rawLimit caps the indented JSON the raw view builds.
 const rawLimit = 4 << 20
 
-// rawLines is the values as indented JSON (many values: a JSON array).
-func rawLines(values []*Node, many bool) []string {
-	var b strings.Builder
-	cut := false
-	if many {
-		b.WriteString("[\n")
-		for i, v := range values {
-			if !writePrettyLimit(&b, v, 1, rawLimit) {
-				cut = true
-				break
-			}
-			if i < len(values)-1 {
-				b.WriteString(",")
-			}
-			b.WriteString("\n")
-		}
-		if !cut {
-			b.WriteString("]")
-		}
-	} else if len(values) == 1 {
-		cut = !writePrettyLimit(&b, values[0], 0, rawLimit)
-	}
-	lines := strings.Split(b.String(), "\n")
-	if many && !cut {
-		for i := 1; i < len(lines)-1; i++ {
-			lines[i] = "  " + lines[i]
-		}
-	}
-	if cut {
-		lines = append(lines, "… cut at 4 MB: o-json get prints it all")
-	}
-	return lines
-}
-
-// flatLines renders leaf paths in document order. It stops at the same
-// view-size cap as JSON so opening a very large document stays responsive.
-func flatLines(values []*Node) []string {
-	lines := make([]string, 0)
-	used := 0
-	var walk func(*Node)
-	walk = func(n *Node) {
-		if used >= rawLimit {
-			return
-		}
-		if n.IsContainer() && len(n.Children) > 0 {
-			for _, child := range n.Children {
-				walk(child)
-			}
-			return
-		}
-		line := n.Path() + " = " + Compact(n, cellLimit)
-		lines = append(lines, line)
-		used += len(line)
-	}
-	for _, n := range values {
-		walk(n)
-	}
-	if used >= rawLimit {
-		lines = append(lines, "… cut at 4 MB: o-jj get prints it all")
-	}
-	return lines
-}
-
 // linesSource is the raw JSON as rows of the line noun. It has no
 // columns, so no header: a list of lines whose labels are padded to the
 // widest line, so the cursor is one even bar on every line.
-func linesSource(lines []string) rowSource {
+func linesSource(lines []dataLine) rowSource {
 	w := 0
 	for _, l := range lines {
-		w = max(w, ansi.StringWidth(l))
+		w = max(w, ansi.StringWidth(l.text))
 	}
 	return rowSource{
 		n: len(lines), noun: "line",
-		cells: func(i int) []string { return []string{lines[i]} },
-		data:  func(i int) any { return lines[i] },
-		label: func(i int) string { return pad(lines[i], w) },
+		cells: func(i int) []string { return []string{lines[i].text} },
+		data:  func(i int) any { return &lines[i] },
+		label: func(i int) string { return pad(lines[i].text, w) },
 	}
 }
 

@@ -249,6 +249,23 @@
       {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
       {"key": "y", "action": "line.yank"}
     ]},
+    {"context": "line/flat", "bindings": [
+      {"key": "y y", "action": "line.yank-part", "args": {"part": "line"}, "hint": "y y/p/v line/path/value"},
+      {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
+      {"key": "y v", "action": "line.yank-part", "args": {"part": "value"}, "hidden": true},
+      {"key": "enter", "action": "line.jump", "hint": "go to path"}
+    ]},
+    {"context": "line/json", "bindings": [
+      {"key": "y y", "action": "line.yank-part", "args": {"part": "value"}, "hint": "y y/p value/path"},
+      {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
+      {"key": "enter", "action": "line.jump", "hint": "go to path"},
+      {"key": "z a", "action": "line.fold", "args": {"how": "toggle"}, "hint": "z a/M/R fold"},
+      {"key": "z o", "action": "line.fold", "args": {"how": "open"}, "hidden": true},
+      {"key": "z c", "action": "line.fold", "args": {"how": "close"}, "hidden": true},
+      {"key": "z M", "action": "line.fold", "args": {"how": "close-all"}, "hidden": true},
+      {"key": "z R", "action": "line.fold", "args": {"how": "open-all"}, "hidden": true},
+      {"key": "%", "action": "line.bracket", "hint": "bracket"}
+    ]},
     {"context": "entry/normal", "bindings": [
       {"key": "enter", "action": "entry.open"},
       {"key": "u", "action": "restructure.undo", "hint": "u/ctrl+r undo/redo"},

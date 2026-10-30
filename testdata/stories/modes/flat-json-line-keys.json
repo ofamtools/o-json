@@ -1,0 +1,20 @@
+{
+  "name": "o-jj: FLAT y p and enter; JSON z a, z M, z R and %",
+  "area": "modes",
+  "width": 120,
+  "height": 40,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["2", "D", "ctrl+w", "l", "j", "j", "j", "y", "p", "enter",
+             "ctrl+w", "h", "g", "g", "D", "ctrl+w", "l", "j", "j", "j", "z", "a", "z", "M", "z", "R", "%"],
+  "expect": [
+    {"after": 4, "mode": "flat", "contains": ["Flat .", ".items[0].name = \"alpha\""]},
+    {"after": 9, "contains": ["copied the path .items[0].name"]},
+    {"after": 10, "mode": "table", "contains": ["structure → .items[0].name", "Table .items[]"]},
+    {"after": 17, "mode": "json", "contains": ["JSON ."]},
+    {"after": 22, "contains": ["\"items\": [… 4 items],"]},
+    {"after": 24, "contains": ["\"meta\": {… 3 keys}"]},
+    {"after": 26, "lacks": ["[… 4 items]"]},
+    {"highlightedText": "  ],"}
+  ]
+}

@@ -261,8 +261,11 @@ func (a *App) registerVerbs() {
 		Verb("yank", yankNode, "Copy the entry's value (JSON for an object or array) into the registers (and the system clipboard, as the clipboard setting says)")
 	r.Define("line").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {
-			line, _ := c.Instance.Data.(string)
-			return a.copyText(c, line, "the line")
+			l := lineAt(c.Instance)
+			if l == nil {
+				return ochazuke.Failed(errors.New("no line here"))
+			}
+			return a.copyText(c, l.text, "the line")
 		}, "Copy the JSON line into the registers (and the system clipboard, as the clipboard setting says)")
 	setHistory(r, ochazuke.HistoryAction, "item.open", "field.open", "entry.open", "entry.up")
 	// A yank writes the registers and the clipboard, as input.yank does.
