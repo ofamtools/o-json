@@ -1597,8 +1597,10 @@ func (a *App) isSource(path string) bool {
 	return p == s
 }
 
-// errExists is a write that found its file there.
-var errExists = errors.New("exists")
+// fileThere is a write that found its file there and will ask before
+// replacing it: no failure, so the job is not reported failed while the
+// confirm asks.
+type fileThere struct{}
 
 // writeMode is how a write treats a file that is there.
 type writeMode int
@@ -1670,21 +1672,23 @@ func (a *App) writeFileAsk(c ochazuke.Ctx, path string, data []byte, mode writeM
 	}
 	return ochazuke.Pending(func(context.Context) (any, error) {
 		if _, err := os.Stat(path); err == nil && !overwrite {
-			return nil, errExists
+			if ask != "" {
+				return fileThere{}, nil
+			}
+			return nil, fmt.Errorf("%s exists; o-json writes a new file", path)
 		}
 		return path, writeNew(path, data, true)
-	}).Then(func(c ochazuke.Ctx, _ any, err error) {
+	}).Then(func(c ochazuke.Ctx, v any, err error) {
+		_, there := v.(fileThere)
 		switch {
-		case errors.Is(err, errExists) && ask != "":
+		case err != nil:
+			// The job's failure reports it (the status line and the ticker).
+		case there:
 			// It is there: ask before replacing it.
 			noun, verb, _ := strings.Cut(ask, ".")
 			if _, err := a.r.Execute(ochazuke.Request{Noun: noun, Verb: verb, Args: askArgs}); err != nil {
 				c.Error(err.Error())
 			}
-		case errors.Is(err, errExists):
-			c.Error(path + " exists; o-json writes a new file")
-		case err != nil:
-			c.Error(err.Error())
 		default:
 			if done != nil {
 				done(path)

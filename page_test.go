@@ -412,6 +412,10 @@ func TestWriteRefusesTheSource(t *testing.T) {
 	if a.r.TopModal() == "" {
 		t.Fatalf("no confirm (info %q, error %q)", a.m.Info, a.m.Status)
 	}
+	// While it asks nothing says it failed: no Error, the job not failed.
+	if jobs := a.r.Jobs(); a.m.Status != "" || len(jobs) == 0 || jobs[len(jobs)-1].State == "failed" {
+		t.Fatalf("asking reads as a failure: error %q jobs %+v", a.m.Status, jobs)
+	}
 	if got, _ := os.ReadFile(out); string(got) != "keep" {
 		t.Fatal("overwrote before the confirm")
 	}
