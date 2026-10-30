@@ -592,3 +592,29 @@ func TestSearchesUseSmartCase(t *testing.T) {
 		t.Errorf("smart in: %q, want in, index and IN", got)
 	}
 }
+
+// The caret line's row is kept while the query line is typed in: an
+// error that comes and goes never moves the structure tree (F12).
+func TestQueryErrorKeepsTheTree(t *testing.T) {
+	a := openQuery(t, sample)
+	press(t, a, "/")
+	row := func() int {
+		t.Helper()
+		for i, l := range strings.Split(view(a), "\n") {
+			if strings.Contains(l, ". (root)") {
+				return i
+			}
+		}
+		t.Fatalf("no root row\n%s", view(a))
+		return -1
+	}
+	query(t, a, ".items")
+	good := row()
+	query(t, a, ".items[ | x")
+	if !strings.Contains(view(a), "^ ") {
+		t.Fatalf("no caret line\n%s", view(a))
+	}
+	if bad := row(); bad != good {
+		t.Fatalf("the error moved the tree from row %d to %d\n%s", good, bad, view(a))
+	}
+}

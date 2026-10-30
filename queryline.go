@@ -189,6 +189,11 @@ func (a *App) queryLines(s ochazuke.Styles, width int) (ochazuke.Block, int) {
 		block.Cursor = &ochazuke.Pos{X: pw + cx}
 	}
 	if errMsg == "" {
+		if focused {
+			// The caret's row is kept while the line is typed in, so an
+			// error that comes and goes never moves the tree below.
+			return block.WithText(block.Text + "\n"), 2
+		}
 		return block, 1
 	}
 	col := pw
