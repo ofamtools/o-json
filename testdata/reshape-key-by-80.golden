@@ -2,12 +2,12 @@
    › testdata/reshape.json  Restructure                                         
   ────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json [+]  ·  .people (object 1/1)                            
-  ╭━ Structure · edited [+] ━━━╮ ╭─ Fields .people ──────────────────────────╮  
-  ┃ jq / to query              ┃ │ field     type       value                │  
-  ┃ key                     2› ┃ │ p1        object{4}  {"name":"Ann","id":… │  
-  ┃ ▾ . (root)                 ┃ │ p2        object{4}  {"name":"Bo","id":"… │  
-  ┃     title                  ┃ │ p1-2      object{3}  {"name":"Cy","id":"… │  
-  ┃   ▾ people                 ┃ │ _missing  array[1]   [{"name":"Dee"}]     │  
+  ╭━ Structure · edited [+] ━━━╮ ╭─ Object .people ──────────────────────────╮  
+  ┃ jq / to query              ┃ │ p1   p2   p1-2  _missing                  │  
+  ┃ key                     2› ┃ │ {4}  {4}  {3}   [1]                       │  
+  ┃ ▾ . (root)                 ┃ │                                           │  
+  ┃     title                  ┃ │                                           │  
+  ┃   ▾ people                 ┃ │                                           │  
   ┃     ▾ p1                   ┃ │                                           │  
   ┃         name               ┃ │                                           │  
   ┃         id                 ┃ │                                           │  

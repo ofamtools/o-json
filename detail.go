@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/unixsuperhero/ochazuke"
 )
@@ -61,7 +62,33 @@ func (a *App) showDetail(sel int) error {
 	view := a.m.ModalViews[detailID]
 	view.Title = fmt.Sprintf("%s  %s", n.Path(), n.TypeLabel())
 	a.m.ModalViews[detailID] = view
-	return a.detail.set(fieldsSource(n, "entry"), sel)
+	out := pickView(detailViews, []*Node{n}, a.r.Settings().String(settingObjectView)).build(n.Path(), []*Node{n})
+	if out.tab == nil {
+		a.detailTab = nil
+		return a.detail.set(out.src, sel)
+	}
+	// A table (an object's one row, object.view): the same object again
+	// (a value edit) keeps the cursor's column.
+	col := 0
+	if prev := a.detailTab; prev != nil && len(prev.Rows) == 1 && prev.Rows[0].Path() == n.Path() {
+		col = a.detail.list.Column()
+	}
+	a.detailTab = out.tab
+	if err := a.detail.set(tableSource(a.detailTab), 0); err != nil {
+		return err
+	}
+	a.detail.list.SetColumn(col)
+	return nil
+}
+
+// drillCell is the value the detail steps into from its focused row: on
+// a one-row object table the cell under the cursor when it holds an
+// object or an array, nil otherwise (a plain cell is an edge).
+func (a *App) drillCell(inst *ochazuke.Instance) *Node {
+	if v, ok := a.valueOf(inst); ok && v.node != nil && v.node.IsContainer() && v.node != nodeAt(inst) {
+		return v.node
+	}
+	return nil
 }
 
 // drill steps into the selected entry when it holds a container.
@@ -81,7 +108,17 @@ func (a *App) up() error {
 	}
 	from := a.trail[len(a.trail)-1]
 	a.trail = a.trail[:len(a.trail)-1]
-	return a.showDetail(from.Index)
+	if err := a.showDetail(from.Index); err != nil {
+		return err
+	}
+	if t := a.detailTab; t != nil {
+		// A one-row object table: the cursor on the key it came from.
+		if j := slices.IndexFunc(t.Columns, func(c TableColumn) bool { return !c.Self && c.Name == from.Key }); j >= 0 {
+			a.detail.list.SetColumn(t.ListColumn(j))
+			return a.detail.refresh()
+		}
+	}
+	return nil
 }
 
 func (a *App) detailView(r *ochazuke.Runtime, _ *ochazuke.Instance, w, h int) ochazuke.Block {

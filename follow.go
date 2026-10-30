@@ -22,6 +22,16 @@ import (
 
 const settingScalarFollow = "structure.scalar-follow"
 
+// object.view: how the data pane and the detail show one object. row (the
+// default) is a one-row table, its keys the header and its values the
+// cells, as a hover sub-table draws an object; fields is the labeled
+// field, type and value rows.
+const (
+	settingObjectView = "object.view"
+	objectRow         = "row"
+	objectFields      = "fields"
+)
+
 // toneFollow marks, in the data pane, the column or field row of the
 // plain-value shape the structure tree's cursor is on: the same tone as
 // the restructure page's origin highlight (toneOrigin), the accent.
@@ -29,6 +39,12 @@ const toneFollow = toneOrigin
 
 func declareFollowSettings(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
+		Name: settingObjectView, Type: ochazuke.SettingString, Default: objectRow, Enum: []string{objectRow, objectFields},
+		Description: "One object in the data pane and the detail: row shows it as a one-row table (its keys the header, its values the cells; a nested value shows its size and opens beneath it); fields shows field, type and value rows",
+	}, ochazuke.Setting{
+		Name: settingLitWidth, Type: ochazuke.SettingString, Default: "fit", Enum: []string{"fit", "normal"},
+		Description: "The data pane's column the structure cursor lights (structure.scalar-follow highlight): fit widens it to its data (an array's items joined), up to the pane less room for the row's first columns, the others narrowing first and then scrolling off; normal keeps the widths",
+	}, ochazuke.Setting{
 		Name: settingScalarFollow, Type: ochazuke.SettingString, Default: "highlight", Enum: []string{"highlight", "show"},
 		Description: "The structure cursor on a path of plain values (no object or array): highlight keeps the data pane on the table or fields that hold it and highlights its column (scrolled into view) or field row; show shows its values alone, as before",
 	})
@@ -37,10 +53,27 @@ func declareFollowSettings(r *ochazuke.Runtime) error {
 // isCollection reports a shape whose values include an object or an array.
 func isCollection(s *Shape) bool { return s.Kinds[KObject] > 0 || s.Kinds[KArray] > 0 }
 
+// plainList reports a shape of lists of plain values: arrays (or null)
+// whose items are no objects or arrays (tags: ["red", "blue"]). It reads
+// as a column, as a plain value does: its cells written out are its items
+// joined (Full).
+func plainList(s *Shape) bool {
+	if s.Kinds[KObject] > 0 || s.Kinds[KArray] == 0 {
+		return false
+	}
+	for _, c := range s.Children {
+		if c.Key != "[]" || isCollection(c) {
+			return false
+		}
+	}
+	return true
+}
+
 // dataTarget is the shape the data pane shows for the selected shape s,
-// and the shape it highlights there (nil for none).
+// and the shape it highlights there (nil for none). A plain value or a
+// list of them (plainList) is a column of the collection holding it.
 func (a *App) dataTarget(s *Shape) (shown, lit *Shape) {
-	if s == nil || isCollection(s) || a.r.Settings().String(settingScalarFollow) == "show" {
+	if s == nil || isCollection(s) && !plainList(s) || a.r.Settings().String(settingScalarFollow) == "show" {
 		return s, nil
 	}
 	up := s.Parent()
@@ -89,7 +122,7 @@ func (a *App) light(lit *Shape) error {
 				}
 				return !c.Self && c.Name == lit.Key
 			}); j >= 0 {
-				col = j + 1 // after the "#" column
+				col = a.tab.ListColumn(j) // after the "#" column of items
 			}
 		case a.fields != nil:
 			row = slices.IndexFunc(a.fields.Children, func(c *Node) bool { return c.Key == lit.Key })

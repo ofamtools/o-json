@@ -48,8 +48,8 @@ func TestQueryLiveResults(t *testing.T) {
 		t.Fatalf("frame lacks the results:\n%s", frame)
 	}
 	query(t, a, ".items[0].owner")
-	if a.fields == nil || a.fields.Path() != ".items[0].owner" {
-		t.Fatalf("one object shows as fields: %v", a.fields)
+	if a.tab == nil || a.tab.Items || len(a.tab.Rows) != 1 || a.tab.Rows[0].Path() != ".items[0].owner" {
+		t.Fatalf("one object shows as one row: %v", a.tab)
 	}
 	query(t, a, "")
 	if a.queryShowing() || a.shown != before {

@@ -207,6 +207,14 @@ func (a *App) registerVerbs() {
 		return a.copyText(c, text, n.Path())
 	}
 	open := func(c ochazuke.Ctx) ochazuke.Result {
+		if a.rowsOf(c.Instance) == a.detail && a.detailTab != nil {
+			// The detail's one-row object table: enter steps into the
+			// cell's object or array; a plain cell is an edge.
+			if n := a.drillCell(c.Instance); n != nil {
+				return done(a.drill(n))
+			}
+			return ochazuke.Done(nil)
+		}
 		n := nodeAt(c.Instance)
 		// In a sub-table (table.nested hover): the value under the
 		// cursor, or the line's value holding a scalar.
@@ -250,6 +258,20 @@ func (a *App) registerVerbs() {
 	// . yanks again at the focus: each yank reads the focused row, and the
 	// repeat keeps only the register.
 	setRepeatable(r, "shape.yank", "item.yank", "field.yank", "entry.yank", "line.yank")
+}
+
+// tabOf is the table a windowed view shows (the data pane's, or the
+// detail's one-row object table), nil for labeled rows or JSON lines.
+func (a *App) tabOf(v *rowsView) *Table {
+	switch {
+	case v == nil:
+		return nil
+	case v == a.data:
+		return a.tab
+	case v == a.detail:
+		return a.detailTab
+	}
+	return nil
 }
 
 // rowsOf is the windowed table an instance belongs to (the list itself or

@@ -242,6 +242,8 @@ func (a *App) dataTitle() string {
 		return "Data"
 	case a.Raw:
 		return "JSON " + s.Path
+	case a.tab != nil && !a.tab.Items:
+		return "Object " + s.Path
 	case a.tab != nil:
 		return fmt.Sprintf("Table %s  %d/%d", s.Path, a.data.Selected()+1, len(a.tab.Rows))
 	case a.fields != nil:

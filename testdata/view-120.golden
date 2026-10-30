@@ -3,11 +3,11 @@
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)                                                                           
   ╭━ Structure · unchanged ━━━━━━━━━━━━━━━━━━━━╮ ╭─ Table .items  1/4 ───────────────────────────────────────────────╮  
-  ┃ jq / to query                              ┃ │ #  id  name   owner              tags            archived?  note? │  
-  ┃ key             type          from         ┃ │ 0  1   alpha  {"name":"ann","e…  ["red","blue"]                   │  
-  ┃ ▾ . (root)      object                     ┃ │ 1  2   beta   {"name":"bob"}     []              true             │  
-  ┃     name        string        .name        ┃ │ 2  3   gamma  {"name":"cy","em…  ["green"]                  third │  
-  ┃     version     number        .version     ┃ │ 3  4   delta  {"name":"dee"}     ["red"]                          │  
+  ┃ jq / to query                              ┃ │ #  id  name   owner  tags  archived?  note?                       │  
+  ┃ key             type          from         ┃ │ 0  1   alpha  {2}    [2]                                          │  
+  ┃ ▾ . (root)      object                     ┃ │ 1  2   beta   {1}    []    true                                   │  
+  ┃     name        string        .name        ┃ │ 2  3   gamma  {2}    [1]              third                       │  
+  ┃     version     number        .version     ┃ │ 3  4   delta  {1}    [1]                                          │  
   ┃   ▾ items       array         .items       ┃ │                                                                   │  
   ┃     ▾ []        object        .items[]     ┃ │                                                                   │  
   ┃         id      number        .items[].id  ┃ │                                                                   │  

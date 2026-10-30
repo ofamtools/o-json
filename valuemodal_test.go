@@ -356,6 +356,7 @@ func TestValueModalEditsAContainerOnSeveralLines(t *testing.T) {
 // u and ctrl+r undo and redo there, and the footer lists them.
 func TestValueModalInTheDetail(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	fieldsView(t, a)
 	onData(t, a, ".items", ".items[1]")
 	press(t, a, "enter", "G", "o")
 	if a.r.TopModal() != valueEditorID || !strings.Contains(view(a), ".items[1] · add after archived") {

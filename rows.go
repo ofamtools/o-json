@@ -29,6 +29,10 @@ type rowSource struct {
 	noun    string          // the row instances' noun
 	data    func(i int) any // a row instance's Data
 	label   func(i int) string
+	// full is row i's cell in list column col written out, as a lit
+	// column shows it (structure.lit-width fit): an array's items joined;
+	// nil, or "", for the cell as cells has it.
+	full func(i, col int) string
 }
 
 // rowsView is a windowed table over a rowSource.
@@ -43,6 +47,17 @@ type rowsView struct {
 	// litCol and litRow are the column and the row of the source the view
 	// highlights (follow.go), -1 for none; a new source clears them.
 	litCol, litRow int
+	// litWidth is the lit column's width this frame when it is widened
+	// to its data (structure.lit-width fit), 0 when not; litFor is the
+	// source, column and pane width it was measured for.
+	litWidth int
+	litFor   litMeasure
+}
+
+// litMeasure is what a lit column's width was measured for.
+type litMeasure struct {
+	col, width, n int
+	ok            bool
 }
 
 // defaultRowsHeight is the window before the first frame measures it.
@@ -64,6 +79,7 @@ func (v *rowsView) set(src rowSource, sel int) error {
 	v.src = src
 	v.off = 0
 	v.litCol, v.litRow = -1, -1
+	v.litWidth, v.litFor = 0, litMeasure{}
 	v.list.SetColumns(src.columns...)
 	v.sel = -1
 	if src.n > 0 {
@@ -128,7 +144,7 @@ func (v *rowsView) refresh() error {
 	end := min(v.src.n, v.off+max(1, v.height))
 	items := make([]ochazuke.ListItem, 0, end-v.off)
 	for i := v.off; i < end; i++ {
-		item := ochazuke.ListItem{ID: v.id + "/" + strconv.Itoa(i-v.off), Noun: v.src.noun, Cells: v.src.cells(i)}
+		item := ochazuke.ListItem{ID: v.id + "/" + strconv.Itoa(i-v.off), Noun: v.src.noun, Cells: v.litCells(i)}
 		if v.src.label != nil {
 			item.Label = v.src.label(i)
 		}
@@ -145,6 +161,54 @@ func (v *rowsView) refresh() error {
 		return v.list.Select(v.id + "/" + strconv.Itoa(v.sel-v.off))
 	}
 	return nil
+}
+
+// litCells is row i's cells, the lit column's written out (full) when the
+// column is widened: the column is as wide as the pane allows, so text
+// wider than it is cut with "…" there rather than summarised.
+func (v *rowsView) litCells(i int) []string {
+	cells := v.src.cells(i)
+	if v.litWidth <= 0 || v.src.full == nil || v.litCol < 0 || v.litCol >= len(cells) {
+		return cells
+	}
+	if f := v.src.full(i, v.litCol); f != "" {
+		cells[v.litCol] = f
+	}
+	return cells
+}
+
+// settingLitWidth: fit widens the column the structure cursor lights to
+// its data (the other columns narrow first, then scroll off); normal
+// keeps the widths as they are.
+const settingLitWidth = "structure.lit-width"
+
+// litMargin is the room a widened lit column leaves the rest of the
+// pane: the "#" column and a neighbour, so the row keeps its context.
+const litMargin = 14
+
+// measureLit fixes the lit column's width for a pane width: its written
+// out cells' widest over the first rows, at most the pane less litMargin
+// (and never less than its normal width); 0 when nothing is widened.
+func (v *rowsView) measureLit(width int) int {
+	col := v.litCol
+	if col < 0 || col >= len(v.src.natural) || v.src.full == nil || v.r.Settings().String(settingLitWidth) != "fit" {
+		return 0
+	}
+	key := litMeasure{col: col, width: width, n: v.src.n, ok: true} // a new source (set) measures again
+	if v.litFor == key {
+		return v.litWidth
+	}
+	w := ansi.StringWidth(v.src.columns[col].Title)
+	for i := 0; i < v.src.n && i < widthSample; i++ {
+		f := v.src.full(i, col)
+		if f == "" {
+			f = v.src.cells(i)[col]
+		}
+		w = max(w, ansi.StringWidth(f))
+	}
+	w = max(min(w, width-litMargin), v.src.natural[col])
+	v.litFor = key
+	return w
 }
 
 // tones are row i's highlight: the highlighted column's cell, or every
@@ -184,7 +248,17 @@ func (v *rowsView) view(width, height int) string {
 		_ = v.refresh()
 	}
 	if len(v.src.natural) == len(v.src.columns) && len(v.src.columns) > 0 {
-		v.list.SetColumns(fitColumns(v.src.columns, v.src.natural, width)...)
+		natural, keep := v.src.natural, -1
+		if lw := v.measureLit(width); lw != v.litWidth {
+			// The lit column widened (or went back): its cells change.
+			v.litWidth = lw
+			_ = v.refresh()
+		}
+		if v.litWidth > 0 {
+			natural, keep = slices.Clone(natural), v.litCol
+			natural[keep] = v.litWidth
+		}
+		v.list.SetColumns(fitColumns(v.src.columns, natural, width, keep)...)
 	}
 	return v.list.View(width, height)
 }
@@ -196,14 +270,19 @@ const tableGap = 2
 // when they all fit, else the widest columns narrow one cell at a time
 // down to a floor (the title, at least minCellWidth), so every column
 // shows before any drops; the table drops from the right after that.
+// Column keep (a widened lit column, -1 for none) keeps its width: the
+// others narrow first.
 // Widths come from the first rows, not the window, so they hold still
 // while the rows scroll.
-func fitColumns(cols []ochazuke.Column, natural []int, width int) []ochazuke.Column {
+func fitColumns(cols []ochazuke.Column, natural []int, width, keep int) []ochazuke.Column {
 	out := slices.Clone(cols)
 	widths := slices.Clone(natural)
 	floor := make([]int, len(cols))
 	for j, c := range cols {
 		floor[j] = min(widths[j], max(ansi.StringWidth(c.Title), minCellWidth))
+	}
+	if keep >= 0 && keep < len(floor) {
+		floor[keep] = widths[keep]
 	}
 	need := func() int {
 		n := tableGap * (len(widths) - 1)
