@@ -52,7 +52,7 @@ The structure tells you every path in the document, its types, and how many valu
 
 **What you'll see:** the data panel follows the selection. A string shows as a value, an object as `field  type  value` rows, and an array as a table.
 
-**Searching paths by text:** by default `/` opens the jq query line (chapter 7), which also finds things. If you want the plain path search instead, turn the query line off with `: settings set query.line false`. Then, in the original structure, `/` searches the paths, `n` and `N` go to the next and previous match, and `esc` clears the search.
+**Searching paths by text:** by default `/` opens the jq query line (chapter 7), which also finds things. If you want the plain path search instead, turn the query line off with `: settings set query.line false`. Then, in the original structure, `/` searches the paths, `n` and `N` go to the next and previous match, and `esc` clears the search. Case is smart, as in Vim with `smartcase`: `name` finds `Name` and `NAME` too, while `Name` finds only `Name` (ochazuke's `search.case` setting: `ignore` or `sensitive` instead).
 
 ![The structure, T for the original with its counts, the type filter](img/02-shape.gif)
 

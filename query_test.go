@@ -523,3 +523,72 @@ func TestQueryResultsTitleMarksSortedOrder(t *testing.T) {
 		t.Fatalf("a path query marked sorted\n%s", frame)
 	}
 }
+
+// o-json's own searches read ochazuke's search.case: smart (the default)
+// ignores case unless the query holds a capital, ignore always does,
+// sensitive never. The path search and the structure filter (matches),
+// the jq function picker and the query line's path completion agree.
+func TestSearchesUseSmartCase(t *testing.T) {
+	a := openQuery(t, writeDoc(t, `{"Name":1,"nickname":2,"items":[{"NAME":3}],"IN":4}`))
+	completeOn(t, a)
+	matched := func(q string) []string {
+		a.Query = q
+		defer func() { a.Query = "" }()
+		var out []string
+		a.Doc.Shape.Walk(func(s *Shape, _ int) {
+			if s.Key != "" && a.matches(s) {
+				out = append(out, s.Path)
+			}
+		})
+		return out
+	}
+	picked := func(q string) []string {
+		press(t, a, "/")
+		press(t, a, "ctrl+f")
+		c := a.r.Chooser(jqFuncChooser)
+		if c == nil {
+			t.Fatal("ctrl+f opened no picker")
+		}
+		Type(a.m, q)
+		var out []string
+		for _, row := range c.Matches() {
+			out = append(out, row.ID)
+		}
+		press(t, a, "esc")
+		press(t, a, "esc")
+		return out
+	}
+	for _, tc := range []struct {
+		mode, q  string
+		paths    []string
+		complete []string
+	}{
+		{ochazuke.SearchCaseSmart, "name", []string{".Name", ".nickname", ".items[].NAME"}, []string{"Name", "nickname"}},
+		{ochazuke.SearchCaseSmart, "Name", []string{".Name"}, []string{"Name"}},
+		{ochazuke.SearchCaseIgnore, "Name", []string{".Name", ".nickname", ".items[].NAME"}, []string{"Name", "nickname"}},
+		{ochazuke.SearchCaseSensitive, "name", []string{".nickname"}, []string{"nickname"}},
+	} {
+		if err := a.r.Settings().Set(ochazuke.SearchCaseSetting, tc.mode); err != nil {
+			t.Fatal(err)
+		}
+		a.snapshotShape()
+		if got := matched(tc.q); !slices.Equal(got, tc.paths) {
+			t.Errorf("%s %q: paths %q, want %q", tc.mode, tc.q, got, tc.paths)
+		}
+		// Completion matches from the key's start: .n completes nickname
+		// and, folded, Name.
+		prefix := tc.q[:1]
+		if got := suggest(t, a, "."+prefix); !slices.Equal(got, tc.complete) {
+			t.Errorf("%s .%s: completes %q, want %q", tc.mode, prefix, got, tc.complete)
+		}
+	}
+	if err := a.r.Settings().Set(ochazuke.SearchCaseSetting, ochazuke.SearchCaseSmart); err != nil {
+		t.Fatal(err)
+	}
+	if got := picked("IN"); !slices.Contains(got, "IN/1") || slices.ContainsFunc(got, func(id string) bool { return strings.HasPrefix(id, "index") }) {
+		t.Errorf("smart IN: %q, want IN and INDEX only", got)
+	}
+	if got := picked("in"); !slices.Contains(got, "IN/1") || !slices.ContainsFunc(got, func(id string) bool { return strings.HasPrefix(id, "index") }) {
+		t.Errorf("smart in: %q, want in, index and IN", got)
+	}
+}

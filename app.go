@@ -347,8 +347,10 @@ func (a *App) matches(s *Shape) bool {
 		return false
 	}
 	if a.Query != "" {
-		q := strings.ToLower(a.Query)
-		return strings.Contains(strings.ToLower(s.Key), q) || strings.Contains(strings.ToLower(s.Path), q)
+		// ochazuke's search.case: smart ignores case unless the query
+		// holds a capital.
+		m := a.r.CaseFor(a.Query)
+		return m.Contains(s.Key, a.Query) || m.Contains(s.Path, a.Query)
 	}
 	return true
 }

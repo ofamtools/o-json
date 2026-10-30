@@ -46,10 +46,12 @@ func (a *App) openFunctions() error {
 	_, err := a.r.OpenChooser(ochazuke.ChooserSpec{
 		Kind: jqFuncChooser, Title: "jq function", Rows: rows,
 		// A name matches from its start or from a word inside it
-		// (down finds ascii_downcase), so sub is not behind gsub.
+		// (down finds ascii_downcase), so sub is not behind gsub; case as
+		// search.case says (smart: IN finds IN and INDEX, in finds in too).
 		Filter: func(q string, row ochazuke.ChooserRow) bool {
-			q, l := strings.ToLower(strings.TrimSpace(q)), strings.ToLower(row.Label)
-			return strings.HasPrefix(l, q) || strings.Contains(l, "_"+q)
+			q = strings.TrimSpace(q)
+			m := a.r.CaseFor(q)
+			return m.HasPrefix(row.Label, q) || m.Contains(row.Label, "_"+q)
 		},
 		Choose: func(row ochazuke.ChooserRow) ochazuke.Result {
 			f, _ := row.Data.(jqFunc)

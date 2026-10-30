@@ -18,7 +18,7 @@ func suggest(t *testing.T, a *App, text string) []string {
 		return nil
 	}
 	var out []string
-	for _, s := range pathSuggestions(a.Doc.Shape, ochazuke.CompletionQuery{Query: tok.Query, Text: text, Cursor: len(r), Token: tok}) {
+	for _, s := range pathSuggestions(a.Doc.Shape, a.r.SearchCase(), ochazuke.CompletionQuery{Query: tok.Query, Text: text, Cursor: len(r), Token: tok}) {
 		out = append(out, s.Text)
 	}
 	return out

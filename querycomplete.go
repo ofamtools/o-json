@@ -45,13 +45,18 @@ func (a *App) applyCompletePaths() {
 
 // completion is the query line's completion snapshot.
 type completion struct {
-	shape atomic.Pointer[Shape] // nil: nothing to offer
+	shape atomic.Pointer[Shape]  // nil: nothing to offer
+	cases atomic.Pointer[string] // search.case, read on the loop
 }
 
 // pathTrigger is the query line's "." trigger.
 func (a *App) pathTrigger() ochazuke.CompletionTrigger {
 	return ochazuke.CompletionTrigger{Trigger: ".", Boundaries: "|(),", SearchAt: func(_ context.Context, q ochazuke.CompletionQuery) ([]ochazuke.Suggestion, error) {
-		return pathSuggestions(a.qc.shape.Load(), q), nil
+		mode := ochazuke.SearchCaseSmart
+		if m := a.qc.cases.Load(); m != nil {
+			mode = *m
+		}
+		return pathSuggestions(a.qc.shape.Load(), mode, q), nil
 	}}
 }
 
@@ -67,12 +72,15 @@ func (a *App) snapshotShape() {
 		s = a.Doc.Shape
 	}
 	a.qc.shape.Store(s)
+	mode := a.r.SearchCase()
+	a.qc.cases.Store(&mode)
 }
 
 // pathSuggestions are the keys under the path the token q names, read
 // in root (the document's shape): the term's input at the token, then the
-// token's steps up to its last ".".
-func pathSuggestions(root *Shape, q ochazuke.CompletionQuery) []ochazuke.Suggestion {
+// token's steps up to its last "."; a key matches the rest from its start,
+// case as search.case (cases) says for that rest.
+func pathSuggestions(root *Shape, cases string, q ochazuke.CompletionQuery) []ochazuke.Suggestion {
 	if root == nil {
 		return nil
 	}
@@ -98,9 +106,11 @@ func pathSuggestions(root *Shape, q ochazuke.CompletionQuery) []ochazuke.Suggest
 	if head != "" {
 		lead = head + "."
 	}
+	prefix = strings.Trim(prefix, `"`)
+	m := ochazuke.CaseFor(cases, prefix)
 	var out []ochazuke.Suggestion
 	for _, c := range s.Children {
-		if !c.IsField() || !strings.HasPrefix(strings.ToLower(c.Key), strings.ToLower(strings.Trim(prefix, `"`))) {
+		if !c.IsField() || !m.HasPrefix(c.Key, prefix) {
 			continue
 		}
 		key := strings.TrimPrefix(keyStep(c.Key), ".")
