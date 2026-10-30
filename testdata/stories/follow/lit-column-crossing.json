@@ -1,0 +1,45 @@
+{
+  "name": "o-json: the lit column crosses the selected row: the cell where they meet is drawn in list.cell.intersect (a background, out of the reverse bar), the lit column's header in list.header.intersect, and the \"#\" row numbers in list.rownum (list.rownum.intersect on the selected row)",
+  "area": "follow",
+  "width": 120,
+  "height": 30,
+  "theme": "dark",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "sample.json"
+  },
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "ctrl+a",
+    "o",
+    "3",
+    "G",
+    "ctrl+a",
+    "o",
+    "2",
+    "j",
+    "ctrl+a",
+    "o"
+  ],
+  "expect": [
+    {
+      "contains": [
+        "Table .items[]  3/4"
+      ],
+      "cell": "gamma",
+      "styled": {
+        "gamma": "#1A1A1A",
+        "alpha": "#78BFA5",
+        "delta": "#78BFA5"
+      },
+      "attrs": {
+        "gamma": "bg,bold,-reverse",
+        "alpha": "fg,-bg,-reverse",
+        "third": "reverse,-bg"
+      }
+    }
+  ]
+}

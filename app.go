@@ -591,7 +591,7 @@ func tableSource(t *Table) rowSource {
 	var cols []ochazuke.Column
 	var natural []int
 	if t.Items {
-		cols = append(cols, ochazuke.Column{Title: "#", Align: ochazuke.AlignRight})
+		cols = append(cols, ochazuke.Column{Title: "#", Align: ochazuke.AlignRight, Part: ochazuke.PartRowNumber})
 		natural = append(natural, len(strconv.Itoa(max(0, len(t.Rows)-1))))
 	}
 	for j, c := range t.Columns {
