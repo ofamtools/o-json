@@ -382,3 +382,26 @@ func TestHoverRowKeysOnASubTableLine(t *testing.T) {
 		t.Fatalf("ctrl+d %d %v, %d j %d %v", b.data.Selected(), b.hover.path, half, c.data.Selected(), c.hover.path)
 	}
 }
+
+// enter on a table cell holding an object or an array opens that value in
+// the detail (the guide, chapter 4), with table.nested summary too; on a
+// plain cell or # it opens the row.
+func TestEnterOnANestedCellOpensIt(t *testing.T) {
+	for _, nested := range []string{"hover", "summary"} {
+		a := openOriginal(t, sample, 120, 30)
+		if err := a.r.Settings().Set(settingNested, nested); err != nil {
+			t.Fatal(err)
+		}
+		selectPath(t, a, ".items")
+		press(t, a, "tab", "l", "l", "l") // row 0, owner
+		press(t, a, "enter")
+		if a.r.TopModal() != detailID || len(a.trail) != 1 || a.trail[0].Path() != ".items[0].owner" {
+			t.Fatalf("%s: enter on owner opened %v\n%s", nested, a.trail, view(a))
+		}
+		press(t, a, "q", "h", "h") // name
+		press(t, a, "enter")
+		if a.r.TopModal() != detailID || a.trail[0].Path() != ".items[0]" {
+			t.Fatalf("%s: enter on name opened %v", nested, a.trail)
+		}
+	}
+}

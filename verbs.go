@@ -215,6 +215,10 @@ func (a *App) registerVerbs() {
 			if !n.IsContainer() {
 				n = n.Parent
 			}
+		} else if v, ok := a.valueOf(c.Instance); ok && v.node != nil && v.node.IsContainer() {
+			// A table cell holding an object or an array opens that
+			// value; a plain cell or # opens the row.
+			n = v.node
 		}
 		return done(a.openDetail(n))
 	}
