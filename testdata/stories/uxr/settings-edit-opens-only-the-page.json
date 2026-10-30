@@ -1,0 +1,12 @@
+{
+  "name": "o-json: : settings edit opens the Settings page and nothing over it (no results modal of its list answer) (F13)",
+  "area": "uxr",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": [":", {"type": "settings edit"}, "enter"],
+  "expect": [
+    {"modal": "", "page": "__settings"}
+  ]
+}

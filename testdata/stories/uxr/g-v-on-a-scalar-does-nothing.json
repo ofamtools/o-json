@@ -1,0 +1,14 @@
+{
+  "name": "o-json: g v (node.values) on a scalar node, where values does not apply, does nothing: the key completing the bound sequence is consumed and never runs v (viewer.raw) alone (F6)",
+  "area": "uxr",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "reshape.json"},
+  "script": ["j", "g", "v", "g", "e", "g", "k"],
+  "expect": [
+    {"after": 1, "contains": ["Value .title"]},
+    {"after": 3, "mode": "normal", "modal": "", "contains": ["Value .title"], "lacks": ["JSON .title"]},
+    {"mode": "normal", "modal": "", "contains": ["Value .title", "Structure · unchanged"], "lacks": ["JSON .title", "Error"]}
+  ]
+}
