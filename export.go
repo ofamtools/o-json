@@ -561,7 +561,7 @@ func (a *App) exportPath() string {
 			}
 		}
 	}
-	if a.shown != nil && a.tab != nil {
+	if a.shown != nil && a.tab != nil && a.tab.Items {
 		return a.shown.Path
 	}
 	return "."

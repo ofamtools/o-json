@@ -1,0 +1,37 @@
+{
+ "name": "o-json: one object (the catalog's root) is one row: its keys the header in document order, its values the cells, nested values by their size, no # column",
+ "area": "object",
+ "width": 120,
+ "height": 24,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "catalog-sample.json"
+ },
+ "script": [],
+ "expect": [
+  {
+   "contains": [
+    "Object ."
+   ],
+   "order": [
+    "schema",
+    "name",
+    "version",
+    "aliases",
+    "nouns",
+    "bindings",
+    "pages",
+    "1",
+    "o-json",
+    "{12}",
+    "[8]",
+    "[10]",
+    "[]"
+   ],
+   "lacks": [
+    "field  type",
+    "#  schema"
+   ]
+  }
+ ]
+}

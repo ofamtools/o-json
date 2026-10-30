@@ -84,6 +84,7 @@ func TestCollectionChangesTheData(t *testing.T) {
 // goes to it.
 func TestScalarHighlightsItsFieldRow(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
+	fieldsView(t, a)
 	selectPath(t, a, ".meta.count")
 	frame := view(a)
 	if a.shown.Path != ".meta" || !strings.Contains(frame, "Fields .meta") || a.data.Selected() != 1 || a.data.litRow != 1 {
@@ -133,8 +134,8 @@ func TestHighlightedColumnScrollsIntoView(t *testing.T) {
 func TestScalarInTheEditedView(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	a.on(t, ".meta.count")
-	if a.shown == nil || a.shown.Path != ".meta" || a.data.litRow != 1 {
-		t.Fatalf("edited: shown %v lit %d\n%s", a.shown, a.data.litRow, view(a))
+	if a.shown == nil || a.shown.Path != ".meta" || a.tab == nil || a.data.litCol != a.tab.ListColumn(1) || a.data.list.Column() != a.data.litCol {
+		t.Fatalf("edited: shown %v lit column %d\n%s", a.shown, a.data.litCol, view(a))
 	}
 }
 

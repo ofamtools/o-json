@@ -29,6 +29,16 @@ func open(t *testing.T, path string, width, height int) *App {
 	return a
 }
 
+// fieldsView sets object.view fields: one object as field, type and value
+// rows, the view the tests below that read those rows were written for.
+func fieldsView(t *testing.T, a *App) {
+	t.Helper()
+	if err := a.r.Settings().Set(settingObjectView, objectFields); err != nil {
+		t.Fatal(err)
+	}
+	view(a)
+}
+
 // openOriginal opens a document with the viewer showing the original
 // (T): the read-only structure tree of shapes and the document's data.
 func openOriginal(t *testing.T, path string, width, height int) *App {
@@ -146,6 +156,7 @@ func TestTableShowsOptionalColumnsLast(t *testing.T) {
 
 func TestEnterOnRowShowsItemFields(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	fieldsView(t, a)
 	selectPath(t, a, ".items")
 	press(t, a, "tab", "j", "enter")
 	if a.r.TopModal() != detailID {
@@ -177,6 +188,7 @@ func TestEnterOnRowShowsItemFields(t *testing.T) {
 
 func TestObjectFieldsAndScalars(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	fieldsView(t, a)
 	frame := view(a)
 	if !strings.Contains(frame, "Fields .") || !strings.Contains(line(frame, "version"), "2") {
 		t.Fatalf("root fields\n%s", frame)
@@ -311,7 +323,7 @@ func TestStartupLoadThroughTheModel(t *testing.T) {
 	}
 	_, cmd := a.m.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
 	finish(a, cmd)
-	if a.Doc == nil || a.Loading != "" || !strings.Contains(view(a), "Fields .") {
+	if a.Doc == nil || a.Loading != "" || !strings.Contains(view(a), "Object .") {
 		t.Fatalf("startup load: loading %q err %v\n%s", a.Loading, a.LoadErr, view(a))
 	}
 }
@@ -510,6 +522,7 @@ func TestPaneKeysResizeTheSplit(t *testing.T) {
 // tree, the table, an object's fields, the detail and the raw lines.
 func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
+	fieldsView(t, a)
 	var clip []string
 	a.Clipboard = func(s string) error { clip = append(clip, s); return nil }
 	key := func(keys ...string) {

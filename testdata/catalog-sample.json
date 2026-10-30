@@ -1,0 +1,254 @@
+{
+  "schema": 1,
+  "name": "o-json",
+  "version": "v0.4.6-0.20261030060112-c1125da27b28",
+  "aliases": {
+    "__chooser-state": "ochazuke.__chooser-state",
+    "actions": "ochazuke.actions",
+    "binding": "ochazuke.binding",
+    "bindings": "ochazuke.bindings",
+    "bindings-help": "ochazuke.bindings-help",
+    "chooser": "ochazuke.chooser",
+    "completion": "ochazuke.completion",
+    "config": "ochazuke.config",
+    "confirm": "ochazuke.confirm",
+    "context": "ochazuke.context",
+    "count": "ochazuke.count",
+    "detail": "ochazuke.detail"
+  },
+  "nouns": [
+    {
+      "name": "app",
+      "verbs": [
+        {
+          "name": "quit",
+          "description": "Exit the application"
+        }
+      ]
+    },
+    {
+      "name": "doc",
+      "verbs": [
+        {
+          "name": "get",
+          "description": "the value at a path, keys in document order; a [] path answers an array of every value it names"
+        },
+        {
+          "name": "rows",
+          "description": "doc table's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc table column; --format table, markdown and toon print them as a table"
+        },
+        {
+          "name": "structure",
+          "description": "the document's shape as a tree of {key, path, count, of, types, min_items, max_items, optional, children}; fields most common first, optional ones last"
+        }
+      ]
+    },
+    {
+      "name": "ochazuke.actions",
+      "verbs": [
+        {
+          "name": "aliases",
+          "description": "List every action alias: the framework's old names, the application's aliases and the alias rows of actions.json, each with the action it runs"
+        },
+        {
+          "name": "check",
+          "description": "Report the entries of actions.json a load would skip, alias rows that clash with an action or another alias included, without installing anything"
+        },
+        {
+          "name": "list",
+          "description": "List the actions installed from actions.json: verbs that run an external command"
+        }
+      ]
+    },
+    {
+      "name": "ochazuke.bindings",
+      "verbs": [
+        {
+          "name": "check",
+          "description": "Report the rows of the user bindings file that would be skipped, any merged row that does not validate, and as warnings the file's guard rows (debts) and any row that can never answer; with debts, every guard row of every table too; the status line names the format read (grouped or rows)"
+        },
+        {
+          "name": "defaults",
+          "description": "Print the default bindings (the framework's and the application's, without the user's bindings.json) as a bindings file, each group tagged with its source: the embedded file, go or generated"
+        },
+        {
+          "name": "export",
+          "description": "Write every stored key row to a file in the grouped bindings format (what config export writes as bindings.reference.json); never over the live bindings.json without force"
+        }
+      ]
+    },
+    {
+      "name": "ochazuke.bindings-help",
+      "verbs": [
+        {
+          "name": "mode",
+          "description": "Choose the mode the help's pick view describes"
+        },
+        {
+          "name": "noun",
+          "description": "Choose the noun the help's pick and table views describe"
+        },
+        {
+          "name": "place",
+          "description": "Choose where the help's pick and table views put the noun: one of the places it was seen (the page, the levels above it, the modal), or none (the noun and app)"
+        }
+      ]
+    },
+    {
+      "name": "ochazuke.chooser",
+      "pin": "insert",
+      "verbs": [
+        {
+          "name": "cancel",
+          "description": "Close without choosing"
+        },
+        {
+          "name": "move",
+          "description": "Move the highlight; from none, 1 lands on the first row and -1 stays"
+        },
+        {
+          "name": "next-source",
+          "description": "Show the next source's rows; the query stays"
+        }
+      ]
+    },
+    {
+      "name": "ochazuke.completion",
+      "verbs": [
+        {
+          "name": "accept",
+          "description": "Replace the token with the highlighted suggestion, else the first, keeping its trigger; one undoable edit"
+        },
+        {
+          "name": "dismiss",
+          "description": "Hide the suggestions; the input stays in its mode and typing reopens them"
+        },
+        {
+          "name": "move",
+          "description": "Move the suggestion highlight; from none, 1 lands on the first and -1 stays"
+        }
+      ]
+    },
+    {
+      "name": "ochazuke.config",
+      "verbs": [
+        {
+          "name": "export",
+          "description": "Write a reference of the user configuration (every setting, every key row) into a directory, default <config dir>/reference; never over the live files without force"
+        },
+        {
+          "name": "path",
+          "description": "Print the config directory (bindings.json, settings.json, actions.json, themes.json), the state directory (history.jsonl, panes.json) and the default config export directory"
+        },
+        {
+          "name": "reload",
+          "description": "Read every config file again: themes.json, settings.json, actions.json, bindings.json, segments.json, then the application's own; a bad file or entry is skipped and reported"
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "noun": "ochazuke.chooser",
+      "pattern": "printable",
+      "request": {
+        "verb": "insert",
+        "noun": "ochazuke.input"
+      },
+      "from": {
+        "text": "text"
+      },
+      "hidden": true
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "pattern": "paste",
+      "request": {
+        "verb": "insert",
+        "noun": "ochazuke.input"
+      },
+      "from": {
+        "text": "text"
+      },
+      "hidden": true
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "keys": "alt+enter",
+      "request": {
+        "verb": "pick",
+        "noun": "ochazuke.chooser"
+      }
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "keys": "alt+up",
+      "request": {
+        "verb": "up",
+        "noun": "ochazuke.chooser"
+      }
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "keys": "backspace",
+      "request": {
+        "verb": "up",
+        "noun": "ochazuke.chooser"
+      },
+      "when": "chooser-up-empty"
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "keys": "ctrl+j",
+      "request": {
+        "verb": "move",
+        "noun": "ochazuke.chooser",
+        "args": {
+          "delta": 1
+        }
+      }
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "keys": "ctrl+k",
+      "request": {
+        "verb": "move",
+        "noun": "ochazuke.chooser",
+        "args": {
+          "delta": -1
+        }
+      }
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "keys": "ctrl+l",
+      "request": {
+        "verb": "open",
+        "noun": "ochazuke.chooser"
+      }
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "keys": "ctrl+n",
+      "request": {
+        "verb": "move",
+        "noun": "ochazuke.chooser",
+        "args": {
+          "delta": 1
+        }
+      }
+    },
+    {
+      "noun": "ochazuke.chooser",
+      "keys": "ctrl+p",
+      "request": {
+        "verb": "move",
+        "noun": "ochazuke.chooser",
+        "args": {
+          "delta": -1
+        }
+      }
+    }
+  ],
+  "pages": []
+}

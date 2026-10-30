@@ -30,9 +30,9 @@ func TestHoverGridPerKind(t *testing.T) {
 		rows      [][]string
 	}{
 		{"object", `{"city": "Paris", "geo": {"lat": 1}, "tags": [1, 2]}`,
-			[]string{"city", "geo", "tags"}, [][]string{{"Paris", "{1 key}", "[2]"}}},
+			[]string{"city", "geo", "tags"}, [][]string{{"Paris", "{1}", "[2]"}}},
 		{"array of objects", `[{"id": 1, "x": {"a": 1, "b": 2}}, {"id": 2, "y": true}]`,
-			[]string{"#", "id", "x", "y"}, [][]string{{"0", "1", "{2 keys}", ""}, {"1", "2", "", "true"}}},
+			[]string{"#", "id", "x", "y"}, [][]string{{"0", "1", "{2}", ""}, {"1", "2", "", "true"}}},
 		{"array of scalars", `["a", 2, null, true]`,
 			nil, [][]string{{"a · 2 · null · true"}}},
 		{"mixed array", `[1, [2, 3], "s"]`,
@@ -308,7 +308,7 @@ func TestHoverSummarySetting(t *testing.T) {
 	if strings.Contains(frame, "Austin") {
 		t.Fatalf("summary opened a sub-table\n%s", frame)
 	}
-	if !strings.Contains(frame, `{"city"…`) {
+	if !strings.Contains(frame, "{3}") {
 		t.Fatalf("summary lost the cell's summary\n%s", frame)
 	}
 	press(t, a, "j")

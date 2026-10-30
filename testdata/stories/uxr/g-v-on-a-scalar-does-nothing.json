@@ -7,8 +7,8 @@
   "seed": {"doc": "reshape.json"},
   "script": ["j", "g", "v", "g", "e", "g", "k"],
   "expect": [
-    {"after": 1, "contains": ["Fields ."]},
-    {"after": 3, "mode": "normal", "modal": "", "contains": ["Fields ."], "lacks": ["JSON ."]},
-    {"mode": "normal", "modal": "", "contains": ["Fields .", "Structure · unchanged"], "lacks": ["JSON .", "Error"]}
+    {"after": 1, "contains": ["Object ."]},
+    {"after": 3, "mode": "normal", "modal": "", "contains": ["Object ."], "lacks": ["JSON ."]},
+    {"mode": "normal", "modal": "", "contains": ["Object .", "Structure · unchanged"], "lacks": ["JSON .", "Error"]}
   ]
 }

@@ -1,0 +1,28 @@
+{
+ "name": "o-json: object.view fields shows one object as field, type and value rows, as before",
+ "area": "object",
+ "width": 120,
+ "height": 24,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "catalog-sample.json"
+ },
+ "values": {
+  "object.view": "fields"
+ },
+ "script": [],
+ "expect": [
+  {
+   "contains": [
+    "Fields .",
+    "field     type"
+   ],
+   "order": [
+    "aliases",
+    "object{12}",
+    "nouns",
+    "array[8]"
+   ]
+  }
+ ]
+}

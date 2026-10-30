@@ -125,6 +125,7 @@ func TestOpenedDocumentIsNotEdited(t *testing.T) {
 // and the mapping is what o-json restructure --map (and jq) runs.
 func TestMoveInTheViewerShiftsTheData(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	fieldsView(t, a)
 	scalarsAlone(t, a) // the data pane shows the plain value itself
 	a.on(t, ".meta.count")
 	if !strings.Contains(view(a), "Value .meta.count") {

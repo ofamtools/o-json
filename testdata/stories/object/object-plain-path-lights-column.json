@@ -1,0 +1,25 @@
+{
+ "name": "o-json: the structure cursor onto a plain key of the object shown lights that key's column and moves the cursor's column to it",
+ "area": "object",
+ "width": 120,
+ "height": 24,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "catalog-sample.json"
+ },
+ "script": [
+  "j",
+  "j",
+  "j"
+ ],
+ "expect": [
+  {
+   "contains": [
+    "Object .",
+    ".version (string 1/1)"
+   ],
+   "cell": "v0.4.6-0.20261030060112-c1125da27b28"
+  }
+ ],
+ "theme": "dark"
+}

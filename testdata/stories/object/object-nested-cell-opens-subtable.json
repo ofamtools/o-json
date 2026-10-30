@@ -1,0 +1,54 @@
+{
+ "name": "o-json: the cursor onto a nested cell of an object's row opens its sub-table under the row; j walks in, l to a nested cell opens the next level, k k walks back out to the row",
+ "area": "object",
+ "width": 120,
+ "height": 24,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "catalog-sample.json"
+ },
+ "script": [
+  "tab",
+  "l",
+  "l",
+  "l",
+  "l",
+  "j",
+  "l",
+  "l",
+  "k",
+  "k"
+ ],
+ "expect": [
+  {
+   "after": 5,
+   "order": [
+    "nouns",
+    "bindings",
+    "name",
+    "verbs",
+    "app",
+    "doc",
+    "ochazuke.actions"
+   ]
+  },
+  {
+   "after": 8,
+   "order": [
+    "app",
+    "name",
+    "description",
+    "quit",
+    "doc"
+   ]
+  },
+  {
+   "contains": [
+    "ochazuke.actions"
+   ],
+   "lacks": [
+    "quit"
+   ]
+  }
+ ]
+}

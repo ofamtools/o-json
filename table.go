@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/x/ansi"
@@ -40,7 +41,32 @@ type Table struct {
 	Path    string        `json:"path"`
 	Columns []TableColumn `json:"columns"`
 	Rows    []*Node       `json:"rows"` // the items, as they are in the document
+	// Items reports rows that are array items (or the values of a "[]"
+	// path, or several values): the data pane numbers them in a "#"
+	// column. One object that is no array item is one row of its keys
+	// (object.view row) with no "#".
+	Items bool `json:"-"`
 }
+
+// Lead is the number of list columns before the table's own: 1 for the
+// "#" column of items, 0 for an object's one row.
+func (t *Table) Lead() int {
+	if t.Items {
+		return 1
+	}
+	return 0
+}
+
+// ColumnOf is the table column a list column shows, -1 for "#" or none.
+func (t *Table) ColumnOf(listCol int) int {
+	if j := listCol - t.Lead(); j >= 0 && j < len(t.Columns) {
+		return j
+	}
+	return -1
+}
+
+// ListColumn is the list column that shows table column j.
+func (t *Table) ListColumn(j int) int { return j + t.Lead() }
 
 // selfValue is the "(value)" column's index into a row's cells.
 const selfValue = -1
@@ -53,6 +79,7 @@ func NewTable(path string, values []*Node, fanned bool) *Table {
 		rows = values[0].Children
 	}
 	t := &Table{Path: path, Rows: rows}
+	t.Items = fanned || len(rows) != 1 || rows[0].Kind != KObject || rows[0].Parent != nil && rows[0].Parent.Kind == KArray
 	type col struct {
 		c     TableColumn
 		kinds map[Kind]bool
@@ -120,6 +147,44 @@ func (t *Table) Cell(row *Node, col int) *Node {
 
 // cellLimit caps how much of a container a cell compacts.
 const cellLimit = 200
+
+// Summary is a value as a cell of the data pane shows it: an object or an
+// array by its size ({63}, [46], [] when empty), since its data opens beneath it (a
+// hover sub-table, table.nested) or in the detail; a plain value as is.
+func Summary(n *Node) string {
+	switch {
+	case n == nil:
+		return ""
+	case n.Kind == KObject && len(n.Children) == 0:
+		return "{}"
+	case n.Kind == KObject:
+		return "{" + strconv.Itoa(len(n.Children)) + "}"
+	case n.Kind == KArray && len(n.Children) == 0:
+		return "[]"
+	case n.Kind == KArray:
+		return "[" + strconv.Itoa(len(n.Children)) + "]"
+	}
+	return Text(n, cellLimit)
+}
+
+// Full is a value written out, as a lit column shows it
+// (structure.lit-width fit): an array's items joined with " · " (each as
+// Text: a nested item as compact JSON), anything else as Text.
+func Full(n *Node) string {
+	if n == nil || n.Kind != KArray || len(n.Children) == 0 {
+		return Text(n, cellLimit)
+	}
+	parts := make([]string, len(n.Children))
+	for i, c := range n.Children {
+		parts[i] = Text(c, cellLimit)
+	}
+	return strings.Join(parts, " · ")
+}
+
+// SummaryText is a row's cell as the data pane shows it (Summary).
+func (t *Table) SummaryText(row *Node, col int) string {
+	return Summary(t.Cell(row, col))
+}
 
 // CellText is the text of a row's cell (blank when missing).
 func (t *Table) CellText(row *Node, col int) string {

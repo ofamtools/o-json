@@ -47,7 +47,7 @@
         "delta": "#78BFA5"
       },
       "attrs": {
-        "[\"red\",\"blue\"]": "-fg"
+        "third": "-fg"
       }
     }
   ]

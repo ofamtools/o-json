@@ -1,0 +1,48 @@
+{
+ "name": "o-json: the structure cursor onto a list of plain values (.items[].tags) lights its column and widens it to its data, the items joined (structure.lit-width fit); moving on puts the widths back",
+ "area": "follow",
+ "width": 120,
+ "height": 24,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "sample.json"
+ },
+ "script": [
+  "j",
+  "j",
+  "j",
+  "j",
+  "j",
+  "j",
+  "j",
+  "j",
+  "j",
+  "j",
+  "tab",
+  "shift+tab",
+  "j",
+  "j"
+ ],
+ "expect": [
+  {
+   "after": 11,
+   "contains": [
+    "Table .items[]",
+    "red \u00b7 blue"
+   ],
+   "styled": {
+    "green": "#78BFA5"
+   }
+  },
+  {
+   "contains": [
+    "Table .items[]",
+    "[2]"
+   ],
+   "lacks": [
+    "red \u00b7 blue"
+   ]
+  }
+ ],
+ "theme": "dark"
+}

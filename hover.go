@@ -17,7 +17,7 @@ package main
 // row, and rows.column (h/l, bound ahead of the list's column verb while
 // the cursor is in a sub-table) moves along one. A nested cell under the
 // cursor in a sub-table opens its own sub-table one step deeper, so only
-// the chain under the cursor is open; anything deeper shows as {N keys}
+// the chain under the cursor is open; anything deeper shows as {N}
 // or [N]. The sub-tables are drawn into the pane: the data pane's table
 // keeps its rows (the windowed list is untouched), and the rows above
 // scroll up under the header to keep the cursor's line in view.
@@ -58,7 +58,7 @@ const (
 func declareHoverSettings(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingNested, Type: ochazuke.SettingString, Default: nestedHover, Enum: []string{nestedHover, nestedSummary},
-		Description: "A data pane cell holding an object or an array: hover opens a sub-table of it under the row while the cursor rests on it (j/k walk into its lines, h/l along them); summary shows only its summary ({N keys}, [N]) and enter drills in the detail",
+		Description: "A data pane cell holding an object or an array: hover opens a sub-table of it under the row while the cursor rests on it (j/k walk into its lines, h/l along them); summary shows only its size ({N}, [N]) and enter drills in the detail",
 	}, ochazuke.Setting{
 		Name: settingHoverRows, Type: ochazuke.SettingInteger, Default: 8,
 		Description: "How many data lines the first hover sub-table shows before it scrolls (each deeper level two fewer, at least 3)",
@@ -90,22 +90,9 @@ type hoverGrid struct {
 	keys   []string // an array of objects: each column's field ("" for # and the item's own value)
 }
 
-// hoverText is a value in a sub-table: the data for a scalar, a
-// placeholder for a nested value.
-func hoverText(n *Node) string {
-	switch {
-	case n == nil:
-		return ""
-	case n.Kind == KObject:
-		if len(n.Children) == 1 {
-			return "{1 key}"
-		}
-		return "{" + strconv.Itoa(len(n.Children)) + " keys}"
-	case n.Kind == KArray:
-		return "[" + strconv.Itoa(len(n.Children)) + "]"
-	}
-	return oneLine(Text(n, 200))
-}
+// hoverText is a value in a sub-table: the data for a scalar, the size
+// for a nested value ({3}, [2]), as a table cell shows it (Summary).
+func hoverText(n *Node) string { return oneLine(Summary(n)) }
 
 // gridOf lays a nested value out as a sub-table, by kind.
 func gridOf(n *Node) hoverGrid {
@@ -228,11 +215,11 @@ func (a *App) dataCell() *Node {
 		if sel >= len(a.tab.Rows) {
 			return nil
 		}
-		if col <= 0 {
+		if col < a.tab.Lead() {
 			return a.tab.Rows[sel]
 		}
-		if col-1 < len(a.tab.Columns) {
-			return a.tab.Cell(a.tab.Rows[sel], col-1)
+		if j := a.tab.ColumnOf(col); j >= 0 {
+			return a.tab.Cell(a.tab.Rows[sel], j)
 		}
 	case a.fields != nil:
 		if sel < len(a.fields.Children) {
@@ -246,7 +233,7 @@ func (a *App) dataCell() *Node {
 // a sub-table, or nil. The # column of a table is the row itself, which
 // the row already shows.
 func (a *App) hoverCell() *Node {
-	if !a.hoverOn() || a.tab != nil && a.data.list.Column() == 0 {
+	if !a.hoverOn() || a.tab != nil && a.data.list.Column() < a.tab.Lead() {
 		return nil
 	}
 	if n := a.dataCell(); nested(n) {

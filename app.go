@@ -70,7 +70,12 @@ type App struct {
 	scalar  *Node    // the data panel's single scalar
 
 	detail *rowsView
-	trail  []*Node // the detail modal's drill path, innermost last
+	// detailTab is the detail's one-row table of an object (object.view
+	// row), nil while it shows labeled rows.
+	detailTab *Table
+	// objectView is the object.view the data pane last showed with.
+	objectView string
+	trail      []*Node // the detail modal's drill path, innermost last
 
 	r    *ochazuke.Runtime
 	m    *ochazuke.Model
@@ -397,6 +402,15 @@ func (a *App) selectedShape() *Shape {
 // sync points the data panel at the selected shape when it moved, or
 // when an edit made the restructured document again.
 func (a *App) sync() error {
+	if v := a.r.Settings().String(settingObjectView); v != a.objectView {
+		// object.view changed (the Settings page, the palette): show the
+		// same path again in the other form, the cursor kept.
+		a.objectView = v
+		if a.shown != nil && (a.fields != nil || a.tab != nil && !a.tab.Items) {
+			a.carry = &rowCarry{sel: max(0, a.data.Selected())}
+			a.shown = nil
+		}
+	}
 	if a.queryShowing() {
 		a.note = ""
 		if a.q.goodView == a.shown {
@@ -420,9 +434,10 @@ func (a *App) sync() error {
 	return a.display(a.selectedShape(), false)
 }
 
-// show fills the data panel with a shape's values: one object as labeled
-// fields, one array or many values as a table, one scalar as is; with Raw,
-// the values as indented JSON lines.
+// show fills the data panel with a shape's values in the view the
+// settings prefer (views.go): one object as one row (object.view row) or
+// labeled fields, one array or many values as a table; one scalar as is;
+// with Raw, the values as indented JSON lines.
 //
 // The same path shown again (a value edit, an undo) keeps the selected
 // row and column.
@@ -455,14 +470,17 @@ func (a *App) show(s *Shape) error {
 	case a.Raw:
 		a.lines = rawLines(values, len(values) != 1)
 		return a.data.set(linesSource(a.lines), 0)
-	case len(values) == 1 && values[0].Kind == KObject:
-		a.fields = values[0]
-		return set(fieldsSource(values[0], "field"))
 	case len(values) == 1 && !values[0].IsContainer():
 		a.scalar = values[0]
 		return a.data.set(rowSource{}, 0)
 	}
-	a.tab = NewTable(s.Path, values, len(values) != 1)
+	// The view the settings prefer among those that apply (views.go).
+	out := pickView(dataViews, values, a.r.Settings().String(settingObjectView)).build(s.Path, values)
+	if out.tab == nil {
+		a.fields = out.fields
+		return set(out.src)
+	}
+	a.tab = out.tab
 	if prevCols != nil {
 		// The same table again (a value edit, an undo): its columns
 		// keep their order (columns.go).
@@ -470,7 +488,7 @@ func (a *App) show(s *Shape) error {
 	}
 	if follow != "" {
 		if j := slices.IndexFunc(a.tab.Columns, func(c TableColumn) bool { return !c.Self && c.Name == follow }); j >= 0 {
-			col = j + 1
+			col = a.tab.ListColumn(j)
 		}
 	}
 	return set(tableSource(a.tab))
@@ -480,31 +498,44 @@ func (a *App) show(s *Shape) error {
 // view and keeps the cursor's row and column (the tree keeps its path).
 type rowCarry struct{ sel, col int }
 
-// tableSource is a table as rows: "#" then the columns, optional titles
-// ending in "?", widths fixed from the first rows.
+// tableSource is a table as rows: "#" (for items, Table.Items) then the
+// columns, optional titles ending in "?", widths fixed from the first
+// rows. A nested value's cell is its size (Summary).
 func tableSource(t *Table) rowSource {
-	cols := []ochazuke.Column{{Title: "#", Align: ochazuke.AlignRight}}
-	natural := []int{len(strconv.Itoa(max(0, len(t.Rows)-1)))}
+	var cols []ochazuke.Column
+	var natural []int
+	if t.Items {
+		cols = append(cols, ochazuke.Column{Title: "#", Align: ochazuke.AlignRight})
+		natural = append(natural, len(strconv.Itoa(max(0, len(t.Rows)-1))))
+	}
 	for j, c := range t.Columns {
 		title := c.Title()
 		if c.Optional {
 			title += "?"
 		}
 		cols = append(cols, ochazuke.Column{Title: title, Priority: 1})
-		natural = append(natural, columnWidth(title, len(t.Rows), func(i int) string { return oneLine(t.CellText(t.Rows[i], j)) }))
+		natural = append(natural, columnWidth(title, len(t.Rows), func(i int) string { return oneLine(t.SummaryText(t.Rows[i], j)) }))
 	}
 	return rowSource{
 		n: len(t.Rows), columns: cols, natural: natural, noun: "item",
 		cells: func(i int) []string {
 			out := make([]string, 0, len(t.Columns)+1)
-			out = append(out, strconv.Itoa(i))
+			if t.Items {
+				out = append(out, strconv.Itoa(i))
+			}
 			for j := range t.Columns {
-				out = append(out, oneLine(t.CellText(t.Rows[i], j)))
+				out = append(out, oneLine(t.SummaryText(t.Rows[i], j)))
 			}
 			return out
 		},
 		data:  func(i int) any { return t.Rows[i] },
 		label: func(i int) string { return t.Rows[i].Path() },
+		full: func(i, col int) string {
+			if j := t.ColumnOf(col); j >= 0 {
+				return oneLine(Full(t.Cell(t.Rows[i], j)))
+			}
+			return ""
+		},
 	}
 }
 

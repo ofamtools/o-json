@@ -158,7 +158,7 @@ func TestCatalog(t *testing.T) {
 func TestViewSmokeFromStdin(t *testing.T) {
 	for _, args := range [][]string{{"--smoke", "-"}, {"view", "--smoke", "--width", "120"}, {"--smoke", sample}} {
 		got := run(t, sampleText(t), args...)
-		if !strings.Contains(got, "Structure") || !strings.Contains(got, "Fields .") || !strings.Contains(got, "o-json sample") {
+		if !strings.Contains(got, "Structure") || !strings.Contains(got, "Object .") || !strings.Contains(got, "o-json sample") {
 			t.Fatalf("%v\n%s", args, got)
 		}
 	}

@@ -226,7 +226,8 @@
       {"key": "y", "action": "entry.yank"}
     ]},
     {"context": "detail/normal", "bindings": [
-      {"key": "q", "action": "modal.pop"}
+      {"key": "q", "action": "modal.pop"},
+      {"key": "backspace", "action": "entry.up", "hint": "back"}
     ]},
     {"context": "value-input/insert", "bindings": [
       {"key": "enter", "action": "value-input.accept", "hint": "set"},

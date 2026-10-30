@@ -199,9 +199,10 @@ func (a *App) valueOf(inst *ochazuke.Instance) (valueAt, bool) {
 			return v, true
 		}
 	}
-	if v := a.rowsOf(inst); v == a.data && a.tab != nil && inst.Noun == "item" {
-		if col := v.list.Column(); col >= 1 && col <= len(a.tab.Columns) && n.Kind == KObject {
-			if c := a.tab.Columns[col-1]; !c.Self {
+	if v := a.rowsOf(inst); a.tabOf(v) != nil && inst.Noun == "item" {
+		t := a.tabOf(v)
+		if j := t.ColumnOf(v.list.Column()); j >= 0 && n.Kind == KObject {
+			if c := t.Columns[j]; !c.Self {
 				if f := n.Field(c.Name); f != nil {
 					return valueAt{node: f, parent: n, key: f.Key}, true
 				}

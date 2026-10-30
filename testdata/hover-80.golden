@@ -3,10 +3,10 @@
   ────────────────────────────────────────────────────────────────────────────  
   testdata/nested.json  ·  . (array ×1)  ·  row [2]                             
   ╭─ Structure · unchanged ────╮ ╭━ Table .  3/20 ━━━━━━━━━━━━━━━━━━━━━━━━━━━╮  
-  │ jq / to query              │ ┃  #  ‹4   meta    address?  orders?    12› ┃  
-  │ key                     2› │ ┃  0       {"sou…  {"city"…  []             ┃  
-  │ ▾ . (root)                 │ ┃  1       {"sou…  {"city"…  [{"id"…        ┃  
-  │   ▾ []                     │ ┃  2       {"sou…  {"city"…  [{"id"…        ┃  
+  │ jq / to query              │ ┃  #  ‹4   meta  address?  orders?      12› ┃  
+  │ key                     2› │ ┃  0       {2}   {3}       []               ┃  
+  │ ▾ . (root)                 │ ┃  1       {2}   {3}       [1]              ┃  
+  │   ▾ []                     │ ┃  2       {2}   {3}       [2]              ┃  
   │       id                   │ ┃     #  id    total  items                 ┃  
   │       name                 │ ┃     0  o3-0  11.67  [3]                   ┃  
   │       active               │ ┃       #  sku     qty                      ┃  
@@ -14,10 +14,10 @@
   │       meta                 │ ┃       1  kettle  4                        ┃  
   │       address              │ ┃       2  filter  1                        ┃  
   │     ▾ orders               │ ┃     1  o3-1  32.68  [3]                   ┃  
-  │       ▾ []                 │ ┃  3       {"sou…  {"city"…  []             ┃  
-  │           id               │ ┃  4       {"sou…  null      [{"id"…        ┃  
-  │           total            │ ┃  5       {"sou…  {"city"…  [{"id"…        ┃  
-  │ 1–12 / 28                  │ ┃  6       {"sou…  {"city"…  []             ┃  
+  │       ▾ []                 │ ┃  3       {2}   {3}       []               ┃  
+  │           id               │ ┃  4       {2}   null      [1]              ┃  
+  │           total            │ ┃  5       {2}   {3}       [2]              ┃  
+  │ 1–12 / 28                  │ ┃  6       {2}   {3}       []               ┃  
   ╰────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────  
   enter item.open · y item.yank · r/i edit · d d delete · u/ctrl+r undo/redo …  

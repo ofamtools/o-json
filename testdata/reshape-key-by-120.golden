@@ -2,12 +2,12 @@
    › testdata/reshape.json  Restructure                                                                                 
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json [+]  ·  .people (object 1/1)                                                                    
-  ╭━ Structure · edited [+] ━━━━━━━━━━━━━━━━━━━╮ ╭─ Fields .people ──────────────────────────────────────────────────╮  
-  ┃ jq / to query                              ┃ │ field     type       value                                        │  
-  ┃ key              type    from              ┃ │ p1        object{4}  {"name":"Ann","id":"p1","tags":["a","b"],"a… │  
-  ┃ ▾ . (root)       object                    ┃ │ p2        object{4}  {"name":"Bo","id":"p2","tags":[],"address":… │  
-  ┃     title        string  .title            ┃ │ p1-2      object{3}  {"name":"Cy","id":"p1","tags":["c"]}         │  
-  ┃   ▾ people       object  .people           ┃ │ _missing  array[1]   [{"name":"Dee"}]                             │  
+  ╭━ Structure · edited [+] ━━━━━━━━━━━━━━━━━━━╮ ╭─ Object .people ──────────────────────────────────────────────────╮  
+  ┃ jq / to query                              ┃ │ p1   p2   p1-2  _missing                                          │  
+  ┃ key              type    from              ┃ │ {4}  {4}  {3}   [1]                                               │  
+  ┃ ▾ . (root)       object                    ┃ │                                                                   │  
+  ┃     title        string  .title            ┃ │                                                                   │  
+  ┃   ▾ people       object  .people           ┃ │                                                                   │  
   ┃     ▾ p1         object  .people.p1        ┃ │                                                                   │  
   ┃         name     string  .people.p1.name   ┃ │                                                                   │  
   ┃         id       string  .people.p1.id     ┃ │                                                                   │  

@@ -55,6 +55,19 @@ func onData(t *testing.T, a *App, path, label string) {
 			return
 		}
 	}
+	// An object's one row (object.view row): the key's column.
+	if a.tab != nil && !a.tab.Items {
+		for j, c := range a.tab.Columns {
+			if !c.Self && c.Name == label {
+				a.data.list.SetColumn(a.tab.ListColumn(j))
+				if err := a.data.list.Focus(); err != nil {
+					t.Fatal(err)
+				}
+				view(a)
+				return
+			}
+		}
+	}
 	t.Fatalf("no data row %q under %s\n%s", label, path, view(a))
 }
 
@@ -87,6 +100,7 @@ func field(t *testing.T, a *App, path string) string {
 // the data pane keeps the row.
 func TestEditValueTypes(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	fieldsView(t, a)
 	inlineEditor(t, a)
 	onData(t, a, ".", "version")
 	press(t, a, "r")
@@ -240,6 +254,7 @@ func TestAddField(t *testing.T) {
 // row's index; the input is drawn above the row.
 func TestAddBefore(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	fieldsView(t, a)
 	inlineEditor(t, a)
 	onData(t, a, ".", "version")
 	press(t, a, "O")
@@ -451,6 +466,7 @@ func TestValueEditsInTheMapAgreeWithJQ(t *testing.T) {
 // as before); on the original (T) they are not available either.
 func TestDataEditableOffIsReadOnly(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	fieldsView(t, a)
 	if err := a.r.Settings().Set(settingDataEditable, false); err != nil {
 		t.Fatal(err)
 	}
@@ -535,6 +551,7 @@ func TestEditAScalarShownAlone(t *testing.T) {
 // deletes, K renames; the detail follows each edit.
 func TestValueEditsInTheDetail(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	fieldsView(t, a)
 	inlineEditor(t, a)
 	onData(t, a, ".items", ".items[0]")
 	press(t, a, "enter")

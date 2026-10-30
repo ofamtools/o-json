@@ -8,7 +8,7 @@
   "values": {"table.nested": "summary"},
   "script": ["tab", "j", "j", "l", "l", "l", "l", "l", "l", "j"],
   "expect": [
-    {"after": 9, "contains": ["Table .  3/20", "{\"city\"…"], "lacks": ["Austin", "country"]},
+    {"after": 9, "contains": ["Table .  3/20", "{3}"], "lacks": ["Austin", "country"]},
     {"contains": ["Table .  4/20"], "lacks": ["Austin"]}
   ]
 }

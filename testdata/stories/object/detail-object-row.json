@@ -1,0 +1,55 @@
+{
+ "name": "o-json: the detail shows an object as one row (object.view): enter on a nested cell steps into it, backspace comes back onto its key's column",
+ "area": "object",
+ "width": 120,
+ "height": 24,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "catalog-sample.json"
+ },
+ "script": [
+  "tab",
+  "l",
+  "l",
+  "l",
+  "l",
+  "enter",
+  "enter",
+  "l",
+  "enter",
+  "backspace"
+ ],
+ "expect": [
+  {
+   "after": 7,
+   "contains": [
+    ".nouns[0]  object{2}"
+   ],
+   "order": [
+    "name",
+    "verbs",
+    "app",
+    "[1]"
+   ],
+   "lacks": [
+    "field  type       value  "
+   ]
+  },
+  {
+   "after": 9,
+   "contains": [
+    ".nouns[0].verbs  array[1]"
+   ]
+  },
+  {
+   "contains": [
+    ".nouns[0]  object{2}"
+   ],
+   "order": [
+    "name",
+    "verbs",
+    "app"
+   ]
+  }
+ ]
+}

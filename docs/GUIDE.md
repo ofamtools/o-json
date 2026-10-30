@@ -50,7 +50,7 @@ The structure tells you every path in the document, its types, and how many valu
 7. On a deep tree, `z +` zooms into the node and `z -` zooms back out.
 8. Press `T` again to go back to the edited structure.
 
-**What you'll see:** the data panel follows the selection. An object shows as `field  type  value` rows and an array as a table. A path of plain values (a string, a number) does not replace them: the data panel stays on the table or fields that hold it and highlights its column (scrolled into view, the row kept) or its field row, so `j`/`k` down `.items[].id`, `.items[].name` walks across the table's columns. `: settings set structure.scalar-follow show` shows the values alone instead, as before.
+**What you'll see:** the data panel follows the selection. An object shows as one row, its keys as the header and its values as the cells (a nested value by its size, `{12}`, `[8]`), and an array as a table. `: settings set object.view fields` shows an object as `field  type  value` rows instead. A path of plain values (a string, a number) does not replace them: the data panel stays on the table or fields that hold it and highlights its column (scrolled into view, the row kept, and widened to show its data: a list of tags reads `red · blue`; `structure.lit-width normal` keeps the widths) or its field row, so `j`/`k` down `.items[].id`, `.items[].name` walks across the table's columns. `: settings set structure.scalar-follow show` shows the values alone instead, as before.
 
 **Searching paths by text:** by default `/` opens the jq query line (chapter 7), which also finds things. If you want the plain path search instead, turn the query line off with `: settings set query.line false`. Then, in the original structure, `/` searches the paths, `n` and `N` go to the next and previous match, and `esc` clears the search. Case is smart, as in Vim with `smartcase`: `name` finds `Name` and `NAME` too, while `Name` finds only `Name` (ochazuke's `search.case` setting: `ignore` or `sensitive` instead).
 
@@ -69,9 +69,9 @@ An array of objects is easiest to read as a table. o-json builds one with a colu
 5. Move the cursor onto a cell that holds an object or an array (`owner`, `tags`). A small **sub-table** of that value opens right under the row.
 6. Press `j` to walk down into the sub-table, line by line, and on out to the next row. `h`/`l` move along a sub-table line. A nested value inside it opens one level deeper.
 
-**What you'll see:** only the chain under the cursor is open; move away and the sub-table closes. Deeper values read `{3 keys}` or `[2]` until you reach them.
+**What you'll see:** only the chain under the cursor is open; move away and the sub-table closes. A cell holding an object or an array shows its size (`{3}`, `[2]`, `[]` when empty) until you reach it.
 
-If you'd rather see a one-line summary in the cell, run `: settings set table.nested summary`. Then `enter` opens the value in the detail (chapter 4).
+If you'd rather not have sub-tables open, run `: settings set table.nested summary`. Then `enter` opens the value in the detail (chapter 4).
 
 ![walk.json as a table: sub-tables open under the row as the cursor moves](img/03-table.gif)
 
@@ -79,13 +79,15 @@ Details: [Tables](../README.md#tables), and "Nested data in tables" in [The view
 
 ## 4. Drill into a row
 
-A wide row is easier to read one field per line. The detail shows a row, or any nested value, as labelled rows that you can step into.
+The detail shows a row, or any nested value, on its own, so you can step into it. An object there is one row, as on the data panel; an array is labelled rows, one item per line.
 
 1. In the table, put the cursor on the `#` column, or on a plain cell, and press `enter`. The row opens in the detail.
 2. On a cell holding an object or array, `enter` opens that value instead.
-3. In the detail, `enter` or `l` on an object or array steps into it.
-4. `h` or `backspace` steps back out.
+3. In the detail, `h`/`l` move along an object's keys, and `enter` on a key holding an object or array steps into it. On an array's labelled rows, `enter` or `l` steps into an item.
+4. `backspace` steps back out, onto the key you came from (`h` too on labelled rows).
 5. `q` or `esc` closes the detail.
+
+To read a wide object one field per line, run `: settings set object.view fields`: the data panel and the detail then show objects as `field  type  value` rows, and `l`/`h` step in and out there.
 
 **What you'll see:** the detail's title is the path you're at (`.items[0].tags  array[2]`). The table stays drawn behind it.
 

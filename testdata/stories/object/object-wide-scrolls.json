@@ -1,0 +1,33 @@
+{
+ "name": "o-json: an object with more keys than fit scrolls its columns as a table does: N\u203a at the right, \u2039N once l moves past, $ to the last key",
+ "area": "object",
+ "width": 100,
+ "height": 14,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "wide-object.json"
+ },
+ "script": [
+  "tab",
+  "$"
+ ],
+ "expect": [
+  {
+   "after": 1,
+   "contains": [
+    "key01",
+    "24\u203a"
+   ],
+   "lacks": [
+    "key30"
+   ]
+  },
+  {
+   "contains": [
+    "\u203924",
+    "key30",
+    "value-30"
+   ]
+  }
+ ]
+}
