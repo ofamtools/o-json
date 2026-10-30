@@ -478,16 +478,34 @@ func (a *App) accept() error {
 }
 
 // renameValue renames v's key to key, in its object only.
+// A key the object has already is numbered past its keys (id-2), and an
+// empty one is the new-key placeholder, as an add names its key: a rename
+// records, never refuses (renameKey).
 func (a *App) renameValue(v valueAt, key string) error {
-	switch {
-	case key == v.key:
+	key = a.renameKey(v, key)
+	if key == v.key {
 		return nil
-	case key == "":
-		return errors.New("a key is not empty")
-	case v.parent.Field(key) != nil:
-		return fmt.Errorf("this object has a key %q already", key)
 	}
 	return a.addPatch(Patch{Op: opRename, Path: v.path(), Key: key})
+}
+
+// renameKey is the key a rename of v to key names: key itself, numbered
+// past the object's other keys when one of them has it, the new-key
+// placeholder for an empty one.
+func (a *App) renameKey(v valueAt, key string) string {
+	if key == v.key {
+		return key
+	}
+	if key == "" {
+		return a.freeValueKey(v.parent)
+	}
+	taken := map[string]bool{}
+	for _, c := range v.parent.Children {
+		if c.Key != v.key {
+			taken[c.Key] = true
+		}
+	}
+	return freeKey(key, taken)
 }
 
 // label is the input's prefix: what it edits and, for a value, the type
@@ -661,9 +679,7 @@ func (a *App) registerValueVerbs() {
 					return a.addPatch(addBeside(v, key, raw, before))
 				}))
 			case hasKey:
-				if v.parent.Field(key) != nil {
-					return ochazuke.Failed(fmt.Errorf("this object has a key %q already", key))
-				}
+				key = a.newValueKey(&valueEdit{at: v}, key) // a key it has: numbered, as o names it
 				return done(a.openInput(&valueEdit{what: "add", at: v, key: key, insert: true, above: before}, "null", true))
 			}
 			return done(a.openInput(&valueEdit{what: "key", at: v, insert: true, above: before}, a.freeValueKey(v.parent), true))

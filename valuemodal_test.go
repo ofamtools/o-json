@@ -258,9 +258,10 @@ func TestValueModalAddsAKeyAndValue(t *testing.T) {
 	agrees(t, a)
 }
 
-// K edits the key: a key the object has is a problem drawn in the editor,
-// and enter stays until it is fixed; nothing goes to the status line.
-func TestValueModalRenameShowsItsProblem(t *testing.T) {
+// K edits the key: a key the object has is numbered past its keys, as o
+// names a key, and the editor says so before enter; enter always sets
+// (record first, never refuse).
+func TestValueModalRenameNumbersATakenKey(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	onData(t, a, ".", "name")
 	press(t, a, "K")
@@ -268,15 +269,12 @@ func TestValueModalRenameShowsItsProblem(t *testing.T) {
 		t.Fatalf("K: focus %q selected %q\n%s", a.r.Focus, selected(a), view(a))
 	}
 	typeText(t, a, "version")
-	press(t, a, "enter")
-	if a.r.TopModal() != valueEditorID || a.m.Status != "" || !strings.Contains(view(a), `! this object has a key "version" already`) {
-		t.Fatalf("enter on a taken key: modal %q status %q\n%s", a.r.TopModal(), a.m.Status, view(a))
+	if !strings.Contains(view(a), `· renames to the key "version-2"`) {
+		t.Fatalf("no note for a taken key:\n%s", view(a))
 	}
-	press(t, a, "ctrl+u")
-	typeText(t, a, "title")
 	press(t, a, "enter")
-	if got := field(t, a, "."); !strings.HasPrefix(got, `{"title":"o-json sample"`) || a.r.TopModal() != "" {
-		t.Fatalf("rename: %s modal %q", got, a.r.TopModal())
+	if got := field(t, a, "."); !strings.HasPrefix(got, `{"version-2":"o-json sample","version":2`) || a.r.TopModal() != "" {
+		t.Fatalf("rename to a taken key: %s modal %q", got, a.r.TopModal())
 	}
 }
 

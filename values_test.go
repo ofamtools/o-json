@@ -290,13 +290,14 @@ func TestRenameOneKey(t *testing.T) {
 	if mappingKey(&Mapping{Map: a.Mapping().Map}) != before {
 		t.Fatal("the rename changed the structure")
 	}
-	// A key the object has already is refused.
+	// A key the object has already is numbered past its keys, never
+	// refused (as o names a key).
 	onData(t, a, ".", "name")
 	valueDo(t, a, "rename", nil)
 	press(t, a, "ctrl+u")
 	typeText(t, a, "version")
 	Press(a.m, "enter")
-	if !strings.Contains(a.m.Status, `key "version" already`) || len(a.rs.patches) != 1 {
+	if len(a.rs.patches) != 2 || a.rs.patches[1].Key != "version-2" {
 		t.Fatalf("rename onto a key: %q %+v", a.m.Status, a.rs.patches)
 	}
 	agrees(t, a)

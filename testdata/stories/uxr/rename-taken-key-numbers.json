@@ -1,0 +1,33 @@
+{
+ "name": "o-json: K to a key the object has takes the next free name as o does (record first), never blocks enter (J rename-refuses)",
+ "area": "uxr",
+ "width": 120,
+ "height": 30,
+ "fixture": "viewer",
+ "seed": {
+  "doc": "sample.json"
+ },
+ "script": [
+  "j",
+  "j",
+  "j",
+  "j",
+  "tab",
+  "l",
+  "l",
+  "K",
+  "i",
+  "d",
+  "enter"
+ ],
+ "expect": [
+  {
+   "lacks": [
+    "has a key \"id\" already"
+   ],
+   "contains": [
+    "id-2"
+   ]
+  }
+ ]
+}

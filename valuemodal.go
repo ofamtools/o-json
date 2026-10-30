@@ -26,8 +26,9 @@ import (
 //	╰──────────────────────────────────────────────────────╯
 //
 // The badge is the type the text will be set as, read as it is typed
-// (inferValue); a problem (a key the object has) is a line in the modal,
-// and enter stays until it is fixed. o / O in an object ask two fields,
+// (inferValue); what the text will do that a reader may not expect (a key
+// the object has, numbered: "renames to the key "id-2"") is a note line
+// in the modal, and enter always sets. o / O in an object ask two fields,
 // the key then the value (enter or tab moves on, shift+tab back); an
 // object or array value is a several-line input, where enter is a new
 // line, esc normal mode, and enter there sets. enter makes the one change
@@ -226,24 +227,6 @@ func (vm *valueModal) texts() (key, value string) {
 	return key, value
 }
 
-// problem is why set would not make the edit ("" when it would): a key
-// the object has, an empty key to rename to.
-func (vm *valueModal) problem() string {
-	ve := vm.ve
-	key, _ := vm.texts()
-	if ve.what == "rename" {
-		switch {
-		case key == ve.at.key:
-			return ""
-		case key == "":
-			return "a key is not empty"
-		case ve.at.parent.Field(key) != nil:
-			return fmt.Sprintf("this object has a key %q already", key)
-		}
-	}
-	return ""
-}
-
 // notes are what the text will do that a reader may not expect: a new
 // key that is taken or empty (another is chosen), JSON that does not
 // parse (set as a string).
@@ -254,6 +237,11 @@ func (vm *valueModal) notes() []string {
 	if ve.what == "add" && ve.at.inObject() && len(vm.fields) == 2 {
 		if k := vm.a.newValueKey(ve, key); k != key {
 			out = append(out, fmt.Sprintf("adds the key %q", k))
+		}
+	}
+	if ve.what == "rename" {
+		if k := vm.a.renameKey(ve.at, key); k != key {
+			out = append(out, fmt.Sprintf("renames to the key %q", k))
 		}
 	}
 	t := strings.TrimSpace(value)
@@ -276,17 +264,13 @@ func (a *App) newValueKey(ve *valueEdit, key string) string {
 	return freeKey(key, taken)
 }
 
-// setModal makes the editor's text the edit and closes it; with a
-// problem it stays open, the problem shown in it.
+// setModal makes the editor's text the edit and closes it.
 func (a *App) setModal() error {
 	ve := a.vedit
 	if ve == nil || ve.modal == nil {
 		return errors.New("no value is being edited")
 	}
 	vm := ve.modal
-	if vm.problem() != "" {
-		return nil // the modal says why; enter stays until it is fixed
-	}
 	key, text := vm.texts()
 	a.vedit = nil
 	if a.r.Instances[valueEditorID] != nil {
@@ -328,7 +312,7 @@ func (vm *valueModal) ModalTitle() string { return vm.title }
 
 // ModalBlock draws the fields: per field the old text dimmed with its
 // type, then a label, the input and the type the text reads as; then
-// the problem or notes.
+// the notes.
 func (vm *valueModal) ModalBlock(s ochazuke.Styles, width, height int) ochazuke.Block {
 	const gutter = 7 // "value  "
 	// The badge column fits the widest type as the theme's badge draws
@@ -404,9 +388,7 @@ func (vm *valueModal) ModalBlock(s ochazuke.Styles, width, height int) ochazuke.
 			lines = append(lines, line)
 		}
 	}
-	if p := vm.problem(); p != "" {
-		lines = append(lines, "", s.Error.Render(ansi.Truncate("! "+p, w, "…")))
-	} else if notes := vm.notes(); len(notes) > 0 {
+	if notes := vm.notes(); len(notes) > 0 {
 		lines = append(lines, "")
 		for _, n := range notes {
 			lines = append(lines, s.Muted.Render(ansi.Truncate("· "+n, w, "…")))
@@ -451,7 +433,7 @@ func (a *App) registerValueEditor() {
 	}
 	r.Define(valueEditorID).
 		Verb("set", func(c ochazuke.Ctx) ochazuke.Result { return done(a.setModal()) },
-			"Close the value editor and make its text the edit, one undo step: the value (its type as the badge shows), the key renamed to, or the key and value added; with a problem shown in the editor it stays open").When("value-editor-last").
+			"Close the value editor and make its text the edit, one undo step: the value (its type as the badge shows), the key renamed to, or the key and value added (a key the object has numbered, as the editor's note says)").When("value-editor-last").
 		Verb("next", func(c ochazuke.Ctx) ochazuke.Result { return done(a.vedit.modal.move(1)) },
 			"Focus the value editor's next field (o in an object: the key, then the value)").When("value-editor-more").
 		Verb("previous", func(c ochazuke.Ctx) ochazuke.Result { return done(a.vedit.modal.move(-1)) },
