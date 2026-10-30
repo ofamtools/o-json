@@ -29,7 +29,7 @@ Updated as each item lands; the sections below describe what is built.
 
 | Item | Keys | Status |
 |---|---|---|
-| Per-mode keys first on the footer (`ctrl+w o` …), other hints short | | missing (truncated before them) |
+| Per-mode keys first on the footer (`ctrl+w o` …), other hints short | | done (the rows sit on the focused noun's mode table, which leads the footer) |
 
 ### Views and panes
 
@@ -122,8 +122,9 @@ its trial colour (o-jj colours the application accent by mode).
   over every path until `esc` clears them or the cycle steps off them.
 - `ctrl+w h` / `ctrl+w l` move to the left / right pane and stop at the
   edge; `ctrl+w w` and `ctrl+a o` cycle. `ctrl+w o` shows only one pane:
-  which one is each mode's binding row (`viewer/shape`: structure;
-  `viewer/table`, `nested`, `flat`, `json`: data; elsewhere the focused
+  which one is each mode's binding row on the focused noun (`node/shape`,
+  `shape/shape`: structure; `item/table`, `field/table`, `item/nested`,
+  `field/nested`, `line/flat`, `line/json`, `line/search`: data; elsewhere the focused
   pane, on the split the focused side). `ctrl+w o` again, `ctrl+w =`, or
   moving the focus to the hidden pane brings both back.
 - `g m` (`:viewer mode`) opens the fuzzy mode picker; every row enters
@@ -190,8 +191,10 @@ its trial colour (o-jj colours the application accent by mode).
   a key reorder in the editor is kept (the patch is the text's order).
   `g r` in VISUAL (`R` on a selection) and a tuios pane for the editor
   (`raw.pane`) are not built; RAW is always foreground.
-- The footer often truncates before the per-mode `ctrl+w o` hint; `?`
-  shows it.
+- The footer leads with the mode's own keys: they are rows of the focused
+  noun's mode table, and ochazuke lists the innermost level first. The
+  search line's keys read type, hits, show, leave; `ctrl+f` (functions)
+  answers only in the jq type.
 - The value editor's `esc esc` returns to EDIT; the detail's value edits
   are not gated by EDIT.
 - The test suite runs with `modes.edit-gate` off by default (it was

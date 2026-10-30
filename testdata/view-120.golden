@@ -20,5 +20,5 @@
   ┃ 1–12 / 18                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  > j nest below · S wrap · r rename · d d delete · u/ctrl+r undo/redo · y y yank · p/P put · m query mode · space ma…  
+  ctrl+w o only structure · > j nest below · S wrap · r rename · d d delete · u/ctrl+r undo/redo · y y yank · p/P put…  
                                                                                                                         

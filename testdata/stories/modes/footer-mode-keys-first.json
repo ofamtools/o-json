@@ -1,0 +1,15 @@
+{
+  "name": "o-jj: each mode's own keys lead the footer (ctrl+w o), so a narrow footer does not cut them",
+  "area": "modes",
+  "width": 80,
+  "height": 26,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["ctrl+w", "h", "ctrl+w", "l", "D", "D", "/", "n"],
+  "expect": [
+    {"after": 2, "mode": "shape", "contains": ["ctrl+w o only structure · "]},
+    {"after": 4, "mode": "table", "contains": ["ctrl+w o only data · enter open"]},
+    {"after": 6, "mode": "flat", "contains": ["ctrl+w o only data · y y/p/v"]},
+    {"mode": "search_·_substr", "contains": ["tab/shift+tab type · ctrl+n/p hit"], "lacks": ["ctrl+f function"]}
+  ]
+}

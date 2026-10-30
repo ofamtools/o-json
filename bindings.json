@@ -16,7 +16,7 @@
       {"key": "ctrl+w =", "action": "ochazuke.pane.reset", "hidden": true}
     ]},
     {"context": "rows/normal", "bindings": [
-      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "next data view"},
+      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "views"},
       {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
       {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
       {"key": "v", "action": "ochazuke.list.visual", "hint": "select rows"},
@@ -90,7 +90,7 @@
       {"key": "n", "action": "viewer.next"},
       {"key": "N", "action": "viewer.previous"},
       {"key": "t", "action": "viewer.type"},
-      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "next data view"},
+      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "views"},
       {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
       {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
       {"key": "esc", "action": "search.clear", "hint": "clear search"},
@@ -109,21 +109,6 @@
       {"key": "ctrl+r", "action": "restructure.redo", "hidden": true},
       {"key": "q", "action": "app.quit"},
       {"key": "Q", "action": "app.quit", "args": {"force": true}, "hint": "quit without writing", "hidden": true}
-    ]},
-    {"context": "viewer/shape", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"}
-    ]},
-    {"context": "viewer/table", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
-    ]},
-    {"context": "viewer/nested", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
-    ]},
-    {"context": "viewer/flat", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
-    ]},
-    {"context": "viewer/json", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
     ]},
     {"context": "viewer/count_pending", "extends": "normal", "bindings": [
       {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}},
@@ -278,27 +263,47 @@
       {"key": "tab", "unbind": true},
       {"key": "shift+tab", "unbind": true}
     ]},
+    {"context": "shape/shape", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"}
+    ]},
+    {"context": "node/shape", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"}
+    ]},
+    {"context": "item/table", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+    ]},
+    {"context": "field/table", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+    ]},
+    {"context": "item/nested", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+    ]},
+    {"context": "field/nested", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+    ]},
     {"context": "item/normal", "bindings": [
-      {"key": "enter", "action": "item.open"},
-      {"key": "y", "action": "item.yank"}
+      {"key": "enter", "action": "item.open", "hint": "open"},
+      {"key": "y", "action": "item.yank", "hint": "yank"}
     ]},
     {"context": "field/normal", "bindings": [
-      {"key": "enter", "action": "field.open"},
-      {"key": "y", "action": "field.yank"}
+      {"key": "enter", "action": "field.open", "hint": "open"},
+      {"key": "y", "action": "field.yank", "hint": "yank"}
     ]},
     {"context": "line/normal", "bindings": [
-      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "next data view"},
+      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "views"},
       {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
       {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
       {"key": "y", "action": "line.yank"}
     ]},
     {"context": "line/flat", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
       {"key": "y y", "action": "line.yank-part", "args": {"part": "line"}, "hint": "y y/p/v line/path/value"},
       {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
       {"key": "y v", "action": "line.yank-part", "args": {"part": "value"}, "hidden": true},
       {"key": "enter", "action": "line.jump", "hint": "go to path"}
     ]},
     {"context": "line/search", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
       {"key": "enter", "action": "line.jump", "hint": "go to hit"},
       {"key": "y y", "action": "line.yank-part", "args": {"part": "value"}, "hint": "y y/p value/path"},
       {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
@@ -306,6 +311,7 @@
       {"key": "N", "action": "search.next", "args": {"steps": -1}, "hidden": true}
     ]},
     {"context": "line/json", "extends": "normal", "bindings": [
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
       {"key": "y y", "action": "line.yank-part", "args": {"part": "value"}, "hint": "y y/p value/path"},
       {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
       {"key": "enter", "action": "line.jump", "hint": "go to path"},
@@ -368,16 +374,16 @@
       {"key": "q", "action": "value-editor.cancel", "hidden": true}
     ]},
     {"context": "jq-input/insert", "bindings": [
-      {"key": "esc", "action": "search.cancel", "hint": "leave"},
-      {"key": "enter", "action": "search.accept", "hint": "show"},
       {"key": "tab", "action": "search.type", "hint": "tab/shift+tab type"},
       {"key": "shift+tab", "action": "search.type", "args": {"steps": -1}, "hidden": true},
-      {"key": "ctrl+v", "action": "ochazuke.input.select", "args": {"shape": "char"}, "hint": "select"},
-      {"key": "ctrl+f", "action": "jq.function", "hint": "function"},
       {"key": "ctrl+n", "action": "jq.next-slot", "when": "search-jq", "hint": "ctrl+n/p slot"},
       {"key": "ctrl+p", "action": "jq.previous-slot", "when": "search-jq", "hidden": true},
       {"key": "ctrl+n", "action": "search.next", "hint": "ctrl+n/p hit"},
-      {"key": "ctrl+p", "action": "search.next", "args": {"steps": -1}, "hidden": true}
+      {"key": "ctrl+p", "action": "search.next", "args": {"steps": -1}, "hidden": true},
+      {"key": "ctrl+f", "action": "jq.function", "when": "search-jq", "hint": "function"},
+      {"key": "enter", "action": "search.accept", "hint": "show"},
+      {"key": "esc", "action": "search.cancel", "hint": "leave"},
+      {"key": "ctrl+v", "action": "ochazuke.input.select", "args": {"shape": "char"}, "hint": "select"}
     ]},
     {"context": "jq-input/normal", "bindings": [
       {"key": "esc", "action": "search.cancel", "hint": "leave"},

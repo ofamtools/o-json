@@ -20,5 +20,5 @@
   │ 1–12 / 28                                  │ ┃  6       7   Gil G   false   [2]   {2}   {3}       []             ┃  
   ╰────────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  enter item.open · y item.yank · D next data view · v select rows · r/i edit · d d delete · u/ctrl+r undo/redo · o/O…  
+  ctrl+w o only data · enter open · y yank · D views · v select rows · r/i edit · d d delete · u/ctrl+r undo/redo · o…  
                                                                                                                         

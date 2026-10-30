@@ -20,5 +20,5 @@
   ┃ 1–12 / 25                  ┃ │                                           │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────  
-  S wrap · t array · r rename · d d delete · u/ctrl+r undo/redo · y y yank · …  
+  ctrl+w o only structure · S wrap · t array · r rename · d d delete · u/ctrl…  
                                                                                 
