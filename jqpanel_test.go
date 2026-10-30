@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -99,5 +100,67 @@ func TestJQPanelModalAndOff(t *testing.T) {
 	}
 	if a.available("jq-panel", "toggle") {
 		t.Fatal("jq.panel off: toggle available")
+	}
+}
+
+// The panel is a read-only input (ochazuke.ReadOnly): the keys that edit
+// stand aside, and neither they nor the viewer's page keys behind them
+// (the page's rows answer after the panel's own, so bindings.json shadows
+// p R T M n N t / W u ctrl+r and keeps w e v as the input's motions) change
+// the text, the restructure, the focus or the page: split or modal, in
+// normal, visual and visual-line mode, over the edited and the original
+// view (where n, N and t are the viewer's).
+func TestJQPanelKeysChangeNothing(t *testing.T) {
+	keys := []string{"p", "P", "R", "T", "M", "n", "N", "t", "/", "W", "w", "e", "u", "ctrl+r", "x", "d", "c", "s", "i", "a", "o", "O", "A", "I", "r", "J", "~", "D", "C", "S", "K"}
+	for _, where := range []string{"split", "modal"} {
+		for _, original := range []bool{false, true} {
+			for _, prefix := range [][]string{nil, {"v"}, {"V"}} {
+				name := fmt.Sprintf("%s original=%v %s", where, original, strings.Join(prefix, ""))
+				t.Run(name, func(t *testing.T) {
+					t.Parallel()
+					for _, key := range keys {
+						a := openReshape(t, 120, 30)
+						if err := a.r.Settings().Set(settingJQPanel, where); err != nil {
+							t.Fatal(err)
+						}
+						// An edit first, so an undo that reached the tree shows;
+						// in the original view a search, so n and N have a match.
+						markPaths(t, a, ".people[].name", ".people[].address.city")
+						press(t, a, "F")
+						if original {
+							press(t, a, "T", "/", "n", "a", "m", "e", "enter")
+						}
+						press(t, a, "g", "j")
+						press(t, a, prefix...)
+						text, mapping, page, modal, side := a.panelText(), mappingKey(a.Mapping()), a.r.Page, a.r.TopModal(), a.original
+						Press(a.m, key)
+						status := a.m.Status
+						Press(a.m, "w") // completes an operator d or c, as d w would
+						status += a.m.Status
+						view(a)
+						switch {
+						case status != "":
+							t.Errorf("%s: %s", key, status)
+						case a.r.Quit:
+							t.Errorf("%s: quit", key)
+						case !a.jqp.open || a.jqp.in == nil:
+							t.Errorf("%s: the panel closed", key)
+						case string(a.jqp.in.Text) != text:
+							t.Errorf("%s: the text changed", key)
+						case mappingKey(a.Mapping()) != mapping:
+							t.Errorf("%s: the restructure changed", key)
+						case a.r.Focus != jqPanelTextID:
+							t.Errorf("%s: focus %q", key, a.r.Focus)
+						case a.original != side:
+							t.Errorf("%s: the viewer flipped", key)
+						case a.r.Page != page || a.r.TopModal() != modal:
+							t.Errorf("%s: page %q modal %q (was %q %q)", key, a.r.Page, a.r.TopModal(), page, modal)
+						case a.r.Mode.Name == "insert" || a.r.Mode.Name == "replace":
+							t.Errorf("%s: mode %q", key, a.r.Mode.Name)
+						}
+					}
+				})
+			}
+		}
 	}
 }

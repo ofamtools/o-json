@@ -18,14 +18,11 @@ import (
 // never grows with the program), modal opens it over the page, off takes
 // the key away.
 //
-// The text is an ochazuke input in normal mode, one line for a one-line
-// program and several for the mapping, so its motions, visual mode and
-// y{motion} (into the registers) work as in any input; y over a visual
-// selection and Y (jq-panel.yank) copy into the registers and the system
-// clipboard. ochazuke v0.54.0's Input has no read-only mode: an edit is
-// undone at the next frame (sync puts the text back and normal mode),
-// silently. This is the one place that does it (readOnlyText); it goes
-// when ochazuke's read-only text result lands.
+// The text is a read-only ochazuke input (ochazuke.ReadOnly), one line for
+// a one-line program and several for the mapping, so its motions, visual
+// mode and y{motion} (into the registers) work as in any input and an
+// edit is a silent no-op; y over a visual selection and Y (jq-panel.yank)
+// copy into the registers and the system clipboard.
 
 const (
 	jqPanelID      = "jq-panel"
@@ -90,23 +87,6 @@ func (a *App) panelText() string {
 	return text
 }
 
-// readOnlyText puts the panel's text back into its input when an edit
-// changed it, and the input back in normal mode: edits are no-ops.
-func (a *App) readOnlyText(text string) {
-	in := a.jqp.in
-	if in == nil {
-		return
-	}
-	if string(in.Text) != text {
-		in.Text = []rune(text)
-		in.History, in.Head = []ochazuke.EditNode{{Text: text, Parent: -1}}, 0
-		in.Cursor = min(in.Cursor, max(0, len(in.Text)-1))
-	}
-	if a.r.Focus == jqPanelTextID && a.r.Mode.Name == "insert" {
-		_ = a.r.SetMode("normal")
-	}
-}
-
 // openJQPanel opens the panel where jq.panel says.
 func (a *App) openJQPanel(view string) error {
 	where := a.r.Settings().String(settingJQPanel)
@@ -123,13 +103,13 @@ func (a *App) openJQPanel(view string) error {
 	text := a.panelText()
 	a.jqp.in = ochazuke.NewInput(jqPanelTextID, text, strings.Contains(text, "\n"))
 	if where == "modal" {
-		inst, err := a.r.OpenModal(jqPanelModalID, ochazuke.Payload{Prompt: a.panelTitle()}, ochazuke.WithInput(a.jqp.in, ochazuke.Kind("jq-panel-text")))
+		inst, err := a.r.OpenModal(jqPanelModalID, ochazuke.Payload{Prompt: a.panelTitle()}, ochazuke.WithInput(a.jqp.in, ochazuke.Kind("jq-panel-text"), ochazuke.ReadOnly()))
 		if err != nil {
 			return err
 		}
 		inst.Component = &jqPanelModal{a: a}
 	} else {
-		if err := a.r.AddInput(a.jqp.in, ochazuke.Parent(a.r.Page), ochazuke.Kind("jq-panel-text")); err != nil {
+		if err := a.r.AddInput(a.jqp.in, ochazuke.Parent(a.r.Page), ochazuke.Kind("jq-panel-text"), ochazuke.ReadOnly()); err != nil {
 			return err
 		}
 		if err := a.r.SetFocus(jqPanelTextID); err != nil {
@@ -182,7 +162,7 @@ func (a *App) syncJQPanel() {
 		focused := a.r.Focus == jqPanelTextID
 		_ = a.r.RemoveInstance(jqPanelTextID)
 		a.jqp.in = ochazuke.NewInput(jqPanelTextID, text, multi)
-		if err := a.r.AddInput(a.jqp.in, ochazuke.Parent(a.r.Page), ochazuke.Kind("jq-panel-text")); err != nil {
+		if err := a.r.AddInput(a.jqp.in, ochazuke.Parent(a.r.Page), ochazuke.Kind("jq-panel-text"), ochazuke.ReadOnly()); err != nil {
 			a.jqp.open, a.jqp.in = false, nil
 			return
 		}
@@ -194,7 +174,14 @@ func (a *App) syncJQPanel() {
 	if inst := a.r.Instances[jqPanelTextID]; inst != nil && a.jqp.where != "modal" && inst.Parent != a.r.Page {
 		inst.Parent = a.r.Page
 	}
-	a.readOnlyText(text)
+	if in := a.jqp.in; string(in.Text) != text {
+		// The mapping changed: the viewer shows the new text, a fresh
+		// history, the cursor kept where it fits (ochazuke has no setter
+		// for a read-only input's text; Replace leaves it as it is).
+		in.Text = []rune(text)
+		in.History, in.Head = []ochazuke.EditNode{{Text: text, Parent: -1}}, 0
+		in.Cursor = min(in.Cursor, max(0, len(in.Text)-1))
+	}
 }
 
 // panelTitle names the view and the keys that switch and close it.
