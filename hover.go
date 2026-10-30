@@ -589,12 +589,18 @@ func (a *App) registerHover() {
 	r.DefineGuard("rows-in-sub-table", func(_ *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.inData(ev.Focus) && a.hoverIn()
 	})
-	// The list's own column verbs (choose, resize, pin) act on the row's
-	// columns: their rows carry this guard so a sub-table does not offer
-	// them (ochazuke's verbs take no availability from o-json).
+	// The list's own column verbs (choose, resize, reset, pin) act on the
+	// row's columns, so a sub-table does not offer them: o-json adds this
+	// guard to each verb beside its own, and keys, hints, the palette and
+	// Execute all drop it there.
 	r.DefineGuard("rows-on-row", func(_ *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return !a.inData(ev.Focus) || !a.hoverIn()
 	})
+	for _, verb := range []string{"ochazuke.list.choose-column", "ochazuke.list.resize-column", "ochazuke.list.reset-columns", "ochazuke.list.toggle-pin-column"} {
+		if err := r.AddVerbAvailability(verb, "rows-on-row"); err != nil {
+			panic(err) // ochazuke's own verbs: a rename is a bug here
+		}
+	}
 	r.Define("rows").
 		Verb("column", func(c ochazuke.Ctx) ochazuke.Result {
 			steps := max(1, ochazuke.IntArg(c.Args, "steps", 1))
