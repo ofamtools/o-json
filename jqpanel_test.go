@@ -90,6 +90,13 @@ func TestJQPanelModalAndOff(t *testing.T) {
 	if a.r.TopModal() != jqPanelModalID || !strings.Contains(view(a), "jq program") {
 		t.Fatalf("modal %q\n%s", a.r.TopModal(), view(a))
 	}
+	// tab in the modal shows the whole mapping, several lines, in the
+	// same input (Input.SetText keeps one line of a one-line input).
+	press(t, a, "tab")
+	view(a)
+	if got := string(a.jqp.in.Text); got != a.panelText() || !strings.Contains(got, "\n") || !a.jqp.in.Multiline {
+		t.Fatalf("modal mapping view %q", got)
+	}
 	press(t, a, "esc")
 	view(a)
 	if a.r.TopModal() != "" || a.jqp.open {

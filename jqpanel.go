@@ -181,11 +181,11 @@ func (a *App) syncJQPanel() {
 	}
 	if in := a.jqp.in; string(in.Text) != text {
 		// The mapping changed: the viewer shows the new text, a fresh
-		// history, the cursor kept where it fits (ochazuke has no setter
-		// for a read-only input's text; Replace leaves it as it is).
-		in.Text = []rune(text)
-		in.History, in.Head = []ochazuke.EditNode{{Text: text, Parent: -1}}, 0
-		in.Cursor = min(in.Cursor, max(0, len(in.Text)-1))
+		// history, the cursor kept where it fits (Input.SetText). The
+		// modal keeps its input, so it takes several lines when the text
+		// does (SetText keeps one line of a one-line input).
+		in.Multiline = in.Multiline || strings.Contains(text, "\n")
+		in.SetText(text)
 	}
 }
 
