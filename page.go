@@ -1839,10 +1839,10 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 	th := max(3, bh*3/5)
 	mh := bh - th
 	var body string
-	if only := a.sideOnly(); a.layout() == "single" || only != "" {
+	if only := a.r.PaneOnly(rsPageID); a.layout() == "single" || only != "" {
 		shown := a.rs.shown
-		if only != "" {
-			shown = only
+		if side := a.sideOf(a.r.Focus); only != "" && side != "" {
+			shown = side // ctrl+w o (pane.only): the focused side alone
 		}
 		body = treePanel(shown, width, th).Text + "\n" + mapPanel(width, mh).Text
 	} else {

@@ -1,13 +1,11 @@
 package main
 
 // Window keys in Vim's form: ctrl+w h / l move to the pane on that side
-// and stop at the edge (viewer.pane), ctrl+w o shows only one pane
-// (viewer.only) and ctrl+w o again or ctrl+w = brings the other back.
-// Which pane ctrl+w o keeps is data: each mode's binding rows give
-// viewer.only its pane (SHAPE: structure; TABLE, NESTED, FLAT, JSON:
-// data; JQ, SPLIT and the rest: the focused one), so the footer's hint
-// names it. Moving the focus to the hidden pane (ctrl+a o, a command)
-// brings the layout back, as Vim's window keys would find no window there.
+// and stop at the edge (viewer.pane). ctrl+w o is ochazuke's pane.only
+// (v0.61.0, UX-RULES R3.16): the focused pane alone; ctrl+w o again or
+// ctrl+w = (pane.restore) brings the other back, and so does moving the
+// focus to the hidden pane. Each mode's own row carries the footer hint
+// (only structure, only data). viewer.only stays as a verb over them.
 
 import (
 	"errors"
@@ -19,26 +17,6 @@ const (
 	paneStructure = "structure"
 	paneData      = "data"
 )
-
-// paneOnly is the viewer pane ctrl+w o keeps ("" for both). A focus on
-// the hidden pane restores both.
-func (a *App) paneOnly(structureFocused, dataFocused bool) string {
-	if a.only == paneStructure && dataFocused || a.only == paneData && structureFocused {
-		a.only = ""
-	}
-	return a.only
-}
-
-// sideOnly is the restructure page's side ctrl+w o keeps (its tree's
-// instance, "" for both); a focus on the other side restores both.
-func (a *App) sideOnly() string {
-	if a.rsOnly != "" {
-		if side := a.sideOf(a.r.Focus); side != "" && side != a.rsOnly {
-			a.rsOnly = ""
-		}
-	}
-	return a.rsOnly
-}
 
 // focusStructure focuses the structure pane the viewer shows: the edited
 // tree, or the original.
@@ -54,53 +32,30 @@ func (a *App) structureFocused() bool {
 	return a.tree.List().Focused() || a.rs.tree.List().Focused() || a.r.Focus == treeID || a.r.Focus == rsTreeID
 }
 
-// onlyPane is viewer.only: pane is structure, data, focused or none.
-// With one pane already alone, it restores both (ctrl+w o again).
+// onlyPane is viewer.only, kept as a verb over ochazuke's pane.only and
+// pane.restore (v0.61.0; the keys run those): pane is structure, data,
+// focused or none. With one pane already alone, it restores both.
 func (a *App) onlyPane(c ochazuke.Ctx, pane string) error {
-	if a.r.Page == rsPageID {
-		if a.rsOnly != "" || pane == "none" {
-			a.rsOnly = ""
-			c.Info("both sides shown")
-			return nil
-		}
-		side := a.sideOf(a.r.Focus)
-		if side == "" {
-			return errors.New("focus a side first")
-		}
-		a.rsOnly = side
-		c.Info("this side only · ctrl+w o again or ctrl+w = restores")
-		return nil
-	}
-	if a.only != "" || pane == "none" {
-		a.only = ""
+	page := a.r.Page
+	if a.r.PaneOnly(page) != "" || pane == "none" {
 		c.Info("both panes shown")
-		return nil
+		return a.r.RestorePanes(page)
 	}
-	if pane == "focused" || pane == "" {
-		pane = paneStructure
-		if a.inData(a.r.Focus) {
-			pane = paneData
-		}
-	}
+	keep := ""
 	switch pane {
+	case "focused", "":
 	case paneStructure:
-		if !a.structureFocused() {
-			if err := a.focusStructure(); err != nil {
-				return err
-			}
+		keep = treeID
+		if a.editedShown() {
+			keep = rsTreeID
 		}
 	case paneData:
-		if !a.inData(a.r.Focus) {
-			if err := a.data.list.Focus(); err != nil {
-				return err
-			}
-		}
+		keep = a.data.id
 	default:
 		return errors.New("pane is structure, data, focused or none")
 	}
-	a.only = pane
-	c.Info(pane + " pane only · ctrl+w o again or ctrl+w = restores")
-	return nil
+	c.Info("one pane · ctrl+w o again or ctrl+w = restores")
+	return a.r.ShowPaneOnly(page, keep)
 }
 
 // movePane is viewer.pane: to is left or right; at the edge it stays.
@@ -131,19 +86,13 @@ func (a *App) registerPaneVerbs() {
 		}
 		return ochazuke.Done(nil)
 	}
-	r.DefineGuard("pane-alone", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool {
-		if a.r.Page == rsPageID {
-			return a.rsOnly != ""
-		}
-		return a.only != ""
-	})
 	r.Define("viewer").
 		Verb("only", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.onlyPane(c, ochazuke.StringArg(c.Args, "pane", "focused")))
 		}, "Show only one pane (ctrl+w o): structure, data or the focused one, as the mode's row says; again, or with pane none, both come back").
 		Verb("restore", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.onlyPane(c, "none"))
-		}, "Show both panes again after ctrl+w o (ctrl+w =)").When("pane-alone").
+		}, "Show both panes again after ctrl+w o (ctrl+w =)").When("pane-only").
 		Verb("pane", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.movePane(ochazuke.StringArg(c.Args, "to", "right")))
 		}, "Move the focus to the pane on the left or right (ctrl+w h, ctrl+w l); at the edge it stays, as in Vim")

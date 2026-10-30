@@ -37,7 +37,7 @@ Updated as each item lands; the sections below describe what is built.
 |---|---|---|
 | View cycle from either pane, remembered per path, counts | `D`, `tab`, `shift+tab` | done |
 | Window keys: left/right stop at the edge, cycle | `ctrl+w h/l/w`, `ctrl+a o` | done |
-| Only the mode's pane, restore | `ctrl+w o`, `ctrl+w =` | done |
+| Only the mode's pane, restore | `ctrl+w o`, `ctrl+w =` | done (ochazuke's `pane.only`, `pane.restore`) |
 | FLAT: yank line / path / value, jump | `y y`, `y p`, `y v`, `enter` | done |
 | JSON: folds, bracket, yank, jump | `z a z o z c z M z R`, `%`, `y y`, `y p`, `enter` | done |
 
@@ -87,7 +87,7 @@ Updated as each item lands; the sections below describe what is built.
 | `esc` rows: `mode.set {mode: declared}` | done (EDIT's `esc`; `viewer.edit-leave` kept as a verb) |
 | Badge colours: `SetModeTone` per mode (no whole-accent recolour) | done |
 | SEARCH / JQ line modes extend insert (completion, per-session undo, `JQ` badge while typing) | done |
-| `ctrl+w o` / `ctrl+w =`: `ochazuke.pane.only` / `pane.restore`, `SplitFocusBlock` | missing |
+| `ctrl+w o` / `ctrl+w =`: `ochazuke.pane.only` / `pane.restore`, `SplitFocusBlock` | done (UX-RULES R3.16; `viewer.only`/`viewer.restore` kept as verbs over them) |
 
 ### Grammar inside SHAPE / TABLE / NESTED (Design B)
 
@@ -133,8 +133,9 @@ its trial colour (each mode's badge tone, `mode.<name>`, declared with ochazuke'
   view is remembered per path; Results and jq result are overlays shown
   over every path until `esc` clears them or the cycle steps off them.
 - `ctrl+w h` / `ctrl+w l` move to the left / right pane and stop at the
-  edge; `ctrl+w w` and `ctrl+a o` cycle. `ctrl+w o` shows only one pane:
-  which one is each mode's binding row on the focused noun (`node/shape`,
+  edge; `ctrl+w w` and `ctrl+a o` cycle. `ctrl+w o` (ochazuke's
+  `pane.only`, R3.16) shows only the focused pane, drawn with
+  `SplitFocusBlock`; the footer hint is each mode's row on the focused noun (`node/shape`,
   `shape/shape`: structure; `item/table`, `field/table`, `item/nested`,
   `field/nested`, `line/flat`, `line/json`, `line/search`: data; elsewhere the focused
   pane, on the split the focused side). `ctrl+w o` again, `ctrl+w =`, or

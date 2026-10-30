@@ -8,12 +8,12 @@
       {"key": "ctrl+a o", "action": "ochazuke.focus.next", "hint": "other pane"},
       {"key": "ctrl+w h", "action": "viewer.pane", "args": {"to": "left"}, "hint": "left pane"},
       {"key": "ctrl+w l", "action": "viewer.pane", "args": {"to": "right"}, "hint": "right pane"},
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "focused"}, "hint": "only this pane"},
       {"key": "ctrl+w w", "action": "ochazuke.focus.next", "hidden": true},
       {"key": "ctrl+w v", "action": "restructure.open", "hint": "split structure"},
       {"key": "ctrl+w >", "action": "ochazuke.pane.grow", "hint": "ctrl+w >/< resize", "from": {"steps": "count"}},
       {"key": "ctrl+w <", "action": "ochazuke.pane.shrink", "from": {"steps": "count"}, "hidden": true},
-      {"key": "ctrl+w =", "action": "ochazuke.pane.reset", "hidden": true}
+      {"key": "ctrl+w =", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w =", "action": "ochazuke.pane.reset", "when": "pane-split", "hidden": true}
     ]},
     {"context": "rows/normal", "bindings": [
       {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "views"},
@@ -92,7 +92,6 @@
     ]},
     {"context": "viewer/normal", "bindings": [
       {"key": "g m", "action": "viewer.mode", "hint": "choose mode"},
-      {"key": "ctrl+w =", "action": "viewer.restore", "hidden": true},
       {"key": "g r", "action": "viewer.raw-edit", "hint": "raw edit"},
       {"key": "/", "action": "search.focus", "hint": "search"},
       {"key": "/", "action": "viewer.search"},
@@ -154,7 +153,6 @@
     ]},
     {"context": "restructure/normal", "bindings": [
       {"key": "ctrl+a o", "action": "restructure.show", "hint": "other side"},
-      {"key": "ctrl+w =", "action": "viewer.restore", "hidden": true},
       {"key": "L", "action": "restructure.layout", "hint": "layout"},
       {"key": "g j", "action": "jq-panel.toggle", "hint": "jq panel"},
       {"key": "u", "action": "restructure.undo", "hint": "u/ctrl+r undo/redo"},
@@ -280,12 +278,14 @@
       {"key": "shift+tab", "unbind": true}
     ]},
     {"context": "shape/shape", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only structure"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/! op"},
       {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
     ]},
     {"context": "node/shape", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only structure"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/! op"},
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "edit-open", "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "edit-open", "hidden": true},
@@ -310,7 +310,8 @@
       {"key": "g e", "action": "viewer.needs-edit", "hidden": true}
     ]},
     {"context": "node/edit", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only structure"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/! op"},
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "hidden": true},
@@ -318,7 +319,8 @@
       {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "declared"}, "hint": "leave EDIT"}
     ]},
     {"context": "item/table", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only data"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
@@ -327,7 +329,8 @@
       {"key": "Y", "action": "item.operate", "args": {"op": "y", "object": "row", "inner": false}, "hidden": true}
     ]},
     {"context": "field/table", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only data"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
@@ -335,7 +338,8 @@
       {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
     ]},
     {"context": "item/nested", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only data"},
       {"key": "esc", "action": "rows.out", "hint": "esc/backspace out"},
       {"key": "backspace", "action": "rows.out", "args": {"levels": "one"}, "hidden": true},
       {"key": "-", "action": "rows.out", "args": {"levels": "one"}, "hidden": true},
@@ -348,7 +352,8 @@
       {"key": "Y", "action": "item.operate", "args": {"op": "y", "object": "row", "inner": false}, "hidden": true}
     ]},
     {"context": "field/nested", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only data"},
       {"key": "esc", "action": "rows.out", "hint": "esc/backspace out"},
       {"key": "backspace", "action": "rows.out", "args": {"levels": "one"}, "hidden": true},
       {"key": "-", "action": "rows.out", "args": {"levels": "one"}, "hidden": true},
@@ -556,14 +561,16 @@
       {"key": "y", "action": "line.yank"}
     ]},
     {"context": "line/flat", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only data"},
       {"key": "y y", "action": "line.yank-part", "args": {"part": "line"}, "hint": "y y/p/v line/path/value"},
       {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
       {"key": "y v", "action": "line.yank-part", "args": {"part": "value"}, "hidden": true},
       {"key": "enter", "action": "line.jump", "hint": "go to path"}
     ]},
     {"context": "line/search", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only data"},
       {"key": "enter", "action": "line.jump", "hint": "go to hit"},
       {"key": "y y", "action": "line.yank-part", "args": {"part": "value"}, "hint": "y y/p value/path"},
       {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
@@ -571,7 +578,8 @@
       {"key": "N", "action": "search.next", "args": {"steps": -1}, "hidden": true}
     ]},
     {"context": "line/json", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hidden": true},
+      {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only data"},
       {"key": "y y", "action": "line.yank-part", "args": {"part": "value"}, "hint": "y y/p value/path"},
       {"key": "y p", "action": "line.yank-part", "args": {"part": "path"}, "hidden": true},
       {"key": "enter", "action": "line.jump", "hint": "go to path"},

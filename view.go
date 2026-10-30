@@ -15,10 +15,10 @@ import (
 // resets it, remembered per page) through PaneLayout and Divide: the
 // default split below is the first argument, and the framework moves it.
 //
-// Layout.SplitFocusBlock is not used: it sizes the split from the whole
-// viewport (BodySize less the page chrome) and stacks below 72 columns,
-// while this renderer gets the page body, draws a breadcrumb line above
-// the panels and gives the tree its natural width.
+// Layout.SplitFocusBlock draws only ctrl+w o's one pane (pane.only): for
+// the split it sizes from the whole viewport and stacks below 72 columns,
+// while this renderer draws a breadcrumb line above the panels and gives
+// the tree its natural width.
 
 // stackWidth is the page width below which the panels stack.
 const stackWidth = 60
@@ -61,9 +61,9 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	var left, right ochazuke.Block
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth
-	only := a.paneOnly(treeFocused || a.r.Focus == jqFieldID, dataFocused)
-	if only != "" {
-		// ctrl+w o (viewer.only): one pane takes the page.
+	if l.Only {
+		// ctrl+w o (ochazuke's pane.only): the focused pane takes the
+		// body, drawn by SplitFocusBlock below.
 		stacked = false
 		lw, lh, rw, rh = width, bh, width, bh
 	} else if stacked {
@@ -89,16 +89,31 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if qh > 0 {
 		inner = ochazuke.Block{Text: q.Text + "\n" + inner.Text, Cursor: q.Cursor}
 	}
-	left = l.PanelBlock(a.treeTitle(), inner, lw, lh, treeFocused || a.r.Focus == jqFieldID)
-	cw, ch = ochazuke.PanelContentSize(rw, rh)
-	right = l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), rw, rh, dataFocused)
+	cw2, ch2 := ochazuke.PanelContentSize(rw, rh)
+	dataBody := a.dataBlock(cw2, ch2)
 	var body string
+	if l.Only {
+		side := ochazuke.SplitLeft
+		if dataFocused {
+			side = ochazuke.SplitRight
+		}
+		ol := l
+		ol.Height = bh + 1 // BodySize leaves one row: the breadcrumb's
+		one := ol.SplitFocusBlock(side, a.treeTitle(), inner, a.dataTitle(), dataBody)
+		body, cursor := one.Text, one.Offset(0, 1)
+		if ph > 0 {
+			panel := a.jqPanelBlock(l, width, ph)
+			body += "\n" + panel.Text
+			if panel.Cursor != nil {
+				cursor = panel.Offset(0, 1+bh)
+			}
+		}
+		return cursor.WithText(crumb + "\n" + body)
+	}
+	left = l.PanelBlock(a.treeTitle(), inner, lw, lh, treeFocused || a.r.Focus == jqFieldID)
+	right = l.PanelBlock(a.dataTitle(), dataBody, rw, rh, dataFocused)
 	cursor := right.Offset(lw+1, 1)
-	if only == paneData {
-		body, cursor = right.Text, right.Offset(0, 1)
-	} else if only == paneStructure {
-		body = left.Text
-	} else if stacked {
+	if stacked {
 		body = left.Text + "\n" + right.Text
 		cursor = right.Offset(0, 1+lh)
 	} else {

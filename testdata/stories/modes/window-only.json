@@ -8,9 +8,9 @@
   "script": ["ctrl+w", "h", "ctrl+w", "o", "ctrl+w", "o", "ctrl+w", "l", "ctrl+w", "o", "ctrl+w", "="],
   "expect": [
     {"after": 2, "mode": "shape", "contains": ["Structure", "Object ."]},
-    {"after": 4, "mode": "shape", "contains": ["structure pane only"], "lacks": ["Object ."]},
+    {"after": 4, "mode": "shape", "contains": ["Structure"], "lacks": ["Object ."]},
     {"after": 6, "contains": ["Object ."]},
-    {"after": 10, "mode": "table", "contains": ["data pane only", "Object ."], "lacks": ["Structure"]},
+    {"after": 10, "mode": "table", "contains": ["Object ."], "lacks": ["Structure"]},
     {"mode": "table", "contains": ["Structure", "Object ."]}
   ]
 }

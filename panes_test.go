@@ -14,42 +14,43 @@ func TestWindowOnlyAndEdges(t *testing.T) {
 		t.Fatalf("ctrl+w h at the left edge moved to %q", a.r.Focus)
 	}
 	press(t, a, "ctrl+w", "o")
-	if a.only != paneStructure {
-		t.Fatalf("SHAPE ctrl+w o: only %q", a.only)
+	if a.r.PaneOnly(pageID) == "" || !strings.Contains(view(a), "Structure") || strings.Contains(view(a), "Object .") {
+		t.Fatalf("SHAPE ctrl+w o: only %q", a.r.PaneOnly(pageID))
 	}
 	press(t, a, "ctrl+w", "o")
-	if a.only != "" {
-		t.Fatalf("ctrl+w o again: only %q", a.only)
+	if a.r.PaneOnly(pageID) != "" {
+		t.Fatalf("ctrl+w o again: only %q", a.r.PaneOnly(pageID))
 	}
 	press(t, a, "ctrl+w", "l", "ctrl+w", "l")
 	if !a.inData(a.r.Focus) {
 		t.Fatalf("ctrl+w l twice: focus %q", a.r.Focus)
 	}
 	press(t, a, "ctrl+w", "o")
-	if a.only != paneData {
-		t.Fatalf("TABLE ctrl+w o: only %q", a.only)
+	if a.r.PaneOnly(pageID) == "" || strings.Contains(view(a), "Structure") {
+		t.Fatalf("TABLE ctrl+w o: only %q", a.r.PaneOnly(pageID))
 	}
 	press(t, a, "ctrl+w", "=")
-	if a.only != "" {
-		t.Fatalf("ctrl+w =: only %q", a.only)
+	if a.r.PaneOnly(pageID) != "" {
+		t.Fatalf("ctrl+w =: only %q", a.r.PaneOnly(pageID))
 	}
 	press(t, a, "ctrl+w", "o", "ctrl+a", "o")
 	view(a)
-	if a.only != "" || !a.structureFocused() {
-		t.Fatalf("focus to the hidden pane: only %q focus %q", a.only, a.r.Focus)
+	if a.r.PaneOnly(pageID) != "" || !a.structureFocused() {
+		t.Fatalf("focus to the hidden pane: only %q focus %q", a.r.PaneOnly(pageID), a.r.Focus)
 	}
 }
 
 // On the split page ctrl+w o keeps the focused side; ctrl+w = restores.
 func TestSplitOnlySide(t *testing.T) {
 	a := open(t, "testdata/sample.json", 110, 30)
-	press(t, a, "ctrl+w", "v", "ctrl+w", "o")
-	if a.rsOnly != rsOrigID || !strings.Contains(view(a), "Original") || strings.Contains(view(a), "Restructured") {
-		t.Fatalf("split ctrl+w o: only %q", a.rsOnly)
+	press(t, a, "ctrl+w", "v")
+	press(t, a, "ctrl+w", "o")
+	if a.r.PaneOnly(rsPageID) == "" || !strings.Contains(view(a), "Original") || strings.Contains(view(a), "Restructured") {
+		t.Fatalf("split ctrl+w o: only %q", a.r.PaneOnly(rsPageID))
 	}
 	press(t, a, "ctrl+w", "=")
-	if a.rsOnly != "" || !strings.Contains(view(a), "Restructured") {
-		t.Fatalf("split ctrl+w =: only %q", a.rsOnly)
+	if a.r.PaneOnly(rsPageID) != "" || !strings.Contains(view(a), "Restructured") {
+		t.Fatalf("split ctrl+w =: only %q", a.r.PaneOnly(rsPageID))
 	}
 }
 

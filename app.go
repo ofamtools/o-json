@@ -50,9 +50,6 @@ type App struct {
 	// folds is the JSON view's folded containers (document paths) per
 	// shown structure path.
 	folds map[string]map[string]bool
-	// only is the viewer pane ctrl+w o keeps alone (panes.go), rsOnly
-	// the restructure page's side; "" shows both.
-	only, rsOnly string
 	// sr is the search line's type and hits, overlay the view over the
 	// structure's own (search.go): results, jq or "".
 	sr searchState
