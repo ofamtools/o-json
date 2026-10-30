@@ -30,19 +30,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if !a.editedShown() && a.sideOf(r.Focus) == rsTreeID {
 		_ = a.tree.Focus() // the edited structure is not shown (structure.editable went off)
 	}
-	if ve := a.vedit; ve != nil && ve.modal != nil && r.Instances[valueEditorID] == nil {
-		a.vedit = nil // the value editor was closed another way: nothing changed
-	}
-	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view != a.detail && r.Focus != valueInputID {
-		// The focus left the inline input (a click, a page): its text is
-		// the edit, as enter would make it.
-		if err := a.accept(); err != nil {
-			a.LoadErr = err
-		}
-	}
-	if err := a.sync(); err != nil {
-		a.LoadErr = err
-	}
+	a.syncData()
 	a.syncDeclaredMode() // the pins of a view the event changed, before the badge draws
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := a.r.PaneLayout(pageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
@@ -135,6 +123,26 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 		}
 	}
 	return cursor.WithText(crumb + "\n" + body)
+}
+
+// syncData settles the data pane before a frame: a value edit the focus
+// left is made, and the pane follows the selection (sync). The viewer and
+// the restructure page's preview both run it.
+func (a *App) syncData() {
+	r := a.r
+	if ve := a.vedit; ve != nil && ve.modal != nil && r.Instances[valueEditorID] == nil {
+		a.vedit = nil // the value editor was closed another way: nothing changed
+	}
+	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view != a.detail && r.Focus != valueInputID {
+		// The focus left the inline input (a click, a page): its text is
+		// the edit, as enter would make it.
+		if err := a.accept(); err != nil {
+			a.LoadErr = err
+		}
+	}
+	if err := a.sync(); err != nil {
+		a.LoadErr = err
+	}
 }
 
 func at(rows []string, i int) string {
@@ -274,11 +282,25 @@ func (a *App) dataNode() *Node {
 	return nodeAt(a.r.Instances[item.ID])
 }
 
+// dataTitle is the data pane's title: the view shown and its path (and
+// the row of a table), then the strip of the views D cycles through
+// (viewStrip), the shown one marked.
 func (a *App) dataTitle() string {
+	title := a.viewTitle()
+	if strip := a.viewStrip(); strip != "" && a.shown != nil {
+		title += "  ·  " + strip
+	}
+	return title
+}
+
+// viewTitle names the view shown and its path.
+func (a *App) viewTitle() string {
 	s := a.shown
 	switch {
 	case s == nil:
 		return "Data"
+	case a.mappingShowing() && s == a.mapv.view:
+		return "Mapping"
 	case a.Raw:
 		return "JSON " + s.Path
 	case a.viewName == viewFlat:

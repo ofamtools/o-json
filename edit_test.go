@@ -23,8 +23,8 @@ func TestEditModeGatesValueEdits(t *testing.T) {
 	before := len(a.rs.patches)
 	Press(a.m, "d")
 	Press(a.m, "d")
-	if !strings.Contains(a.m.Status, "press i first") || len(a.rs.patches) != before {
-		t.Fatalf("d d in TABLE: status %q patches %d", a.m.Status, len(a.rs.patches))
+	if !strings.Contains(a.m.Info, "d d changes the document: press i first") || a.m.Status != "" || len(a.rs.patches) != before {
+		t.Fatalf("d d in TABLE: info %q patches %d", a.m.Info, len(a.rs.patches))
 	}
 	press(t, a, "i")
 	if a.r.BaseMode() != "edit" {

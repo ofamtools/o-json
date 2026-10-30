@@ -58,7 +58,9 @@ func TestSplitOnlySide(t *testing.T) {
 // side pulls the original's, and the other direction refuses.
 func TestSplitPushPull(t *testing.T) {
 	a := open(t, "testdata/sample.json", 110, 30)
-	press(t, a, "ctrl+w", "v", "j", "d", "p")
+	press(t, a, "ctrl+w", "v")
+	cleared(t, a)
+	press(t, a, "j", "d", "p")
 	if got := len(a.Mapping().Map); got != 1 {
 		t.Fatalf("d p: %d entries", got)
 	}

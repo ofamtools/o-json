@@ -2,7 +2,7 @@
    › testdata/reshape.json  Restructure                                                                                 
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json [+]  ·  .people (object 1/1)                                                                    
-  ╭━ Structure · edited [+] ━━━━━━━━━━━━━━━━━━━╮ ╭─ Object .people ──────────────────────────────────────────────────╮  
+  ╭━ Structure · edited [+] ━━━━━━━━━━━━━━━━━━━╮ ╭─ Object .people  ·  [table] fields flat json mapping ─────────────╮  
   ┃ substr / to search                         ┃ │ p1   p2   p1-2  _missing                                          │  
   ┃ key              type    from              ┃ │ {4}  {4}  {3}   [1]                                               │  
   ┃ ▾ . (root)       object                    ┃ │                                                                   │  
@@ -20,5 +20,5 @@
   ┃ 1–12 / 25                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  ctrl+w o only structure · y/d/c/! op · S wrap · t array · r rename · u/ctrl+r undo/redo · p/P put · m query mode · …  
+  ctrl+w o only structure · tab/D views · ctrl+w l data · ctrl+w v split · y/d/c/! op · S wrap · t array · r rename ·…  
                                                                                                                         

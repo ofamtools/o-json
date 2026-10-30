@@ -1,0 +1,13 @@
+{
+  "name": "o-jj: closing the split returns to the viewer's structure row (R3.9, P4)",
+  "area": "split",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["j", "j", "j", "ctrl+w", "v", "q"],
+  "expect": [
+    {"after": 3, "contains": [".items ("]},
+    {"mode": "shape", "contains": [".items ("]}
+  ]
+}

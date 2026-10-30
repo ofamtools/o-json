@@ -1,0 +1,18 @@
+{
+  "name": "o-jj: D on the restructured tree steps the preview's view; the preview is a focus stop with its declared mode: ctrl+w l from the restructured tree or ctrl+w j reach it, ctrl+w k and ctrl+w h leave it",
+  "area": "split",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["ctrl+w", "v", "ctrl+w", "l", "D", "ctrl+w", "l", "ctrl+w", "k", "ctrl+w", "j", "tab", "ctrl+w", "h"],
+  "expect": [
+    {"after": 4, "mode": "split", "contains": ["Restructured", "Object ."]},
+    {"after": 5, "mode": "split", "contains": ["Fields ."]},
+    {"after": 7, "mode": "table", "contains": ["Fields ."]},
+    {"after": 9, "mode": "split"},
+    {"after": 11, "mode": "table"},
+    {"after": 12, "mode": "flat", "contains": ["Flat ."]},
+    {"mode": "split", "contains": ["Flat ."]}
+  ]
+}

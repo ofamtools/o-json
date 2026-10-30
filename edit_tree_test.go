@@ -13,12 +13,12 @@ func TestEditGatesTheStructure(t *testing.T) {
 	gated(t, a)
 	selectPath(t, a, ".version")
 	Press(a.m, "S")
-	if !strings.Contains(a.m.Status, "press i first") || a.r.BaseMode() != "shape" {
-		t.Fatalf("S in SHAPE: %q mode %q", a.m.Status, a.r.BaseMode())
+	if !strings.Contains(a.m.Info, "S changes the document: press i first") || a.m.Status != "" || a.r.BaseMode() != "shape" {
+		t.Fatalf("S in SHAPE: %q mode %q", a.m.Info, a.r.BaseMode())
 	}
 	keys(a, "d", "d")
-	if !strings.Contains(a.m.Status, "press i first") {
-		t.Fatalf("d d in SHAPE: %q", a.m.Status)
+	if !strings.Contains(a.m.Info, "press i first") {
+		t.Fatalf("d d in SHAPE: %q", a.m.Info)
 	}
 	keys(a, "y", "p")
 	if got := yanked(t, a, ""); got != ".version" {

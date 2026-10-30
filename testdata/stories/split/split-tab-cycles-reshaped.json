@@ -1,0 +1,16 @@
+{
+  "name": "o-jj: in SPLIT, D, tab and shift+tab cycle the reshaped data's views from the original tree (R1.10); the document node is an object, so Fields comes before Flat",
+  "area": "split",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["ctrl+w", "v", "j", "D", "D", "tab", "shift+tab"],
+  "expect": [
+    {"after": 2, "mode": "split", "contains": ["Original", "Restructured"]},
+    {"after": 4, "contains": ["Fields "]},
+    {"after": 5, "contains": ["Flat "]},
+    {"after": 6, "contains": ["JSON "]},
+    {"contains": ["Flat "]}
+  ]
+}

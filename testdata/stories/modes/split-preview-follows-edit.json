@@ -1,0 +1,14 @@
+{
+  "name": "o-jj: SPLIT's right side previews the reshaped data at the restructured tree's selection, and follows an edit (d d drops the key's column)",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["ctrl+w", "v", "j", "s", "ctrl+w", "l", "j", "j", "d", "d", "k", "k"],
+  "expect": [
+    {"after": 6, "mode": "split", "contains": ["Object .", "o-json sample  2"]},
+    {"after": 10, "contains": ["Table .items", "alpha"]},
+    {"contains": ["Object .", "o-json sample  [4]"], "lacks": ["o-json sample  2"]}
+  ]
+}

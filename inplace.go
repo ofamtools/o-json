@@ -29,10 +29,11 @@ import (
 // (default on) off keeps the viewer read-only, as it was: the original
 // tree only, and the restructure page alone edits.
 //
-// The restructure page starts empty (the owner's side-by-side style):
-// opened on a state with no edits, it empties it as one undo step;
-// opened on in-place edits, it shows them. Back in the viewer with
-// nothing done there, the copy comes back (that step undone).
+// The restructure page opens on the state as it is: the copy a document
+// starts with, or the in-place edits, beside the original. Starting from
+// nothing is a verb of its own (restructure.clear, one undo step), never
+// a side effect of opening the page, so closing it keeps the viewer's
+// selection and the edits made in the viewer.
 
 const (
 	settingEditable    = "structure.editable"
@@ -52,9 +53,17 @@ func declareEditSettings(r *ochazuke.Runtime) error {
 // editable reports the structure.editable setting.
 func (a *App) editable() bool { return a.r.Settings().Bool(settingEditable) }
 
-// editedShown reports the viewer showing the edited document: the
-// restructured tree in the structure pane and its data in the data pane.
-func (a *App) editedShown() bool { return a.editable() && !a.original && a.Doc != nil }
+// editedShown reports the edited document drawn: in the viewer the
+// restructured tree in the structure pane and its data in the data pane
+// (viewerEdited); on the restructure page always, its preview being the
+// restructured document's data.
+func (a *App) editedShown() bool {
+	return a.Doc != nil && (a.r.Page == rsPageID || a.viewerEdited())
+}
+
+// viewerEdited reports the viewer set to the edited document (not T's
+// original), whichever page is open.
+func (a *App) viewerEdited() bool { return a.editable() && !a.original && a.Doc != nil }
 
 // identity is the restructure that copies the document: the document
 // node and one node per shape, each mapped to itself. A shape is expanded
@@ -111,7 +120,6 @@ func (a *App) copyShape(e *edit, s *Shape, parent string) {
 // brings back the edits it replaced; with none replaced it is the floor
 // (F6). It is the base unsaved compares with.
 func (a *App) startState() error {
-	a.rs.startedEmpty = false
 	clear(a.rs.marks)
 	if !a.editable() {
 		a.rs.patches, a.rs.stages, a.rs.in = nil, nil, nil
@@ -158,23 +166,22 @@ func (a *App) collapseCopy(e edit) error {
 // started with.
 func (a *App) edited() bool { return mappingKey(a.Mapping()) != a.rs.base }
 
-// placeTree lends the restructured tree to a page: it is drawn, focused
-// and keyed there (a focus must sit inside the open page).
+// placeTree lends the restructured tree and the data pane to a page:
+// they are drawn, focused and keyed there (a focus must sit inside the
+// open page). On the restructure page the data pane is the preview of the
+// restructured document (restructure.preview).
 func (a *App) placeTree(page string) {
-	if inst := a.r.Instances[rsTreeID]; inst != nil {
-		inst.Parent = page
+	for _, id := range []string{rsTreeID, dataID} {
+		if inst := a.r.Instances[id]; inst != nil {
+			inst.Parent = page
+		}
 	}
 }
 
-// openedViewer runs when the viewer opens: the restructured tree comes
-// back to it, and a restructure page that started empty and was left
-// empty gives the copy back (its start undone).
+// openedViewer runs when the viewer opens: the restructured tree and the
+// data pane come back to it.
 func (a *App) openedViewer() {
 	a.placeTree(pageID)
-	if a.rs.startedEmpty && len(a.Mapping().Map) == 0 {
-		_, _ = a.r.Execute(ochazuke.Request{Noun: "ochazuke.outline", Verb: "undo", Target: rsTreeID})
-	}
-	a.rs.startedEmpty = false
 	// The page keeps the focus it had; one on the page itself or on the
 	// hidden original moves to the structure pane shown.
 	if a.editedShown() && (a.r.Focus == pageID || slices.Contains(a.r.Ancestry(a.r.Focus), treeID)) {
@@ -182,19 +189,23 @@ func (a *App) openedViewer() {
 	}
 }
 
-// openedRestructure runs when the restructure page opens: the tree comes
-// to it, empty when the state has no edits (structure.editable), and the
-// focus goes to the original.
+// openedRestructure runs when the restructure page opens: the tree and
+// the data pane (the preview, restructure.preview) come to it as they
+// are, and the focus goes to the original.
 func (a *App) openedRestructure() {
 	want := a.viewerShape()
 	a.placeTree(rsPageID)
-	if a.editable() && a.Doc != nil && !a.edited() && len(a.rs.tree.Nodes()) > 1 {
-		root := edit{nodes: []ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}, meta: map[string]nodeMeta{}}
-		if a.commit("start empty", rsRootID, root) == nil {
-			a.rs.startedEmpty = true
-		}
-	}
 	_ = a.focusOriginal(want)
+}
+
+// clearRestructure is restructure.clear: the restructured tree emptied to
+// the document node, one undo step (u brings the structure back).
+func (a *App) clearRestructure() error {
+	if len(a.rs.tree.Nodes()) <= 1 {
+		return errors.New("the restructure is already empty")
+	}
+	root := edit{nodes: []ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}, meta: map[string]nodeMeta{}}
+	return a.commit("clear", rsRootID, root)
 }
 
 // restructured is the restructured document the edited view shows,

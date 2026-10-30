@@ -2,7 +2,7 @@
    › testdata/nested.json  Restructure                                                                                  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
   testdata/nested.json  ·  . (array ×1)  ·  row [2]                                                                     
-  ╭─ Structure · unchanged ────────────────────╮ ╭━ Table .  3/20 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮  
+  ╭─ Structure · unchanged ────────────────────╮ ╭━ Table .  3/20  ·  [table] flat json mapping ━━━━━━━━━━━━━━━━━━━━━╮  
   │ substr / to search                         │ ┃  #       id  name    active  tags  meta  address?  orders?    12› ┃  
   │ key             type          from         │ ┃  0       1   Ada A   false   []    {2}   {3}       []             ┃  
   │ ▾ . (root)      array                      │ ┃  1       2   Bo B    true    [1]   {2}   {3}       [1]            ┃  
@@ -20,5 +20,5 @@
   │ 1–12 / 28                                  │ ┃  6       7   Gil G   false   [2]   {2}   {3}       []             ┃  
   ╰────────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  ctrl+w o only data · esc/backspace out · D show it · y/d/c/s/! op · enter open · v select rows · r/i edit · u/ctrl+…  
+  ctrl+w o only data · esc/backspace out · D show it · y/d/c/s/! op · enter open · tab/D views · v select rows · r/i …  
                                                                                                                         

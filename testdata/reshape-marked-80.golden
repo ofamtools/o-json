@@ -2,7 +2,7 @@
    › testdata/reshape.json  Restructure                                         
   ────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json  ·  .people[].address.city (string 2/2)                 
-  ╭━ Structure · 2 marked · … ━╮ ╭─ Table .people[].address  1/2 ────────────╮  
+  ╭━ Structure · 2 marked · … ━╮ ╭─ Table .people[].address  1/2  ·  [tabl… ─╮  
   ┃ substr / to search         ┃ │ #  city  zip?                             │  
   ┃   key                   2› ┃ │ 0  Oslo  0150                             │  
   ┃   ▾ . (root)               ┃ │ 1  Rome                                   │  
@@ -20,5 +20,5 @@
   ┃                            ┃ │                                           │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────  
-  ctrl+w o only structure · y/d/c/! op · < < out · S wrap · t array · r renam…  
+  ctrl+w o only structure · tab/D views · ctrl+w l data · ctrl+w v split · y/…  
                                                                                 

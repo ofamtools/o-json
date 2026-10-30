@@ -41,7 +41,7 @@ var settingSections = []settingSection{
 		{"Panel", []string{settingJQPanel, settingJQPanelHeight}},
 	}},
 	{ochazuke.SettingSection{ID: "restructure", Title: "Restructure", Description: "The restructure page and the edits on the restructured tree"}, []settingGroup{
-		{"", []string{settingLayout, settingNewKey, settingVisualPut, settingVisualWrap, settingVisualEdge, settingRepeatScope}},
+		{"", []string{settingLayout, settingPreview, settingNewKey, settingVisualPut, settingVisualWrap, settingVisualEdge, settingRepeatScope}},
 	}},
 	{ochazuke.SettingSection{ID: "reshape", Title: "Reshape", Description: "The reshape steps: flatten, key by and the marks they act on"}, []settingGroup{
 		{"Flatten", []string{settingFlattenArrays, settingFlattenJoin, settingFlattenNames}},

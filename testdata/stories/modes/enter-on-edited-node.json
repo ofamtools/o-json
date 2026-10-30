@@ -1,0 +1,13 @@
+{
+  "name": "o-jj: enter on the edited structure folds the node (Design D decision 10), as on the original",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["j", "j", "j", "enter"],
+  "expect": [
+    {"after": 3, "contains": ["▾ items"]},
+    {"mode": "shape", "contains": ["▸ items"]}
+  ]
+}

@@ -50,7 +50,15 @@ const (
 	// apply to it.
 	rsRootID      = "r:root"
 	settingLayout = "restructure.layout"
-	settingNewKey = "restructure.new-key"
+	// settingPreview is what the restructure page shows under the
+	// restructured tree: data (the restructured document's data at the
+	// selected node, in the data pane's views), mapping (the mapping's
+	// text) or off (the trees take the height).
+	settingPreview = "restructure.preview"
+	previewData    = "data"
+	previewMapping = "mapping"
+	previewOff     = "off"
+	settingNewKey  = "restructure.new-key"
 	// toneOrigin marks, on one tree, where the other tree's selected node
 	// comes from or went to: the built-in queued tone, the scheme's accent
 	// as the foreground (a background tone waits for the library).
@@ -87,9 +95,6 @@ type restructureState struct {
 	// base is the mapping (mappingKey) the document started with: its
 	// copy, or the empty restructure; unsaved compares with it.
 	base string
-	// startedEmpty is a restructure page that emptied the copy when it
-	// opened, with no change made since (inplace.go).
-	startedEmpty bool
 	// patches are the value edits applied after the restructure
 	// (patch.go, values.go), part of the mapping.
 	patches []Patch
@@ -118,6 +123,9 @@ func declareSettings(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingLayout, Type: ochazuke.SettingString, Default: "split", Enum: []string{"split", "single"},
 		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, ctrl+a o swaps them",
+	}, ochazuke.Setting{
+		Name: settingPreview, Type: ochazuke.SettingString, Default: previewData, Enum: []string{previewData, previewMapping, previewOff},
+		Description: "Under the restructured tree on the restructure page: data previews the restructured document at the selected node in the data pane's views (D, tab; ctrl+w l or ctrl+w j focuses it), mapping shows the mapping's text, off shows the trees alone",
 	}, ochazuke.Setting{
 		Name: settingNewKey, Type: ochazuke.SettingString, Default: "new-key",
 		Description: "The placeholder key a new object key gets on the restructure page (S wrapping a node, o and O): opened selected, typing replaces it; a sibling with it already gives new-key-2, -3, ...",
@@ -163,7 +171,7 @@ func (a *App) registerRestructure() error {
 	if err != nil {
 		return err
 	}
-	tree.OnChange = func(ochazuke.TreeChange) error { a.rs.dirty, a.rs.startedEmpty = true, false; return nil }
+	tree.OnChange = func(ochazuke.TreeChange) error { a.rs.dirty = true; return nil }
 	tree.RowNoun = "node"
 	tree.NewID = a.newNodeID
 	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, marks: map[string]bool{}, shown: rsOrigID, dirty: true, base: mappingKey(&Mapping{Map: []MapEntry{}})}
@@ -898,7 +906,6 @@ func (a *App) commitStep(label, focus string, e edit, patches []Patch, floor boo
 // commitStaged is commitStep that also makes st the reshape steps: a
 // reshape step closes the tree and opens its output's copy as one step.
 func (a *App) commitStaged(label, focus string, e edit, patches []Patch, st stageState, floor bool) error {
-	a.rs.startedEmpty = false
 	before, was, wasSt := a.current(), slices.Clone(a.rs.patches), a.stagesNow()
 	e.markBuilt()
 	patches = slices.Clone(patches)
@@ -1403,6 +1410,9 @@ func (a *App) registerRestructureVerbs() {
 		Verb("close", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.doneErr(r.OpenPage(pageID))
 		}, "Go back to the viewer; the restructure stays as it is").
+		Verb("clear", func(c ochazuke.Ctx) ochazuke.Result {
+			return a.doneErr(a.clearRestructure())
+		}, "Empty the restructured tree to the document node, to build a structure from nothing (one undo step: u brings it back)").
 		Verb("show", func(c ochazuke.Ctx) ochazuke.Result {
 			side := ochazuke.StringArg(c.Args, "side", "")
 			if side == "edited" {
@@ -1487,7 +1497,16 @@ func (a *App) registerRestructureVerbs() {
 			}
 			return a.writeFile(c, path, []byte(text), writeNewFile, "the mapping", "", func(string) { a.markSaved() })
 		}, "Write the mapping (the --mapping form, o-json restructure --map reads it) to a new file").
-		Verb("mapping", func(c ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.Mapping()) }, "The restructure's mapping, {map: [{from, to}]} (the palette shows it in the text view)").Fetch().TextResult().
+		Verb("mapping", func(c ochazuke.Ctx) ochazuke.Result {
+			if b, _ := c.Args["yank"].(bool); b {
+				text, err := a.mappingText()
+				if err != nil {
+					return ochazuke.Failed(err)
+				}
+				return a.copyAnswering(c, ochazuke.Yank{Text: text}, "the mapping", a.Mapping())
+			}
+			return ochazuke.Done(a.Mapping())
+		}, "The restructure's mapping, {map: [{from, to}]} (the palette shows it in the text view); with yank also copy it as JSON (the --mapping form) into the registers (and the system clipboard as the clipboard setting says)").Fetch().TextResult().
 		Verb("layout", func(c ochazuke.Ctx) ochazuke.Result {
 			l := ochazuke.StringArg(c.Args, "layout", "")
 			if l == "" {
@@ -1507,12 +1526,15 @@ func (a *App) registerRestructureVerbs() {
 		"columns": {Type: "string", Description: "with format, the columns to keep, separated by commas"},
 		"yank":    {Type: "boolean", Description: "also copy the program into the registers (and the system clipboard as the clipboard setting says); omitted, it is only shown"},
 	})
+	params("restructure.mapping", map[string]ochazuke.Parameter{
+		"yank": {Type: "boolean", Description: "also copy the mapping as JSON into the registers (and the system clipboard as the clipboard setting says); omitted, it is only shown"},
+	})
 	params("restructure.export-map", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "the mapping file to write, e.g. NAME.map.json"}})
 	params("restructure.add", map[string]ochazuke.Parameter{"path": {Type: "string", Required: true, Description: "a structure path, e.g. .items[].id"}})
 	params("restructure.show", map[string]ochazuke.Parameter{"side": {Type: "string", Enum: []string{"original", "restructured", "edited"}, Description: "edited is restructured"}})
 	params("restructure.layout", map[string]ochazuke.Parameter{"layout": {Type: "string", Enum: []string{"split", "single"}}})
 	setHistory(r, ochazuke.HistoryAction, "restructure.open", "restructure.close", "restructure.show")
-	setHistory(r, ochazuke.HistoryChange, "shape.send", "restructure.add", "restructure.undo", "restructure.redo",
+	setHistory(r, ochazuke.HistoryChange, "shape.send", "restructure.add", "restructure.clear", "restructure.undo", "restructure.redo",
 		"restructure.write", "restructure.overwrite", "restructure.overwrite-source", "restructure.jq", "restructure.export-map", "restructure.layout")
 }
 
@@ -1554,7 +1576,7 @@ func (a *App) focusOriginal(want string) error {
 // selected: the original's selection, or in the edited view the selected
 // node's origin.
 func (a *App) viewerShape() string {
-	if n, ok := a.rs.tree.Selected(); ok && a.editedShown() && a.rs.meta[n.ID].from != "" {
+	if n, ok := a.rs.tree.Selected(); ok && a.viewerEdited() && a.rs.meta[n.ID].from != "" {
 		return "o:s:" + a.rs.meta[n.ID].from
 	}
 	if n, ok := a.tree.Selected(); ok {
@@ -1778,6 +1800,13 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 	a.decorate()
 	a.highlight()
 	a.syncMarks()
+	preview := a.preview()
+	if preview != previewData && a.inData(r.Focus) {
+		_ = a.rs.tree.Focus() // the preview went (restructure.preview)
+	}
+	if preview == previewData {
+		a.syncData()
+	}
 	a.syncDeclaredMode()
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := r.PaneLayout(rsPageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
@@ -1806,11 +1835,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		case a.Doc == nil:
 			r.Placed(id)
 		case id == rsTreeID && len(a.rs.tree.Nodes()) == 1 && ch > 2:
-			say := "empty: " + a.sendKey() + " on a shape of the original sends it here"
-			if a.rs.startedEmpty {
-				say += "; left empty, the viewer keeps its copy"
-			}
-			hint := wrap(say, cw)
+			hint := wrap("empty: "+a.sendKey()+" on a shape of the original sends it here", cw)
 			body = strings.TrimRight(t.View(cw, t.Height()), "\n") + "\n\n" + hint
 		default:
 			body = t.View(cw, ch)
@@ -1823,7 +1848,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		title := "Mapping"
 		if err != nil {
 			title, text = "Mapping (does not check)", err.Error()
-			if len(a.rs.tree.Nodes()) == 0 {
+			if len(a.rs.tree.Nodes()) <= 1 {
 				title = "Mapping"
 			}
 		}
@@ -1836,20 +1861,57 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		}
 		return l.PanelBlock(title, ochazuke.Text(strings.Join(lines, "\n")), w, h, false)
 	}
-	th := max(3, bh*3/5)
-	mh := bh - th
+	// The preview: the data pane, lent to this page (placeTree), showing
+	// the restructured document at the selected node.
+	previewPanel := func(w, h int) ochazuke.Block {
+		if preview == previewMapping {
+			return mapPanel(w, h)
+		}
+		cw, ch := ochazuke.PanelContentSize(w, h)
+		focused := a.data.list.Focused() || r.Focus == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
+		b := l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), w, h, focused)
+		if !focused {
+			b.Cursor = nil
+		}
+		return b
+	}
+	th, mh := max(3, bh*3/5), 0
+	if preview == previewOff {
+		th = bh
+	}
+	mh = bh - th
 	var body string
-	if only := a.r.PaneOnly(rsPageID); a.layout() == "single" || only != "" {
+	var cursor ochazuke.Block // the preview's cursor (an inline value edit), placed on the page
+	only := a.r.PaneOnly(rsPageID)
+	switch {
+	case only != "" && only == dataID && preview == previewData:
+		p := previewPanel(width, bh)
+		body, cursor = p.Text, p.Offset(0, 1)
+	case a.layout() == "single" || only != "":
 		shown := a.rs.shown
 		if side := a.sideOf(a.r.Focus); only != "" && side != "" {
 			shown = side // ctrl+w o (pane.only): the focused side alone
 		}
-		body = treePanel(shown, width, th).Text + "\n" + mapPanel(width, mh).Text
-	} else {
+		if only != "" {
+			th, mh = bh, 0
+		}
+		body = treePanel(shown, width, th).Text
+		if mh > 0 {
+			p := previewPanel(width, mh)
+			body += "\n" + p.Text
+			cursor = p.Offset(0, 1+th)
+		}
+	default:
 		lw := l.Divide(width/2, width-1, ochazuke.PaneMinWidth)
 		rw := width - lw - 1
 		left := strings.Split(treePanel(rsOrigID, lw, bh).Text, "\n")
-		right := strings.Split(treePanel(rsTreeID, rw, th).Text+"\n"+mapPanel(rw, mh).Text, "\n")
+		rightText := treePanel(rsTreeID, rw, th).Text
+		if mh > 0 {
+			p := previewPanel(rw, mh)
+			rightText += "\n" + p.Text
+			cursor = p.Offset(lw+1, 1+th)
+		}
+		right := strings.Split(rightText, "\n")
 		rows := make([]string, bh)
 		for i := range rows {
 			rows[i] = pad(at(left, i), lw) + " " + at(right, i)
@@ -1858,13 +1920,22 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 	}
 	if ph > 0 {
 		panel := a.jqPanelBlock(l, width, ph)
-		out := panel.Offset(0, 1+bh).WithText(crumb + "\n" + body + "\n" + panel.Text)
-		if panel.Cursor == nil {
-			out.Cursor = nil
+		out := cursor.WithText(crumb + "\n" + body + "\n" + panel.Text)
+		if panel.Cursor != nil {
+			out = panel.Offset(0, 1+bh).WithText(out.Text)
 		}
 		return out
 	}
-	return ochazuke.Text(crumb + "\n" + body)
+	return cursor.WithText(crumb + "\n" + body)
+}
+
+// preview is the restructure.preview setting.
+func (a *App) preview() string {
+	switch v := a.r.Settings().String(settingPreview); v {
+	case previewMapping, previewOff:
+		return v
+	}
+	return previewData
 }
 
 // wrapLong wraps an error to the width; mapping JSON is cut, not wrapped.

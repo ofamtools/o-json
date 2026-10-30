@@ -1,0 +1,12 @@
+{
+  "name": "o-jj: the edited structure's footer leads with the views and the panes (tab/D views, ctrl+w l data, ctrl+w v split)",
+  "area": "modes",
+  "width": 140,
+  "height": 40,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["j"],
+  "expect": [
+    {"mode": "shape", "contains": ["tab/D views · ctrl+w l data · ctrl+w v split"], "lacks": ["J outline.move", "K outline.move"]}
+  ]
+}

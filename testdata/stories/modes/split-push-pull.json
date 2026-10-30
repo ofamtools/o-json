@@ -1,15 +1,16 @@
 {
-  "name": "o-jj: SPLIT d p pushes, d o pulls, v j { wraps",
+  "name": "o-jj: SPLIT d p pushes, d o pulls, v j { wraps (from a cleared restructure: restructure.clear)",
   "area": "modes",
   "width": 120,
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "sample.json"},
-  "script": ["ctrl+w", "v", "j", "d", "p", "j", "ctrl+w", "l", "d", "o", "j", "v", "j", "{"],
+  "script": ["ctrl+w", "v", ":", {"type": "restructure clear"}, "enter", "j", "d", "p", "j", "ctrl+w", "l", "d", "o", "j", "v", "j", "{"],
   "expect": [
     {"after": 2, "mode": "split", "contains": ["Original", "Restructured"]},
-    {"after": 5, "contains": ["sent 1 node(s)", ".name"]},
-    {"after": 10, "contains": [".version"]},
+    {"after": 5, "contains": ["Restructured  0 nodes"]},
+    {"after": 8, "contains": ["sent 1 node(s)", ".name"]},
+    {"after": 13, "contains": [".version"]},
     {"contains": ["new-key"]}
   ]
 }

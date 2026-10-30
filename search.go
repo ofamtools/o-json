@@ -132,7 +132,7 @@ func (a *App) refreshSearch() {
 		return
 	}
 	if text == "" || root == nil {
-		if a.overlay != "" {
+		if a.overlay == overlayResults || a.overlay == overlayJQ {
 			a.overlay = ""
 		}
 		return

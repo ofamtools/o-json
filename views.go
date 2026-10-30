@@ -8,40 +8,23 @@ package main
 // branch in show.
 
 import (
+	"encoding/json"
 	"slices"
+	"strings"
 
 	"github.com/unixsuperhero/ochazuke"
 )
 
 // cycleDataView steps the data pane's view (D, tab; shift+tab back): the
 // structure path's own views that apply, then the overlays that are live
-// (the search's Results, the jq result). A count walks several. A path's
-// own view is remembered per path; an overlay is shown over every path
-// until esc clears it or the cycle steps off it.
+// (the restructure's Mapping, the search's Results, the jq result). A
+// count walks several. A path's own view is remembered per path; an
+// overlay is shown over every path until esc clears it or the cycle
+// steps off it.
 func (a *App) cycleDataView(steps int) error {
-	s := a.selectedShape()
-	if s == nil || steps == 0 {
+	available, current := a.viewCycle()
+	if len(available) == 0 || steps == 0 {
 		return nil
-	}
-	values := s.Values()
-	available := make([]string, 0, len(dataViewOrder)+2)
-	for _, name := range dataViewOrder {
-		if viewApplies(name, values) {
-			available = append(available, name)
-		}
-	}
-	if a.sr.view != nil {
-		available = append(available, overlayResults)
-	}
-	if a.searchJQ() && a.q.goodView != nil {
-		available = append(available, overlayJQ)
-	}
-	current := a.overlay
-	if current == "" {
-		current = a.viewByPath[s.Path]
-		if !viewApplies(current, values) {
-			current = defaultDataView(values, a.r.Settings().String(settingObjectView))
-		}
 	}
 	i := slices.Index(available, current)
 	if i < 0 {
@@ -49,11 +32,11 @@ func (a *App) cycleDataView(steps int) error {
 	}
 	i = ((i+steps)%len(available) + len(available)) % len(available)
 	switch next := available[i]; next {
-	case overlayResults, overlayJQ:
+	case overlayMapping, overlayResults, overlayJQ:
 		a.overlay = next
 	default:
 		a.overlay = ""
-		a.viewByPath[s.Path] = next
+		a.viewByPath[a.selectedShape().Path] = next
 	}
 	if err := a.reshow(); err != nil {
 		return err
@@ -63,6 +46,98 @@ func (a *App) cycleDataView(steps int) error {
 	}
 	a.syncDeclaredMode()
 	return nil
+}
+
+// viewCycle is the views D steps through for the selected path, in
+// order, and the one shown; none without a selected path.
+func (a *App) viewCycle() (available []string, current string) {
+	s := a.selectedShape()
+	if s == nil {
+		return nil, ""
+	}
+	values := s.Values()
+	available = make([]string, 0, len(dataViewOrder)+3)
+	for _, name := range dataViewOrder {
+		if viewApplies(name, values) {
+			available = append(available, name)
+		}
+	}
+	if a.editedShown() {
+		available = append(available, overlayMapping)
+	}
+	if a.sr.view != nil {
+		available = append(available, overlayResults)
+	}
+	if a.searchJQ() && a.q.goodView != nil {
+		available = append(available, overlayJQ)
+	}
+	current = a.overlay
+	if current == "" || !slices.Contains(available, current) {
+		current = a.viewByPath[s.Path]
+		if !viewApplies(current, values) {
+			current = defaultDataView(values, a.r.Settings().String(settingObjectView))
+		}
+	}
+	return available, current
+}
+
+// viewStrip is the data pane title's strip of the cycle: the views D
+// steps through, the shown one in brackets ("table [flat] json mapping").
+// Views that do not apply to the path are left out: a panel title is
+// plain text (ochazuke strips styles from it), so they cannot be dimmed.
+func (a *App) viewStrip() string {
+	available, current := a.viewCycle()
+	if len(available) < 2 {
+		return ""
+	}
+	parts := make([]string, len(available))
+	for i, name := range available {
+		parts[i] = name
+		if name == current {
+			parts[i] = "[" + name + "]"
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+// overlayMapping is the Mapping view: the restructure's mapping (the
+// --mapping form restructure.export-map writes) as JSON lines, over every
+// path, while the restructured document is shown (the viewer's edited
+// view, the restructure page's preview).
+const overlayMapping = "mapping"
+
+// mappingShowing reports the data pane on the Mapping view.
+func (a *App) mappingShowing() bool { return a.overlay == overlayMapping && a.editedShown() }
+
+// mappingCache is the Mapping view's values, made again when the mapping
+// changes.
+type mappingCache struct {
+	key  string
+	view *Shape
+}
+
+// mappingView is the mapping as one JSON value to show (a mapping that
+// does not check: why, as a string), shown as JSON.
+func (a *App) mappingView() *Shape {
+	key := mappingKey(a.Mapping())
+	if a.mapv.view != nil && a.mapv.key == key {
+		return a.mapv.view
+	}
+	text, err := a.mappingText()
+	var root *Node
+	if err == nil {
+		root, err = Build([]byte(text))
+	}
+	if err != nil {
+		quoted, _ := json.Marshal("the mapping does not check: " + err.Error())
+		root, _ = Build(quoted)
+	}
+	s := &Shape{Path: overlayMapping, Kinds: map[Kind]int{}}
+	s.add(root)
+	s.finish()
+	a.viewByPath[s.Path] = viewJSON
+	a.mapv = mappingCache{key: key, view: s}
+	return s
 }
 
 const (
@@ -125,6 +200,8 @@ func (a *App) dataMode() string {
 	switch {
 	case a.queryShowing():
 		return "jq"
+	case a.mappingShowing():
+		return "json"
 	case a.overlay == overlayResults && a.shown == a.sr.view:
 		return "search"
 	case a.hoverIn():

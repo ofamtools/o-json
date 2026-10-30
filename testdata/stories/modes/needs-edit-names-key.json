@@ -1,0 +1,13 @@
+{
+  "name": "o-jj: a gated key names itself and the way to EDIT, in the info tone",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "values": {"modes.edit-gate": true},
+  "script": ["j", "S"],
+  "expect": [
+    {"mode": "shape", "contains": ["S changes the document: press i first (EDIT)"], "lacks": ["Error:", "this key"]}
+  ]
+}

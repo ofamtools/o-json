@@ -1,0 +1,14 @@
+{
+  "name": "o-jj: the data pane focused in the viewer, ctrl+w v and q come back to it",
+  "area": "split",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["j", "j", "j", "ctrl+w", "l", "ctrl+w", "v", "q"],
+  "expect": [
+    {"after": 5, "mode": "table", "contains": ["Table .items"]},
+    {"after": 7, "mode": "split"},
+    {"mode": "table", "contains": ["Table .items", ".items ("]}
+  ]
+}

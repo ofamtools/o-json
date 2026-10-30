@@ -138,12 +138,12 @@ Sometimes the shape is wrong: you want fewer fields, different names, or a flatt
 
 The data panel shows the reshaped document as you edit. `T` flips between the original and the edited version. `w` writes the edited document to a new file.
 
-**On the restructure page.** `M` opens a page with the original on the left and the new shape on the right, plus the mapping that turns one into the other. It's better when you'd rather build the result from scratch.
+**On the restructure page.** `M` opens a page with the original on the left and the new shape on the right, plus a preview of the reshaped data under it. It's better when you'd rather build the result from scratch.
 
-1. Press `M`. The new shape starts empty. `u` brings back the copy.
+1. Press `M`. The new shape is the copy, as the viewer has it. To start from nothing, run `: restructure clear` (`u` brings the copy back).
 2. On the original, select a shape and press `s` to send it across. It brings the parents it needs and its fields with it.
 3. Press `ctrl+a o` to go to the restructured tree, and use the keys above (`< <`, `r`, `d d`, …).
-4. Watch the **Mapping** panel. It is the restructure, live: `{"from": ".items[].owner.name", "to": ".items[].owner_name"}`.
+4. Watch the preview: the reshaped data at the selected node, live. `tab` steps its views, and the last one, **Mapping**, is the restructure itself: `{"from": ".items[].owner.name", "to": ".items[].owner_name"}`. `y m` copies it, `y j` the jq program.
 5. Press `w` to write the result to a new file. `L` switches between the split and single layouts. `q` goes back to the viewer, keeping your edits.
 
 **Save the mapping and reuse it.**
@@ -260,7 +260,7 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 | `T` | original / edited structure |
 | `t` | type filter (original) |
 | `esc` | clear the filter |
-| `D` `tab` | the next data view |
+| `tab` `D` | the next data view |
 | `z +` | zoom into the node |
 | `z -` | zoom out a level |
 

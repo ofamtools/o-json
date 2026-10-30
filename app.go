@@ -130,6 +130,8 @@ type App struct {
 	hover hoverState // the walk into the data pane's sub-tables (hover.go)
 
 	jqp jqPanel // the live jq panel (jqpanel.go)
+
+	mapv mappingCache // the Mapping view's values (views.go)
 }
 
 // New builds the viewer on a fresh runtime: the page with the structure
@@ -480,6 +482,13 @@ func (a *App) sync() error {
 			return nil
 		}
 		return a.show(a.sr.view)
+	}
+	if a.mappingShowing() {
+		a.note = ""
+		if v := a.mappingView(); v != a.shown {
+			return a.show(v)
+		}
+		return nil
 	}
 	if a.queryShowing() {
 		a.note = ""

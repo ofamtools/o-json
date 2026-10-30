@@ -9,7 +9,7 @@ package main
 // o-json. The detail's edits are not gated.
 
 import (
-	"errors"
+	"strings"
 
 	"github.com/unixsuperhero/ochazuke"
 )
@@ -83,8 +83,10 @@ func (a *App) registerEdit() error {
 		Verb("edit-leave", func(ochazuke.Ctx) ochazuke.Result { return a.leaveEdit() },
 			"Leave EDIT (esc): back to the data pane's view mode").When("edit-on").
 		Verb("needs-edit", func(c ochazuke.Ctx) ochazuke.Result {
-			return ochazuke.Failed(errors.New("this key changes the document: press i first (EDIT), esc when done"))
-		}, "Say that a value edit needs EDIT (the edit keys in the table, modes.edit-gate)").When("edit-gated")
+			c.Info(needsEditNote(ochazuke.StringArg(c.Args, "key", "")))
+			return ochazuke.Done(nil)
+		}, "Say that a key changes the document and needs EDIT first (the edit keys in the table and on the structure, modes.edit-gate); key is the key pressed, which the note names").When("edit-gated")
+	setParams(r, "viewer.needs-edit", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the key pressed, named in the note (its row reads it: from key prefix key)"}})
 	setParams(r, "viewer.edit", map[string]ochazuke.Parameter{"open": {Type: "boolean", Description: "edit the value under the cursor at once (r)"}})
 	setHistory(r, ochazuke.HistoryAction, "viewer.edit", "viewer.edit-leave", "viewer.needs-edit")
 	return nil
@@ -95,4 +97,15 @@ func (a *App) registerEdit() error {
 func (a *App) renaming() bool {
 	inst := a.r.Instances[a.r.Focus]
 	return inst != nil && inst.Noun == "ochazuke.outline-line"
+}
+
+// needsEditNote is viewer.needs-edit's note: the key that would change
+// the document and how to get to EDIT, in the info tone (nothing went
+// wrong; the key is gated).
+func needsEditNote(key string) string {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		key = "this key"
+	}
+	return key + " changes the document: press i first (EDIT), esc when done"
 }

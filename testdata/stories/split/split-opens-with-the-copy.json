@@ -1,0 +1,12 @@
+{
+  "name": "o-jj: ctrl+w v shows the viewer's edited copy beside the original (Splits: original beside edited)",
+  "area": "split",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["ctrl+w", "v"],
+  "expect": [
+    {"mode": "split", "contains": ["Original", "Restructured"], "lacks": ["Restructured  0 nodes", "empty: s on a shape"]}
+  ]
+}

@@ -324,14 +324,18 @@ func TestOpenAndReloadWithUnsavedEditsAsk(t *testing.T) {
 }
 
 // The viewer and the restructure page are one state: M opens on the
-// in-place edits; with none it starts empty, and left empty the viewer
-// gets its copy back.
+// state as it is (the copy, or the in-place edits), and q leaves it so;
+// restructure.clear empties it as one undo step.
 func TestRestructurePageSharesTheState(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	press(t, a, "M")
-	if len(a.rs.tree.Nodes()) != 1 || !a.rs.startedEmpty || !strings.Contains(view(a), "Restructured  0 nodes") {
-		t.Fatalf("M did not start empty\n%s", view(a))
+	if a.edited() || len(a.rs.tree.Nodes()) <= 1 || strings.Contains(view(a), "Restructured  0 nodes") {
+		t.Fatalf("M did not open on the copy\n%s", view(a))
 	}
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "clear"}); err != nil || len(a.rs.tree.Nodes()) != 1 {
+		t.Fatalf("clear: %v, %d nodes", err, len(a.rs.tree.Nodes()))
+	}
+	press(t, a, "u")
 	press(t, a, "q")
 	identical(t, a)
 	a.on(t, ".meta.count")

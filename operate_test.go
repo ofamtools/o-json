@@ -72,7 +72,7 @@ func TestOperatorDeleteChangeRepeat(t *testing.T) {
 	selectPath(t, a, ".items")
 	press(t, a, "ctrl+w", "l")
 	keys(a, "d", "i", "r")
-	if !strings.Contains(a.m.Status, "press i first") || len(a.rs.patches) != 0 {
+	if !strings.Contains(a.m.Info, "press i first") || len(a.rs.patches) != 0 {
 		t.Fatalf("d i r in TABLE: %q %d", a.m.Status, len(a.rs.patches))
 	}
 	press(t, a, "i")

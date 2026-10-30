@@ -19,6 +19,7 @@ func openNest(t *testing.T, path string, sends ...string) *App {
 	t.Helper()
 	a := open(t, path, 120, 30)
 	press(t, a, "M")
+	cleared(t, a)
 	sendPaths(t, a, sends...)
 	press(t, a, "ctrl+a", "o")
 	return a

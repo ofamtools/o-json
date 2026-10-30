@@ -1,0 +1,15 @@
+{
+  "name": "o-jj: the data pane's title draws the view cycle as a strip, the shown view marked; Mapping is a view in it",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "script": ["ctrl+w", "l", "D", "D", "D", "D", "D"],
+  "expect": [
+    {"after": 2, "contains": ["[table] fields flat json mapping"]},
+    {"after": 3, "contains": ["table [fields] flat json mapping"]},
+    {"after": 6, "mode": "json", "contains": ["Mapping  ·  table fields flat json [mapping]", "\"map\""]},
+    {"contains": ["[table] fields flat json mapping"]}
+  ]
+}

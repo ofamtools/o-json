@@ -1,0 +1,14 @@
+{
+  "name": "o-jj: restructure.preview mapping shows the mapping's text; an empty restructure is not titled as one that does not check",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "values": {"restructure.preview": "mapping"},
+  "script": ["ctrl+w", "v", ":", {"type": "restructure clear"}, "enter"],
+  "expect": [
+    {"after": 2, "contains": ["Mapping", "\"from\""]},
+    {"contains": ["Restructured  0 nodes", "Mapping"], "lacks": ["does not check"]}
+  ]
+}

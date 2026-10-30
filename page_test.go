@@ -12,7 +12,8 @@ import (
 	"github.com/unixsuperhero/ochazuke"
 )
 
-// openRestructure opens the sample and the restructure page with M.
+// openRestructure opens the sample and the restructure page with M,
+// emptied (restructure.clear).
 func openRestructure(t *testing.T, width, height int) *App {
 	t.Helper()
 	a := open(t, sample, width, height)
@@ -20,7 +21,18 @@ func openRestructure(t *testing.T, width, height int) *App {
 	if a.r.Page != rsPageID {
 		t.Fatalf("page %q", a.r.Page)
 	}
+	cleared(t, a)
 	return a
+}
+
+// cleared empties the restructure (restructure.clear): the page opens on
+// the copy, and these tests build from nothing.
+func cleared(t *testing.T, a *App) {
+	t.Helper()
+	if err := a.clearRestructure(); err != nil {
+		t.Fatal(err)
+	}
+	view(a)
 }
 
 // selectIn moves a page tree's selection to a node with the keys.
@@ -81,7 +93,7 @@ func TestRestructurePageOpensEmpty(t *testing.T) {
 		t.Fatalf("mapping %+v", a.Mapping())
 	}
 	frame := view(a)
-	for _, want := range []string{"Original", "Restructured  0 nodes", ". (root)", "empty: s on a shape", "Mapping", "owner", "email?"} {
+	for _, want := range []string{"Original", "Restructured  0 nodes", ". (root)", "empty: s on a shape", "owner", "email?"} {
 		if !strings.Contains(frame, want) {
 			t.Fatalf("no %q\n%s", want, frame)
 		}
@@ -316,6 +328,9 @@ func TestDeleteAndUndo(t *testing.T) {
 // page's mapping, and writing it out runs the same.
 func TestLiveMappingIsWhatRestructureRuns(t *testing.T) {
 	a := openRestructure(t, 120, 40)
+	if err := a.r.Settings().Set(settingPreview, previewMapping); err != nil {
+		t.Fatal(err)
+	}
 	sendPaths(t, a, ".items[].owner", ".name")
 	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".items[].owner.name"))
@@ -371,6 +386,7 @@ func TestWriteRefusesTheSource(t *testing.T) {
 	}
 	a := open(t, src, 120, 30)
 	press(t, a, "M")
+	cleared(t, a)
 	sendPaths(t, a, ".name")
 	// w without a path opens the args form for it.
 	press(t, a, "w")
@@ -427,7 +443,7 @@ func TestWriteRefusesTheSource(t *testing.T) {
 }
 
 // restructure.layout single draws one tree; tab swaps original and
-// restructured, and the Mapping stays below.
+// restructured, and the preview stays below.
 func TestSingleLayoutToggles(t *testing.T) {
 	a := openRestructure(t, 100, 30)
 	sendPaths(t, a, ".name")
@@ -435,7 +451,7 @@ func TestSingleLayoutToggles(t *testing.T) {
 		t.Fatal(err)
 	}
 	frame := view(a)
-	if !strings.Contains(frame, "Original") || strings.Contains(frame, "Restructured") || !strings.Contains(frame, "Mapping") {
+	if !strings.Contains(frame, "Original") || strings.Contains(frame, "Restructured") || !strings.Contains(frame, "Object .") {
 		t.Fatalf("single, original\n%s", frame)
 	}
 	press(t, a, "ctrl+a", "o")
@@ -559,5 +575,47 @@ func TestLayoutKeyFlips(t *testing.T) {
 	press(t, a, "ctrl+a", "o")
 	if a.sideOf(a.r.Focus) != rsTreeID {
 		t.Fatalf("split tab moves: %q", a.r.Focus)
+	}
+}
+
+// On the restructure page y m copies the mapping as JSON and y j the jq
+// program, from either tree; restructure.preview picks what is under the
+// restructured tree: the data (default), the mapping's text, or nothing,
+// and a focus on a preview that went moves to the restructured tree.
+func TestPreviewYanksAndSetting(t *testing.T) {
+	a := open(t, sample, 120, 30)
+	press(t, a, "ctrl+w", "v")
+	for _, focus := range []func() error{a.rs.orig.Focus, a.rs.tree.Focus} {
+		if err := focus(); err != nil {
+			t.Fatal(err)
+		}
+		press(t, a, "y", "m")
+		if got := yanked(t, a, ""); !strings.Contains(got, `"map"`) || !strings.Contains(got, `"from": ".name"`) {
+			t.Fatalf("y m on %s: %q", a.r.Focus, got)
+		}
+		press(t, a, "y", "j")
+		if p, err := a.plan(); err != nil || yanked(t, a, "") != p.JQ() {
+			t.Fatalf("y j on %s: %q (%v)", a.r.Focus, yanked(t, a, ""), err)
+		}
+	}
+	press(t, a, "ctrl+w", "l")
+	if !a.inData(a.r.Focus) || !strings.Contains(view(a), "Object .") {
+		t.Fatalf("ctrl+w l: focus %q\n%s", a.r.Focus, view(a))
+	}
+	if err := a.r.Settings().Set(settingPreview, previewOff); err != nil {
+		t.Fatal(err)
+	}
+	if frame := view(a); a.sideOf(a.r.Focus) != rsTreeID || strings.Contains(frame, "Object .") || strings.Contains(frame, "Mapping") {
+		t.Fatalf("off: focus %q\n%s", a.r.Focus, frame)
+	}
+	press(t, a, "ctrl+w", "l")
+	if a.sideOf(a.r.Focus) != rsTreeID {
+		t.Fatalf("off: ctrl+w l went to %q", a.r.Focus)
+	}
+	if err := a.r.Settings().Set(settingPreview, previewMapping); err != nil {
+		t.Fatal(err)
+	}
+	if frame := view(a); !strings.Contains(frame, "Mapping") || !strings.Contains(frame, `"from": ".name"`) {
+		t.Fatalf("mapping\n%s", frame)
 	}
 }

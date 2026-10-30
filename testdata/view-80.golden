@@ -2,7 +2,7 @@
    › testdata/sample.json  Restructure                                          
   ────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)                                   
-  ╭━ Structure · unchanged ━━━━╮ ╭─ Table .items  1/4 ───────────────────────╮  
+  ╭━ Structure · unchanged ━━━━╮ ╭─ Table .items  1/4  ·  [table] flat jso… ─╮  
   ┃ substr / to search         ┃ │ #      id  name   owner  tags          2› │  
   ┃ key                     2› ┃ │ 0      1   alpha  {2}    [2]              │  
   ┃ ▾ . (root)                 ┃ │ 1      2   beta   {1}    []               │  
@@ -20,5 +20,5 @@
   ┃ 1–12 / 18                  ┃ │                                           │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────  
-  ctrl+w o only structure · y/d/c/! op · > j nest below · S wrap · r rename ·…  
+  ctrl+w o only structure · tab/D views · ctrl+w l data · ctrl+w v split · y/…  
                                                                                 

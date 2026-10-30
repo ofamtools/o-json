@@ -58,13 +58,47 @@ func (a *App) onlyPane(c ochazuke.Ctx, pane string) error {
 	return a.r.ShowPaneOnly(page, keep)
 }
 
-// movePane is viewer.pane: to is left or right; at the edge it stays.
+// movePane is viewer.pane: to is left, right, up or down; at the edge it
+// stays. On the restructure page the original is on the left and the
+// restructured tree on the right, the preview (restructure.preview data)
+// under it: right and down go on to the preview, up and left come back.
+// The viewer's panes are side by side (stacked on a narrow page, where
+// down and up move as right and left do).
 func (a *App) movePane(to string) error {
 	if a.r.Page == rsPageID {
-		if to == "left" {
+		inData := a.inData(a.r.Focus)
+		preview := a.preview() == previewData && a.Doc != nil
+		switch to {
+		case "left":
 			return a.rs.orig.Focus()
+		case "up":
+			if !inData {
+				return nil
+			}
+			if a.layout() == "single" && a.rs.shown == rsOrigID {
+				return a.rs.orig.Focus()
+			}
+			return a.rs.tree.Focus()
+		case "down":
+			if inData || !preview {
+				return nil
+			}
+			return a.data.list.Focus()
+		}
+		switch {
+		case inData:
+			return nil
+		case a.sideOf(a.r.Focus) == rsTreeID && preview:
+			return a.data.list.Focus()
 		}
 		return a.rs.tree.Focus()
+	}
+	switch to {
+	case "up", "down":
+		if a.m.Width >= stackWidth {
+			return nil
+		}
+		to = map[string]string{"up": "left", "down": "right"}[to]
 	}
 	if to == "left" {
 		if a.structureFocused() {
@@ -95,8 +129,8 @@ func (a *App) registerPaneVerbs() {
 		}, "Show both panes again after ctrl+w o (ctrl+w =)").When("pane-only").
 		Verb("pane", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.movePane(ochazuke.StringArg(c.Args, "to", "right")))
-		}, "Move the focus to the pane on the left or right (ctrl+w h, ctrl+w l); at the edge it stays, as in Vim")
+		}, "Move the focus to the pane on the left, right, above or below (ctrl+w h, ctrl+w l, ctrl+w k, ctrl+w j); at the edge it stays, as in Vim. On the restructure page the preview is right of and below the restructured tree")
 	setParams(r, "viewer.only", map[string]ochazuke.Parameter{"pane": {Type: "string", Enum: []string{paneStructure, paneData, "focused", "none"}, Description: "default focused"}})
-	setParams(r, "viewer.pane", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"left", "right"}, Description: "default right"}})
+	setParams(r, "viewer.pane", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"left", "right", "up", "down"}, Description: "default right"}})
 	setHistory(r, ochazuke.HistoryAction, "viewer.only", "viewer.restore", "viewer.pane")
 }

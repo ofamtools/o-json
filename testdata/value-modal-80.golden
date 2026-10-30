@@ -2,7 +2,7 @@
    › testdata/sample.json  Restructure                                          
   ────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)  ·  row .items[1]                 
-  ╭─ Structure · unchanged ────╮ ╭━ Table .items  2/4 ━━━━━━━━━━━━━━━━━━━━━━━╮  
+  ╭─ Structure · unchanged ────╮ ╭━ Table .items  2/4  ·  [table] flat jso… ━╮  
   │ substr / to search         │ ┃ #      id  name   owner  tags          2› ┃  
   │ key                     2› │ ┃ 0      1   alpha  {2}    [2]              ┃  
   │ ▾ . (root)                 │ ┃ 1      2   beta   {1}    []               ┃  
@@ -26,7 +26,7 @@
    › testdata/sample.json  Restructure                                          
   ────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)  ·  row .items[1]                 
-  ╭─ Structure · unchanged ────╮ ╭━ Table .items  2/4 ━━━━━━━━━━━━━━━━━━━━━━━╮  
+  ╭─ Structure · unchanged ────╮ ╭━ Table .items  2/4  ·  [table] flat jso… ━╮  
   │ substr / to search         │ ┃ #      id  name   owner  tags          2› ┃  
   │ key                     2› │ ┃ 0      1   alpha  {2}    [2]              ┃  
   │ ▾ . (r╭──────────────────────────────────────────────────────────╮       ┃  

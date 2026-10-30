@@ -96,7 +96,8 @@ func (a *App) operate(c ochazuke.Ctx, pane string) ochazuke.Result {
 		return ochazuke.Failed(fmt.Errorf("%s: no %s here", op, objectName(object)))
 	}
 	if (op == "d" || op == "c") && pane == "data" && a.editGated() {
-		return ochazuke.Failed(errors.New("this key changes the document: press i first (EDIT), esc when done"))
+		c.Info(needsEditNote(op))
+		return ochazuke.Done(nil)
 	}
 	var o operand
 	var err error
@@ -500,7 +501,8 @@ func (a *App) operateSort(c ochazuke.Ctx, object string, o operand, reverse bool
 		return ochazuke.Failed(errors.New("s: values change on the edited view (T), with data.editable on"))
 	}
 	if a.editGated() {
-		return ochazuke.Failed(errors.New("this key changes the document: press i first (EDIT), esc when done"))
+		c.Info(needsEditNote("s"))
+		return ochazuke.Done(nil)
 	}
 	kids := slices.Clone(n.Children)
 	if n.Kind == KObject {

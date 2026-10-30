@@ -291,14 +291,19 @@ func buildNest(env monogatari.Env) (monogatari.Built, error) {
 	return s.built(), nil
 }
 
-// nest opens the restructure page as the keys would: M, s on each shape
-// to send, tab to the restructured tree, the on node selected.
+// nest opens the restructure page as the keys would: M, the restructure
+// cleared (restructure.clear), s on each shape to send, the on node of
+// the restructured tree selected.
 func (s *storySession) nest(seed storySeed) error {
 	if err := s.load(seed.Doc); err != nil {
 		return err
 	}
 	a := s.a
 	if err := s.press("M"); err != nil {
+		return err
+	}
+	// The page opens on the copy; the fixture builds from nothing.
+	if err := a.clearRestructure(); err != nil {
 		return err
 	}
 	for _, p := range seed.Send {
@@ -308,9 +313,6 @@ func (s *storySession) nest(seed storySeed) error {
 		if err := s.press("s"); err != nil {
 			return err
 		}
-	}
-	if err := s.press("tab"); err != nil {
-		return err
 	}
 	on := func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].from == seed.On && !a.rs.meta[n.ID].item }
 	if err := s.selectIn(a.rs.tree, on); err != nil {

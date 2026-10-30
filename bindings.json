@@ -8,6 +8,8 @@
       {"key": "ctrl+a o", "action": "ochazuke.focus.next", "hint": "other pane"},
       {"key": "ctrl+w h", "action": "viewer.pane", "args": {"to": "left"}, "hint": "left pane"},
       {"key": "ctrl+w l", "action": "viewer.pane", "args": {"to": "right"}, "hint": "right pane"},
+      {"key": "ctrl+w j", "action": "viewer.pane", "args": {"to": "down"}, "hidden": true},
+      {"key": "ctrl+w k", "action": "viewer.pane", "args": {"to": "up"}, "hidden": true},
       {"key": "ctrl+w w", "action": "ochazuke.focus.next", "hidden": true},
       {"key": "ctrl+w v", "action": "restructure.open", "hint": "split structure"},
       {"key": "ctrl+w >", "action": "ochazuke.pane.grow", "hint": "ctrl+w >/< resize", "from": {"steps": "count"}},
@@ -16,8 +18,8 @@
       {"key": "ctrl+w =", "action": "ochazuke.pane.reset", "when": "pane-split", "hidden": true}
     ]},
     {"context": "rows/normal", "bindings": [
-      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "views"},
-      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
+      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "tab/D views"},
+      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
       {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
       {"key": "v", "action": "ochazuke.list.visual", "hint": "select rows"},
       {"key": "V", "action": "ochazuke.list.visual", "hidden": true},
@@ -68,12 +70,12 @@
       {"key": "O", "action": "value.add", "args": {"before": true}, "hidden": true},
       {"key": "K", "action": "value.rename", "hint": "rename key"},
       {"key": "p", "action": "value.paste", "hint": "put"},
-      {"key": "x", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "d d", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "o", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "O", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "K", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "p", "action": "viewer.needs-edit", "hidden": true}
+      {"key": "x", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "d d", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "o", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "O", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "K", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "p", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true}
     ]},
     {"context": "rows/edit", "extends": "normal", "bindings": [
       {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "declared"}, "hint": "leave EDIT"}
@@ -100,8 +102,8 @@
       {"key": "n", "action": "viewer.next"},
       {"key": "N", "action": "viewer.previous"},
       {"key": "t", "action": "viewer.type"},
-      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "views"},
-      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
+      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "tab/D views"},
+      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
       {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
       {"key": "esc", "action": "search.clear", "hint": "clear search"},
       {"key": "esc", "action": "viewer.clear"},
@@ -155,6 +157,12 @@
       {"key": "ctrl+a o", "action": "restructure.show", "hint": "other side"},
       {"key": "L", "action": "restructure.layout", "hint": "layout"},
       {"key": "g j", "action": "jq-panel.toggle", "hint": "jq panel"},
+      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "tab/D views"},
+      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
+      {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
+      {"key": "ctrl+w j", "action": "viewer.pane", "args": {"to": "down"}, "hint": "preview"},
+      {"key": "y j", "action": "restructure.jq", "args": {"yank": true}, "hint": "y j/m copy jq/mapping"},
+      {"key": "y m", "action": "restructure.mapping", "args": {"yank": true}, "hidden": true},
       {"key": "u", "action": "restructure.undo", "hint": "u/ctrl+r undo/redo"},
       {"key": "ctrl+r", "action": "restructure.redo", "hidden": true},
       {"key": "w", "action": "restructure.write", "hint": "w/W write"},
@@ -163,6 +171,7 @@
       {"key": "Q", "action": "app.quit", "args": {"force": true}, "hint": "quit without writing", "hidden": true}
     ]},
     {"context": "node/normal", "bindings": [
+      {"key": "enter", "action": "outline.fold", "hidden": true},
       {"key": "> j", "action": "node.indent", "args": {"into": "next"}, "hint": "nest below"},
       {"key": "> j", "action": "ochazuke.key.ignore", "hidden": true},
       {"key": "> k", "action": "node.indent", "args": {"into": "previous"}, "hint": "nest above"},
@@ -257,9 +266,9 @@
       {"key": "right", "action": "ochazuke.outline.expand", "hidden": true}
     ]},
     {"context": "ochazuke.outline/shape", "extends": "normal", "bindings": [
-      {"key": "o", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "O", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "a", "action": "viewer.needs-edit", "hidden": true}
+      {"key": "o", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "O", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "a", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true}
     ]},
     {"context": "ochazuke.outline/normal", "bindings": [
       {"key": "o", "action": "restructure.add-key", "args": {"where": "below"}, "hint": "o/O new key"},
@@ -269,6 +278,8 @@
       {"key": "ctrl+r", "action": "restructure.redo", "hidden": true},
       {"key": "tab", "unbind": true},
       {"key": "shift+tab", "unbind": true},
+      {"key": "J", "action": "ochazuke.outline.move", "args": {"delta": 1}, "hidden": true},
+      {"key": "K", "action": "ochazuke.outline.move", "args": {"delta": -1}, "hidden": true},
       {"key": "i", "unbind": true},
       {"key": "d d", "unbind": true}
     ]},
@@ -280,34 +291,40 @@
     {"context": "shape/shape", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hint": "both panes"},
       {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only structure"},
+      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "tab/D views"},
+      {"key": "ctrl+w l", "action": "viewer.pane", "args": {"to": "right"}, "hint": "data"},
+      {"key": "ctrl+w v", "action": "restructure.open", "hint": "split"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/! op"},
       {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
     ]},
     {"context": "node/shape", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hint": "both panes"},
       {"key": "ctrl+w o", "action": "ochazuke.pane.only", "hint": "only structure"},
+      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "tab/D views"},
+      {"key": "ctrl+w l", "action": "viewer.pane", "args": {"to": "right"}, "hint": "data"},
+      {"key": "ctrl+w v", "action": "restructure.open", "hint": "split"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/! op"},
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "edit-open", "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "edit-open", "hidden": true},
       {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
       {"key": "i", "action": "viewer.edit", "hint": "EDIT"},
-      {"key": "d", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "c", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "> j", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "> k", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "> >", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "< <", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "g >", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "S", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "t", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "r", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "p", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "P", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "F", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "g p", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "g k", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "g v", "action": "viewer.needs-edit", "hidden": true},
-      {"key": "g e", "action": "viewer.needs-edit", "hidden": true}
+      {"key": "d", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "c", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "> j", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "> k", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "> >", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "< <", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "g >", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "S", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "t", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "r", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "p", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "P", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "F", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "g p", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "g k", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "g v", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true},
+      {"key": "g e", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true}
     ]},
     {"context": "node/edit", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hint": "both panes"},
@@ -555,8 +572,8 @@
       {"key": "y", "action": "field.yank", "hint": "yank"}
     ]},
     {"context": "line/normal", "bindings": [
-      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "views"},
-      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
+      {"key": "tab", "action": "viewer.view", "from": {"steps": "steps"}, "hint": "tab/D views"},
+      {"key": "D", "action": "viewer.view", "from": {"steps": "steps"}, "hidden": true},
       {"key": "shift+tab", "action": "viewer.view", "args": {"steps": -1}, "hidden": true},
       {"key": "y", "action": "line.yank"}
     ]},
