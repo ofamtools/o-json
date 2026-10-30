@@ -1,5 +1,92 @@
 # o-jj trial
 
+## DONE checklist (Design D and the prototype)
+
+Status: **done**, **partial** (works with a gap named), **missing**.
+Updated as each item lands; the sections below describe what is built.
+
+### Modes and the badge
+
+| Item | Keys | Status |
+|---|---|---|
+| SHAPE declared by the structure pane | `ctrl+w h` | done |
+| TABLE declared by the table / fields view | `ctrl+w l`, `ctrl+a o` | done |
+| NESTED while a hover sub-table is open under the cursor | `j` into it, `k` out | done |
+| FLAT, JSON declared by their views | `D`, `tab`, `shift+tab`, `2 D` | done |
+| SEARCH on the line (`SEARCH · SUBSTR`), SEARCH on the Results | `/`, `tab`, `enter` | done |
+| Search badge tag lower case (`SEARCH · substr`) | | missing (ochazuke upper-cases the badge) |
+| JQ: `m` on the structure, the jq result view declares JQ | `m`, `/` `shift+tab` | done |
+| JQ badge while typing the jq line (prototype `JQ`) | `/` `shift+tab` | missing (INSERT: completion needs insert) |
+| EDIT entered by `i`, `r` (+ value editor); `esc` / leaving the pane leaves | `i`, `r`, `esc` | done |
+| VISUAL in both panes | `v`, `V` | done |
+| SPLIT badge on the restructure page | `ctrl+w v` | done |
+| RAW | `g r` | partial (foreground only, no badge while the editor has the terminal) |
+| Mode picker | `g m` | done |
+| Per-mode accent colours | | partial (o-jj recolours the whole accent; ochazuke tones later) |
+| Opt-outs `modes.declared`, `modes.edit-gate` | | done |
+
+### Footer and help
+
+| Item | Keys | Status |
+|---|---|---|
+| Per-mode keys first on the footer (`ctrl+w o` …), other hints short | | missing (truncated before them) |
+
+### Views and panes
+
+| Item | Keys | Status |
+|---|---|---|
+| View cycle from either pane, remembered per path, counts | `D`, `tab`, `shift+tab` | done |
+| Window keys: left/right stop at the edge, cycle | `ctrl+w h/l/w`, `ctrl+a o` | done |
+| Only the mode's pane, restore | `ctrl+w o`, `ctrl+w =` | done |
+| FLAT: yank line / path / value, jump | `y y`, `y p`, `y v`, `enter` | done |
+| JSON: folds, bracket, yank, jump | `z a z o z c z M z R`, `%`, `y y`, `y p`, `enter` | done |
+
+### SEARCH and JQ
+
+| Item | Keys | Status |
+|---|---|---|
+| One line, type cycle substring / fuzzy / regex / jq | `/`, `tab`, `shift+tab` | done |
+| Hits while typing, Results view, n/N, jump, yank | `ctrl+n/p`, `enter`, `n`, `N`, `y y`, `y p` | done |
+| `esc` on the line cancels; `esc` on a pane clears | `esc` | done |
+| Hits computed off the event loop | | missing |
+| Undo groups per search typing session | `u` on the line | missing |
+| jq slots on `ctrl+n`/`ctrl+p` | | done |
+
+### EDIT
+
+| Item | Keys | Status |
+|---|---|---|
+| Value keys need EDIT | `x`, `d d`, `o`, `O`, `K`, `p` | done |
+| Structure edits under EDIT (question 22) | | missing (left live in SHAPE, as recommended for the trial) |
+
+### RAW
+
+| Item | Keys | Status |
+|---|---|---|
+| Document / row value in the editor, foreground | `g r` | done |
+| Invalid → reopen at line, third invalid drops | | done |
+| Edit back as path-addressed patches (a diff), one undo step | `u` | missing (one set patch) |
+| VISUAL `R` opens the selection in RAW | `v j R` | missing |
+| tuios pane, `ctrl+a d` detach, `g r` re-attach (`raw.pane auto/foreground`) | | missing |
+
+### SPLIT
+
+| Item | Keys | Status |
+|---|---|---|
+| Original beside edited | `ctrl+w v` | done |
+| Push / pull | `d p`, `d o` | done |
+| Wrap the selection | `v j j j {`, `[`, `}`, `]` | done |
+
+### Grammar inside SHAPE / TABLE / NESTED (Design B)
+
+| Item | Keys | Status |
+|---|---|---|
+| Operators wait for a motion or object | `y`, `d`, `c`, `s`, `!` | missing |
+| JSON text objects | `iv ik ip io ao ia aa ir ic` | missing |
+| Counts, `.` repeat, registers | `2 d j`, `.`, `" a y iv` | missing |
+| Shortcut rows | `y y`, `y p`, `y k`, `Y` | partial (FLAT/JSON/Results only; TABLE `y` copies at once) |
+
+
 Build with `GOWORK=off go build -o /tmp/o-jj/bin/o-jj .`. The executable
 uses `o-jj` for its CLI name and the ochazuke config and state directories:
 `$XDG_CONFIG_HOME/o-jj` and `$XDG_STATE_HOME/o-jj` (or the matching paths
