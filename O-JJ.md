@@ -68,7 +68,7 @@ Updated as each item lands; the sections below describe what is built.
 | Invalid → reopen at line, third invalid drops | | done |
 | Edit back as path-addressed patches (a diff), one undo step | `u` | done (a reordered object is one set: no reorder patch) |
 | VISUAL `R` opens the selection in RAW | `V j R` | done (data pane rows; the structure's selection is refused) |
-| tuios pane, `ctrl+a d` detach, `g r` re-attach (`raw.pane auto/foreground`) | `g r`, `ctrl+a d` | done (tested with a fake tuios; not walked in a live session) |
+| tuios pane, `ctrl+a d` detach, `g r` re-attach (`raw.pane auto/foreground`) | `g r`, `ctrl+a d` | done (walked in a throwaway tuios server with a stand-in editor; `ctrl+a d` in nvim not walked) |
 
 ### SPLIT
 
@@ -264,8 +264,11 @@ answer.
   -- nvim -c <raw.detach> +L file`, grants `raw.pane-grants`); o-jj keeps
   running, the breadcrumb says `RAW running`, `g r` focuses the window,
   the editor's `ctrl+a d` focuses o-jj's pane, and the window's end
-  reads the file back. Not walked in a live tuios session yet; whether
-  `write` is the grant `focus-window` needs is unchecked.
+  reads the file back. The window runs the editor under `sh`, which
+  leaves a marker file when the editor exits (a tuios window can outlive
+  its process); o-jj then closes the window. Walked in a throwaway tuios
+  server (tui-drive) with a stand-in editor; whether `write` is the grant
+  `focus-window` needs (nvim's `ctrl+a d`) is unchecked.
 - The footer leads with the mode's own keys: they are rows of the focused
   noun's mode table, and ochazuke lists the innermost level first. The
   search line's keys read type, hits, show, leave; `ctrl+f` (functions)
