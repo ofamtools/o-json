@@ -9,6 +9,94 @@ package main
 
 import "slices"
 
+// cycleDataView changes only the selected path's preferred view. A count
+// walks the applicable views, so a scalar skips Fields.
+func (a *App) cycleDataView(steps int) error {
+	if a.shown == nil || steps == 0 {
+		return nil
+	}
+	values := a.shown.Values()
+	available := make([]string, 0, len(dataViewOrder))
+	for _, name := range dataViewOrder {
+		if viewApplies(name, values) {
+			available = append(available, name)
+		}
+	}
+	i := slices.Index(available, a.viewName)
+	if i < 0 {
+		i = 0
+	}
+	i = ((i+steps)%len(available) + len(available)) % len(available)
+	a.viewByPath[a.shown.Path] = available[i]
+	if err := a.reshow(); err != nil {
+		return err
+	}
+	a.syncDeclaredMode()
+	return nil
+}
+
+const (
+	viewFlat = "flat"
+	viewJSON = "json"
+)
+
+// dataViewOrder is the trial's view cycle. Fields is available for an
+// object; the other views work for every selected path.
+var dataViewOrder = []string{viewTable, objectFields, viewFlat, viewJSON}
+
+// syncDeclaredMode uses the focus stop and the active data view as the
+// local mode declaration. Ochazuke currently pins modes by noun only;
+// this app-side declaration is the trial equivalent of an instance pin.
+func (a *App) syncDeclaredMode() {
+	if a.r.Settings().String(settingDeclaredModes) == "off" {
+		switch a.r.BaseMode() {
+		case "shape", "table", "flat", "json":
+			_ = a.r.SetMode("normal")
+		}
+		return
+	}
+	if len(a.r.Modals()) > 0 {
+		return
+	}
+	want := ""
+	switch {
+	case a.tree.List().Focused() || a.rs.tree.List().Focused() || a.r.Focus == treeID || a.r.Focus == rsTreeID:
+		want = "shape"
+	case a.data.list.Focused() || a.r.Focus == dataID:
+		want = a.viewName
+		if want == "" || want == objectFields || want == objectRow {
+			want = "table"
+		}
+	}
+	if want == "" {
+		return
+	}
+	base := a.r.BaseMode()
+	if base != "normal" && base != "shape" && base != "table" && base != "flat" && base != "json" {
+		return // an explicit edit, query or selection mode is on top
+	}
+	if base != want {
+		_ = a.r.SetMode(want)
+	}
+}
+
+func viewApplies(name string, values []*Node) bool {
+	switch name {
+	case viewTable, viewFlat, viewJSON:
+		return true
+	case objectFields:
+		return oneObject(values)
+	}
+	return false
+}
+
+func defaultDataView(values []*Node, objectPreference string) string {
+	if oneObject(values) && objectPreference == objectFields {
+		return objectFields
+	}
+	return viewTable
+}
+
 // dataView is one way of showing values: a name (the setting's value that
 // prefers it), the values it applies to, and the rows it builds.
 type dataView struct {

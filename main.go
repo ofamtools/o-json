@@ -18,6 +18,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	ocli "github.com/unixsuperhero/ochazuke/cli"
@@ -34,6 +35,15 @@ func progName() string {
 	if parent := os.Getenv("ODEN_PARENT"); parent != "" {
 		return parent + " json"
 	}
+	return appName()
+}
+
+// appName keeps the trial binary's CLI identity separate. Ochazuke uses
+// the executable name for its config and state directories as well.
+func appName() string {
+	if filepath.Base(os.Args[0]) == "o-jj" {
+		return "o-jj"
+	}
 	return "o-json"
 }
 
@@ -47,7 +57,7 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		// command word and print the usage.
 		return runTUI(args, stdin, stdout, stderr)
 	}
-	app := oden.New("o-json", args, oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
+	app := oden.New(appName(), args, oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
 		oden.WithDefault(func(_ context.Context, args []string) error {
 			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !strings.ContainsAny(args[0], "./") {
 				return oden.ErrNotFound

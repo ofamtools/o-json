@@ -44,6 +44,9 @@ type App struct {
 	// Raw shows the selected shape's values as indented JSON instead of a
 	// table or fields.
 	Raw bool
+	// viewByPath remembers the data lens independently for each shape path.
+	viewByPath map[string]string
+	viewName   string
 
 	// Clipboard copies text to the system clipboard; nil when there is
 	// none (ochazuke then sends OSC 52). Only ochazuke's registers call it
@@ -114,9 +117,9 @@ type App struct {
 // viewer.open or viewer.paste fills it.
 func New() (*App, error) {
 	r := ochazuke.NewRuntime()
-	a := &App{r: r}
+	a := &App{r: r, viewByPath: make(map[string]string)}
 	a.m = ochazuke.NewModel(r)
-	a.m.Title = "o-json"
+	a.m.Title = appName()
 	r.Instance(pageID, ochazuke.Kind("viewer"))
 	a.registerNouns()
 	tree, err := r.AddTree(treeID, nil, ochazuke.Parent(pageID), ochazuke.NoSpill(), ochazuke.NoMarks(),
@@ -171,7 +174,7 @@ func New() (*App, error) {
 	if err := declareFollowSettings(r); err != nil {
 		return nil, err
 	}
-	page, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID))
+	page, err := r.AddPage(pageID, appName(), a.render, ochazuke.Focus(treeID))
 	if err != nil {
 		return nil, err
 	}
@@ -190,6 +193,7 @@ func New() (*App, error) {
 	if err := r.OpenPage(pageID); err != nil {
 		return nil, err
 	}
+	a.syncDeclaredMode()
 	return a, nil
 }
 
@@ -208,6 +212,9 @@ func (a *App) Load(path string) error {
 func (a *App) setDoc(path string, doc *Doc) error {
 	a.Doc, a.Path, a.Loading, a.LoadErr = doc, path, "", nil
 	a.shown = nil
+	a.viewByPath = make(map[string]string)
+	a.viewName = ""
+	a.Raw = false
 	a.forgetQuery()
 	if page := a.r.PageOf(pageID); page != nil {
 		page.Title = doc.Name
@@ -240,7 +247,11 @@ func (a *App) setDoc(path string, doc *Doc) error {
 			return err
 		}
 	}
-	return a.sync()
+	if err := a.sync(); err != nil {
+		return err
+	}
+	a.syncDeclaredMode()
+	return nil
 }
 
 // maxFields is how many fields of one shape the tree lists; an object used
@@ -457,6 +468,12 @@ func (a *App) show(s *Shape) error {
 	a.followKey = ""
 	a.shown, a.tab, a.fields, a.lines, a.scalar, a.lit = s, nil, nil, nil, nil, nil
 	values := s.Values()
+	view := a.viewByPath[s.Path]
+	if !viewApplies(view, values) {
+		view = defaultDataView(values, a.r.Settings().String(settingObjectView))
+	}
+	a.viewName = view
+	a.Raw = view == viewJSON
 	set := func(src rowSource) error {
 		if err := a.data.set(src, sel); err != nil {
 			return err
@@ -467,15 +484,18 @@ func (a *App) show(s *Shape) error {
 		return nil
 	}
 	switch {
-	case a.Raw:
+	case view == viewJSON:
 		a.lines = rawLines(values, len(values) != 1)
+		return a.data.set(linesSource(a.lines), 0)
+	case view == viewFlat:
+		a.lines = flatLines(values)
 		return a.data.set(linesSource(a.lines), 0)
 	case len(values) == 1 && !values[0].IsContainer():
 		a.scalar = values[0]
 		return a.data.set(rowSource{}, 0)
 	}
 	// The view the settings prefer among those that apply (views.go).
-	out := pickView(dataViews, values, a.r.Settings().String(settingObjectView)).build(s.Path, values)
+	out := pickView(dataViews, values, view).build(s.Path, values)
 	if out.tab == nil {
 		a.fields = out.fields
 		return set(out.src)
@@ -597,6 +617,35 @@ func rawLines(values []*Node, many bool) []string {
 	}
 	if cut {
 		lines = append(lines, "… cut at 4 MB: o-json get prints it all")
+	}
+	return lines
+}
+
+// flatLines renders leaf paths in document order. It stops at the same
+// view-size cap as JSON so opening a very large document stays responsive.
+func flatLines(values []*Node) []string {
+	lines := make([]string, 0)
+	used := 0
+	var walk func(*Node)
+	walk = func(n *Node) {
+		if used >= rawLimit {
+			return
+		}
+		if n.IsContainer() && len(n.Children) > 0 {
+			for _, child := range n.Children {
+				walk(child)
+			}
+			return
+		}
+		line := n.Path() + " = " + Compact(n, cellLimit)
+		lines = append(lines, line)
+		used += len(line)
+	}
+	for _, n := range values {
+		walk(n)
+	}
+	if used >= rawLimit {
+		lines = append(lines, "… cut at 4 MB: o-jj get prints it all")
 	}
 	return lines
 }

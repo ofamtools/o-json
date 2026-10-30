@@ -81,9 +81,19 @@ func (a *App) registerVerbs() {
 			return done(a.filterKind(next))
 		}, "Keep the structure paths holding values of a type; without kind, step string, number, bool, null, object, array, then off").When("viewer-original").
 		Verb("raw", func(ochazuke.Ctx) ochazuke.Result {
-			a.Raw = !a.Raw
+			if a.shown == nil {
+				return ochazuke.Done(nil)
+			}
+			if a.viewName == viewJSON {
+				a.viewByPath[a.shown.Path] = viewTable
+			} else {
+				a.viewByPath[a.shown.Path] = viewJSON
+			}
 			return done(a.reshow())
 		}, "Show the selected path's values as indented JSON instead of a table or fields (toggle)").
+		Verb("view", func(c ochazuke.Ctx) ochazuke.Result {
+			return done(a.cycleDataView(ochazuke.IntArg(c.Args, "steps", 1)))
+		}, "Cycle the data pane through table, fields, flat and JSON; remember the view per structure path").
 		Verb("clear", func(ochazuke.Ctx) ochazuke.Result {
 			a.Query, a.Kind = "", ""
 			return done(a.refilter())
@@ -92,10 +102,11 @@ func (a *App) registerVerbs() {
 	params("viewer.load", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the JSON file; - reads stdin"}})
 	params("viewer.search", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "omit to be asked in a prompt"}})
 	params("viewer.type", map[string]ochazuke.Parameter{"kind": {Type: "string", Enum: []string{"string", "number", "bool", "null", "object", "array", ""}, Description: "omit to step to the next type"}})
+	params("viewer.view", map[string]ochazuke.Parameter{"steps": {Type: "integer", Description: "Number of applicable views to step; negative steps backward"}})
 	// load reads the file and shows it: a fetch, as the framework's reloads are.
 	setHistory(r, ochazuke.HistoryFetch, "viewer.load")
 	a.registerOpenVerbs(params)
-	setHistory(r, ochazuke.HistoryAction, "viewer.search", "viewer.next", "viewer.previous", "viewer.type", "viewer.raw", "viewer.clear")
+	setHistory(r, ochazuke.HistoryAction, "viewer.search", "viewer.next", "viewer.previous", "viewer.type", "viewer.raw", "viewer.view", "viewer.clear")
 
 	r.Define("shape").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {

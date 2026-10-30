@@ -18,7 +18,7 @@ import (
 func viewCommand(stdin io.Reader, stdout, stderr io.Writer) oden.Command {
 	return oden.Command{
 		Name: "view", Summary: "open the viewer: the structure tree on the left, the selected path's data on the right",
-		Usage: "[--smoke] [--width N] [--height N] [FILE|-]", Source: "o-json",
+		Usage: "[--smoke] [--width N] [--height N] [FILE|-]", Source: appName(),
 		Details: "o-json FILE opens it too; with no file (and stdin a terminal) the viewer opens an empty document. Keys: ? in the viewer lists them; README.md has the table.",
 		Run: func(_ context.Context, args []string) error {
 			return runTUI(args, stdin, stdout, stderr)

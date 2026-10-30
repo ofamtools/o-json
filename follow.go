@@ -21,6 +21,7 @@ import (
 // and is shown either way.
 
 const settingScalarFollow = "structure.scalar-follow"
+const settingDeclaredModes = "modes.declared"
 
 // object.view: how the data pane and the detail show one object. row (the
 // default) is a one-row table, its keys the header and its values the
@@ -39,6 +40,9 @@ const toneFollow = toneOrigin
 
 func declareFollowSettings(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
+		Name: settingDeclaredModes, Type: ochazuke.SettingString, Default: "on", Enum: []string{"on", "off"},
+		Description: "Show the current structure or data view in the mode badge; off keeps the normal badge",
+	}, ochazuke.Setting{
 		Name: settingObjectView, Type: ochazuke.SettingString, Default: objectRow, Enum: []string{objectRow, objectFields},
 		Description: "One object in the data pane and the detail: row shows it as a one-row table (its keys the header, its values the cells; a nested value shows its size and opens beneath it); fields shows field, type and value rows",
 	}, ochazuke.Setting{

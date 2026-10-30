@@ -28,7 +28,7 @@ type settingGroup struct {
 
 var settingSections = []settingSection{
 	{ochazuke.SettingSection{ID: "viewer", Title: "Viewer", Description: "Editing the structure in place, the trees, opening, pasting and undo"}, []settingGroup{
-		{"", []string{settingEditable, settingScalarFollow, settingLitWidth, settingObjectView, settingDuplicateTone, settingRecent, settingReloadPlace, settingEmptyHint, settingUndoAtStart}},
+		{"", []string{settingEditable, settingDeclaredModes, settingScalarFollow, settingLitWidth, settingObjectView, settingDuplicateTone, settingRecent, settingReloadPlace, settingEmptyHint, settingUndoAtStart}},
 		{"Paste", []string{settingPasteOnTree, settingPasteText}},
 	}},
 	{ochazuke.SettingSection{ID: "data", Title: "Data", Description: "The data pane and the detail: value edits, the value editor, tables and nested data"}, []settingGroup{
@@ -68,7 +68,7 @@ func settingPlace(name string) (section, group string, ok bool) {
 
 // declareSettingLayout declares the o-json tab and its sections.
 func declareSettingLayout(r *ochazuke.Runtime) error {
-	if err := r.DeclareSettingOwner(ochazuke.SettingOwner{ID: ochazuke.OwnerApp, Title: "o-json", Description: "o-json's own settings: the viewer, the data pane, jq, the restructure, reshape steps and export"}); err != nil {
+	if err := r.DeclareSettingOwner(ochazuke.SettingOwner{ID: ochazuke.OwnerApp, Title: appName(), Description: "The viewer, data pane, jq, restructure, reshape steps and export"}); err != nil {
 		return err
 	}
 	for _, s := range settingSections {

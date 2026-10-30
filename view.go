@@ -43,6 +43,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	if err := a.sync(); err != nil {
 		a.LoadErr = err
 	}
+	a.syncDeclaredMode()
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := a.r.PaneLayout(pageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.breadcrumb(), width, "…"))
@@ -242,6 +243,8 @@ func (a *App) dataTitle() string {
 		return "Data"
 	case a.Raw:
 		return "JSON " + s.Path
+	case a.viewName == viewFlat:
+		return "Flat " + s.Path
 	case a.tab != nil && !a.tab.Items:
 		return "Object " + s.Path
 	case a.tab != nil:
