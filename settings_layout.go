@@ -32,7 +32,7 @@ var settingSections = []settingSection{
 		{"Paste", []string{settingPasteOnTree, settingPasteText}},
 	}},
 	{ochazuke.SettingSection{ID: "data", Title: "Data", Description: "The data pane and the detail: value edits, the value editor, tables and nested data"}, []settingGroup{
-		{"Values", []string{settingDataEditable, settingValueEditor, settingValueLeave, settingRebuildValueEdit}},
+		{"Values", []string{settingDataEditable, settingValueEditor, settingValueLeave, settingValueStableHeight, settingRebuildValueEdit}},
 		{"Tables", []string{settingStableColumns, settingNested, settingHoverRows}},
 	}},
 	{ochazuke.SettingSection{ID: "query", Title: "jq", Description: "The jq query line, query mode and the jq panel"}, []settingGroup{

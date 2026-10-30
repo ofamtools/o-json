@@ -11,9 +11,9 @@
   │   ▾ items       array     │ was    beta                                      string  │                           ┃  
   │     ▾ []        object    │ value  omega                                     string  │                           ┃  
   │         id      number    │                                                          │                           ┃  
-  │         name    string    │ enter set · esc normal                                   │                           ┃  
-  │       ▾ owner   object    ╰──────────────────────────────────────────────────────────╯                           ┃  
-  │           name  string        .items[].ow… │ ┃                                                                   ┃  
+  │         name    string    │                                                          │                           ┃  
+  │       ▾ owner   object    │ enter set · esc normal                                   │                           ┃  
+  │           name  string    ╰──────────────────────────────────────────────────────────╯                           ┃  
   │           ema…  string|null?  .items[].ow… │ ┃                                                                   ┃  
   │       ▾ tags    array         .items[].ta… │ ┃                                                                   ┃  
   │           []    string        .items[].ta… │ ┃                                                                   ┃  
@@ -29,15 +29,15 @@
   ╭─ Structure · unchanged ────────────────────╮ ╭━ Table .items  2/4 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮  
   │ jq / to query                              │ ┃ #  id  name   owner              tags            archived?  note? ┃  
   │ key             type          from         │ ┃ 0  1   alpha  {"name":"ann","e…  ["red","blue"]                   ┃  
-  │ ▾ . (root)      object                     │ ┃ 1  2   beta   {"name":"bob"}     []              true             ┃  
-  │     name        string    ╭──────────────────────────────────────────────────────────╮n"]                  third ┃  
-  │     version     number    │ .items[1] · add after name                               │]                          ┃  
-  │   ▾ items       array     │ key    new-key                                           │                           ┃  
-  │     ▾ []        object    │ value  null                                        null  │                           ┃  
+  │ ▾ . (root)      object    ╭──────────────────────────────────────────────────────────╮          true             ┃  
+  │     name        string    │ .items[1] · add after name                               │n"]                  third ┃  
+  │     version     number    │ key    new-key                                           │]                          ┃  
+  │   ▾ items       array     │ value  null                                        null  │                           ┃  
+  │     ▾ []        object    │                                                          │                           ┃  
   │         id      number    │                                                          │                           ┃  
-  │         name    string    │ enter next · esc normal                                  │                           ┃  
-  │       ▾ owner   object    ╰──────────────────────────────────────────────────────────╯                           ┃  
-  │           name  string        .items[].ow… │ ┃                                                                   ┃  
+  │         name    string    │                                                          │                           ┃  
+  │       ▾ owner   object    │ enter next · esc normal                                  │                           ┃  
+  │           name  string    ╰──────────────────────────────────────────────────────────╯                           ┃  
   │           ema…  string|null?  .items[].ow… │ ┃                                                                   ┃  
   │       ▾ tags    array         .items[].ta… │ ┃                                                                   ┃  
   │           []    string        .items[].ta… │ ┃                                                                   ┃  

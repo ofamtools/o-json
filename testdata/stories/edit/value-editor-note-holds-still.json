@@ -1,0 +1,13 @@
+{
+  "name": "o-json: the value editor keeps a row for its note (value.stable-height): typing { notes that it is not valid JSON in that row, under the field, and the box keeps its size (F11)",
+  "area": "edit",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "nested.json"},
+  "script": ["tab", "l", "l", "r", {"type": "{"}],
+  "expect": [
+    {"after": 4, "modal": "value-editor", "lacks": ["not valid JSON"]},
+    {"modal": "value-editor", "order": ["value  {", "· not valid JSON: sets it as a string", "enter set"]}
+  ]
+}

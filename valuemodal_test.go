@@ -425,3 +425,56 @@ func TestValueModalGolden(t *testing.T) {
 		}
 	}
 }
+
+// The value editor keeps a row for each note it can show
+// (value.stable-height), so a note appearing as the text is typed (JSON
+// that does not parse, a key the object has) never moves the box or its
+// keys line; off, the box fits the notes it shows.
+func TestValueModalHoldsStillWhileTyping(t *testing.T) {
+	cases := []struct {
+		name, title string
+		open        func(a *App)
+		typing      string
+	}{
+		{"edit", ".items[1].name", func(a *App) {
+			onData(t, a, ".items", ".items[1]")
+			press(t, a, "l", "l", "r")
+		}, "{"},
+		{"rename", ".name · rename key", func(a *App) {
+			onData(t, a, ".", "name")
+			press(t, a, "K")
+		}, "version"},
+		{"add", ". · add after name", func(a *App) {
+			onData(t, a, ".", "name")
+			press(t, a, "o")
+		}, "version"},
+	}
+	for _, c := range cases {
+		for _, stable := range []bool{true, false} {
+			t.Run(c.name+" "+itoa(map[bool]int{true: 1}[stable]), func(t *testing.T) {
+				a := open(t, sample, 120, 30)
+				if err := a.r.Settings().Set(settingValueStableHeight, stable); err != nil {
+					t.Fatal(err)
+				}
+				c.open(a)
+				top, bottom, _, _, ok := modalBox(view(a), c.title)
+				if !ok {
+					t.Fatalf("no editor\n%s", view(a))
+				}
+				typeText(t, a, c.typing)
+				if c.name == "add" {
+					press(t, a, "tab")
+					typeText(t, a, "[")
+				}
+				frame := view(a)
+				if a.vedit == nil || a.vedit.modal == nil || len(a.vedit.modal.notes()) == 0 {
+					t.Fatalf("no note\n%s", frame)
+				}
+				top2, bottom2, _, _, _ := modalBox(frame, c.title)
+				if moved := top2 != top || bottom2 != bottom; moved == stable {
+					t.Fatalf("stable %v: box rows %d-%d, then %d-%d\n%s", stable, top, bottom, top2, bottom2, frame)
+				}
+			})
+		}
+	}
+}

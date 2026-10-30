@@ -42,10 +42,14 @@ const (
 	// edit, as a record editor keeps each change (u undoes it); cancel
 	// closes it unchanged, as a prompt does.
 	settingValueLeave = "value.leave"
-	leaveSet          = "set"
-	leaveCancel       = "cancel"
-	editorModal       = "modal"
-	editorInline      = "inline"
+	// settingValueStableHeight keeps a row in the value editor for each
+	// note it can show, so a note appearing as the text is typed never
+	// moves the box.
+	settingValueStableHeight = "value.stable-height"
+	leaveSet                 = "set"
+	leaveCancel              = "cancel"
+	editorModal              = "modal"
+	editorInline             = "inline"
 	// valueEditorID is the modal (its body's id and noun); its inputs are
 	// value-field (one line) and value-text (several lines).
 	valueEditorID = "value-editor"
@@ -64,6 +68,9 @@ func declareValueEditorSetting(r *ochazuke.Runtime) error {
 	}, ochazuke.Setting{
 		Name: settingValueLeave, Type: ochazuke.SettingString, Default: leaveSet, Enum: []string{leaveSet, leaveCancel},
 		Description: "What esc in normal mode does in the value editor and the inline input (the first esc goes from insert to normal, the text kept): set makes the text the edit, one undo step (u undoes it), as a record editor keeps each change; cancel closes it with nothing changed, as a prompt does. q in normal mode always cancels",
+	}, ochazuke.Setting{
+		Name: settingValueStableHeight, Type: ochazuke.SettingBoolean, Default: true,
+		Description: "The value editor keeps a row for each note it can show (JSON that does not parse, a key the object has), so a note appearing as you type never moves the box or its keys; off, the box fits the notes it shows",
 	})
 }
 
@@ -266,6 +273,21 @@ func (vm *valueModal) notes() []string {
 	return out
 }
 
+// noteRows is how many notes this editor can show (notes says which):
+// the rows value.stable-height keeps for them.
+func (vm *valueModal) noteRows() int {
+	n := 0
+	if vm.ve.what == "add" && vm.ve.at.inObject() && len(vm.fields) == 2 || vm.ve.what == "rename" {
+		n++ // the key it will take
+	}
+	for _, f := range vm.fields {
+		if !f.key {
+			n++ // not valid JSON
+		}
+	}
+	return n
+}
+
 // newValueKey is the key an add names: the typed one, the placeholder for an
 // empty one, numbered past the object's keys.
 func (a *App) newValueKey(ve *valueEdit, key string) string {
@@ -403,10 +425,20 @@ func (vm *valueModal) ModalBlock(s ochazuke.Styles, width, height int) ochazuke.
 			lines = append(lines, line)
 		}
 	}
-	if notes := vm.notes(); len(notes) > 0 {
+	// The notes: under the fields after a blank line, or with
+	// value.stable-height right under them in rows kept for every note
+	// the editor can show, so one appearing never moves the box.
+	notes := vm.notes()
+	stable := vm.a.r.Settings().Bool(settingValueStableHeight)
+	if len(notes) > 0 && !stable {
 		lines = append(lines, "")
-		for _, n := range notes {
-			lines = append(lines, s.Muted.Render(ansi.Truncate("· "+n, w, "…")))
+	}
+	for _, n := range notes {
+		lines = append(lines, s.Muted.Render(ansi.Truncate("· "+n, w, "…")))
+	}
+	if stable {
+		for range vm.noteRows() - len(notes) {
+			lines = append(lines, "")
 		}
 	}
 	lines = append(lines, "") // air above the keys

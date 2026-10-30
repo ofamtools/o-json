@@ -100,7 +100,7 @@ You can fix a value without leaving the viewer. Each edit is one step you can un
 Value edits work in the data panel of the edited view, which is the default. (After `T`, in the original, the data is read-only.)
 
 1. In the table, move to a cell and press `r` (or `i`). The **value editor** opens over the table. Its title is the value's path, the old value is shown dimmed, and the new text is selected, so typing replaces it.
-2. A badge shows the type the text will get: a number, `true`/`false`, `null`, JSON for an object or array, otherwise a string. To force a string, quote it: `"42"`.
+2. A badge shows the type the text will get: a number, `true`/`false`, `null`, JSON for an object or array, otherwise a string. To force a string, quote it: `"42"`. Text that starts like JSON but does not parse gets a note under the field (it would be set as a string). The editor keeps a row for its notes, so the box does not move as you type (`: settings set value.stable-height false` fits the box to the notes it shows).
 3. `enter` sets the value. `esc` goes to normal mode and keeps what you typed; a second `esc` sets it too, and `q` there cancels. (`: settings set value.leave cancel` makes the second `esc` cancel instead.)
 4. An object or array value opens on several lines. There `enter` adds a new line; press `esc` to go to normal mode, then `enter` (or `esc`) sets the value.
 5. `d d` deletes the field (or, on `#`, the whole item).

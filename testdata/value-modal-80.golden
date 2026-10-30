@@ -11,9 +11,9 @@
   │   ▾ it│ was    beta                                      string  │       ┃  
   │     ▾ │ value  omega                                     string  │       ┃  
   │       │                                                          │       ┃  
+  │       │                                                          │       ┃  
   │       │ enter set · esc normal                                   │       ┃  
   │       ╰──────────────────────────────────────────────────────────╯       ┃  
-  │           name             │ ┃                                           ┃  
   │           email            │ ┃                                           ┃  
   │       ▾ tags               │ ┃                                           ┃  
   │           []               │ ┃                                           ┃  
@@ -29,15 +29,15 @@
   ╭─ Structure · unchanged ────╮ ╭━ Table .items  2/4 ━━━━━━━━━━━━━━━━━━━━━━━╮  
   │ jq / to query              │ ┃ #      id  name   owner   tags         2› ┃  
   │ key                     2› │ ┃ 0      1   alpha  {"nam…  ["red…          ┃  
-  │ ▾ . (root)                 │ ┃ 1      2   beta   {"nam…  []              ┃  
-  │     na╭──────────────────────────────────────────────────────────╮       ┃  
-  │     ve│ .items[1] · add after name                               │       ┃  
-  │   ▾ it│ key    new-key                                           │       ┃  
-  │     ▾ │ value  null                                        null  │       ┃  
+  │ ▾ . (r╭──────────────────────────────────────────────────────────╮       ┃  
+  │     na│ .items[1] · add after name                               │       ┃  
+  │     ve│ key    new-key                                           │       ┃  
+  │   ▾ it│ value  null                                        null  │       ┃  
+  │     ▾ │                                                          │       ┃  
+  │       │                                                          │       ┃  
   │       │                                                          │       ┃  
   │       │ enter next · esc normal                                  │       ┃  
   │       ╰──────────────────────────────────────────────────────────╯       ┃  
-  │           name             │ ┃                                           ┃  
   │           email            │ ┃                                           ┃  
   │       ▾ tags               │ ┃                                           ┃  
   │           []               │ ┃                                           ┃  
