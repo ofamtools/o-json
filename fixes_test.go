@@ -3,10 +3,17 @@ package main
 import (
 	"strings"
 	"testing"
+
+	"github.com/unixsuperhero/ochazuke"
 )
 
 // hasReverse reports reverse video (SGR 7) in text.
-func hasReverse(text string) bool {
+func hasReverse(text string) bool { return reverseCount(text) > 0 }
+
+// reverseCount counts the escape sequences in text that turn reverse
+// video (SGR 7) on.
+func reverseCount(text string) int {
+	n := 0
 	for _, seq := range strings.Split(text, "\x1b[")[1:] {
 		end := strings.IndexByte(seq, 'm')
 		if end < 0 {
@@ -22,55 +29,41 @@ func hasReverse(text string) bool {
 					k += 2
 				}
 			case p == "7":
-				return true
+				n++
 			}
 		}
 	}
-	return false
+	return n
 }
 
 // Beneath the detail the data pane draws its row without the cursor's
-// bar, which would peek out beside the modal (6-edit.tape);
-// detail.backdrop-cursor keeps it.
+// bar, which would peek out beside the modal (6-edit.tape): o-json gives
+// ochazuke's modal-highlights the default plain; keep draws the bar
+// (dimmed) again, and closing the detail brings it back either way.
 func TestDetailHidesTheRowCursorBeneathIt(t *testing.T) {
 	a := open(t, sample, 120, 30)
+	if got := a.r.Settings().String(ochazuke.ModalBackdropHighlightsSetting); got != "plain" {
+		t.Fatalf("modal-highlights %q, want o-json's default plain", got)
+	}
 	onData(t, a, ".items", ".items[1]")
-	if !hasReverse(a.dataBlock(60, 20).Text) {
+	page := reverseCount(a.m.View().Content)
+	if page == 0 {
 		t.Fatal("the data pane draws no cursor bar")
 	}
 	press(t, a, "enter")
 	if a.r.TopModal() != detailID {
 		t.Fatalf("enter: modal %q", a.r.TopModal())
 	}
-	if body := a.beneathDetail(a.dataBlock(60, 20)).Text; hasReverse(body) || !strings.Contains(body, "beta") {
-		t.Fatalf("the cursor bar is drawn beneath the detail: %q", body)
-	}
-	if err := a.r.Settings().Set(settingDetailBackdropCursor, true); err != nil {
+	plain := reverseCount(a.m.View().Content)
+	if err := a.r.Settings().Set(ochazuke.ModalBackdropHighlightsSetting, "keep"); err != nil {
 		t.Fatal(err)
 	}
-	if !hasReverse(a.beneathDetail(a.dataBlock(60, 20)).Text) {
-		t.Fatal("detail.backdrop-cursor on: no cursor bar beneath the detail")
+	if keep := reverseCount(a.m.View().Content); plain >= keep {
+		t.Fatalf("beneath the detail plain draws %d reverse spans, keep %d: plain must drop the page's bar", plain, keep)
 	}
 	press(t, a, "q")
-	if !hasReverse(a.beneathDetail(a.dataBlock(60, 20)).Text) {
-		t.Fatal("the cursor bar did not come back when the detail closed")
-	}
-}
-
-// unreverse drops reverse video and underline, keeps colours whose
-// components are 7 or 4, and drops a sequence left empty.
-func TestUnreverse(t *testing.T) {
-	for in, want := range map[string]string{
-		"\x1b[7mx\x1b[27m":                     "x",
-		"\x1b[38;2;7;4;7;1;7mx":                "\x1b[38;2;7;4;7;1mx",
-		"\x1b[48;5;7;4;7mx\x1b[m":              "\x1b[48;5;7mx\x1b[m",
-		"\x1b[2;4;7mx\x1b[24;27m y \x1b[0m":    "\x1b[2mx y \x1b[0m",
-		"plain \x1b[1mbold\x1b[22m":            "plain \x1b[1mbold\x1b[22m",
-		"\x1b[38;2;145;159;152;2;7m  \x1b[27m": "\x1b[38;2;145;159;152;2m  ",
-	} {
-		if got := unreverse(in); got != want {
-			t.Errorf("unreverse(%q) = %q, want %q", in, got, want)
-		}
+	if got := reverseCount(a.m.View().Content); got != page {
+		t.Fatalf("the cursor bar did not come back when the detail closed: %d reverse spans, %d before", got, page)
 	}
 }
 

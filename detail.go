@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/unixsuperhero/ochazuke"
 )
@@ -142,75 +141,18 @@ func (a *App) refreshDetail() {
 	_ = a.showDetail(max(0, a.detail.Selected()))
 }
 
-// settingDetailBackdropCursor keeps the data pane's cursor drawn beneath
-// the detail.
-const settingDetailBackdropCursor = "detail.backdrop-cursor"
-
+// declareDetailSettings gives ochazuke's modal-highlights o-json's
+// default, plain: beneath the detail (and every other modal) the page is
+// drawn without reverse video or underline, so the data pane's cursor bar
+// does not peek out beside the detail, which shows that row. The row keeps
+// ochazuke's owner, section, enum and description; only the default is
+// o-json's, and keep brings the dimmed highlights back.
 func declareDetailSettings(r *ochazuke.Runtime) error {
-	return r.DeclareSetting(ochazuke.Setting{
-		Name: settingDetailBackdropCursor, Type: ochazuke.SettingBoolean, Default: false,
-		Description: "Beneath the detail the data pane keeps its cursor bar (dimmed with the page); off draws that row plain there, as the detail shows the row and the bar would only peek out beside it",
-	})
-}
-
-// beneathDetail is the data pane's body as drawn beneath the detail: the
-// cursor's marks (reverse video, the current cell's underline) taken out
-// unless detail.backdrop-cursor (the detail shows that row; its bar would
-// peek out beside the modal).
-//
-// A workaround: ochazuke keeps a page's highlight under a modal (Model
-// beneath) and its backdrop dims colours but not reverse video, so a bar
-// the modal does not cover reads as a stray highlight. A per-modal option
-// in ochazuke would replace this.
-func (a *App) beneathDetail(b ochazuke.Block) ochazuke.Block {
-	if a.r.Instances[detailID] == nil || a.r.Settings().Bool(settingDetailBackdropCursor) {
-		return b
+	for _, s := range r.Settings().Declared() {
+		if s.Name == ochazuke.ModalBackdropHighlightsSetting {
+			s.Default = "plain"
+			return r.DeclareSetting(s)
+		}
 	}
-	return b.WithText(unreverse(b.Text))
-}
-
-// unreverse drops reverse video and underline (SGR 7, 27, 4, 24: the
-// cursor's bar and its cell) from text's escape sequences, colour parameters (38/48/58 with 5;N or 2;R;G;B) kept whole.
-func unreverse(text string) string {
-	var out strings.Builder
-	for {
-		i := strings.Index(text, "\x1b[")
-		if i < 0 {
-			out.WriteString(text)
-			return out.String()
-		}
-		j := i + 2
-		for j < len(text) && (text[j] >= '0' && text[j] <= '9' || text[j] == ';' || text[j] == ':') {
-			j++
-		}
-		if j >= len(text) || text[j] != 'm' {
-			out.WriteString(text[:j])
-			text = text[j:]
-			continue
-		}
-		out.WriteString(text[:i])
-		params := strings.Split(text[i+2:j], ";")
-		var kept []string
-		for k := 0; k < len(params); k++ {
-			p := params[k]
-			switch {
-			case p == "7" || p == "27" || p == "4" || p == "24":
-				continue
-			case (p == "38" || p == "48" || p == "58") && k+1 < len(params):
-				n := 2
-				if params[k+1] == "2" {
-					n = 4
-				}
-				end := min(len(params), k+1+n)
-				kept = append(kept, params[k:end]...)
-				k = end - 1
-				continue
-			}
-			kept = append(kept, p)
-		}
-		if len(kept) > 0 || len(params) == 1 && params[0] == "" {
-			out.WriteString("\x1b[" + strings.Join(kept, ";") + "m")
-		}
-		text = text[j+1:]
-	}
+	return fmt.Errorf("ochazuke has no %s setting", ochazuke.ModalBackdropHighlightsSetting)
 }

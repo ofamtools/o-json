@@ -37,7 +37,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | The page: breadcrumb, panels, the divider (`PaneLayout` + `Divide`, so `ctrl+w >` `<` `=` resize) | `view.go` |
 | Verbs | `verbs.go` |
 | Key rows: `bindings.json` (embedded, one row per line; the only place a default key is written), loaded by `bindings.go` | `bindings.json`, `bindings.go` |
-| The detail modal (drill in and out), the data pane drawn without its cursor beneath it (`detail.backdrop-cursor`, `unreverse`: a workaround) | `detail.go` |
+| The detail modal (drill in and out); o-json's default for ochazuke's `modal-highlights` (`plain`: the page beneath a modal drawn without its cursor bars) | `detail.go` |
 | The restructure page: its two trees, node meta (origin by node id), the edits (send, indent, dedent, wrap, add-key, array/object, rename) as one undo step each, new keys opened selected with a placeholder, the origin highlight, the live mapping, write | `page.go` |
 | Editing the structure in place: the viewer's structure pane is the restructured tree (lent to the open page, `placeTree`), the copy a document starts with (`identity`), the restructured document the data pane shows, `T` (`flip`), `structure.editable`, the restructure page's empty start | `inplace.go` |
 | Yank, delete and put on the restructured tree through ochazuke's registers (nodes as `o-json.nodes` text, or structure paths from the original's `y`, `pathBlocks`; a put keeps ids that are free, so delete + put is a move and yank + put a copy), where a put lands (`putPlace`), a put or wrap over a visual-line selection (`restructure.visual-put`, `restructure.visual-wrap`), dot-repeat's scope (`repeat.scope`) | `put.go` |

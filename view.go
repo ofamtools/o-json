@@ -85,7 +85,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	}
 	left = l.PanelBlock(a.treeTitle(), inner, lw, lh, treeFocused || a.r.Focus == jqFieldID)
 	cw, ch = ochazuke.PanelContentSize(rw, rh)
-	right = l.PanelBlock(a.dataTitle(), a.beneathDetail(a.dataBlock(cw, ch)), rw, rh, dataFocused)
+	right = l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), rw, rh, dataFocused)
 	var body string
 	cursor := right.Offset(lw+1, 1)
 	if stacked {
