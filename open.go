@@ -602,6 +602,14 @@ var aliases = []ochazuke.ActionAlias{
 	{Alias: "q!", Action: "app.quit", Args: ochazuke.Arguments{"force": true}, Note: "quit without writing (vim :q!)"},
 }
 
+// modeAliases are the o-jj aliases of verbs registered after the open
+// verbs (registerOperate adds them).
+var modeAliases = []ochazuke.ActionAlias{
+	{Alias: "sort", Action: "item.operate", Args: ochazuke.Arguments{"op": "s", "object": "column", "again": false}, Note: "sort the table by the cursor's column (vim :sort; s i c)"},
+	{Alias: "sort!", Action: "item.operate", Args: ochazuke.Arguments{"op": "s", "object": "column", "reverse": true}, Note: "sort the table by the cursor's column, descending (vim :sort!)"},
+	{Alias: "find", Action: "search.focus", Note: "the search line (/)"},
+}
+
 func (a *App) addAliases() error {
 	for _, al := range aliases {
 		if err := a.r.AddActionAlias(al); err != nil {

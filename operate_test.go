@@ -149,3 +149,43 @@ func TestOperatorOnTheStructure(t *testing.T) {
 		t.Fatalf("! !: focus %q query %q", a.r.Focus, a.queryText())
 	}
 }
+
+// NESTED: esc leaves the sub-tables (TABLE), backspace one level, D shows
+// the nested value as the pane's view.
+func TestNestedKeys(t *testing.T) {
+	a := hoverAt(t, 120, 30, 6)
+	press(t, a, "j")
+	if a.r.BaseMode() != "nested" {
+		t.Fatalf("j: mode %q", a.r.BaseMode())
+	}
+	press(t, a, "esc")
+	if a.hoverIn() || a.r.BaseMode() != "table" {
+		t.Fatalf("esc: hover %v mode %q", a.hoverIn(), a.r.BaseMode())
+	}
+	press(t, a, "j", "backspace")
+	if a.hoverIn() {
+		t.Fatal("backspace stayed in the sub-table")
+	}
+	press(t, a, "j", "D")
+	if a.shown == nil || a.shown.Path != "[].address" {
+		t.Fatalf("D: shown %v", a.shown)
+	}
+}
+
+// :sort and :sort! sort the table by the cursor's column.
+func TestSortAliases(t *testing.T) {
+	a := open(t, "testdata/sample.json", 110, 30)
+	selectPath(t, a, ".items")
+	press(t, a, "ctrl+w", "l", "l", "l", ":")
+	Type(a.m, "sort!")
+	press(t, a, "enter")
+	if a.sort == nil || a.sort.col != "name" || !a.sort.reverse {
+		t.Fatalf(":sort!: %+v (%q)", a.sort, a.m.Status)
+	}
+	press(t, a, ":")
+	Type(a.m, "sort")
+	press(t, a, "enter")
+	if a.sort == nil || a.sort.reverse {
+		t.Fatalf(":sort: %+v (%q)", a.sort, a.m.Status)
+	}
+}

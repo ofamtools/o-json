@@ -336,6 +336,10 @@
     ]},
     {"context": "item/nested", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "esc", "action": "rows.out", "hint": "esc/backspace out"},
+      {"key": "backspace", "action": "rows.out", "args": {"levels": "one"}, "hidden": true},
+      {"key": "-", "action": "rows.out", "args": {"levels": "one"}, "hidden": true},
+      {"key": "D", "action": "rows.show-nested", "hint": "show it"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
@@ -345,6 +349,10 @@
     ]},
     {"context": "field/nested", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "esc", "action": "rows.out", "hint": "esc/backspace out"},
+      {"key": "backspace", "action": "rows.out", "args": {"levels": "one"}, "hidden": true},
+      {"key": "-", "action": "rows.out", "args": {"levels": "one"}, "hidden": true},
+      {"key": "D", "action": "rows.show-nested", "hint": "show it"},
       {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},

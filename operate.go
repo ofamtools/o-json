@@ -584,4 +584,9 @@ func (a *App) registerOperate() {
 	}
 	setHistory(r, ochazuke.HistoryChange, keys...)
 	setRepeatable(r, keys...)
+	for _, al := range modeAliases {
+		if err := r.AddActionAlias(al); err != nil {
+			panic(err) // o-jj's own rows: a clash is a bug here
+		}
+	}
 }

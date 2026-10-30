@@ -11,7 +11,7 @@ Updated as each item lands; the sections below describe what is built.
 |---|---|---|
 | SHAPE declared by the structure pane | `ctrl+w h` | done |
 | TABLE declared by the table / fields view | `ctrl+w l`, `ctrl+a o` | done |
-| NESTED while a hover sub-table is open under the cursor | `j` into it, `k` out | done |
+| NESTED while a hover sub-table is open under the cursor | `j` into it, `k` out, `esc` out (TABLE), `backspace`/`-` one level, `D` shows it | done |
 | FLAT, JSON declared by their views | `D`, `tab`, `shift+tab`, `2 D` | done |
 | SEARCH on the line (`SEARCH · SUBSTR`), SEARCH on the Results | `/`, `tab`, `enter` | done |
 | Search badge tag lower case (`SEARCH · substr`) | | missing (ochazuke upper-cases the badge) |
@@ -48,6 +48,7 @@ Updated as each item lands; the sections below describe what is built.
 | One line, type cycle substring / fuzzy / regex / jq | `/`, `tab`, `shift+tab` | done |
 | Hits while typing, Results view, n/N, jump, yank | `ctrl+n/p`, `enter`, `n`, `N`, `y y`, `y p` | done |
 | `esc` on the line cancels; `esc` on a pane clears | `esc` | done |
+| `:sort`, `:sort!`, `:find` aliases | `:sort` | done (`:raw` would shadow `viewer.raw`: `g r`) |
 | Hits computed off the event loop | | done (documents over 20000 nodes; the breadcrumb says `searching…`) |
 | Undo groups per search typing session | `u` on the line | done (o-jj folds the session on leaving: `groupLineSession`, a workaround) |
 | jq slots on `ctrl+n`/`ctrl+p` | | done |
@@ -105,7 +106,7 @@ its trial colour (o-jj colours the application accent by mode).
 |---|---|---|---|
 | SHAPE | `SHAPE` | the structure pane | the structure keys; `ctrl+w o` keeps the structure pane |
 | TABLE | `TABLE` | the data pane's table, object row or fields | `i` → EDIT, `r` → EDIT and the value editor; `ctrl+w o` keeps the data pane |
-| NESTED | `NESTED` | the cursor in a hover sub-table | as TABLE |
+| NESTED | `NESTED` | the cursor in a hover sub-table | as TABLE; `esc` leaves the sub-tables, `backspace`/`-` one level, `D` shows the value as the pane's view |
 | FLAT | `FLAT` | `D`/`tab` to the Flat view | `y y` line, `y p` path, `y v` value, `enter` moves the structure cursor to the path |
 | JSON | `JSON` | `D`/`tab` to the JSON view | `z a` `z o` `z c` fold the value under the line, `z M` fold all, `z R` open all, `%` matching bracket, `y y` value, `y p` path, `enter` jump |
 | SEARCH | `SEARCH · SUBSTR` / `· FUZZY` / `· REGEX` on the line, `SEARCH` on the Results | `/` | on the line: `tab`/`shift+tab` type, `ctrl+n`/`ctrl+p` hits, `enter` shows the Results, `esc` cancels; on the Results: `n`/`N`, `enter` jumps the structure (the pane stays), `y y` value, `y p` path, `esc` clears |

@@ -378,6 +378,20 @@ func (a *App) hoverUp(steps int) error {
 	return nil
 }
 
+// hoverOut leaves the sub-tables: all of them (back on the table's row)
+// or one level.
+func (a *App) hoverOut(levels string) int {
+	a.hoverCheck()
+	h := &a.hover
+	if levels == "one" && len(h.path) > 0 {
+		h.path = h.path[:len(h.path)-1]
+	} else {
+		h.path = nil
+	}
+	a.hoverMark()
+	return len(h.path)
+}
+
 // hoverColumn moves along the sub-table line under the cursor: by delta
 // cells, to the first or last, or to cell index (1 the first) when
 // index > 0.
@@ -596,6 +610,25 @@ func (a *App) registerHover() {
 			}
 			return ochazuke.Done(a.hover.path[len(a.hover.path)-1].col)
 		}, "Move along the line of the data pane's sub-table under the cursor (table.nested hover): by delta cells, to the first or last, or to cell index").Motion().When("rows-in-sub-table")
+	r.Define("rows").
+		Verb("out", func(c ochazuke.Ctx) ochazuke.Result {
+			return ochazuke.Done(a.hoverOut(ochazuke.StringArg(c.Args, "levels", "all")))
+		}, "Leave the data pane's sub-tables (NESTED): levels all (esc) back to the table's row, one (backspace) one level up").Motion().When("rows-in-sub-table").
+		Verb("show-nested", func(c ochazuke.Ctx) ochazuke.Result {
+			v, ok := a.hoverValueAt()
+			if !ok || v.node == nil {
+				return ochazuke.Failed(errors.New("no nested value here"))
+			}
+			p := v.node.Path()
+			a.hover.path = nil
+			if err := a.jumpStructure(p); err != nil {
+				return ochazuke.Failed(err)
+			}
+			c.Info("showing " + generalPath(p) + " · h goes back")
+			return ochazuke.Done(p)
+		}, "Show the sub-table's value under the cursor as the data pane's view (D in NESTED): the structure cursor moves to its path").When("rows-in-sub-table")
+	setParams(r, "rows.out", map[string]ochazuke.Parameter{"levels": {Type: "string", Enum: []string{"all", "one"}, Description: "all sub-tables (esc) or one level (backspace)"}})
+	setHistory(r, ochazuke.HistoryAction, "rows.out", "rows.show-nested")
 	key := r.CanonicalKey("rows.column")
 	op := r.Operations[key]
 	op.Parameters = map[string]ochazuke.Parameter{
