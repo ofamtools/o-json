@@ -1,8 +1,22 @@
-# o-json
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <img alt="o-json" src="assets/logo-light.svg" width="257">
+  </picture>
+  <br>
+  <a href="https://github.com/unixsuperhero/o-json/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/unixsuperhero/o-json?sort=semver&amp;label=release"></a>
+  <a href="https://pkg.go.dev/github.com/unixsuperhero/o-json"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/unixsuperhero/o-json.svg"></a>
+  <a href="go.mod"><img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/unixsuperhero/o-json"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/unixsuperhero/o-json"></a>
+</p>
+
+<p align="center">See a JSON document's shape and its arrays as tables, then edit, reshape and query it with jq.</p>
+
+<p align="center"><img alt="sample.json in the viewer: the structure tree, .items as a table, the owner sub-table opening under the row, r editing a name, r renaming .name to title in the structure, and g j showing the live jq panel with the mapping" src="assets/demo.gif" width="720"></p>
 
 New here? Start with the [guide](docs/GUIDE.md).
 
-A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out`, `export --out`, the viewer's `w` and `viewer.export` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
+A JSON structure and table viewer for the o family, built on [ochazuke](https://github.com/unixsuperhero/ochazuke) (Bubble Tea v2) with an [oden](https://github.com/unixsuperhero/oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out`, `export --out`, the viewer's `w` and `viewer.export` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
 
 ```sh
 o-json data.json                        # open the viewer (also: o-json view data.json)
@@ -17,7 +31,37 @@ o-json export data.json --of .items > items.csv     # an array as csv (tsv, json
 o-json --smoke data.json                # render one 80x24 frame to stdout and exit
 ```
 
-Build: `go build -o ~/bin/o-json .`
+## Highlights
+
+- **The structure tree.** One row per path, not per value: types, counts, optional fields and repeated keys at a glance ([guide](docs/GUIDE.md#2-read-the-shape), [reference](#structure)).
+- **Tables with hover sub-tables.** An array of objects as a table, optional columns last; a nested object or array opens as a sub-table under the row as the cursor reaches it ([guide](docs/GUIDE.md#3-an-array-as-a-table), [detail](docs/GUIDE.md#4-drill-into-a-row)).
+- **The value editor.** Edit, add, delete and rename values in the table, each typed from what you write and each one undoable; nothing is written until you ask ([guide](docs/GUIDE.md#5-edit-values)).
+- **Restructure and reshape, with the live jq panel.** Rename, move, nest and wrap shapes in the structure itself or on the restructure page, flatten and key arrays by a field; `g j` keeps the jq program and the mapping for every change on screen ([guide](docs/GUIDE.md#6-restructure-the-shape), [reference](#the-restructure-page)).
+- **The query line.** jq as you type, with path completion, field chips and a function picker; path answers are the document's own nodes ([guide](docs/GUIDE.md#7-query-with-jq), [reference](#query)).
+- **Export.** An array as csv, tsv, jsonl or markdown, from the command line or the viewer, or straight into o-csv ([guide](docs/GUIDE.md#8-export-and-write), [reference](#export)).
+- **A story tester.** The viewer's interactions are [monogatari](https://github.com/unixsuperhero/monogatari) stories, played headless under `go test` and live in a separate tester build ([reference](#the-story-tester)).
+
+## Install
+
+```sh
+go install github.com/unixsuperhero/o-json@latest
+```
+
+Requires Go 1.27 or newer. From a checkout: `go build -o ~/bin/o-json .`; `make story-build` builds the story tester as `bin/o-json-story`, never over `o-json` (see [The story tester](#the-story-tester)).
+
+## In the family
+
+o-json is one of the o family's `o-*` tools, so `o json` and `mtm json` reach it once it is on PATH:
+
+| Repo | Relation |
+|---|---|
+| [ochazuke](https://github.com/unixsuperhero/ochazuke) | The TUI framework the viewer is built on: panes, lists, the tree, modals, keys as binding rows, the palette, settings. |
+| [oden](https://github.com/unixsuperhero/oden) | The command line: `o-json structure`, `table`, `doc ...`, and `o json` from the family root. |
+| [monogatari](https://github.com/unixsuperhero/monogatari) | The story tester: o-json's stories run through its host, in the `monogatari` build only. |
+| [matomeru](https://github.com/unixsuperhero/matomeru) (`mtm`) | Reaches o-json as `mtm json`, as it does every `o-*` tool. |
+| [o-csv](https://github.com/unixsuperhero/o-csv) | The sibling o-json copies its shape from; `viewer.open-in` opens a table there. |
+
+The full gate is under [Checks](#checks); o-json is MIT licensed ([License](#license)).
 
 ## Paths
 
@@ -416,3 +460,7 @@ bin/o-json-story story fixture list          # nest, viewer, empty
 ```
 
 It reads and writes no user config and no state but its own (recordings under `$XDG_DATA_HOME/o-json-story`, user stories under `$XDG_CONFIG_HOME/o-json-story/stories`); every session's document and state directory are temp dirs.
+
+## License
+
+MIT; see [LICENSE](LICENSE).
