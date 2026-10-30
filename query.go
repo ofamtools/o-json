@@ -152,6 +152,10 @@ func (j *jqRunner) key() (string, string, *Node) {
 // pause is over.
 func (j *jqRunner) PendingCommand() tea.Cmd {
 	j.a.refreshSearch()
+	// The runner runs after every event: the declared mode (views.go)
+	// follows a focus move here, before the frame draws its badge, as
+	// well as in render.
+	j.a.syncDeclaredMode()
 	key, q, root := j.key()
 	a := j.a
 	if key != j.wanted {

@@ -87,8 +87,8 @@ func (a *App) syncDeclaredMode() {
 		}
 		return
 	}
-	if len(a.r.Modals()) > 0 {
-		return
+	if len(a.r.Modals()) > 0 || a.r.Mode.Payload.Prefix != "" || a.r.Mode.Name != a.r.BaseMode() {
+		return // a modal, or a prefix or count waiting for its next key
 	}
 	if a.r.Focus == jqFieldID {
 		// The search line: the type's mode, while it is in insert.
