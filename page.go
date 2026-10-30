@@ -1366,6 +1366,32 @@ func (a *App) registerRestructureVerbs() {
 			}
 			return sendShapes(c, shapes)
 		}, "Send the shape (with the ancestors it needs and its fields) to the restructure").Many().When("shape-sendable")
+	// d o on the restructured side (vimdiff's obtain): the shape under the
+	// original side's cursor comes over, as d p (shape.send) pushes it.
+	r.DefineGuard("split-obtainable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		if r.Page != rsPageID {
+			return false
+		}
+		n, ok := a.rs.orig.Selected()
+		if !ok {
+			return false
+		}
+		inst := r.Instances[n.ID]
+		s, _ := inst.Data.(*Shape)
+		return inst != nil && s != nil && s.parent != nil && a.rs.in == nil
+	})
+	r.Define("node").
+		Verb("obtain", func(c ochazuke.Ctx) ochazuke.Result {
+			n, _ := a.rs.orig.Selected()
+			s, _ := r.Instances[n.ID].Data.(*Shape)
+			return sendShapes(c, []*Shape{s})
+		}, "Bring the shape under the original side's cursor over to the restructured side (d o, vimdiff's obtain; d p on the original pushes)").When("split-obtainable")
+	r.Define("restructure").
+		Verb("one-way", func(ochazuke.Ctx) ochazuke.Result {
+			return ochazuke.Failed(errors.New("the original side is read-only: d p on it pushes a shape here, d o here pulls one"))
+		}, "Say that the split moves shapes one way, original to restructured (d p on the restructured side, d o on the original)")
+	setHistory(r, ochazuke.HistoryChange, "node.obtain")
+	setHistory(r, ochazuke.HistoryAction, "restructure.one-way")
 
 	r.Define("restructure").
 		Verb("open", func(c ochazuke.Ctx) ochazuke.Result {

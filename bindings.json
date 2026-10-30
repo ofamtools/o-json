@@ -224,7 +224,16 @@
       {"key": "]", "action": "node.unwrap", "hidden": true},
       {"key": "v", "action": "ochazuke.list.visual", "hidden": true}
     ]},
+    {"context": "shape/split", "extends": "normal", "bindings": [
+      {"key": "d p", "action": "shape.send", "hint": "push"},
+      {"key": "d o", "action": "restructure.one-way", "hidden": true}
+    ]},
+    {"context": "node/split", "extends": "normal", "bindings": [
+      {"key": "d o", "action": "node.obtain", "hint": "pull"},
+      {"key": "d p", "action": "restructure.one-way", "hidden": true}
+    ]},
     {"context": "shape/visual-line", "extends": "normal", "bindings": [
+      {"key": "d p", "action": "shape.send", "hint": "push"},
       {"key": "v", "action": "ochazuke.list.visual", "hidden": true}
     ]},
     {"context": "node/jq", "bindings": [

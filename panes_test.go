@@ -52,3 +52,22 @@ func TestSplitOnlySide(t *testing.T) {
 		t.Fatalf("split ctrl+w =: only %q", a.rsOnly)
 	}
 }
+
+// SPLIT: d p on the original pushes the shape, d o on the restructured
+// side pulls the original's, and the other direction refuses.
+func TestSplitPushPull(t *testing.T) {
+	a := open(t, "testdata/sample.json", 110, 30)
+	press(t, a, "ctrl+w", "v", "j", "d", "p")
+	if got := len(a.Mapping().Map); got != 1 {
+		t.Fatalf("d p: %d entries", got)
+	}
+	press(t, a, "j", "ctrl+w", "l", "d", "o")
+	if got := len(a.Mapping().Map); got != 2 {
+		t.Fatalf("d o: %d entries", got)
+	}
+	Press(a.m, "d")
+	Press(a.m, "p")
+	if !strings.Contains(a.m.Status, "read-only") {
+		t.Fatalf("d p on the restructured side: %q", a.m.Status)
+	}
+}
