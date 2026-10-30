@@ -1,0 +1,43 @@
+{
+  "name": "o-json: a highlighted column off screen scrolls the data table to show it; the cursor's row stays",
+  "area": "follow",
+  "width": 64,
+  "height": 30,
+  "theme": "dark",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "sample.json"
+  },
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "tab",
+    "3",
+    "G",
+    "shift+tab",
+    "9",
+    "j"
+  ],
+  "expect": [
+    {
+      "after": 7,
+      "contains": [
+        "Table .items[]  3/4"
+      ],
+      "lacks": [
+        "third"
+      ]
+    },
+    {
+      "contains": [
+        "Table .items[]  3/4",
+        "note?",
+        "third",
+        ".items[].note (string"
+      ],
+      "cell": "third"
+    }
+  ]
+}

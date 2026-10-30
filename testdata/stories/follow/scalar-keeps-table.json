@@ -1,0 +1,54 @@
+{
+  "name": "o-json: the structure cursor onto a plain-value path keeps the data pane's table and the cursor's row, and highlights the path's column (the cursor's column moves to it)",
+  "area": "follow",
+  "width": 120,
+  "height": 30,
+  "theme": "dark",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "sample.json"
+  },
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "tab",
+    "3",
+    "G",
+    "shift+tab",
+    "2",
+    "j",
+    "tab"
+  ],
+  "expect": [
+    {
+      "after": 7,
+      "contains": [
+        "Table .items[]  3/4"
+      ]
+    },
+    {
+      "after": 10,
+      "contains": [
+        "Table .items[]  3/4",
+        ".items[].name (string 4/4)"
+      ],
+      "cell": "gamma"
+    },
+    {
+      "contains": [
+        "Table .items[]  3/4"
+      ],
+      "cell": "gamma",
+      "styled": {
+        "alpha": "#78BFA5",
+        "beta": "#78BFA5",
+        "delta": "#78BFA5"
+      },
+      "attrs": {
+        "[\"red\",\"blue\"]": "-fg"
+      }
+    }
+  ]
+}

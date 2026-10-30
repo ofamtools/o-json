@@ -40,6 +40,9 @@ type rowsView struct {
 	sel    int // the selected row of the source, -1 for none
 	off    int // the first row on screen
 	height int // rows on screen, from the last frame
+	// litCol and litRow are the column and the row of the source the view
+	// highlights (follow.go), -1 for none; a new source clears them.
+	litCol, litRow int
 }
 
 // defaultRowsHeight is the window before the first frame measures it.
@@ -53,13 +56,14 @@ func newRowsView(r *ochazuke.Runtime, id, parent string) (*rowsView, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &rowsView{r: r, list: list, id: id, sel: -1, height: defaultRowsHeight}, nil
+	return &rowsView{r: r, list: list, id: id, sel: -1, height: defaultRowsHeight, litCol: -1, litRow: -1}, nil
 }
 
 // set shows a new source with row sel selected (clamped).
 func (v *rowsView) set(src rowSource, sel int) error {
 	v.src = src
 	v.off = 0
+	v.litCol, v.litRow = -1, -1
 	v.list.SetColumns(src.columns...)
 	v.sel = -1
 	if src.n > 0 {
@@ -131,6 +135,7 @@ func (v *rowsView) refresh() error {
 		if v.src.data != nil {
 			item.Data = v.src.data(i)
 		}
+		item.Tones = v.tones(i, len(item.Cells))
 		items = append(items, item)
 	}
 	if err := v.list.SetItems(items); err != nil {
@@ -140,6 +145,21 @@ func (v *rowsView) refresh() error {
 		return v.list.Select(v.id + "/" + strconv.Itoa(v.sel-v.off))
 	}
 	return nil
+}
+
+// tones are row i's highlight: the highlighted column's cell, or every
+// cell of the highlighted row.
+func (v *rowsView) tones(i, cells int) []ochazuke.ToneSpan {
+	var out []ochazuke.ToneSpan
+	if v.litCol >= 0 && v.litCol < cells {
+		out = append(out, ochazuke.CellTone(v.litCol, toneFollow))
+	}
+	if i == v.litRow {
+		for c := range cells {
+			out = append(out, ochazuke.CellTone(c, toneFollow))
+		}
+	}
+	return out
 }
 
 // page is half a screen (half) or a screen less one row.

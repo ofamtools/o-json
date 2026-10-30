@@ -2,9 +2,9 @@
    › testdata/reshape.json  Restructure                                         
   ────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json  ·  .people[].address.city (string 2/2)                 
-  ╭━ Structure · 2 marked · … ━╮ ╭─ Table .people[].address.city  1/2 ───────╮  
-  ┃ jq / to query              ┃ │ #  (value)                                │  
-  ┃   key                   2› ┃ │ 0  Oslo                                   │  
+  ╭━ Structure · 2 marked · … ━╮ ╭─ Table .people[].address  1/2 ────────────╮  
+  ┃ jq / to query              ┃ │ #  city  zip?                             │  
+  ┃   key                   2› ┃ │ 0  Oslo  0150                             │  
   ┃   ▾ . (root)               ┃ │ 1  Rome                                   │  
   ┃       title                ┃ │                                           │  
   ┃     ▾ people               ┃ │                                           │  

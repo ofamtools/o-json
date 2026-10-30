@@ -1,0 +1,46 @@
+{
+  "name": "o-json: the structure cursor onto a collection still changes the data pane, and the highlight goes",
+  "area": "follow",
+  "width": 120,
+  "height": 30,
+  "theme": "dark",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "sample.json"
+  },
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "j",
+    "j",
+    "tab",
+    "shift+tab",
+    "j",
+    "tab"
+  ],
+  "expect": [
+    {
+      "after": 7,
+      "contains": [
+        "Table .items[]  1/4"
+      ],
+      "styled": {
+        "beta": "#78BFA5"
+      }
+    },
+    {
+      "contains": [
+        "Table .items[].owner  1/4",
+        "ann@example.com"
+      ],
+      "lacks": [
+        "alpha"
+      ],
+      "attrs": {
+        "bob": "-fg"
+      }
+    }
+  ]
+}

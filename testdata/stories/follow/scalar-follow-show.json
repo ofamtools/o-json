@@ -1,0 +1,33 @@
+{
+  "name": "o-json: structure.scalar-follow show shows a plain-value path's values alone, as before",
+  "area": "follow",
+  "width": 120,
+  "height": 30,
+  "theme": "dark",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "sample.json"
+  },
+  "values": {
+    "structure.scalar-follow": "show"
+  },
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "j",
+    "j"
+  ],
+  "expect": [
+    {
+      "contains": [
+        "Table .items[].name  1/4",
+        "(value)"
+      ],
+      "lacks": [
+        "archived?"
+      ]
+    }
+  ]
+}

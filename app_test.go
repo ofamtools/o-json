@@ -181,7 +181,13 @@ func TestObjectFieldsAndScalars(t *testing.T) {
 	if !strings.Contains(frame, "Fields .") || !strings.Contains(line(frame, "version"), "2") {
 		t.Fatalf("root fields\n%s", frame)
 	}
+	// A plain value keeps the fields that hold it, its row highlighted
+	// (structure.scalar-follow highlight); show shows it alone.
 	selectPath(t, a, ".name")
+	if frame = view(a); !strings.Contains(frame, "Fields .") || a.data.litRow != 0 || a.data.Selected() != 0 {
+		t.Fatalf("scalar kept the fields (row %d, lit %d)\n%s", a.data.Selected(), a.data.litRow, frame)
+	}
+	scalarsAlone(t, a)
 	if frame = view(a); !strings.Contains(frame, "Value .name") || !strings.Contains(frame, `"o-json sample"`) {
 		t.Fatalf("scalar\n%s", frame)
 	}

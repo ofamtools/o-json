@@ -58,12 +58,16 @@ type App struct {
 
 	treeWidth int // the structure tree's natural width
 
-	shown  *Shape // the shape the data panel shows
-	data   *rowsView
-	tab    *Table   // the data panel's table, when it shows one
-	fields *Node    // the data panel's object, when it shows fields
-	lines  []string // the data panel's raw lines, when Raw
-	scalar *Node    // the data panel's single scalar
+	shown *Shape // the shape the data panel shows
+	lit   *Shape // the plain-value shape highlighted in it (follow.go), nil for none
+	// litPath is the path last highlighted (kept across a show of the
+	// same table), so lighting it again does not move the cursor.
+	litPath string
+	data    *rowsView
+	tab     *Table   // the data panel's table, when it shows one
+	fields  *Node    // the data panel's object, when it shows fields
+	lines   []string // the data panel's raw lines, when Raw
+	scalar  *Node    // the data panel's single scalar
 
 	detail *rowsView
 	trail  []*Node // the detail modal's drill path, innermost last
@@ -157,6 +161,9 @@ func New() (*App, error) {
 		return nil, err
 	}
 	if err := declareJQPanelSettings(r); err != nil {
+		return nil, err
+	}
+	if err := declareFollowSettings(r); err != nil {
 		return nil, err
 	}
 	page, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID))
@@ -403,21 +410,14 @@ func (a *App) sync() error {
 			if a.shown == nil && note == a.note {
 				return nil
 			}
-			a.shown, a.tab, a.fields, a.lines, a.scalar, a.note = nil, nil, nil, nil, nil, note
+			a.shown, a.tab, a.fields, a.lines, a.scalar, a.lit, a.note = nil, nil, nil, nil, nil, nil, note
 			return a.data.set(rowSource{}, 0)
 		}
 		a.note = ""
-		if s == a.shown {
-			return nil
-		}
-		return a.show(s)
+		return a.display(s, false)
 	}
 	a.note = ""
-	s := a.selectedShape()
-	if s == nil || s == a.shown {
-		return nil
-	}
-	return a.show(s)
+	return a.display(a.selectedShape(), false)
 }
 
 // show fills the data panel with a shape's values: one object as labeled
@@ -440,15 +440,15 @@ func (a *App) show(s *Shape) error {
 	}
 	follow := a.followKey
 	a.followKey = ""
-	a.shown, a.tab, a.fields, a.lines, a.scalar = s, nil, nil, nil, nil
+	a.shown, a.tab, a.fields, a.lines, a.scalar, a.lit = s, nil, nil, nil, nil, nil
 	values := s.Values()
 	set := func(src rowSource) error {
 		if err := a.data.set(src, sel); err != nil {
 			return err
 		}
-		if col > 0 {
-			a.data.list.SetColumn(col)
-		}
+		// Another table starts at its first column (a highlight moves it
+		// on, follow.go); the same one keeps the cursor's column.
+		a.data.list.SetColumn(col)
 		return nil
 	}
 	switch {

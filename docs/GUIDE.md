@@ -50,7 +50,7 @@ The structure tells you every path in the document, its types, and how many valu
 7. On a deep tree, `z +` zooms into the node and `z -` zooms back out.
 8. Press `T` again to go back to the edited structure.
 
-**What you'll see:** the data panel follows the selection. A string shows as a value, an object as `field  type  value` rows, and an array as a table.
+**What you'll see:** the data panel follows the selection. An object shows as `field  type  value` rows and an array as a table. A path of plain values (a string, a number) does not replace them: the data panel stays on the table or fields that hold it and highlights its column (scrolled into view, the row kept) or its field row, so `j`/`k` down `.items[].id`, `.items[].name` walks across the table's columns. `: settings set structure.scalar-follow show` shows the values alone instead, as before.
 
 **Searching paths by text:** by default `/` opens the jq query line (chapter 7), which also finds things. If you want the plain path search instead, turn the query line off with `: settings set query.line false`. Then, in the original structure, `/` searches the paths, `n` and `N` go to the next and previous match, and `esc` clears the search. Case is smart, as in Vim with `smartcase`: `name` finds `Name` and `NAME` too, while `Name` finds only `Name` (ochazuke's `search.case` setting: `ignore` or `sensitive` instead).
 

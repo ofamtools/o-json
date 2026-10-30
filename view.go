@@ -136,7 +136,13 @@ func (a *App) breadcrumb() string {
 		return a.emptyCrumb()
 	}
 	parts := []string{a.Doc.Name + a.dirtyMark()}
-	if s := a.shown; s != nil {
+	// The path the tree's cursor is on: the shape shown, or the plain
+	// values highlighted in it (follow.go).
+	s := a.shown
+	if a.lit != nil {
+		s = a.lit
+	}
+	if s != nil {
 		info := s.Types() + " ×" + fmt.Sprint(s.Count)
 		if s.IsField() {
 			info = s.Types() + " " + s.Presence()

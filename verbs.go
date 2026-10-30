@@ -333,10 +333,7 @@ func (a *App) refilter() error {
 
 // reshow redraws the data panel for the selected shape.
 func (a *App) reshow() error {
-	if s := a.selectedShape(); s != nil {
-		return a.show(s)
-	}
-	return nil
+	return a.display(a.selectedShape(), true)
 }
 
 // matchList is the shapes the filters match, in tree order.
