@@ -12,7 +12,7 @@
 
 <p align="center">See a JSON document's shape and its arrays as tables, then edit, reshape and query it with jq.</p>
 
-<p align="center"><img alt="sample.json in the viewer: the structure tree, .items as a table, the owner sub-table opening under the row, r editing a name, r renaming .name to title in the structure, and g j showing the live jq panel with the mapping" src="assets/demo.gif" width="720"></p>
+<p align="center"><img alt="sample.json in the viewer: the structure tree, .items as a table, the owner sub-table opening under the row, r editing a name, r renaming .name to title in the structure, and g j showing the live jq panel with the mapping" src="assets/demo.gif" width="880"></p>
 
 New here? Start with the [guide](docs/GUIDE.md).
 

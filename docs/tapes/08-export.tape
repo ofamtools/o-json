@@ -5,17 +5,17 @@ Output "docs/img/08-export.gif"
 
 Set Shell "bash"
 Set Theme "Catppuccin Mocha"
-Set FontSize 14
-Set Width 1132
-Set Height 606
+Set FontSize 16
+Set Width 1600
+Set Height 900
 Set Padding 12
 Set Framerate 10
 Set TypingSpeed 60ms
 Set CursorBlink false
 
-# Off camera: throwaway HOME and XDG dirs, so no owner config or state is read or written.
+# Off camera: throwaway HOME and XDG dirs, so no owner config or state is read or written; truecolor for the 24-bit colours.
 Hide
-Type "export HOME=$(mktemp -d /tmp/o-json-guide/oj.XXXX) && export XDG_CONFIG_HOME=$HOME/c XDG_STATE_HOME=$HOME/s XDG_DATA_HOME=$HOME/d XDG_CACHE_HOME=$HOME/k PS1='$ ' && cd /tmp/o-json-guide/vhs-work && clear && alias o-json=/tmp/o-json-guide/bin/o-json"
+Type "export HOME=$(mktemp -d /tmp/o-json-guide/oj.XXXX) && export XDG_CONFIG_HOME=$HOME/c XDG_STATE_HOME=$HOME/s XDG_DATA_HOME=$HOME/d XDG_CACHE_HOME=$HOME/k COLORTERM=truecolor PS1='$ ' && cd /tmp/o-json-guide/vhs-work && clear && alias o-json=/tmp/o-json-guide/bin/o-json"
 Enter
 Sleep 2s
 Show
