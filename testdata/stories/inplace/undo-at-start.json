@@ -3,9 +3,9 @@
   "area": "inplace",
   "width": 100,
   "height": 20,
-  "page": {"id": "o-json-viewer"},
+  "fixture": "viewer",
   "script": ["u"],
   "expect": [
-    {"after": 1, "contains": ["already at oldest change"], "lacks": ["[+]", "Error"]}
+    {"contains": ["already at oldest change"], "lacks": ["[+]", "Error"]}
   ]
 }

@@ -3,10 +3,11 @@
   "area": "edit",
   "width": 120,
   "height": 30,
-  "page": {"id": "o-json-nested"},
+  "fixture": "viewer",
+  "seed": {"doc": "nested.json"},
   "script": ["tab", "v", "j"],
   "expect": [
     {"after": 2, "lacks": ["┃ json"], "highlighted": 1, "cell": "", "highlightedText": "["},
-    {"after": 3, "highlighted": 1, "cell": "", "highlightedText": "{"}
+    {"highlighted": 1, "cell": "", "highlightedText": "{"}
   ]
 }

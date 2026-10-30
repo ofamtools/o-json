@@ -3,9 +3,9 @@
   "area": "ux2",
   "width": 110,
   "height": 20,
-  "page": {"id": "o-json-empty"},
+  "fixture": "empty",
   "script": ["j"],
   "expect": [
-    {"after": 1, "contains": ["╭━ Structure"], "lacks": ["╭─ Structure"]}
+    {"contains": ["╭━ Structure"], "lacks": ["╭─ Structure"]}
   ]
 }

@@ -3,11 +3,12 @@
   "area": "edit",
   "width": 120,
   "height": 30,
-  "page": {"id": "o-json-nested"},
-  "settings": [{"name": "value.editor", "type": "string", "default": "inline"}],
+  "fixture": "viewer",
+  "seed": {"doc": "nested.json"},
+  "values": {"value.editor": "inline"},
   "script": ["tab", "l", "l", "r", {"type": "Zed"}, "esc"],
   "expect": [
     {"after": 4, "modal": "", "focus": "data/value-input", "contains": ["name (string): Ada A"]},
-    {"after": 6, "modal": "", "cell": "Zed", "contains": ["1 value edit"]}
+    {"modal": "", "cell": "Zed", "contains": ["1 value edit"]}
   ]
 }

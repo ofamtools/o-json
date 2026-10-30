@@ -3,11 +3,12 @@
   "area": "edit",
   "width": 120,
   "height": 30,
-  "page": {"id": "o-json-nested"},
+  "fixture": "viewer",
+  "seed": {"doc": "nested.json"},
   "script": ["tab", "enter", "o", {"type": "rank"}, "enter", {"type": "1"}, "enter"],
   "expect": [
     {"after": 3, "modal": "value-editor", "focus": "value-editor/key", "contains": ["[0] · add after id", "key    new-key", "value  null", "enter next"]},
     {"after": 5, "focus": "value-editor/value", "contains": ["key    rank", "enter set"]},
-    {"after": 7, "modal": "detail", "contains": ["rank     number     1", "1 value edit"]}
+    {"modal": "detail", "contains": ["rank     number     1", "1 value edit"]}
   ]
 }

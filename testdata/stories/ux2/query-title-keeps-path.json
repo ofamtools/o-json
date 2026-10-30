@@ -3,9 +3,9 @@
   "area": "ux2",
   "width": 110,
   "height": 20,
-  "page": {"id": "o-json-viewer"},
+  "fixture": "viewer",
   "script": ["j", "m"],
   "expect": [
-    {"after": 2, "mode": "query", "contains": [".a · query"]}
+    {"mode": "query", "contains": [".a · query"]}
   ]
 }

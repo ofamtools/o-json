@@ -58,6 +58,7 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	app.Add(textCommands(stdin, stdout, stderr)...)
 	app.Add(exportCommand(stdin, stdout, stderr))
 	app.Add(viewCommand(stdin, stdout, stderr))
+	app.Add(storyCommands()...) // the tester's story command; none in a normal build
 	ocli.Mount(app, newShell(stdin, stdout, stderr))
 	// Mount's help note says every result is JSON, which is true of the doc
 	// noun only; structure, table and get print text.

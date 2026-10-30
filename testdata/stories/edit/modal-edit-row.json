@@ -3,12 +3,13 @@
   "area": "edit",
   "width": 120,
   "height": 30,
-  "page": {"id": "o-json-nested"},
+  "fixture": "viewer",
+  "seed": {"doc": "nested.json"},
   "script": ["tab", "l", "l", "r", {"type": "Zed"}, "enter", "r", {"type": "gone"}, "esc"],
   "expect": [
     {"after": 4, "modal": "value-editor", "mode": "insert", "contains": ["[0].name", "was    Ada A", "value  Ada A", "enter set", "esc cancel"], "order": ["#", "id", "name", "active"]},
     {"after": 5, "contains": ["value  Zed", " string "]},
     {"after": 6, "modal": "", "mode": "normal", "cell": "Zed", "contains": ["1 value edit"]},
-    {"after": 9, "modal": "", "cell": "Zed", "contains": ["1 value edit"], "lacks": ["gone"]}
+    {"modal": "", "cell": "Zed", "contains": ["1 value edit"], "lacks": ["gone"]}
   ]
 }

@@ -3,7 +3,8 @@
   "area": "hover",
   "width": 120,
   "height": 30,
-  "page": {"id": "o-json-nested"},
+  "fixture": "viewer",
+  "seed": {"doc": "nested.json"},
   "script": ["tab", "j", "j", "l", "l", "l", "l", "l", "l",
     "j", "l", "l",
     "k", "l",
@@ -20,6 +21,6 @@
     {"after": 20, "order": ["o3-0", "mug", "kettle", "filter", "o3-1"], "contains": ["Table .  3/20"]},
     {"after": 23, "order": ["Cy C", "o3-0", "o3-1", "Di D"], "lacks": ["mug"]},
     {"after": 26, "order": ["Cy C", "churn-risk · beta", "Di D"], "lacks": ["o3-0"]},
-    {"after": 32, "contains": ["Table .  6/20"], "lacks": ["churn-risk · beta"]}
+    {"contains": ["Table .  6/20"], "lacks": ["churn-risk · beta"]}
   ]
 }

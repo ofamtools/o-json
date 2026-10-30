@@ -340,10 +340,27 @@ Every setting o-json declares (`: settings`, or `settings.json`), the default fi
 
 ## Checks
 
+o-json has two builds: the viewer, and the story tester (build tag `monogatari`). The gate runs both (`make check` does all of it):
+
 ```sh
-gofmt -l . && go vet ./... && GOWORK=off go test -race ./...
+gofmt -l . && GOWORK=off go vet ./... && GOWORK=off go test -race ./...            # the viewer and the untagged tests
+GOWORK=off go vet -tags monogatari ./... && GOWORK=off go test -race -tags monogatari ./...   # the tester and the stories
+make split-check     # go tool nm: the viewer links no monogatari, the tester does
 go run . --smoke testdata/sample.json
 go run . catalog >/dev/null
 ```
 
-The tests cover structure inference on mixed and optional data, column order, a 50 MB document (100,000 items; 10,000 under `-race`), the viewer through its keys, the empty document, open, paste, new and the recent list, frames at 80 and 120 columns (`testdata/view-*.golden`, `UPDATE_GOLDEN=1` rewrites them), the windowed table at 100,000 rows, and `ValidateBindings`. `TestStories` plays the stories in `testdata/stories/<area>/<name>.json` (ochazuke's story format: a script of keys and expectations; the `page` is a placeholder) through ochazuke's story engine against the real viewer.
+The tests cover structure inference on mixed and optional data, column order, a 50 MB document (100,000 items; 10,000 under `-race`), the viewer through its keys, the empty document, open, paste, new and the recent list, frames at 80 and 120 columns (`testdata/view-*.golden`, `UPDATE_GOLDEN=1` rewrites them), the windowed table at 100,000 rows, and `ValidateBindings`. `TestStories` (`-tags monogatari` only) plays the stories in `testdata/stories/<area>/<name>.json` through [monogatari](https://github.com/unixsuperhero/monogatari)'s `host.Test` against the real viewer: a script of keys and expectations, the story's `fixture` the starting state (`nest`, the default: the restructure page on nest.json with .a .x .y .z sent and .y selected; `viewer`: a fresh viewer; `empty`: no document), its `seed` the document (`{"doc": "nested.json"}`, any `testdata/*.json`; for `nest` also `send` and `on`) and its `values` o-json's settings. The document is copied to a temp dir, so a write lands there.
+
+### The story tester
+
+`make story-build` builds `bin/o-json-story` (never installed over `o-json`), whose `story` command is monogatari's host over the same stories, embedded:
+
+```sh
+bin/o-json-story story run [AREA|NAME...]    # headless; non-zero exit on a failure
+bin/o-json-story story open edit/modal-edit-row   # live in the real chrome
+bin/o-json-story story explore edit          # the state explorer
+bin/o-json-story story fixture list          # nest, viewer, empty
+```
+
+It reads and writes no user config and no state but its own (recordings under `$XDG_DATA_HOME/o-json-story`, user stories under `$XDG_CONFIG_HOME/o-json-story/stories`); every session's document and state directory are temp dirs.

@@ -3,10 +3,11 @@
   "area": "edit",
   "width": 120,
   "height": 30,
-  "page": {"id": "o-json-nested"},
+  "fixture": "viewer",
+  "seed": {"doc": "nested.json"},
   "script": ["tab", "l", "l", "K", "ctrl+u", {"type": "label"}, "enter", "u"],
   "expect": [
     {"after": 7, "order": ["#", "id", "name?", "label?", "active", "tags"], "cell": "Ada A"},
-    {"after": 8, "order": ["#", "id", "name", "active", "tags"], "lacks": ["label?"]}
+    {"order": ["#", "id", "name", "active", "tags"], "lacks": ["label?"]}
   ]
 }

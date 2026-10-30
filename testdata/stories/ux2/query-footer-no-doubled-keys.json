@@ -3,9 +3,9 @@
   "area": "ux2",
   "width": 160,
   "height": 20,
-  "page": {"id": "o-json-viewer"},
+  "fixture": "viewer",
   "script": ["m"],
   "expect": [
-    {"after": 1, "mode": "query", "contains": [". path", "| pipe"], "lacks": [". . path", "| | pipe", "[ [", ", , comma", "] ] each"]}
+    {"mode": "query", "contains": [". path", "| pipe"], "lacks": [". . path", "| | pipe", "[ [", ", , comma", "] ] each"]}
   ]
 }

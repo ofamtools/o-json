@@ -3,10 +3,10 @@
   "area": "ux2",
   "width": 100,
   "height": 20,
-  "page": {"id": "o-json"},
-  "settings": [{"name": "visual.at-edge", "type": "string", "default": "stay", "enum": ["end", "stay"]}],
+  "fixture": "nest",
+  "values": {"visual.at-edge": "stay"},
   "script": ["V", "<"],
   "expect": [
-    {"after": 2, "mode": "visual-line", "lacks": ["[+]"]}
+    {"mode": "visual-line", "lacks": ["[+]"]}
   ]
 }

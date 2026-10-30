@@ -3,9 +3,9 @@
   "area": "ux2",
   "width": 100,
   "height": 20,
-  "page": {"id": "o-json"},
+  "fixture": "nest",
   "script": ["y", "y", "j", "V", "p"],
   "expect": [
-    {"after": 5, "mode": "normal", "contains": ["y-2"], "lacks": ["z       number  .z"]}
+    {"mode": "normal", "contains": ["y-2"], "lacks": ["z       number  .z"]}
   ]
 }

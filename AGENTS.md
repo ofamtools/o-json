@@ -44,7 +44,7 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 | Query mode (`m`): the context at the anchor (`jqContextAt`), how a field is written there (`fieldTerm`), the jq-character verbs | `querymode.go` |
 | The function picker and argument slots | `queryfunc.go` |
 | Path completion after `.` in the query line (the trigger, the shape snapshot the off-loop search reads, `query.complete-paths`) | `querycomplete.go` |
-| o-json's stories (`testdata/stories/<area>/<name>.json`) run through `ochazuke/story` against the real viewer | `story_test.go` |
+| The story tester (`//go:build monogatari`): o-json as a monogatari app (`storyApp`, fixtures `nest`/`viewer`/`empty`, the seed's `doc`/`send`/`on`, the temp document and state dir), the `o-json story` mount (`host.Command`), the embedded stories and testdata documents; the normal build's empty mount; `host.Test` over `testdata/stories/<area>/<name>.json` | `story.go`, `story_off.go`, `story_test.go` |
 | The search prompt, the system clipboard | `prompt.go`, `clipboard.go` |
 
 ## Invariants
@@ -72,12 +72,18 @@ Family plans, todos and the roadmap live in `~/hub/o-plans/` (`README.md` is the
 
 `TestNoDeprecatedOchazuke` (ochazuke's `strictcheck`) fails on any deprecated ochazuke name (`ctx.Status`: use `ctx.Info` or `ctx.Error`). Give a verb availability (`.When(guard)`) rather than a guard on its rows.
 
+Two builds, and the gate runs both (`make check`): `go vet` and `gofmt` see a tagged file only in the tagged run.
+
 ```sh
-gofmt -l . && go vet ./... && GOWORK=off go test -race ./...
+gofmt -l . && GOWORK=off go vet ./... && GOWORK=off go test -race ./...
+GOWORK=off go vet -tags monogatari ./... && GOWORK=off go test -race -tags monogatari ./...
+make split-check     # the normal binary has 0 monogatari symbols (go tool nm), the tester some
 go run . --smoke testdata/sample.json
 go run . catalog >/dev/null
 ```
 
+The tester (`make story-build`, `bin/o-json-story story run|open|explore ...`) links monogatari only behind the build tag `monogatari`: its files are `story.go` and `story_test.go`, and `story_off.go` (`!monogatari`) mounts nothing, so the shipped binary links none of it. Never import monogatari from an untagged file. gopls needs `-tags monogatari` in its build flags to edit the tagged files. A story picks its starting state with `fixture` (never `page`, which the o-json app does not read, so a story with one fails), its document with `seed`, and sets o-json's settings with `values` (`settings` declares new ones and fails on o-json's own). A UI bug becomes a story here (`"skip": "gap: ..."` until the fix) before it is fixed. The fixtures build the real viewer through `New`; a document is copied to a temp dir and the state directory is a temp dir, so no story reaches the repo's testdata or the user's state.
+
 The race suite takes about two minutes. To time it, or to keep each run short on a busy machine, `scripts/test-chunks.sh OUT [N] [flags]` runs the top-level tests in N `go test -json` chunks (`scripts/test-chunks.sh /tmp/o-json-race 4 -race`, then `OUT/done`) and `python3 scripts/slowest.py OUT 15` prints failures, the total and the slowest tests (it also reads one `go test -json` file). Keep the suite fast: a selection walk (`selectIn`, `selectPath`) and `press` draw one frame where they stop, not one per key; tests that open their own viewer may `t.Parallel()` (registers, settings and history are per runtime); a test that needs a large document sizes it for `raceOn` (`rebuildWindowItems`), and `TestMain` fails a run in which every rebuild-window test skipped.
 
-ochazuke (`v0.46.0`) and oden (`v0.1.1`) are required at their tags. An untracked `go.work` (`go work init . ../ochazuke ../oden`) builds against the sibling checkouts, and `GOWORK=off` builds from the tags as a fresh clone does. Never commit `go.work` or a `replace`.
+ochazuke (`v0.54.0`), oden (`v0.1.1`) and monogatari (`v0.1.0`, the tester only) are required at their tags. An untracked `go.work` (`go work init . ../ochazuke ../oden ../monogatari`) builds against the sibling checkouts, and `GOWORK=off` builds from the tags as a fresh clone does. Never commit `go.work` or a `replace`.
