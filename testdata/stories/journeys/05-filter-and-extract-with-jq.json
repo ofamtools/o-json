@@ -1,0 +1,50 @@
+{
+  "values": {"modes.edit-gate": true},
+  "name": "journey 05: filter and extract with jq (paste an API response, select, project, yank from the result, the column into jq)",
+  "width": 120,
+  "height": 30,
+  "fixture": "empty",
+  "area": "journeys",
+  "script": [
+    {"paste": "{\"data\":[{\"id\":\"ORD-1001\",\"status\":\"shipped\",\"customer\":{\"name\":\"Kai Jade\",\"email\":\"kai.jade@example.com\"},\"items\":[{\"sku\":\"TEA-MAT\",\"qty\":3,\"price\":6},{\"sku\":\"CUP-01\",\"qty\":4,\"price\":35}],\"total\":158,\"created_at\":\"2026-10-01T19:00:00Z\"},{\"id\":\"ORD-1002\",\"status\":\"paid\",\"customer\":{\"name\":\"Kai Abe\",\"email\":\"kai.abe@example.com\"},\"items\":[{\"sku\":\"TEA-GEN\",\"qty\":1,\"price\":42}],\"total\":42,\"created_at\":\"2026-10-02T00:00:00Z\",\"coupon\":\"AUTUMN5\"},{\"id\":\"ORD-1003\",\"status\":\"refunded\",\"customer\":{\"name\":\"Finn Abe\"},\"items\":[{\"sku\":\"TEA-MAT\",\"qty\":1,\"price\":26}],\"total\":26,\"created_at\":\"2026-10-02T10:00:00Z\"},{\"id\":\"ORD-1004\",\"status\":\"shipped\",\"customer\":{\"name\":\"Aiko Abe\",\"email\":null},\"items\":[{\"sku\":\"TEA-HOJ\",\"qty\":2,\"price\":18},{\"sku\":\"POT-02\",\"qty\":4,\"price\":24},{\"sku\":\"TEA-SEN\",\"qty\":3,\"price\":9}],\"total\":159,\"created_at\":\"2026-10-02T16:00:00Z\"},{\"id\":\"ORD-1005\",\"status\":\"paid\",\"customer\":{\"name\":\"Dev Abe\",\"email\":\"dev.abe@example.com\"},\"items\":[{\"sku\":\"TEA-GEN\",\"qty\":1,\"price\":29},{\"sku\":\"TEA-HOJ\",\"qty\":1,\"price\":7}],\"total\":36,\"created_at\":\"2026-10-02T22:00:00Z\"},{\"id\":\"ORD-1006\",\"status\":\"refunded\",\"customer\":{\"name\":\"Finn Brook\",\"email\":\"finn.brook@example.com\"},\"items\":[{\"sku\":\"POT-02\",\"qty\":4,\"price\":42},{\"sku\":\"TEA-HOJ\",\"qty\":1,\"price\":38},{\"sku\":\"TEA-GEN\",\"qty\":2,\"price\":24}],\"total\":254,\"created_at\":\"2026-10-03T07:00:00Z\",\"coupon\":\"WELCOME10\"}],\"page\":{\"next\":\"cursor-6\",\"total\":25}}"}, "j", "/", "shift+tab", {"type": ".data[] | select(.status == \"paid\")"}, {"job": "jq.run", "state": "done"}, "enter", "/", {"type": " | {id, total, who: .customer.name}"}, {"job": "jq.run", "state": "done"}, "enter", "l",
+    "l", "y", "j", "y", "ctrl+w", "o", "ctrl+w", "=", "esc", "l", "l", "!",
+    "i", "c", {"job": "jq.run", "state": "done"}, "enter", "esc", "q"
+  ],
+  "expect": [
+    {"after": 1, "mode": "shape", "contains": ["[no file]", "Object .", "data  page"]},
+    {"after": 2, "contains": ["Table .data  1/6"]},
+    {"after": 4, "mode": "jq_·_line", "focus": "jq-field"},
+    {"after": 6, "contains": ["jq .data[] | select(.status == \"paid\") (object ×2)", "2 results"]},
+    {"after": 7, "mode": "jq", "contains": ["Table jq .data[] | select(.status == \"paid\")  1/2", "ORD-1002"]},
+    {"after": 10, "mode": "jq_·_line", "contains": ["keys sorted (object ×2)"]},
+    {"after": 11, "mode": "jq", "contains": ["#  id        total  who", "ORD-1002  42     Kai Abe", "ORD-1005  36     Dev Abe"]},
+    {"after": 14, "register": "42", "contains": ["copied .total"]},
+    {"after": 16, "register": "36"},
+    {"after": 18, "lacks": ["query · unchanged"]},
+    {"after": 20, "contains": [".data · query · unchanged"]},
+    {"after": 21, "contains": ["jq result cleared", "Table .data  1/6"]},
+    {"after": 27, "mode": "jq_·_line", "contains": ["jq .data[].status (string ×6)", "6 results"]},
+    {"after": 28, "contains": ["Table jq .data[].status  1/6", "(value)"]},
+    {"after": 29, "contains": ["jq result cleared"]},
+    {"quit": true}
+  ],
+  "notes": [
+    {"after": 1, "keys": "paste", "note": "o-json with no file; paste a response copied from the browser (a bracketed paste): it becomes the document"},
+    {"after": 2, "keys": "j", "note": "j onto .data: six orders"},
+    {"after": 4, "keys": "/ shift+tab", "note": "/ opens the search line; shift+tab steps back to its jq type (JQ · LINE)"},
+    {"after": 6, "keys": "type \".data[] | select(.status == \\\"paid\\\")\" job jq.run", "note": "type a filter; it runs as you type"},
+    {"after": 7, "keys": "enter", "note": "enter moves into the result (JQ): the two paid orders as a table"},
+    {"after": 10, "keys": "/ type \" | {id, total, who: .customer.name}\" job jq.run", "note": "/ again keeps the query: extend it with a projection"},
+    {"after": 11, "keys": "enter", "note": "enter: id, total and the customer's name"},
+    {"after": 14, "keys": "l l y", "note": "l l to total, y yanks the cell"},
+    {"after": 16, "keys": "j y", "note": "j y: the next one"},
+    {"after": 18, "keys": "ctrl+w o", "note": "ctrl+w o: the result alone"},
+    {"after": 20, "keys": "ctrl+w =", "note": "ctrl+w = brings the tree back (in query mode while a query is live)"},
+    {"after": 21, "keys": "esc", "note": "esc clears the jq result: the table is back"},
+    {"after": 23, "keys": "l l", "note": "l l to the status column"},
+    {"after": 27, "keys": "! i c job jq.run", "note": "! i c: the column's path goes on the jq line and runs"},
+    {"after": 28, "keys": "enter", "note": "enter: every status as a list (the badge reads TABLE here, not JQ: see the README's bugs)"},
+    {"after": 29, "keys": "esc", "note": "esc clears it"},
+    {"after": 30, "keys": "q", "note": "q quits: a pasted document with no edits does not ask"}
+  ]
+}

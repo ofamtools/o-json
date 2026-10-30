@@ -1,0 +1,42 @@
+{
+  "values": {"modes.edit-gate": true},
+  "name": "journey 14: count and group records with jq (how many used a coupon, orders per status, revenue per status sorted, yank a total)",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "jobs/orders.min.json"},
+  "area": "journeys",
+  "script": [
+    "j", "/", "shift+tab", {"type": "[.data[] | select(.coupon)] | length"}, {"job": "jq.run", "state": "done"}, "enter", "/", "ctrl+u", {"type": ".data | group_by(.status) | map({status: .[0].status, orders: length})"}, {"job": "jq.run", "state": "done"}, "enter", "/",
+    {"type": " | sort_by(-.orders)"}, {"job": "jq.run", "state": "done"}, "enter", "/", "ctrl+u", {"type": ".data | group_by(.status) | map({status: .[0].status, orders: length, revenue: (map(.total) | add)}) | sort_by(-.revenue)"}, {"job": "jq.run", "state": "done"}, "enter", "j", "l", "l", "y",
+    "ctrl+w", "o", "ctrl+w", "=", "esc", "q"
+  ],
+  "expect": [
+    {"after": 1, "contains": ["Table .data  1/25"]},
+    {"after": 3, "mode": "jq_·_line"},
+    {"after": 6, "mode": "jq", "contains": ["Value jq [.data[] | select(.coupon)] | length", "1 result"]},
+    {"after": 10, "mode": "jq_·_line", "contains": ["keys sorted"]},
+    {"after": 11, "mode": "jq", "contains": ["#  orders  status", "0  9       paid", "1  3       pending", "2  7       refunded", "3  6       shipped"]},
+    {"after": 15, "mode": "jq", "order": ["9       paid", "7       refunded", "6       shipped", "3       pending"]},
+    {"after": 20, "mode": "jq", "contains": ["#  orders  revenue  status"], "order": ["7       1186     refunded", "9       1142     paid", "6       888      shipped", "3       192      pending"]},
+    {"after": 24, "register": "1142"},
+    {"after": 26, "lacks": ["query · unchanged"]},
+    {"after": 28, "contains": ["query · unchanged"]},
+    {"after": 29, "contains": ["jq result cleared"]},
+    {"quit": true}
+  ],
+  "notes": [
+    {"after": 1, "keys": "j", "note": "opened as `o-json orders.min.json`; j onto .data: 25 orders, no count verb, so jq does the counting"},
+    {"after": 3, "keys": "/ shift+tab", "note": "/ then shift+tab: the line's jq type"},
+    {"after": 6, "keys": "type \"[.data[] | select(.coupon)] | length\" job jq.run enter", "note": "how many orders used a coupon: one number"},
+    {"after": 10, "keys": "/ ctrl+u type \".data | group_by(.status) | map({status: .[0].status, orders: length})\" job jq.run", "note": "/ back on the line, ctrl+u clears it; group by status and count"},
+    {"after": 11, "keys": "enter", "note": "enter: one row per status (jq sorts the keys: orders before status)"},
+    {"after": 15, "keys": "/ type \" | sort_by(-.orders)\" job jq.run enter", "note": "sorting the result is jq too (the table's own sort refuses a jq result: see the README's bugs)"},
+    {"after": 20, "keys": "/ ctrl+u type \".data | group_by(.status) | map({status: .[0].status, orders: length, revenue: (map(.total) | add)}) | sort_by(-.revenue)\" job jq.run enter", "note": "a new question: revenue per status, biggest first"},
+    {"after": 24, "keys": "j l l y", "note": "j to paid, l l to its revenue, y yanks it"},
+    {"after": 26, "keys": "ctrl+w o", "note": "ctrl+w o: the counts alone"},
+    {"after": 28, "keys": "ctrl+w =", "note": "ctrl+w = restores the tree"},
+    {"after": 29, "keys": "esc", "note": "esc clears the result; the document is untouched"},
+    {"after": 30, "keys": "q", "note": "q quits"}
+  ]
+}

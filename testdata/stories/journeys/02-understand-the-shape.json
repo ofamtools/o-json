@@ -1,0 +1,46 @@
+{
+  "values": {"modes.edit-gate": true},
+  "name": "journey 02: understand the shape of JSON you didn't write (counts, optional keys, type filter, missing vs null, structure path)",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "jobs/orders.min.json"},
+  "area": "journeys",
+  "script": [
+    "T", "t", "t", "esc", "g", "g", "7", "j", "y", "p", "k", "k",
+    "enter", "enter", "ctrl+w", "l", "$", "tab", "ctrl+w", "h", "T", "g", "m", "esc",
+    "q"
+  ],
+  "expect": [
+    {"after": 1, "mode": "shape", "contains": ["Structure · original", "email?    string|null  21/25", "coupon?     string        6/25", "price   number       51/51"]},
+    {"after": 2, "contains": ["Structure · original (filtered)", "type string"]},
+    {"after": 3, "contains": ["original (filt", "type number"]},
+    {"after": 4, "contains": ["Structure · original"], "lacks": ["(filtered)"]},
+    {"after": 8, "focus": "s:.data[].customer.email", "contains": [".data[].customer.email (string|null 21/25 optional)", "Table .data[].customer", "kai.jade@example.com"]},
+    {"after": 10, "register": ".data[].customer.email"},
+    {"after": 13, "contains": ["▸ customer"]},
+    {"after": 14, "contains": ["▾ customer", "email?"]},
+    {"after": 17, "mode": "table", "contains": ["row .data[0].customer"]},
+    {"after": 18, "mode": "flat", "contains": [".data[2].customer.name = \"Finn Abe\"", ".data[3].customer.email = null"], "lacks": [".data[2].customer.email"]},
+    {"after": 21, "mode": "shape", "contains": ["Structure · unchanged"]},
+    {"after": 23, "focus": "mode-picker/query", "contains": ["Modes", "SHAPE", "read and walk the structure", "FLAT"]},
+    {"after": 24, "mode": "shape", "lacks": ["read and walk the structure"]},
+    {"quit": true}
+  ],
+  "notes": [
+    {"after": 1, "keys": "T", "note": "opened as `o-json orders.min.json`; T flips to the original structure: every path once, with its type and how many records have it"},
+    {"after": 2, "keys": "t", "note": "t filters the tree to one type: strings"},
+    {"after": 3, "keys": "t", "note": "t again: the next type, numbers"},
+    {"after": 4, "keys": "esc", "note": "esc clears the filter"},
+    {"after": 8, "keys": "g g 7 j", "note": "g g to the root, 7 j down to the optional email: the breadcrumb says how often it is there"},
+    {"after": 10, "keys": "y p", "note": "y p yanks the structure path, ready for jq or code"},
+    {"after": 13, "keys": "k k enter", "note": "k k to customer, enter folds it"},
+    {"after": 14, "keys": "enter", "note": "enter opens it again"},
+    {"after": 17, "keys": "ctrl+w l $", "note": "ctrl+w l into the customers table (TABLE), $ to the last column"},
+    {"after": 18, "keys": "tab", "note": "tab to FLAT: here the difference shows: order 2 has no email at all, order 3 has email null"},
+    {"after": 21, "keys": "ctrl+w h T", "note": "back to the tree; T returns to the edited structure"},
+    {"after": 23, "keys": "g m", "note": "g m: the mode picker lists every mode and the key that reaches it"},
+    {"after": 24, "keys": "esc", "note": "esc closes it"},
+    {"after": 25, "keys": "q", "note": "q quits"}
+  ]
+}
