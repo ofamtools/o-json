@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os"
 	"slices"
-	"sync/atomic"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
