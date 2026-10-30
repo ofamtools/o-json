@@ -132,7 +132,7 @@ func (a *App) pathBlocks(text string) ([][]clipNode, bool) {
 		if line = strings.TrimSpace(line); line == "" {
 			continue
 		}
-		s := a.Doc.Shape.Find(line)
+		s := a.inShape().Find(line)
 		if s == nil || s.parent == nil {
 			return nil, false
 		}
@@ -226,7 +226,7 @@ func (a *App) check(e edit) error {
 	if len(m.Map) == 0 || a.Doc == nil {
 		return nil
 	}
-	_, err := NewPlan(m, a.Doc.Shape)
+	_, err := NewPlan(m, a.inShape())
 	return err
 }
 

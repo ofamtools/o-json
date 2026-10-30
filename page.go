@@ -93,6 +93,16 @@ type restructureState struct {
 	// patches are the value edits applied after the restructure
 	// (patch.go, values.go), part of the mapping.
 	patches []Patch
+	// stages are the reshape steps made so far (marks.flatten,
+	// node.key-by, ...), each holding the tree it closed; in is the
+	// current tree's input, the last step's output (nil: the document).
+	// Both are part of every undo step (reshape_app.go).
+	stages []closedStage
+	in     *stageInput
+	// marks are the restructured tree's marked nodes, by id (node.mark);
+	// they are not edits, so undo leaves them, and a node that comes
+	// back keeps its mark.
+	marks map[string]bool
 }
 
 func declareSettings(r *ochazuke.Runtime) error {
@@ -153,7 +163,7 @@ func (a *App) registerRestructure() error {
 	tree.OnChange = func(ochazuke.TreeChange) error { a.rs.dirty, a.rs.startedEmpty = true, false; return nil }
 	tree.RowNoun = "node"
 	tree.NewID = a.newNodeID
-	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, shown: rsOrigID, dirty: true, base: mappingKey(&Mapping{Map: []MapEntry{}})}
+	a.rs = restructureState{orig: orig, tree: tree, meta: map[string]nodeMeta{}, marks: map[string]bool{}, shown: rsOrigID, dirty: true, base: mappingKey(&Mapping{Map: []MapEntry{}})}
 	a.registerRestructureVerbs()
 	a.registerRepeat()
 	if err := tree.SetNodes([]ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node", Fixed: rootFixed}}); err != nil {
@@ -259,8 +269,12 @@ func (e edit) markBuilt() {
 	}
 }
 
-// Mapping is the page's mapping now, with the value edits.
+// Mapping is the page's mapping now, with the value edits and the
+// reshape steps (stagedMapping).
 func (a *App) Mapping() *Mapping {
+	if len(a.rs.stages) > 0 {
+		return a.stagedMapping()
+	}
 	m := mappingOf(a.rs.tree.Nodes(), a.rs.meta)
 	if len(a.rs.patches) > 0 {
 		m.Patches = slices.Clone(a.rs.patches)
@@ -277,7 +291,7 @@ func (a *App) plan() (*Plan, error) {
 	if len(m.Map) == 0 {
 		return nil, fmt.Errorf("the restructure is empty: %s on a shape sends it here", a.sendKey())
 	}
-	return NewPlan(m, a.Doc.Shape)
+	return NewDocPlan(m, a.Doc.Root, a.Doc.Shape)
 }
 
 // valid reports a node list whose mapping checks (an empty one does).
@@ -286,7 +300,7 @@ func (a *App) valid(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) bool {
 	if len(m.Map) == 0 || a.Doc == nil {
 		return true
 	}
-	_, err := NewPlan(m, a.Doc.Shape)
+	_, err := NewPlan(m, a.inShape())
 	return err == nil
 }
 
@@ -382,7 +396,7 @@ func (a *App) shapeAt(path string) *Shape {
 	if a.Doc == nil {
 		return nil
 	}
-	return a.Doc.Shape.Find(path)
+	return a.inShape().Find(path)
 }
 
 // span is id's subtree in the flat list, [i, end).
@@ -872,24 +886,31 @@ var errAtOldest = errors.New("already at oldest change")
 // refuses with errAtOldest, so the tree keeps it on the stack and
 // nothing beneath it is reached).
 func (a *App) commitStep(label, focus string, e edit, patches []Patch, floor bool) error {
+	return a.commitStaged(label, focus, e, patches, a.stagesNow(), floor)
+}
+
+// commitStaged is commitStep that also makes st the reshape steps: a
+// reshape step closes the tree and opens its output's copy as one step.
+func (a *App) commitStaged(label, focus string, e edit, patches []Patch, st stageState, floor bool) error {
 	a.rs.startedEmpty = false
-	before, was := a.current(), slices.Clone(a.rs.patches)
+	before, was, wasSt := a.current(), slices.Clone(a.rs.patches), a.stagesNow()
 	e.markBuilt()
 	patches = slices.Clone(patches)
-	set := func(to edit, p []Patch) func() error {
+	set := func(to edit, p []Patch, s stageState) func() error {
 		return func() error {
 			a.rs.meta, a.rs.dirty, a.rs.patches = maps.Clone(to.meta), true, slices.Clone(p)
+			a.rs.stages, a.rs.in = slices.Clone(s.stages), s.in
 			return a.rs.tree.SetNodes(fixNodes(slices.Clone(to.nodes), to.meta))
 		}
 	}
-	if err := set(e, patches)(); err != nil {
+	if err := set(e, patches, st)(); err != nil {
 		return err
 	}
-	undo := set(before, was)
+	undo := set(before, was, wasSt)
 	if floor {
 		undo = func() error { return errAtOldest }
 	}
-	return a.rs.tree.Record(ochazuke.TreeAction{ID: focus, Label: label, Undo: undo, Redo: set(e, patches)})
+	return a.rs.tree.Record(ochazuke.TreeAction{ID: focus, Label: label, Undo: undo, Redo: set(e, patches, st)})
 }
 
 // The changes a restructure node refuses (TreeNode.Fixed), from every
@@ -977,7 +998,11 @@ func (a *App) decorate() {
 func (a *App) highlight() {
 	var origLit string
 	newLit := map[string]bool{}
-	switch a.sideOf(a.r.Focus) {
+	side := a.sideOf(a.r.Focus)
+	if a.rs.in != nil {
+		side = "" // after a reshape step the origins are the step's output, not the original's shapes
+	}
+	switch side {
 	case rsTreeID:
 		if n, ok := a.rs.tree.Selected(); ok {
 			if f := a.rs.meta[n.ID].from; f != "" {
@@ -1106,7 +1131,7 @@ func (a *App) registerRestructureVerbs() {
 			return false
 		}
 		s, _ := inst.Data.(*Shape)
-		return s != nil && s.parent != nil
+		return s != nil && s.parent != nil && a.rs.in == nil // after a reshape step, restructure.add takes the step's paths
 	})
 	// show swaps the tree shown: the single layout's, or the viewer's
 	// structure and data panes (structure.editable).
@@ -1670,10 +1695,13 @@ func (a *App) writeFileAsk(c ochazuke.Ctx, path string, data []byte, mode writeM
 func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	a.decorate()
 	a.highlight()
+	a.syncMarks()
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := r.PaneLayout(rsPageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.restructureCrumb(), width, "…"))
-	bh := max(0, height-1)
+	a.syncJQPanel()
+	ph := a.splitHeight(height - 1)
+	bh := max(0, height-1-ph)
 	if bh < 6 || width < 16 {
 		return ochazuke.Text(crumb)
 	}
@@ -1687,6 +1715,9 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		if id == rsTreeID {
 			t = a.rs.tree
 			title = fmt.Sprintf("Restructured  %d nodes", len(a.rs.tree.Nodes())-1)
+			if note := a.marksNote(); note != "" {
+				title += "  " + note
+			}
 		}
 		switch {
 		case a.Doc == nil:
@@ -1738,6 +1769,14 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 			rows[i] = pad(at(left, i), lw) + " " + at(right, i)
 		}
 		body = strings.Join(rows, "\n")
+	}
+	if ph > 0 {
+		panel := a.jqPanelBlock(l, width, ph)
+		out := panel.Offset(0, 1+bh).WithText(crumb + "\n" + body + "\n" + panel.Text)
+		if panel.Cursor == nil {
+			out.Cursor = nil
+		}
+		return out
 	}
 	return ochazuke.Text(crumb + "\n" + body)
 }

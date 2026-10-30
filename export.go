@@ -818,7 +818,7 @@ extension, else csv. --jq prints a jq program (for jq -r) that makes the same cs
 				if err != nil {
 					return err
 				}
-				plan, err := NewPlan(m, doc.Shape)
+				plan, err := NewDocPlan(m, doc.Root, doc.Shape)
 				if err != nil {
 					return err
 				}

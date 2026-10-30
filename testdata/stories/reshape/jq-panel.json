@@ -1,0 +1,56 @@
+{
+  "name": "o-json: g j opens the live jq panel under the panes at a fixed height; esc gives the focus back, an edit beside it (F) updates the program; g j focuses it again, tab shows the mapping with the step, q closes it",
+  "area": "reshape",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {
+    "doc": "reshape.json"
+  },
+  "script": [
+    "g",
+    "j",
+    "esc",
+    "j",
+    "j",
+    "j",
+    "j",
+    "space",
+    "F",
+    "g",
+    "j",
+    "tab",
+    "q"
+  ],
+  "expect": [
+    {
+      "after": 2,
+      "contains": [
+        "jq program",
+        "\"title\": .title",
+        "tab mapping"
+      ]
+    },
+    {
+      "after": 9,
+      "contains": [
+        "jq program",
+        "flatten 1 field(s)"
+      ]
+    },
+    {
+      "after": 12,
+      "contains": [
+        "Mapping",
+        "{\"map\": [",
+        "tab jq"
+      ]
+    },
+    {
+      "lacks": [
+        "jq program",
+        "Mapping"
+      ]
+    }
+  ]
+}

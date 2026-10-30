@@ -1,0 +1,15 @@
+{
+  "name": "o-json: space marks two fields at different depths, the title counts them, F flattens them into one row per person, u brings the tree and its marks back",
+  "area": "reshape",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "reshape.json"},
+  "script": ["j", "j", "j", "j", "space", "j", "j", "j", "j", "j", "space", "F", "u"],
+  "expect": [
+    {"after": 5, "contains": ["1 marked"]},
+    {"after": 11, "contains": ["2 marked"]},
+    {"after": 12, "contains": ["flatten 2 field(s)", "Oslo", "city"], "lacks": ["2 marked", "zip"]},
+    {"contains": ["2 marked", "zip"]}
+  ]
+}

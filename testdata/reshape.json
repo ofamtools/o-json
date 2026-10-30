@@ -1,0 +1,9 @@
+{
+  "title": "people",
+  "people": [
+    {"id": "p1", "name": "Ann", "address": {"city": "Oslo", "zip": "0150"}, "tags": ["a", "b"]},
+    {"id": "p2", "name": "Bo", "address": {"city": "Rome"}, "tags": []},
+    {"id": "p1", "name": "Cy", "tags": ["c"]},
+    {"name": "Dee"}
+  ]
+}

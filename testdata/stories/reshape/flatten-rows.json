@@ -1,0 +1,13 @@
+{
+  "name": "o-json: with flatten.arrays rows a marked array gives one row per item, the other fields repeated",
+  "area": "reshape",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "reshape.json"},
+  "values": {"flatten.arrays": "rows"},
+  "script": ["j", "j", "j", "j", "space", "j", "j", "space", "F"],
+  "expect": [
+    {"contains": ["arrays rows", "Ann", "Bo"]}
+  ]
+}

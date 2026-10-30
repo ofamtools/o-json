@@ -62,11 +62,15 @@ func (a *App) editedShown() bool { return a.editable() && !a.original && a.Doc !
 // lists at most maxFields fields: anything else is one node that copies
 // its values, so the output is always the input.
 func (a *App) identity() edit {
-	e := edit{nodes: []ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}, meta: map[string]nodeMeta{}}
 	if a.Doc == nil {
-		return e
+		return edit{nodes: []ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}, meta: map[string]nodeMeta{}}
 	}
-	root := a.Doc.Shape
+	return a.identityOf(a.Doc.Shape)
+}
+
+// identityOf is the copy of a document of this shape (identity).
+func (a *App) identityOf(root *Shape) edit {
+	e := edit{nodes: []ochazuke.TreeNode{{ID: rsRootID, Label: ".", Noun: "node"}}, meta: map[string]nodeMeta{}}
 	if !copyExpands(root) {
 		e.meta[rsRootID] = nodeMeta{from: "."}
 		return e
@@ -108,8 +112,9 @@ func (a *App) copyShape(e *edit, s *Shape, parent string) {
 // (F6). It is the base unsaved compares with.
 func (a *App) startState() error {
 	a.rs.startedEmpty = false
+	clear(a.rs.marks)
 	if !a.editable() {
-		a.rs.patches = nil
+		a.rs.patches, a.rs.stages, a.rs.in = nil, nil, nil
 		a.rs.base = mappingKey(&Mapping{Map: []MapEntry{}})
 		return nil
 	}
@@ -119,12 +124,16 @@ func (a *App) startState() error {
 	// as viewer.discard promises (e, R and viewer new over edits).
 	floor := a.rs.base == "" || !a.edited()
 	e := a.identity()
-	if err := a.commitStep("open", rsRootID, e, nil, floor); err != nil {
+	if err := a.commitStaged("open", rsRootID, e, nil, stageState{}, floor); err != nil {
 		return err
 	}
 	a.rs.base, a.rs.saved = mappingKey(a.Mapping()), ""
-	// A big structure opens collapsed below the second level, as the
-	// original tree does.
+	return a.collapseCopy(e)
+}
+
+// collapseCopy collapses a big copy below its second level, as the
+// original tree opens.
+func (a *App) collapseCopy(e edit) error {
 	if len(e.nodes) > bigStructure {
 		depth := map[string]int{}
 		parents := map[string]bool{}

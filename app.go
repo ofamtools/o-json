@@ -92,6 +92,8 @@ type App struct {
 	q queryState // the live jq query (query.go)
 
 	hover hoverState // the walk into the data pane's sub-tables (hover.go)
+
+	jqp jqPanel // the live jq panel (jqpanel.go)
 }
 
 // New builds the viewer on a fresh runtime: the page with the structure
@@ -147,6 +149,12 @@ func New() (*App, error) {
 	if err := declareHoverSettings(r); err != nil {
 		return nil, err
 	}
+	if err := declareReshapeSettings(r); err != nil {
+		return nil, err
+	}
+	if err := declareJQPanelSettings(r); err != nil {
+		return nil, err
+	}
 	page, err := r.AddPage(pageID, "o-json", a.render, ochazuke.Focus(treeID))
 	if err != nil {
 		return nil, err
@@ -156,6 +164,8 @@ func New() (*App, error) {
 		return nil, err
 	}
 	a.registerValueVerbs()
+	a.registerReshapeVerbs()
+	a.registerJQPanel()
 	a.registerHover()
 	a.placeTree(pageID)
 	if err := a.bind(); err != nil {

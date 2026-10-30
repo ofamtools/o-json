@@ -26,6 +26,7 @@ const stackWidth = 60
 func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	a.decorate()
 	a.highlight()
+	a.syncMarks()
 	if !a.editedShown() && a.sideOf(r.Focus) == rsTreeID {
 		_ = a.tree.Focus() // the edited structure is not shown (structure.editable went off)
 	}
@@ -45,7 +46,9 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := a.r.PaneLayout(pageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.breadcrumb(), width, "…"))
-	bh := max(0, height-1)
+	a.syncJQPanel()
+	ph := a.splitHeight(height - 1)
+	bh := max(0, height-1-ph)
 	if bh < 3 || width < 8 {
 		return ochazuke.Text(crumb)
 	}
@@ -98,6 +101,13 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	}
 	if left.Cursor != nil {
 		cursor = left.Offset(0, 1)
+	}
+	if ph > 0 {
+		panel := a.jqPanelBlock(l, width, ph)
+		body += "\n" + panel.Text
+		if panel.Cursor != nil {
+			cursor = panel.Offset(0, 1+bh)
+		}
 	}
 	return cursor.WithText(crumb + "\n" + body)
 }
@@ -186,6 +196,9 @@ func (a *App) treeTitle() string {
 		if term := a.queryModeTerm(); term != "" {
 			title = term + " · query"
 		}
+	}
+	if note := a.marksNote(); note != "" && a.editedShown() {
+		title += " · " + note
 	}
 	if view != "" {
 		title += " · " + view

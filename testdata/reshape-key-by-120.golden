@@ -1,0 +1,24 @@
+  ◆ o-json                                                                                                     NORMAL   
+   › testdata/reshape.json  Restructure                                                                                 
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+  testdata/reshape.json [+]  ·  .people (object 1/1)                                                                    
+  ╭━ Structure · edited [+] ━━━━━━━━━━━━━━━━━━━╮ ╭─ Fields .people ──────────────────────────────────────────────────╮  
+  ┃ jq / to query                              ┃ │ field     type       value                                        │  
+  ┃ key              type    from              ┃ │ p1        object{4}  {"name":"Ann","id":"p1","tags":["a","b"],"a… │  
+  ┃ ▾ . (root)       object                    ┃ │ p2        object{4}  {"name":"Bo","id":"p2","tags":[],"address":… │  
+  ┃     title        string  .title            ┃ │ p1-2      object{3}  {"name":"Cy","id":"p1","tags":["c"]}         │  
+  ┃   ▾ people       object  .people           ┃ │ _missing  array[1]   [{"name":"Dee"}]                             │  
+  ┃     ▾ p1         object  .people.p1        ┃ │                                                                   │  
+  ┃         name     string  .people.p1.name   ┃ │                                                                   │  
+  ┃         id       string  .people.p1.id     ┃ │                                                                   │  
+  ┃       ▾ tags     array   .people.p1.tags   ┃ │                                                                   │  
+  ┃           []     string  .people.p1.tags[] ┃ │                                                                   │  
+  ┃       ▾ address  object  .people.p1.addre… ┃ │                                                                   │  
+  ┃           city   string  .people.p1.addre… ┃ │                                                                   │  
+  ┃           zip    string  .people.p1.addre… ┃ │                                                                   │  
+  ┃     ▾ p2         object  .people.p2        ┃ │                                                                   │  
+  ┃ 1–12 / 25                                  ┃ │                                                                   │  
+  ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+  S wrap · t array · r rename · d d delete · y y yank · p/P put · m query mode · space mark · F flatten · g p pick · …  
+                                                                                                                        

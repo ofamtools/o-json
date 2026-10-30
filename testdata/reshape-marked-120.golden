@@ -1,0 +1,24 @@
+  ◆ o-json                                                                                                     NORMAL   
+   › testdata/reshape.json  Restructure                                                                                 
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+  testdata/reshape.json  ·  .people[].address.city (string 2/2)                                                         
+  ╭━ Structure · 2 marked · unchanged ━━━━━━━━━╮ ╭─ Table .people[].address.city  1/2 ───────────────────────────────╮  
+  ┃ jq / to query                              ┃ │ #  (value)                                                        │  
+  ┃   key              type     from           ┃ │ 0  Oslo                                                           │  
+  ┃   ▾ . (root)       object                  ┃ │ 1  Rome                                                           │  
+  ┃       title        string   .title         ┃ │                                                                   │  
+  ┃     ▾ people       array    .people        ┃ │                                                                   │  
+  ┃       ▾ []         object   .people[]      ┃ │                                                                   │  
+  ┃ *         name     string   .people[].name ┃ │                                                                   │  
+  ┃           id       string?  .people[].id   ┃ │                                                                   │  
+  ┃         ▾ tags     array    .people[].tags ┃ │                                                                   │  
+  ┃             []     string   .people[].tag… ┃ │                                                                   │  
+  ┃         ▾ address  object   .people[].add… ┃ │                                                                   │  
+  ┃ *           city   string   .people[].add… ┃ │                                                                   │  
+  ┃             zip    string?  .people[].add… ┃ │                                                                   │  
+  ┃                                            ┃ │                                                                   │  
+  ┃                                            ┃ │                                                                   │  
+  ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+  < < out · S wrap · t array · r rename · d d delete · y y yank · p/P put · m query mode · F flatten · g p pick · o/O…  
+                                                                                                                        

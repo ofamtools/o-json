@@ -85,11 +85,14 @@ func (e *MapEntry) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Mapping is a restructure spec: {"map": [entries]}, and the value
-// patches applied after it, {"patches": [...]} (patch.go).
+// Mapping is a restructure spec: {"map": [entries]}, the value patches
+// applied after it, {"patches": [...]} (patch.go), and the reshape steps
+// that follow, each with its own map and patches, {"then": [...]}
+// (reshape.go).
 type Mapping struct {
 	Map     []MapEntry `json:"map"`
 	Patches []Patch    `json:"patches,omitempty"`
+	Then    []Stage    `json:"then,omitempty"`
 }
 
 // ReadMapping parses a mapping file's bytes.
@@ -98,7 +101,7 @@ func ReadMapping(data []byte) (*Mapping, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&m); err != nil {
-		return nil, fmt.Errorf(`mapping: %w (a mapping is {"map": [{"from": PATH, "to": PATH|null}], "patches": [{"op": "set"|"delete"|"add"|"rename", "path": PATH, ...}]})`, err)
+		return nil, fmt.Errorf(`mapping: %w (a mapping is {"map": [{"from": PATH, "to": PATH|null}], "patches": [{"op": "set"|"delete"|"add"|"rename", "path": PATH, ...}], "then": [{"op": "flatten"|"key-by"|"values"|"entries", ..., "map": [...], "patches": [...]}]})`, err)
 	}
 	return &m, nil
 }
@@ -129,10 +132,78 @@ type Plan struct {
 	mapping *Mapping
 	shape   *Shape
 	root    *target
+
+	// The reshape steps (Mapping.Then), made ready against the document
+	// NewDocPlan read, and that document's result.
+	stages []*stagePlan
+	src    *Node
+	out    *Node
+	orph   []int
 }
 
-// NewPlan checks a mapping against a document's shape (Infer).
+// NewPlan checks a mapping against a document's shape (Infer). A mapping
+// with reshape steps needs the document itself (NewDocPlan): what a step
+// makes depends on the values.
 func NewPlan(m *Mapping, shape *Shape) (*Plan, error) {
+	if len(m.Then) > 0 {
+		return nil, errors.New("a mapping with reshape steps (then) is planned on the document")
+	}
+	return newPlan(m, shape)
+}
+
+// NewDocPlan checks a mapping against a document: the first map against
+// its shape, then each reshape step and its map against what the steps
+// before it made.
+func NewDocPlan(m *Mapping, root *Node, shape *Shape) (*Plan, error) {
+	first := *m
+	first.Then = nil
+	p, err := newPlan(&first, shape)
+	if err != nil || len(m.Then) == 0 {
+		return p, err
+	}
+	p.mapping = m
+	cur, orphans := p.applyFirst(root)
+	for i, s := range m.Then {
+		sp, err := prepareStage(s, cur)
+		if err != nil {
+			return nil, fmt.Errorf("then step %d: %w", i+1, err)
+		}
+		out := normalized(sp.apply(cur))
+		if len(s.Map) > 0 {
+			if sp.plan, err = newPlan(&Mapping{Map: s.Map, Patches: s.Patches}, Infer(out)); err != nil {
+				return nil, fmt.Errorf("then step %d: %w", i+1, err)
+			}
+		} else if err := checkPatches(s.Patches); err != nil {
+			return nil, fmt.Errorf("then step %d: %w", i+1, err)
+		}
+		p.stages = append(p.stages, sp)
+		cur, orphans = sp.applyMap(out)
+	}
+	p.src, p.out, p.orph = root, cur, orphans
+	return p, nil
+}
+
+// normalized is n parsed again, so its nodes have their own parents and
+// positions.
+func normalized(n *Node) *Node {
+	out, err := Build([]byte(Compact(n, 0)))
+	if err != nil {
+		return n
+	}
+	return out
+}
+
+// applyMap is the stage's map and patches on the step's output.
+func (sp *stagePlan) applyMap(out *Node) (*Node, []int) {
+	if sp.plan != nil {
+		v, orphans := sp.plan.ApplyAll(out)
+		return normalized(v), orphans
+	}
+	v, orphans := applyPatches(out, sp.st.Patches)
+	return normalized(v), orphans
+}
+
+func newPlan(m *Mapping, shape *Shape) (*Plan, error) {
 	p := &Plan{mapping: m, shape: shape, root: &target{path: "."}}
 	for i, e := range m.Map {
 		if err := p.add(e); err != nil {
@@ -290,8 +361,24 @@ func (p *Plan) Apply(root *Node) *Node {
 }
 
 // ApplyAll is Apply and the patches it skipped, by index (orphans: their
-// target is not in the restructured document).
+// target is not in the restructured document): the last patches, the
+// ones after the last reshape step when there are any.
 func (p *Plan) ApplyAll(root *Node) (*Node, []int) {
+	if len(p.stages) == 0 {
+		return p.applyFirst(root)
+	}
+	if root == p.src {
+		return p.out, p.orph
+	}
+	cur, orphans := p.applyFirst(root)
+	for _, sp := range p.stages {
+		cur, orphans = sp.applyMap(normalized(sp.apply(cur)))
+	}
+	return cur, orphans
+}
+
+// applyFirst is the first map and its patches.
+func (p *Plan) applyFirst(root *Node) (*Node, []int) {
 	v, ok := p.value(p.root, root)
 	if !ok {
 		v = &Node{Kind: KNull, Value: "null"}
@@ -372,6 +459,22 @@ func rekey(n *Node, key string) *Node {
 // The value patches follow as setpath / delpaths steps, each testing its
 // target first (patch.go), so the program's output is Apply's.
 func (p *Plan) JQ() string {
+	first := p.firstJQ()
+	if len(p.stages) == 0 {
+		return first
+	}
+	parts := []string{"(" + strings.TrimSuffix(first, "\n") + ")"}
+	for _, sp := range p.stages {
+		parts = append(parts, "("+sp.opJQ()+")")
+		if m := sp.mapJQ(); m != "" {
+			parts = append(parts, "("+m+")")
+		}
+	}
+	return strings.Join(parts, " | ") + "\n"
+}
+
+// firstJQ is the first map and its patches as jq.
+func (p *Plan) firstJQ() string {
 	expr := p.jqValue(p.root)
 	if p.root.hasFrom {
 		if cond := jqCond(p.root.rel, p.root.shapes); cond != "" {
@@ -553,7 +656,7 @@ func jqStream(steps []pathStep, shapes []*Shape) string {
 // story of the source. A shape counts as kept when an entry maps it or a
 // path under it, or when it is inside a value an entry copies whole.
 func (p *Plan) Complete() *Mapping {
-	out := &Mapping{Map: slices.Clone(p.mapping.Map), Patches: slices.Clone(p.mapping.Patches)}
+	out := &Mapping{Map: slices.Clone(p.mapping.Map), Patches: slices.Clone(p.mapping.Patches), Then: slices.Clone(p.mapping.Then)}
 	kept, listed := map[*Shape]bool{}, map[*Shape]bool{}
 	for _, e := range p.mapping.Map {
 		if e.From == "" {
@@ -614,41 +717,55 @@ func FormatMapping(m *Mapping) ([]byte, error) {
 	var b strings.Builder
 	b.WriteString("{\"map\": [\n")
 	for i, e := range m.Map {
-		var fields []string
-		if e.From != "" {
-			fields = append(fields, `"from": `+str(e.From))
-		}
-		to := "null"
-		if e.To != nil {
-			to = str(*e.To)
-		}
-		fields = append(fields, `"to": `+to)
-		b.WriteString("  {" + strings.Join(fields, ", ") + "}")
+		b.WriteString("  " + formatEntry(e, str))
 		if i < len(m.Map)-1 {
 			b.WriteString(",")
 		}
 		b.WriteString("\n")
 	}
-	if len(m.Patches) == 0 {
-		b.WriteString("]}\n")
-		return []byte(b.String()), nil
-	}
-	b.WriteString("],\n\"patches\": [\n")
-	for i, p := range m.Patches {
-		b.WriteString("  " + formatPatch(p, str))
-		if i < len(m.Patches)-1 {
-			b.WriteString(",")
+	if len(m.Patches) > 0 {
+		b.WriteString("],\n\"patches\": [\n")
+		for i, p := range m.Patches {
+			b.WriteString("  " + formatPatch(p, str))
+			if i < len(m.Patches)-1 {
+				b.WriteString(",")
+			}
+			b.WriteString("\n")
 		}
-		b.WriteString("\n")
+	}
+	if len(m.Then) > 0 {
+		b.WriteString("],\n\"then\": [\n")
+		for i, s := range m.Then {
+			b.WriteString(formatStage(s, str))
+			if i < len(m.Then)-1 {
+				b.WriteString(",")
+			}
+			b.WriteString("\n")
+		}
 	}
 	b.WriteString("]}\n")
 	return []byte(b.String()), nil
 }
 
+// formatEntry is one mapping entry on a line: no "from" on a wrapper,
+// "to": null on a drop.
+func formatEntry(e MapEntry, str func(string) string) string {
+	var fields []string
+	if e.From != "" {
+		fields = append(fields, `"from": `+str(e.From))
+	}
+	to := "null"
+	if e.To != nil {
+		to = str(*e.To)
+	}
+	fields = append(fields, `"to": `+to)
+	return "{" + strings.Join(fields, ", ") + "}"
+}
+
 // restructureOutput is what the restructure command prints or writes.
 func restructureOutput(doc *Doc, m *Mapping, as string) ([]byte, error) {
 	src := doc.Root
-	plan, err := NewPlan(m, doc.Shape)
+	plan, err := NewDocPlan(m, doc.Root, doc.Shape)
 	if err != nil {
 		return nil, err
 	}
