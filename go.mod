@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/itchyny/gojq v0.12.19
-	github.com/unixsuperhero/ochazuke v0.50.0
+	github.com/unixsuperhero/ochazuke v0.54.0
 	github.com/unixsuperhero/oden v0.1.1
 )
 
