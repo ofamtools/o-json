@@ -1,4 +1,4 @@
-  ◆ o-json                                                             INSERT   
+  ◆ o-json                                                       INSERT         
    › testdata/sample.json  Restructure                                          
   ────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)  ·  row .items[1]                 
@@ -11,7 +11,7 @@
   │   ▾ it│ was    beta                                      string  │       ┃  
   │     ▾ │ value  omega                                     string  │       ┃  
   │       │                                                          │       ┃  
-  │       │ enter set · esc cancel · ctrl+space palette.open · ctrl… │       ┃  
+  │       │ enter set · esc cancel                                   │       ┃  
   │       ╰──────────────────────────────────────────────────────────╯       ┃  
   │           name             │ ┃                                           ┃  
   │           email            │ ┃                                           ┃  
@@ -20,9 +20,9 @@
   │ 1–12 / 18                  │ ┃                                           ┃  
   ╰────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────  
-  enter set · esc cancel · ctrl+space palette.open · ctrl+k input.kill · ctrl…  
+  enter set · esc cancel                                                        
                                                                                 
-  ◆ o-json                                                             INSERT   
+  ◆ o-json                                                       INSERT         
    › testdata/sample.json  Restructure                                          
   ────────────────────────────────────────────────────────────────────────────  
   testdata/sample.json  ·  .items (array 1/1)  ·  row .items[1]                 
@@ -35,7 +35,7 @@
   │   ▾ it│ key    new-key                                           │       ┃  
   │     ▾ │ value  null                                        null  │       ┃  
   │       │                                                          │       ┃  
-  │       │ enter next · esc cancel · ctrl+space palette.open · ctr… │       ┃  
+  │       │ enter next · esc cancel                                  │       ┃  
   │       ╰──────────────────────────────────────────────────────────╯       ┃  
   │           name             │ ┃                                           ┃  
   │           email            │ ┃                                           ┃  
@@ -44,5 +44,5 @@
   │ 1–12 / 18                  │ ┃                                           ┃  
   ╰────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────  
-  enter next · esc cancel · ctrl+space palette.open · ctrl+k input.kill · ctr…  
+  enter next · esc cancel                                                       
                                                                                 
