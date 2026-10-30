@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/unixsuperhero/monogatari"
 	"github.com/unixsuperhero/monogatari/host"
 	"github.com/unixsuperhero/ochazuke"
@@ -81,8 +82,24 @@ type storySession struct {
 }
 
 func (s *storySession) built() monogatari.Built {
-	return monogatari.Built{Model: s.a.m, Close: func() { os.RemoveAll(s.dir) }, Writes: s.writes}
+	return monogatari.Built{Model: s.a.m, Program: drawEach{s.a.m}, Close: func() { os.RemoveAll(s.dir) }, Writes: s.writes}
 }
+
+// drawEach draws a frame after every message, as Bubble Tea's event loop
+// does (tea.go: update, then render): the viewer's data pane follows the
+// tree in render (sync), so a story that sent keys without drawing
+// between them acted on rows a real program had already replaced.
+type drawEach struct{ m *ochazuke.Model }
+
+func (d drawEach) Init() tea.Cmd { return d.m.Init() }
+
+func (d drawEach) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	_, cmd := d.m.Update(msg)
+	d.m.View()
+	return d, cmd
+}
+
+func (d drawEach) View() tea.View { return d.m.View() }
 
 // writes is every file in the temp dir but the document: what the app
 // wrote (viewer.write, restructure.write, export).
