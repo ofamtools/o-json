@@ -181,6 +181,13 @@ func (a *App) valueOf(inst *ochazuke.Instance) (valueAt, bool) {
 	if n == nil {
 		return valueAt{}, false
 	}
+	// In a hover sub-table (hover.go): the value under its cursor, as a
+	// table row's cell.
+	if a.rowsOf(inst) == a.data {
+		if v, ok := a.hoverValueAt(); ok {
+			return v, true
+		}
+	}
 	if v := a.rowsOf(inst); v == a.data && a.tab != nil && inst.Noun == "item" {
 		if col := v.list.Column(); col >= 1 && col <= len(a.tab.Columns) && n.Kind == KObject {
 			if c := a.tab.Columns[col-1]; !c.Self {
@@ -197,7 +204,8 @@ func (a *App) valueOf(inst *ochazuke.Instance) (valueAt, bool) {
 // editableValue is the data pane value a verb may patch on a focus: the
 // edited view shown, data.editable on, the data pane or the detail opened
 // from it (its rows are the edited document's), not the raw JSON, no
-// value input open.
+// value input open, the cursor on a row and not in a hover sub-table
+// (hover.go), so the value keys and hints drop out there.
 func (a *App) editableValue(focus string) (valueAt, bool) {
 	inst := a.r.Instances[focus]
 	if v := a.rowsOf(inst); !a.dataEditable() || !a.editedShown() || a.queryShowing() || a.Raw || a.vedit != nil || v == nil || v == a.detail && !a.detailEditable() {
@@ -360,6 +368,7 @@ type valueEdit struct {
 	insert bool      // drawn as a new line below the row
 	above  bool      // add: before the row (O), drawn as a new line above it
 	view   *rowsView // the table it is drawn on: the data pane or the detail
+	sub    bool      // opened in a hover sub-table: drawn on its cursor line
 }
 
 // openInput opens the inline input on the focused row, text selected
@@ -373,6 +382,7 @@ func (a *App) openInput(ve *valueEdit, text string, sel bool) error {
 	if ve.view == nil {
 		ve.view = view
 	}
+	ve.sub = ve.view == a.data && a.hoverIn()
 	if a.r.Instances[valueInputID] != nil {
 		_ = a.r.RemoveInstance(valueInputID)
 	}
@@ -503,6 +513,11 @@ func (a *App) inputBlock(body string, w int) ochazuke.Block {
 		}
 	}
 	prefix := ve.label()
+	if ve.sub && a.hover.cursorY >= 0 {
+		// On the sub-table's cursor line, at its level's indent.
+		row = a.hover.cursorY
+		prefix = strings.Repeat(" ", hoverIndent+(len(a.hover.path)-1)*hoverStep) + prefix
+	}
 	pw := ansi.StringWidth(prefix)
 	field := ochazuke.InputBlock(ve.in, max(1, w-pw), 1)
 	text := prefix + field.Text
@@ -566,9 +581,6 @@ func (a *App) registerValueVerbs() {
 			if err := a.settleEdited(); err != nil {
 				return valueAt{}, err
 			}
-		}
-		if a.rowsOf(c.Instance) == a.data && a.hoverIn() {
-			return valueAt{}, errors.New("value edits work on the table's rows, not in a sub-table: k back to the row (table.nested)")
 		}
 		v, ok := a.editableValue(c.Instance.ID)
 		if !ok {
@@ -703,9 +715,6 @@ func (a *App) registerValueVerbs() {
 // yankValue copies the value on the focus (item.yank, field.yank,
 // value.yank).
 func (a *App) yankValue(c ochazuke.Ctx) ochazuke.Result {
-	if n := a.hoverValue(c.Instance); n != nil {
-		return a.copyYank(c, valueYank(n), n.Path())
-	}
 	v, ok := a.valueOf(c.Instance)
 	if !ok || v.node == nil {
 		return ochazuke.Failed(errors.New("no value here"))

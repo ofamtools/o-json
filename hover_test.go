@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/unixsuperhero/ochazuke"
 )
 
 // nestedDoc is an array of people whose cells hold objects (address,
@@ -212,20 +214,86 @@ func TestHoverYankAndOpenTheCell(t *testing.T) {
 	}
 }
 
-// Value edits act on the row; in a sub-table they refuse with a notice
-// (and never pass the key on, so p does not load the clipboard).
-func TestHoverEditsOnlyOnTheRow(t *testing.T) {
+// The keys in a sub-table are the table's: the same edit hints show, r
+// edits the value under the sub-table's cursor in an input drawn on its
+// line, and the write is one undoable value edit; p and d d act there too.
+func TestHoverEditsTheSubTableCell(t *testing.T) {
 	a := hoverAt(t, 120, 30, 6)
-	press(t, a, "j")
-	for _, key := range []string{"p", "r"} {
-		Press(a.m, key)
-		view(a)
-		if !strings.Contains(a.m.Status, "not in a sub-table") || len(a.rs.patches) != 0 || a.vedit != nil {
-			t.Fatalf("%s in a sub-table: status %q, %d patches", key, a.m.Status, len(a.rs.patches))
+	editHints := []string{"r/i edit", "d d delete", "o/O add", "K rename key", "p put"}
+	edits := []string{"value.edit", "value.delete", "value.add", "value.rename", "value.paste"}
+	hints := func() string { return ochazuke.BindingHints(a.r, a.r.Focus) }
+	onRow := hints()
+	press(t, a, "j") // the address line, on city
+	if !a.hoverIn() {
+		t.Fatal("j did not step into the sub-table")
+	}
+	for _, h := range editHints {
+		if !strings.Contains(onRow, h) || !strings.Contains(hints(), h) {
+			t.Errorf("%q: on the row %v, in the sub-table %v\n%s", h, strings.Contains(onRow, h), strings.Contains(hints(), h), hints())
 		}
 	}
-	if a.Path != nestedDoc {
-		t.Fatalf("the document changed to %q", a.Path)
+	for _, verb := range edits {
+		if !a.r.VerbShown(verb, a.r.Focus, a.r.Mode) {
+			t.Errorf("%s is not available in a sub-table", verb)
+		}
+	}
+	press(t, a, "r")
+	if a.r.Focus != valueInputID || selected(a) != "Austin" {
+		t.Fatalf("r: focus %q selected %q", a.r.Focus, selected(a))
+	}
+	frame := view(a)
+	row, input := line(frame, "Cy C"), line(frame, "city (string): Austin")
+	head := line(frame, "city    zip")
+	if row == "" || head == "" || input == "" || !strings.Contains(frame, head+"\n"+input) || strings.Index(frame, row) > strings.Index(frame, head) {
+		t.Fatalf("the input is not on the sub-table's line under its header\n%s", frame)
+	}
+	if !strings.Contains(input, "┃     city (string)") {
+		t.Fatalf("the input is not at the sub-table's indent: %q", input)
+	}
+	typeText(t, a, "Lyon")
+	press(t, a, "enter")
+	if got := field(t, a, ".[2].address.city"); got != `"Lyon"` {
+		t.Fatalf("city after the edit: %s", got)
+	}
+	if !a.hoverIn() || !strings.Contains(view(a), "Lyon  73301") {
+		t.Fatalf("the walk did not stay on the edited line (in %v)\n%s", a.hoverIn(), view(a))
+	}
+	press(t, a, "u")
+	if got := field(t, a, ".[2].address.city"); got != `"Austin"` {
+		t.Fatalf("u: %s", got)
+	}
+	// y on country, then p over zip; d d deletes city.
+	press(t, a, "$", "y", "h", "p")
+	if got := field(t, a, ".[2].address.zip"); got != `"US"` {
+		t.Fatalf("p over zip: %s", got)
+	}
+	press(t, a, "0", "d", "d")
+	if got := field(t, a, ".[2].address"); got != `{"zip":"US","country":"US"}` {
+		t.Fatalf("d d on city: %s", got)
+	}
+	if !a.hoverIn() {
+		t.Fatal("the walk left the sub-table after a delete")
+	}
+}
+
+// A cell an item of a sub-table lacks is added by r, as on a table row.
+func TestHoverEditAddsAMissingCell(t *testing.T) {
+	a := open(t, "testdata/nested.json", 120, 30)
+	press(t, a, "tab")
+	// Row 0 has no orders items to lack; build one: an object array whose
+	// second item lacks a key, through a value edit on the row.
+	for range 7 {
+		press(t, a, "l")
+	}
+	valueDo(t, a, "edit", ochazuke.Arguments{"text": `[{"a": 1, "b": 2}, {"a": 3}]`})
+	press(t, a, "j", "j", "l", "l") // the second item's b
+	v, ok := a.valueOf(a.r.Instances[a.r.Focus])
+	if !ok || v.node != nil || v.key != "b" {
+		t.Fatalf("the missing cell: %+v %v", v, ok)
+	}
+	valueDo(t, a, "edit", ochazuke.Arguments{"text": "4"})
+	if got := field(t, a, ".[0].orders[1]"); got != `{"a":3,"b":4}` {
+		t.Fatalf("added: %s", got)
 	}
 }
 
@@ -266,5 +334,40 @@ func TestHoverRenderGolden(t *testing.T) {
 		if got != string(want) {
 			t.Errorf("%d columns\n%s\nwant\n%s", width, got, want)
 		}
+	}
+}
+
+// The row's other keys keep their meaning on a sub-table line: N| goes to
+// cell N, the half and page motions walk the drawn lines, and the list's
+// column chooser and resizing (which act on the row's columns) are not
+// offered there.
+func TestHoverRowKeysOnASubTableLine(t *testing.T) {
+	a := hoverAt(t, 120, 30, 6)
+	press(t, a, "j", "3", "|")
+	if p := a.hover.path; len(p) != 1 || p[0].col != 2 {
+		t.Fatalf("3|: path %v, want the third cell", p)
+	}
+	if a.data.list.Column() != 6 {
+		t.Fatalf("3| moved the row's column to %d", a.data.list.Column())
+	}
+	for _, key := range []string{"g c", "z >", "z p"} {
+		if strings.Contains(ochazuke.BindingHints(a.r, a.r.Focus), key+" ") {
+			t.Errorf("%s offered in a sub-table", key)
+		}
+	}
+	press(t, a, "g", "c")
+	if a.r.TopModal() != "" || !a.hoverIn() {
+		t.Fatalf("g c in a sub-table opened %q (in %v)", a.r.TopModal(), a.hoverIn())
+	}
+	// ctrl+d walks half a screen of lines: the same as that many j.
+	b := hoverAt(t, 120, 30, 7)
+	half := b.data.page(true)
+	press(t, b, "ctrl+d")
+	c := hoverAt(t, 120, 30, 7)
+	for range half {
+		press(t, c, "j")
+	}
+	if b.data.Selected() != c.data.Selected() || !slices.Equal(b.hover.path, c.hover.path) {
+		t.Fatalf("ctrl+d %d %v, %d j %d %v", b.data.Selected(), b.hover.path, half, c.data.Selected(), c.hover.path)
 	}
 }

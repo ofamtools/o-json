@@ -126,11 +126,12 @@ func (a *App) registerVerbs() {
 			}
 			steps := max(1, ochazuke.IntArg(c.Args, "steps", 1))
 			motion := ochazuke.StringArg(c.Args, "motion", "")
-			// On the data pane with table.nested hover, down and up walk
-			// the drawn lines, the open sub-tables' among them (hover.go);
-			// the other motions move by rows and leave any sub-table.
+			// On the data pane with table.nested hover, down and up and
+			// the half and page motions walk the drawn lines, the open
+			// sub-tables' among them (hover.go); top and bottom go to a
+			// row and leave any sub-table.
 			walk := v == a.data && a.hoverOn()
-			if walk && motion != "down" && motion != "up" {
+			if walk && (motion == "top" || motion == "bottom") {
 				a.hover.path = nil
 			}
 			var err error
@@ -148,13 +149,29 @@ func (a *App) registerVerbs() {
 					err = v.move(-steps)
 				}
 			case "half-down":
-				err = v.move(steps * v.page(true))
+				if walk {
+					err = a.hoverDown(steps * v.page(true))
+				} else {
+					err = v.move(steps * v.page(true))
+				}
 			case "half-up":
-				err = v.move(-steps * v.page(true))
+				if walk {
+					err = a.hoverUp(steps * v.page(true))
+				} else {
+					err = v.move(-steps * v.page(true))
+				}
 			case "page-down":
-				err = v.move(steps * v.page(false))
+				if walk {
+					err = a.hoverDown(steps * v.page(false))
+				} else {
+					err = v.move(steps * v.page(false))
+				}
 			case "page-up":
-				err = v.move(-steps * v.page(false))
+				if walk {
+					err = a.hoverUp(steps * v.page(false))
+				} else {
+					err = v.move(-steps * v.page(false))
+				}
 			case "top":
 				err = v.to(ochazuke.IntArg(c.Args, "line", 1) - 1)
 			case "bottom":

@@ -73,8 +73,9 @@ type hoverPos struct{ row, col int }
 // it.
 type hoverState struct {
 	path     []hoverPos
-	root     *Node
+	root     string // the path of the cell's value (nodes are rebuilt by an edit)
 	sel, col int
+	cursorY  int // the cursor's line in the pane as last drawn, -1 on the row
 }
 
 // hoverGrid is one sub-table: a header (nil for a scalar array's single
@@ -86,6 +87,7 @@ type hoverGrid struct {
 	rows   [][]string
 	nodes  [][]*Node
 	lines  []*Node
+	keys   []string // an array of objects: each column's field ("" for # and the item's own value)
 }
 
 // hoverText is a value in a sub-table: the data for a scalar, a
@@ -111,9 +113,14 @@ func gridOf(n *Node) hoverGrid {
 	switch {
 	case n.Kind == KArray && slices.ContainsFunc(n.Children, func(c *Node) bool { return c.Kind == KObject }):
 		t := NewTable(n.Path(), []*Node{n}, false)
-		g.header = []string{"#"}
+		g.header, g.keys = []string{"#"}, []string{""}
 		for _, c := range t.Columns {
 			g.header = append(g.header, c.Title())
+			key := c.Name
+			if c.Self {
+				key = ""
+			}
+			g.keys = append(g.keys, key)
 		}
 		for i, row := range t.Rows {
 			cells := []string{strconv.Itoa(i)}
@@ -177,13 +184,29 @@ func (g hoverGrid) value(p hoverPos) *Node {
 	return nil
 }
 
+// at is the value the cursor at p edits, as valueOf answers on a table
+// row: the cell's value, a cell the item lacks (its parent and key), the
+// line's value on # or a joined list.
+func (g hoverGrid) at(p hoverPos) (valueAt, bool) {
+	if n := g.cell(p); n != nil {
+		return valueAt{node: n, parent: n.Parent, key: n.Key}, true
+	}
+	if p.row < 0 || p.row >= len(g.lines) {
+		return valueAt{}, false
+	}
+	line := g.lines[p.row]
+	if p.col >= 0 && p.col < len(g.keys) && g.keys[p.col] != "" && line.Kind == KObject {
+		return valueAt{parent: line, key: g.keys[p.col]}, true
+	}
+	return valueAt{node: line, parent: line.Parent, key: line.Key}, true
+}
+
 func nested(n *Node) bool { return n != nil && n.IsContainer() && len(n.Children) > 0 }
 
 // hoverOn reports the hover sub-tables in use for the data pane: the
-// setting, a table or fields shown (not the raw JSON), no inline value
-// input open.
+// setting, a table or fields shown (not the raw JSON).
 func (a *App) hoverOn() bool {
-	return a.r.Settings().String(settingNested) == nestedHover && !a.Raw && a.vedit == nil && (a.tab != nil || a.fields != nil)
+	return a.r.Settings().String(settingNested) == nestedHover && !a.Raw && (a.tab != nil || a.fields != nil)
 }
 
 // inData reports a focus on the data pane's table (the list or a row).
@@ -237,13 +260,20 @@ func (a *App) hoverCell() *Node {
 // to the cell.
 func (a *App) hoverCheck() {
 	h := &a.hover
-	if len(h.path) > 0 && (a.data.Selected() != h.sel || a.data.list.Column() != h.col || a.hoverCell() != h.root) {
+	if len(h.path) > 0 && (a.data.Selected() != h.sel || a.data.list.Column() != h.col || pathOf(a.hoverCell()) != h.root) {
 		h.path = nil
 	}
 }
 
+func pathOf(n *Node) string {
+	if n == nil {
+		return ""
+	}
+	return n.Path()
+}
+
 func (a *App) hoverMark() {
-	a.hover.sel, a.hover.col, a.hover.root = a.data.Selected(), a.data.list.Column(), a.hoverCell()
+	a.hover.sel, a.hover.col, a.hover.root = a.data.Selected(), a.data.list.Column(), pathOf(a.hoverCell())
 }
 
 // hoverIn reports the cursor on a sub-table's line (not the row).
@@ -261,14 +291,33 @@ func (a *App) hoverLevels() []hoverGrid {
 		return nil
 	}
 	levels := []hoverGrid{gridOf(n)}
-	for k, pos := range a.hover.path {
-		next := levels[k].node(pos)
+	for k := range a.hover.path {
+		// An edit can shorten a level (a delete): keep the cursor on it.
+		g, pos := levels[k], &a.hover.path[k]
+		pos.row = min(max(pos.row, 0), len(g.rows)-1)
+		pos.col = min(max(pos.col, 0), len(g.rows[pos.row])-1)
+		next := g.node(*pos)
 		if next == nil {
+			a.hover.path = a.hover.path[:k+1]
 			break
 		}
 		levels = append(levels, gridOf(next))
 	}
 	return levels
+}
+
+// hoverValueAt is the value under the cursor in a sub-table of the data
+// pane (valueOf's answer there), false on a row.
+func (a *App) hoverValueAt() (valueAt, bool) {
+	if !a.hoverIn() {
+		return valueAt{}, false
+	}
+	levels := a.hoverLevels()
+	d := len(a.hover.path)
+	if d == 0 || d > len(levels) {
+		return valueAt{}, false
+	}
+	return levels[d-1].at(a.hover.path[d-1])
 }
 
 // hoverValue is the value under the cursor in a sub-table of the data
@@ -279,7 +328,7 @@ func (a *App) hoverValue(inst *ochazuke.Instance) *Node {
 	}
 	levels := a.hoverLevels()
 	d := len(a.hover.path)
-	if d > len(levels) {
+	if d == 0 || d > len(levels) {
 		return nil
 	}
 	return levels[d-1].value(a.hover.path[d-1])
@@ -343,8 +392,9 @@ func (a *App) hoverUp(steps int) error {
 }
 
 // hoverColumn moves along the sub-table line under the cursor: by delta
-// cells, or to the first or last.
-func (a *App) hoverColumn(delta int, to string) error {
+// cells, to the first or last, or to cell index (1 the first) when
+// index > 0.
+func (a *App) hoverColumn(delta int, to string, index int) error {
 	levels := a.hoverLevels()
 	h := &a.hover
 	d := len(h.path)
@@ -354,12 +404,14 @@ func (a *App) hoverColumn(delta int, to string) error {
 	g := levels[d-1]
 	cur := &h.path[d-1]
 	last := len(g.rows[cur.row]) - 1
-	switch to {
-	case "first":
+	switch {
+	case index > 0:
+		cur.col = min(index-1, last)
+	case to == "first":
 		cur.col = 0
-	case "last":
+	case to == "last":
 		cur.col = last
-	case "":
+	case to == "":
 		cur.col = min(max(cur.col+delta, 0), last)
 	default:
 		return errors.New("to is first or last")
@@ -487,7 +539,8 @@ func (a *App) hoverBlock(s ochazuke.Styles, levels []hoverGrid, k, w int) (lines
 // cursor's line and two lines below it on screen.
 func (a *App) hoverView(w, h int) string {
 	body := a.data.view(w, h)
-	if !a.inData(a.r.Focus) {
+	a.hover.cursorY = -1
+	if !a.inData(a.r.Focus) { // the inline value input is the pane's child too
 		return body
 	}
 	levels := a.hoverLevels()
@@ -516,9 +569,13 @@ func (a *App) hoverView(w, h int) string {
 	if over := min(cursor+3, len(out)) - h; over > 0 {
 		drop := min(over, cursor-1)
 		out = append(out[:1], out[1+drop:]...)
+		cursor -= drop
 	}
 	if len(out) > h {
 		out = out[:h]
+	}
+	if at >= 0 {
+		a.hover.cursorY = cursor // where a value input on the line is drawn
 	}
 	return strings.Join(out, "\n")
 }
@@ -532,20 +589,27 @@ func (a *App) registerHover() {
 	r.DefineGuard("rows-in-sub-table", func(_ *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.inData(ev.Focus) && a.hoverIn()
 	})
+	// The list's own column verbs (choose, resize, pin) act on the row's
+	// columns: their rows carry this guard so a sub-table does not offer
+	// them (ochazuke's verbs take no availability from o-json).
+	r.DefineGuard("rows-on-row", func(_ *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		return !a.inData(ev.Focus) || !a.hoverIn()
+	})
 	r.Define("rows").
 		Verb("column", func(c ochazuke.Ctx) ochazuke.Result {
 			steps := max(1, ochazuke.IntArg(c.Args, "steps", 1))
-			if err := a.hoverColumn(ochazuke.IntArg(c.Args, "delta", 1)*steps, ochazuke.StringArg(c.Args, "to", "")); err != nil {
+			if err := a.hoverColumn(ochazuke.IntArg(c.Args, "delta", 1)*steps, ochazuke.StringArg(c.Args, "to", ""), ochazuke.IntArg(c.Args, "index", 0)); err != nil {
 				return ochazuke.Failed(err)
 			}
 			return ochazuke.Done(a.hover.path[len(a.hover.path)-1].col)
-		}, "Move along the line of the data pane's sub-table under the cursor (table.nested hover): by delta cells, or to the first or last").Motion().When("rows-in-sub-table")
+		}, "Move along the line of the data pane's sub-table under the cursor (table.nested hover): by delta cells, to the first or last, or to cell index").Motion().When("rows-in-sub-table")
 	key := r.CanonicalKey("rows.column")
 	op := r.Operations[key]
 	op.Parameters = map[string]ochazuke.Parameter{
 		"delta": {Type: "integer", Description: "cells to move, negative to the left (default 1)"},
 		"steps": {Type: "integer", Description: "repeat count (default 1)"},
 		"to":    {Type: "string", Enum: []string{"first", "last"}, Description: "the first or last cell instead of delta"},
+		"index": {Type: "integer", Description: "the cell number, 1 the first (a count: 3|), instead of delta"},
 	}
 	r.Operations[key] = op
 	setHistory(r, ochazuke.HistoryAction, "rows.column")
