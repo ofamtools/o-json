@@ -77,7 +77,12 @@ func (a *App) runRawPane(c ochazuke.Ctx, argv []string) ochazuke.Result {
 	if g := strings.TrimSpace(a.r.Settings().String(settingRawGrants)); g != "" {
 		args = append(args, "--grants", g)
 	}
-	cmd := []string{argv[0]}
+	// The window's process is the editor under sh, which leaves a marker
+	// file when the editor exits: a tuios window may outlive its process,
+	// so the marker, not the window, says the edit is over.
+	done := a.raw.file + ".done"
+	os.Remove(done)
+	cmd := []string{"sh", "-c", `"$@"; s=$?; : > "$0"; exit $s`, done, argv[0]}
 	if d := strings.TrimSpace(a.r.Settings().String(settingRawDetach)); d != "" {
 		d = strings.NewReplacer("{session}", session, "{pane}", pane).Replace(d)
 		cmd = append(cmd, "-c", d)
@@ -93,17 +98,23 @@ func (a *App) runRawPane(c ochazuke.Ctx, argv []string) ochazuke.Result {
 		return ochazuke.Failed(errors.New("raw: tuios new-window printed no window id"))
 	}
 	a.raw.window = id
-	a.later = append(a.later, a.watchRawPane(session, id))
+	a.later = append(a.later, a.watchRawPane(session, id, done))
 	c.Info("RAW " + a.raw.path + " in a tuios pane · ctrl+a d there comes back · g r goes to it")
 	return ochazuke.Done(nil)
 }
 
-// watchRawPane polls tuios until the window is gone.
-func (a *App) watchRawPane(session, id string) tea.Cmd {
+// watchRawPane waits for the editor's end: its marker file (then the
+// window is closed), or the window gone (closed by hand).
+func (a *App) watchRawPane(session, id, done string) tea.Cmd {
 	run := a.tuios
 	return func() tea.Msg {
 		for {
 			time.Sleep(rawPanePoll)
+			if _, err := os.Stat(done); err == nil {
+				os.Remove(done)
+				_, _ = run("close-window", id, "-s", session)
+				return rawPaneDone{window: id}
+			}
 			if _, err := run("get-window", id, "-s", session); err != nil {
 				return rawPaneDone{window: id}
 			}
