@@ -303,7 +303,11 @@ func TestExportJQAgreesWithGo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	y, _ := v.(ochazuke.Yank)
+	program, _ := v.(string)
+	if y, _ := a.r.ReadYank(""); y.Text != program {
+		t.Fatalf("restructure.jq answered %q, copied %q", program, y.Text)
+	}
+	y := ochazuke.Yank{Text: program}
 	root, _ := a.shownRoot()
 	want, _ := exportBytes(root, &exportFormats[0], a.exportOptions(".items", nil))
 	if got := run(y.Text, sampleText(t)); !slices.EqualFunc(records(got, ','), records(string(want), ','), slices.Equal) {

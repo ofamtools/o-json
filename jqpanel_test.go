@@ -164,3 +164,46 @@ func TestJQPanelKeysChangeNothing(t *testing.T) {
 		}
 	}
 }
+
+// : restructure jq and : restructure mapping open what they answer in
+// ochazuke's text view (TextResult): the program as it is, the mapping as
+// indented JSON; restructure jq still copies the program, q closes the
+// view back on the tree, and palette.text-results plain shows neither.
+func TestRestructureTextResultsOpenTheTextView(t *testing.T) {
+	a := openReshape(t, 120, 30)
+	focus := a.r.Focus
+	p, err := a.plan()
+	if err != nil {
+		t.Fatal(err)
+	}
+	press(t, a, append([]string{":"}, append(strings.Split("restructure jq", ""), "enter")...)...)
+	settle(a)
+	view(a)
+	if a.r.TopModal() != ochazuke.TextViewID {
+		t.Fatalf(": restructure jq: modal %q\n%s", a.r.TopModal(), view(a))
+	}
+	if in := a.r.Input(a.r.Focus); in == nil || string(in.Text) != strings.TrimRight(p.JQ(), "\n") || !in.ReadOnly {
+		t.Fatalf("the text view does not hold the program read-only: %+v", in)
+	}
+	if y, _ := a.r.ReadYank(""); y.Text != p.JQ() {
+		t.Fatalf("restructure jq copied %q", y.Text)
+	}
+	press(t, a, "q")
+	if a.r.TopModal() != "" || a.r.Focus != focus {
+		t.Fatalf("q: modal %q focus %q, want %q", a.r.TopModal(), a.r.Focus, focus)
+	}
+	press(t, a, append([]string{":"}, append(strings.Split("restructure mapping", ""), "enter")...)...)
+	settle(a)
+	if in := a.r.Input(a.r.Focus); a.r.TopModal() != ochazuke.TextViewID || in == nil || !strings.Contains(string(in.Text), "\n  \"map\": [") {
+		t.Fatalf(": restructure mapping: modal %q\n%s", a.r.TopModal(), view(a))
+	}
+	press(t, a, "q")
+	if err := a.r.Settings().Set(ochazuke.PaletteTextResultsSetting, "plain"); err != nil {
+		t.Fatal(err)
+	}
+	press(t, a, append([]string{":"}, append(strings.Split("restructure jq", ""), "enter")...)...)
+	settle(a)
+	if a.r.TopModal() == ochazuke.TextViewID {
+		t.Fatal("palette.text-results plain: the text view opened")
+	}
+}

@@ -264,6 +264,13 @@ func (a *App) copyText(c ochazuke.Ctx, text, what string) ochazuke.Result {
 
 // copyYank is copyText for a yank with a shape (a value keeps its type).
 func (a *App) copyYank(c ochazuke.Ctx, y ochazuke.Yank, what string) ochazuke.Result {
+	return a.copyAnswering(c, y, what, y)
+}
+
+// copyAnswering copies y as copyYank does and answers answer: a verb
+// declared TextResult answers its text, which the palette opens in the
+// text view.
+func (a *App) copyAnswering(c ochazuke.Ctx, y ochazuke.Yank, what string, answer any) ochazuke.Result {
 	register := ochazuke.StringArg(c.Args, "register", "")
 	text := y.Text
 	if err := a.r.StoreYank(y, register, false); err != nil {
@@ -276,9 +283,9 @@ func (a *App) copyYank(c ochazuke.Ctx, y ochazuke.Yank, what string) ochazuke.Re
 	clip := a.Clipboard
 	if clip == nil {
 		c.Info(said)
-		return ochazuke.Done(y)
+		return ochazuke.Done(answer)
 	}
-	return ochazuke.Pending(func(context.Context) (any, error) { return y, clip(text) }).
+	return ochazuke.Pending(func(context.Context) (any, error) { return answer, clip(text) }).
 		Then(func(c ochazuke.Ctx, _ any, err error) {
 			if err != nil {
 				c.Notify("clipboard: " + err.Error() + " (the registers have " + what + ")")

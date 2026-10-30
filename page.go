@@ -1397,14 +1397,15 @@ func (a *App) registerRestructureVerbs() {
 				if err != nil {
 					return ochazuke.Failed(err)
 				}
-				return a.copyText(c, text, "the jq program of the "+f+" export")
+				return a.copyAnswering(c, ochazuke.Yank{Text: text}, "the jq program of the "+f+" export", text)
 			}
 			p, err := a.plan()
 			if err != nil {
 				return ochazuke.Failed(err)
 			}
-			return a.copyText(c, p.JQ(), "the jq program")
-		}, "Copy the jq program that makes the restructured document into the registers and the system clipboard; with format (csv or tsv) it ends in the export's @csv / @tsv step (of and columns as viewer.export takes them), so jq -r makes the export").
+			program := p.JQ()
+			return a.copyAnswering(c, ochazuke.Yank{Text: program}, "the jq program", program)
+		}, "Copy the jq program that makes the restructured document into the registers and the system clipboard, and answer it (the palette shows it in the text view); with format (csv or tsv) it ends in the export's @csv / @tsv step (of and columns as viewer.export takes them), so jq -r makes the export").TextResult().
 		Verb("export-map", func(c ochazuke.Ctx) ochazuke.Result {
 			path := ochazuke.StringArg(c.Args, "path", "")
 			text, err := a.mappingText()
@@ -1413,7 +1414,7 @@ func (a *App) registerRestructureVerbs() {
 			}
 			return a.writeFile(c, path, []byte(text), writeNewFile, "the mapping", "", func(string) { a.markSaved() })
 		}, "Write the mapping (the --mapping form, o-json restructure --map reads it) to a new file").
-		Verb("mapping", func(c ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.Mapping()) }, "The restructure's mapping, {map: [{from, to}]}").Fetch().
+		Verb("mapping", func(c ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.Mapping()) }, "The restructure's mapping, {map: [{from, to}]} (the palette shows it in the text view)").Fetch().TextResult().
 		Verb("layout", func(c ochazuke.Ctx) ochazuke.Result {
 			l := ochazuke.StringArg(c.Args, "layout", "")
 			if l == "" {
