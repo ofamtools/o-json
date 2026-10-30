@@ -1,9 +1,9 @@
-  ◆ o-json                                                       SHAPE          
+  ◆ o-json                                                    SHAPE             
    › testdata/reshape.json  Restructure                                         
   ────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json [+]  ·  .people (object 1/1)                            
   ╭━ Structure · edited [+] ━━━╮ ╭─ Object .people ──────────────────────────╮  
-  ┃ jq / to query              ┃ │ p1   p2   p1-2  _missing                  │  
+  ┃ substr / to search         ┃ │ p1   p2   p1-2  _missing                  │  
   ┃ key                     2› ┃ │ {4}  {4}  {3}   [1]                       │  
   ┃ ▾ . (root)                 ┃ │                                           │  
   ┃     title                  ┃ │                                           │  

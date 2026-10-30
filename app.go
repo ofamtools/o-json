@@ -52,6 +52,10 @@ type App struct {
 	// only is the viewer pane ctrl+w o keeps alone (panes.go), rsOnly
 	// the restructure page's side; "" shows both.
 	only, rsOnly string
+	// sr is the search line's type and hits, overlay the view over the
+	// structure's own (search.go): results, jq or "".
+	sr      searchState
+	overlay string
 
 	// Clipboard copies text to the system clipboard; nil when there is
 	// none (ochazuke then sends OSC 52). Only ochazuke's registers call it
@@ -145,6 +149,9 @@ func New() (*App, error) {
 	if err := a.registerQuery(); err != nil {
 		return nil, err
 	}
+	if err := a.registerSearch(); err != nil {
+		return nil, err
+	}
 	if err := a.registerQueryMode(); err != nil {
 		return nil, err
 	}
@@ -224,6 +231,7 @@ func (a *App) setDoc(path string, doc *Doc) error {
 	a.viewName = ""
 	a.Raw = false
 	a.forgetQuery()
+	a.overlay, a.sr.key = "", ""
 	if page := a.r.PageOf(pageID); page != nil {
 		page.Title = doc.Name
 	}
@@ -430,6 +438,13 @@ func (a *App) sync() error {
 			a.shown = nil
 		}
 	}
+	if a.overlay == overlayResults && a.sr.view != nil {
+		a.note = ""
+		if a.shown == a.sr.view {
+			return nil
+		}
+		return a.show(a.sr.view)
+	}
 	if a.queryShowing() {
 		a.note = ""
 		if a.q.goodView == a.shown {
@@ -475,6 +490,11 @@ func (a *App) show(s *Shape) error {
 	follow := a.followKey
 	a.followKey = ""
 	a.shown, a.tab, a.fields, a.lines, a.scalar, a.lit = s, nil, nil, nil, nil, nil
+	if s == a.sr.view {
+		// The Results view (search.go): one line per hit.
+		a.viewName, a.Raw, a.lines = viewResults, false, a.sr.hits
+		return a.data.set(linesSource(a.lines), a.sr.cur)
+	}
 	values := s.Values()
 	view := a.viewByPath[s.Path]
 	if !viewApplies(view, values) {

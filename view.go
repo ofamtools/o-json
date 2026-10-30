@@ -152,6 +152,14 @@ func (a *App) breadcrumb() string {
 	if a.lit != nil {
 		s = a.lit
 	}
+	if s != nil && s == a.sr.view {
+		n := len(a.sr.hits)
+		parts = append(parts, fmt.Sprintf("%s: %d hit%s", s.Path, n, plural(n)))
+		if l := lineAt(a.r.Instances[a.r.Focus]); l != nil && l.node != nil {
+			parts = append(parts, "hit "+l.node.Path())
+		}
+		s = nil
+	}
 	if s != nil {
 		info := s.Types() + " ×" + fmt.Sprint(s.Count)
 		if s.IsField() {
@@ -254,6 +262,12 @@ func (a *App) dataTitle() string {
 		return "JSON " + s.Path
 	case a.viewName == viewFlat:
 		return "Flat " + s.Path
+	case a.viewName == viewResults:
+		n := fmt.Sprintf("%d", len(a.sr.hits))
+		if a.sr.cut {
+			n = "first " + n
+		}
+		return fmt.Sprintf("Results %s  %d/%s", strings.TrimPrefix(s.Path, "search "), a.data.Selected()+1, n)
 	case a.tab != nil && !a.tab.Items:
 		return "Object " + s.Path
 	case a.tab != nil:

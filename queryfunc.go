@@ -109,6 +109,37 @@ func (a *App) nextSlot() error {
 	return nil
 }
 
+// previousSlot selects the empty slot before the cursor, else the last.
+func (a *App) previousSlot() error {
+	in := a.q.in
+	from := in.Cursor
+	if s, _, ok := in.SelectedText(); ok {
+		from = s
+	}
+	i := -1
+	for j := min(from, len(in.Text)) - 1; j >= 0; j-- {
+		if in.Text[j] == jqSlot {
+			i = j
+			break
+		}
+	}
+	if i < 0 {
+		for j := len(in.Text) - 1; j >= 0 && i < 0; j-- {
+			if in.Text[j] == jqSlot {
+				i = j
+			}
+		}
+		if i < 0 {
+			return errors.New("no empty slot")
+		}
+	}
+	if a.r.Focus == jqFieldID {
+		return in.SelectText(i, i+1)
+	}
+	in.Cursor = i
+	return nil
+}
+
 func (a *App) registerQueryFunctions() {
 	r := a.r
 	hasSlot := func() bool { return slices.Contains(a.q.in.Text, jqSlot) }
@@ -132,10 +163,13 @@ func (a *App) registerQueryFunctions() {
 		}, "Pick a jq builtin and write it at the anchor, an empty slot per argument (the first selected: typing fills it, tab goes to the next); with name (sub or sub/2), that one (ctrl+f)").When("query-functions").
 		Verb("next-slot", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.queryDone(a.nextSlot())
-		}, "Select the query's next empty argument slot (tab)").When("query-slot")
+		}, "Select the query's next empty argument slot (ctrl+n)").When("query-slot").
+		Verb("previous-slot", func(c ochazuke.Ctx) ochazuke.Result {
+			return a.queryDone(a.previousSlot())
+		}, "Select the query's previous empty argument slot (ctrl+p)").When("query-slot")
 	op := r.Operations[r.CanonicalKey("jq.function")]
 	op.Parameters = map[string]ochazuke.Parameter{"name": {Type: "string", Description: "a builtin, name or name/arity; omit to pick one"}}
 	r.Operations[r.CanonicalKey("jq.function")] = op
 	setHistory(r, ochazuke.HistoryChange, "jq.function")
-	setHistory(r, ochazuke.HistoryAction, "jq.next-slot")
+	setHistory(r, ochazuke.HistoryAction, "jq.next-slot", "jq.previous-slot")
 }

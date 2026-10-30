@@ -1,9 +1,9 @@
-  ◆ o-json                                                                                               SHAPE          
+  ◆ o-json                                                                                            SHAPE             
    › testdata/reshape.json  Restructure                                                                                 
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json  ·  .people[].address.city (string 2/2)                                                         
   ╭━ Structure · 2 marked · unchanged ━━━━━━━━━╮ ╭─ Table .people[].address  1/2 ────────────────────────────────────╮  
-  ┃ jq / to query                              ┃ │ #  city  zip?                                                     │  
+  ┃ substr / to search                         ┃ │ #  city  zip?                                                     │  
   ┃   key              type     from           ┃ │ 0  Oslo  0150                                                     │  
   ┃   ▾ . (root)       object                  ┃ │ 1  Rome                                                           │  
   ┃       title        string   .title         ┃ │                                                                   │  

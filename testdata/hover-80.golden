@@ -1,9 +1,9 @@
-  ◆ o-json                                                       NESTED         
+  ◆ o-json                                                    NESTED            
    › testdata/nested.json  Restructure                                          
   ────────────────────────────────────────────────────────────────────────────  
   testdata/nested.json  ·  . (array ×1)  ·  row [2]                             
   ╭─ Structure · unchanged ────╮ ╭━ Table .  3/20 ━━━━━━━━━━━━━━━━━━━━━━━━━━━╮  
-  │ jq / to query              │ ┃  #  ‹4   meta  address?  orders?      12› ┃  
+  │ substr / to search         │ ┃  #  ‹4   meta  address?  orders?      12› ┃  
   │ key                     2› │ ┃  0       {2}   {3}       []               ┃  
   │ ▾ . (root)                 │ ┃  1       {2}   {3}       [1]              ┃  
   │   ▾ []                     │ ┃  2       {2}   {3}       [2]              ┃  

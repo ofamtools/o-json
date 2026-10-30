@@ -329,10 +329,13 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 
 | Keys | Does |
 |---|---|
-| `/` | focus the jq query line |
-| `esc` `enter` | leave the line (the query stays) |
+| `/` | the search line (substring, fuzzy, regex or jq) |
+| `tab` | the next search type (shift+tab back) |
+| `enter` | show the hits or the jq result |
+| `esc` | leave the line (a jq query stays) |
+| `esc` | clear the search or jq result |
 | `ctrl+f` | pick a jq function |
-| `tab` | the next empty argument |
+| `ctrl+n` | the next empty argument |
 | `tab` `enter` | take the completion |
 | `m` | query mode on the tree |
 | `.` | query mode: the field's path |

@@ -457,6 +457,8 @@ func (a *App) registerQueryMode() error {
 			if to == "edit" {
 				return r.SetMode("normal")
 			}
+			// JQ mode writes the query: the line's type is jq.
+			a.sr.typ = "jq"
 			return r.SetMode(queryMode)
 		}), "Switch the structure pane between its edit keys and JQ mode, where jq's characters build the query from the highlighted field (m); to: edit or jq (query is an alias)").When("query-structure").
 		Verb("path", edit(func(c ochazuke.Ctx) error {

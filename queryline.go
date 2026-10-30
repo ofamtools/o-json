@@ -165,25 +165,40 @@ func (a *App) queryLines(s ochazuke.Styles, width int) (ochazuke.Block, int) {
 	if focused {
 		a.snapshotShape()
 	}
+	// The prompt names the line's type (search.go): jq, or the match
+	// mode's tag.
 	prompt := "jq "
+	if t := a.searchTypeRow(); t.match != "" {
+		prompt = ochazuke.MatchTag(t.match) + " "
+	}
 	pw := ansi.StringWidth(prompt)
 	avail := max(1, width-pw)
 	if len(in.Text) == 0 && !focused {
 		hint := "query"
-		if key := a.keyFor("jq.focus"); key != "" {
+		if key := a.keyFor("search.focus"); key != "" {
+			hint = key + " to search"
+		} else if key := a.keyFor("jq.focus"); key != "" {
 			hint = key + " to query"
 		}
 		return ochazuke.Text(s.Muted.Render(ansi.Truncate(prompt+hint, width, "…"))), 1
 	}
 	errPos := -1
 	var errMsg string
-	if l := a.q.last; l != nil && l.Err != nil && l.Query == string(in.Text) {
+	if !a.searchJQ() {
+		if a.sr.err != nil {
+			errPos, errMsg = len(in.Text), a.sr.err.Error()
+		}
+	} else if l := a.q.last; l != nil && l.Err != nil && l.Query == string(in.Text) {
 		errPos, errMsg = l.Pos, l.Err.Error()
 		if errPos < 0 {
 			errPos = len(in.Text)
 		}
 	}
-	line, cx := chipLine(s, in, a.queryTokens(), focused, a.r.Settings().String(settingChipFocus) == "line", errPos, avail)
+	toks := a.queryTokens()
+	if !a.searchJQ() {
+		toks = nil // a search pattern has no jq chips
+	}
+	line, cx := chipLine(s, in, toks, focused, a.r.Settings().String(settingChipFocus) == "line", errPos, avail)
 	block := ochazuke.Text(s.Muted.Render(prompt) + line)
 	if focused {
 		block.Cursor = &ochazuke.Pos{X: pw + cx}

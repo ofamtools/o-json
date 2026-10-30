@@ -13,26 +13,52 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// cycleDataView changes only the selected path's preferred view. A count
-// walks the applicable views, so a scalar skips Fields.
+// cycleDataView steps the data pane's view (D, tab; shift+tab back): the
+// structure path's own views that apply, then the overlays that are live
+// (the search's Results, the jq result). A count walks several. A path's
+// own view is remembered per path; an overlay is shown over every path
+// until esc clears it or the cycle steps off it.
 func (a *App) cycleDataView(steps int) error {
-	if a.shown == nil || steps == 0 {
+	s := a.selectedShape()
+	if s == nil || steps == 0 {
 		return nil
 	}
-	values := a.shown.Values()
-	available := make([]string, 0, len(dataViewOrder))
+	values := s.Values()
+	available := make([]string, 0, len(dataViewOrder)+2)
 	for _, name := range dataViewOrder {
 		if viewApplies(name, values) {
 			available = append(available, name)
 		}
 	}
-	i := slices.Index(available, a.viewName)
+	if a.sr.view != nil {
+		available = append(available, overlayResults)
+	}
+	if a.searchJQ() && a.q.goodView != nil {
+		available = append(available, overlayJQ)
+	}
+	current := a.overlay
+	if current == "" {
+		current = a.viewByPath[s.Path]
+		if !viewApplies(current, values) {
+			current = defaultDataView(values, a.r.Settings().String(settingObjectView))
+		}
+	}
+	i := slices.Index(available, current)
 	if i < 0 {
 		i = 0
 	}
 	i = ((i+steps)%len(available) + len(available)) % len(available)
-	a.viewByPath[a.shown.Path] = available[i]
+	switch next := available[i]; next {
+	case overlayResults, overlayJQ:
+		a.overlay = next
+	default:
+		a.overlay = ""
+		a.viewByPath[s.Path] = next
+	}
 	if err := a.reshow(); err != nil {
+		return err
+	}
+	if err := a.sync(); err != nil {
 		return err
 	}
 	a.syncDeclaredMode()
@@ -40,8 +66,9 @@ func (a *App) cycleDataView(steps int) error {
 }
 
 const (
-	viewFlat = "flat"
-	viewJSON = "json"
+	viewFlat    = "flat"
+	viewJSON    = "json"
+	viewResults = "results"
 )
 
 // dataViewOrder is the trial's view cycle. Fields is available for an
@@ -55,12 +82,19 @@ func (a *App) syncDeclaredMode() {
 	defer a.syncModeAccent()
 	if a.r.Settings().String(settingDeclaredModes) == "off" {
 		switch a.r.BaseMode() {
-		case "shape", "table", "nested", "flat", "json", "jq", "split":
+		case "shape", "table", "nested", "flat", "json", "jq", "split", "search":
 			_ = a.r.SetMode("normal")
 		}
 		return
 	}
 	if len(a.r.Modals()) > 0 {
+		return
+	}
+	if a.r.Focus == jqFieldID {
+		// The search line: the type's mode, while it is in insert.
+		if base := a.r.BaseMode(); (base == "insert" || slices.Contains(lineModes(), base)) && base != a.lineMode() {
+			_ = a.r.SetMode(a.lineMode())
+		}
 		return
 	}
 	want := ""
@@ -77,6 +111,8 @@ func (a *App) syncDeclaredMode() {
 		}
 		if a.queryShowing() {
 			want = "jq"
+		} else if a.overlay == overlayResults && a.shown == a.sr.view {
+			want = "search"
 		} else if a.hoverIn() {
 			want = "nested"
 		}
@@ -88,7 +124,7 @@ func (a *App) syncDeclaredMode() {
 	if base == queryMode && want == "shape" {
 		return // m explicitly lifted the structure pane into JQ
 	}
-	if base != "normal" && base != "shape" && base != "table" && base != "nested" && base != "flat" && base != "json" && base != "jq" && base != "split" {
+	if base != "normal" && base != "shape" && base != "table" && base != "nested" && base != "flat" && base != "json" && base != "jq" && base != "split" && base != "search" {
 		return // an explicit edit, query or selection mode is on top
 	}
 	if base != want {
@@ -100,20 +136,24 @@ func (a *App) syncDeclaredMode() {
 // table. In this trial the accent follows the mode, colouring the badge and
 // focused chrome together. The library can own per-mode badge tones later.
 var trialModeAccents = map[string][2]string{
-	"shape":       {"#266B9A", "#73B6ED"},
-	"table":       {"#237A56", "#72D5A7"},
-	"nested":      {"#596E2E", "#BDD568"},
-	"flat":        {"#8B5A26", "#E7B673"},
-	"json":        {"#7952A3", "#C7A2ED"},
-	"jq":          {"#A45916", "#F2AD64"},
-	"query":       {"#A45916", "#F2AD64"},
-	"split":       {"#166C78", "#74CDD4"},
-	"edit":        {"#A44049", "#F2949A"},
-	"insert":      {"#A44049", "#F2949A"},
-	"visual":      {"#8D4A91", "#E59CE2"},
-	"visual-line": {"#8D4A91", "#E59CE2"},
-	"raw":         {"#516B36", "#9DD077"},
-	"search":      {"#886A1E", "#E9CD6A"},
+	"shape":           {"#266B9A", "#73B6ED"},
+	"table":           {"#237A56", "#72D5A7"},
+	"nested":          {"#596E2E", "#BDD568"},
+	"flat":            {"#8B5A26", "#E7B673"},
+	"json":            {"#7952A3", "#C7A2ED"},
+	"jq":              {"#A45916", "#F2AD64"},
+	"query":           {"#A45916", "#F2AD64"},
+	"split":           {"#166C78", "#74CDD4"},
+	"edit":            {"#A44049", "#F2949A"},
+	"insert":          {"#A44049", "#F2949A"},
+	"visual":          {"#8D4A91", "#E59CE2"},
+	"visual-line":     {"#8D4A91", "#E59CE2"},
+	"raw":             {"#516B36", "#9DD077"},
+	"search":          {"#886A1E", "#E9CD6A"},
+	"search_·_substr": {"#886A1E", "#E9CD6A"},
+	"search_·_fuzzy":  {"#886A1E", "#E9CD6A"},
+	"search_·_regex":  {"#886A1E", "#E9CD6A"},
+	"jq_·_line":       {"#A45916", "#F2AD64"},
 }
 
 func (a *App) syncModeAccent() {

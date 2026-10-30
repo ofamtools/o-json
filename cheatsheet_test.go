@@ -120,8 +120,11 @@ var cheatSheet = []sheetSection{
 		{"restructure/normal", "restructure.close", nil, "page: back to the viewer"},
 	}},
 	{"Query (chapter 7)", []sheetLine{
-		{"viewer/normal", "jq.focus", nil, "focus the jq query line"},
-		{"jq-input/insert", "jq.leave", nil, "leave the line (the query stays)"},
+		{"viewer/normal", "search.focus", nil, "the search line (substring, fuzzy, regex or jq)"},
+		{"jq-input/insert", "search.type", nil, "the next search type (shift+tab back)"},
+		{"jq-input/insert", "search.accept", nil, "show the hits or the jq result"},
+		{"jq-input/insert", "search.cancel", nil, "leave the line (a jq query stays)"},
+		{"viewer/normal", "search.clear", nil, "clear the search or jq result"},
 		{"jq-input/insert", "jq.function", nil, "pick a jq function"},
 		{"jq-input/insert", "jq.next-slot", nil, "the next empty argument"},
 		{"ochazuke.completion/insert", "ochazuke.completion.accept", nil, "take the completion"},

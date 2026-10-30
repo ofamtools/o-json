@@ -35,8 +35,8 @@ var settingSections = []settingSection{
 		{"Values", []string{settingDataEditable, settingValueEditor, settingValueLeave, settingValueStableHeight, settingRebuildValueEdit}},
 		{"Tables", []string{settingStableColumns, settingNested, settingHoverRows}},
 	}},
-	{ochazuke.SettingSection{ID: "query", Title: "jq", Description: "The jq query line, query mode and the jq panel"}, []settingGroup{
-		{"", []string{settingQueryLine, settingChipFocus, settingCompletePaths}},
+	{ochazuke.SettingSection{ID: "query", Title: "Search and jq", Description: "The search line (/: substring, fuzzy, regex or jq), query mode and the jq panel"}, []settingGroup{
+		{"", []string{settingQueryLine, settingSearchType, settingChipFocus, settingCompletePaths}},
 		{"Panel", []string{settingJQPanel, settingJQPanelHeight}},
 	}},
 	{ochazuke.SettingSection{ID: "restructure", Title: "Restructure", Description: "The restructure page and the edits on the restructured tree"}, []settingGroup{

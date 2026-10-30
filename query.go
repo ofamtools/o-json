@@ -72,7 +72,7 @@ func (a *App) queryText() string { return string(a.q.in.Text) }
 
 // queryShowing reports the data pane showing the query's results.
 func (a *App) queryShowing() bool {
-	return a.queryOn() && a.Doc != nil && strings.TrimSpace(a.queryText()) != "" && a.q.goodView != nil
+	return a.overlay == overlayJQ && a.queryOn() && a.Doc != nil && strings.TrimSpace(a.queryText()) != "" && a.q.goodView != nil
 }
 
 // queryRoot is the document the query runs on: the shown one.
@@ -140,7 +140,7 @@ type jqTick struct{ seq uint64 }
 
 func (j *jqRunner) key() (string, string, *Node) {
 	a := j.a
-	if !a.queryOn() || a.Doc == nil {
+	if !a.queryOn() || a.Doc == nil || !a.searchJQ() {
 		return "", "", nil
 	}
 	q := a.queryText()
@@ -151,6 +151,7 @@ func (j *jqRunner) key() (string, string, *Node) {
 // PendingCommand starts the pause of a changed query, or the run whose
 // pause is over.
 func (j *jqRunner) PendingCommand() tea.Cmd {
+	j.a.refreshSearch()
 	key, q, root := j.key()
 	a := j.a
 	if key != j.wanted {
@@ -263,6 +264,7 @@ func (a *App) registerQuery() error {
 			return a.copyText(c, q, "the query")
 		}, "Copy the jq query into the registers (and the system clipboard, as the clipboard setting says)").When("query-line").
 		Verb("focus", func(c ochazuke.Ctx) ochazuke.Result {
+			a.sr.typ = "jq"
 			return a.queryDone(a.focusQuery())
 		}, "Focus the jq query line, typing at its end (/); esc goes back where it came from, the query kept").When("query-line").
 		Verb("leave", func(c ochazuke.Ctx) ochazuke.Result {
@@ -333,7 +335,7 @@ func (a *App) focusQuery() error {
 	if err := a.r.SetFocus(jqFieldID); err != nil {
 		return err
 	}
-	if err := a.r.SetMode("insert"); err != nil {
+	if err := a.r.SetMode(a.lineMode()); err != nil {
 		return err
 	}
 	a.q.in.Cursor = len(a.q.in.Text)
@@ -376,7 +378,7 @@ func (a *App) wrapSelection(open string) error {
 	if err := in.Replace(lo, hi, open+inner+cls); err != nil {
 		return err
 	}
-	if err := a.r.SetMode("insert"); err != nil {
+	if err := a.r.SetMode(a.lineMode()); err != nil {
 		return err
 	}
 	in.Cursor = lo + len([]rune(open+inner+cls))

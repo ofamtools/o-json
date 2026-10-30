@@ -18,6 +18,11 @@ func openQuery(t *testing.T, path string) *App {
 	t.Helper()
 	a := open(t, path, 120, 30)
 	a.q.run.Debounce = 0
+	// These tests are the jq type of the search line (search.go).
+	if err := a.r.Settings().Set(settingSearchType, "jq"); err != nil {
+		t.Fatal(err)
+	}
+	a.sr.typ = "jq"
 	return a
 }
 
@@ -212,7 +217,7 @@ func TestQuerySlashFocusesAndEscLeaves(t *testing.T) {
 	a := openQuery(t, sample)
 	from := a.r.Focus
 	press(t, a, "/")
-	if a.r.Focus != jqFieldID || a.q.in.Mode != "insert" {
+	if a.r.Focus != jqFieldID || a.q.in.Mode != a.lineMode() {
 		t.Fatalf("/ focus %q mode %q", a.r.Focus, a.q.in.Mode)
 	}
 	finish(a, Type(a.m, ".name"))
@@ -306,7 +311,7 @@ func TestQueryWrapSelection(t *testing.T) {
 	if got := a.queryText(); got != "[.name, .version]" {
 		t.Fatalf("wrapped %q", got)
 	}
-	if a.q.in.Mode != "insert" || a.q.in.Cursor != len(a.q.in.Text) {
+	if a.q.in.Mode != a.lineMode() || a.q.in.Cursor != len(a.q.in.Text) {
 		t.Fatalf("after the wrap: mode %q cursor %d", a.q.in.Mode, a.q.in.Cursor)
 	}
 	view(a)
@@ -472,11 +477,11 @@ func TestQueryFunctionSlots(t *testing.T) {
 	if n := strings.Count(a.queryText(), "□"); n != 2 {
 		t.Fatalf("%d slots", n)
 	}
-	if a.r.Focus != jqFieldID || a.q.in.Mode != "insert" {
+	if a.r.Focus != jqFieldID || a.q.in.Mode != a.lineMode() {
 		t.Fatalf("back in the line: focus %q mode %q", a.r.Focus, a.q.in.Mode)
 	}
 	Type(a.m, `"t"`)
-	press(t, a, "tab")
+	press(t, a, "ctrl+n")
 	// The second slot holds a nested call: tostring is arity 0.
 	if _, err := a.r.Execute(ochazuke.Request{Noun: "jq", Verb: "function", Args: ochazuke.Arguments{"name": "tostring"}}); err != nil {
 		t.Fatal(err)
