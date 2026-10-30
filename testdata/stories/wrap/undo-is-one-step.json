@@ -1,0 +1,13 @@
+{
+  "name": "o-json: one u undoes v j j j { and the four fields are back where they were",
+  "area": "wrap",
+  "width": 110,
+  "height": 24,
+  "fixture": "viewer",
+  "seed": {"doc": "wrap.json"},
+  "script": ["j", "v", "j", "j", "j", "{", "esc", "u"],
+  "expect": [
+    {"after": 7, "contains": ["new-key"]},
+    {"mode": "normal", "contains": [".city", ".zip"], "lacks": ["new-key"]}
+  ]
+}

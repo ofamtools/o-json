@@ -1,0 +1,38 @@
+{
+  "name": "o-json: v j j j [ makes a new key holding the array of the four fields' values, their keys dropped with a notice; enter accepts the placeholder",
+  "area": "wrap",
+  "width": 110,
+  "height": 24,
+  "fixture": "viewer",
+  "seed": {
+    "doc": "wrap.json"
+  },
+  "script": [
+    "j",
+    "v",
+    "j",
+    "j",
+    "j",
+    "[",
+    "enter"
+  ],
+  "expect": [
+    {
+      "after": 6,
+      "contains": [
+        "an array of 4 value(s); their keys went"
+      ]
+    },
+    {
+      "mode": "normal",
+      "contains": [
+        "new-key",
+        "7 · Ada · London · N1"
+      ],
+      "lacks": [
+        "VISUAL-LINE",
+        ".city"
+      ]
+    }
+  ]
+}

@@ -274,11 +274,14 @@ func (e edit) markBuilt() {
 
 // Mapping is the page's mapping now, with the value edits and the
 // reshape steps (stagedMapping).
-func (a *App) Mapping() *Mapping {
+func (a *App) Mapping() *Mapping { return a.mappingWith(a.rs.tree.Nodes(), a.rs.meta) }
+
+// mappingWith is Mapping with nodes and meta as the tree.
+func (a *App) mappingWith(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) *Mapping {
 	if len(a.rs.stages) > 0 {
-		return a.stagedMapping()
+		return a.stagedMappingWith(nodes, meta)
 	}
-	m := mappingOf(a.rs.tree.Nodes(), a.rs.meta)
+	m := mappingOf(nodes, meta)
 	if len(a.rs.patches) > 0 {
 		m.Patches = slices.Clone(a.rs.patches)
 	}
@@ -1110,6 +1113,28 @@ func (a *App) registerRestructureVerbs() {
 			return e, ok
 		})
 	})
+	// Unwrapping needs a node with a parent holding keys or an item; the
+	// verb tells why one it cannot lift is refused.
+	// Over a V selection any selected node will do.
+	r.DefineGuard("node-unwrappable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		id := a.focusedNode(ev.Focus)
+		if id == "" {
+			return false
+		}
+		ids := []string{id}
+		if l := a.rs.tree.List(); l.Visual() {
+			for _, it := range l.Marked() {
+				ids = append(ids, it.ID)
+			}
+		}
+		e := edit{nodes: a.rs.tree.Nodes(), meta: a.rs.meta}
+		return slices.ContainsFunc(ids, func(id string) bool {
+			if e.meta[id].item {
+				id = e.parent(id)
+			}
+			return id != "" && e.parent(id) != "" && len(e.siblings(id)) > 0
+		})
+	})
 	r.DefineGuard("node-to-array", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.moved(a.focusedNode(ev.Focus), a.toArray)
 	})
@@ -1235,6 +1260,10 @@ func (a *App) registerRestructureVerbs() {
 	r.Define("node").
 		Verb("wrap", func(c ochazuke.Ctx) ochazuke.Result {
 			key := ochazuke.StringArg(c.Args, "key", "")
+			as := ochazuke.StringArg(c.Args, "as", wrapObject)
+			if as != wrapObject && as != wrapArray {
+				return ochazuke.Failed(fmt.Errorf("as is %s or %s", wrapObject, wrapArray))
+			}
 			now := a.current()
 			ids := subjectIDs(c)
 			var e edit
@@ -1247,11 +1276,17 @@ func (a *App) registerRestructureVerbs() {
 			if len(ws) == 0 || !a.valid(e.nodes, e.meta) && a.valid(now.nodes, now.meta) {
 				return ochazuke.Failed(errors.New("wrap does not apply here"))
 			}
+			if as == wrapArray {
+				return a.wrapAsArray(c, e, ws, key)
+			}
 			if len(ws) > 1 {
 				key = ws[0] // several new keys keep their placeholders: none opens
 			}
 			return created(c, "wrap", e, ws[0], key)
-		}, "Wrap the node in a new object in its place, the new key a placeholder opened selected (typing names it). Over a V selection (S), restructure.visual-wrap: together puts the selected siblings in one new object, each wraps every node in its own").Many().When("node-wrappable").
+		}, "Wrap the node in a new object in its place, the new key a placeholder opened selected (typing names it). Over a V selection (S, {), restructure.visual-wrap: together puts the selected siblings in one new object, each wraps every node in its own. as array ([) makes the new key an array of the wrapped values instead, their keys dropped (a values reshape step: one undo step)").Many().When("node-wrappable").
+		Verb("unwrap", func(c ochazuke.Ctx) ochazuke.Result {
+			return a.unwrapNodes(c, subjectIDs(c))
+		}, "The inverse of node.wrap (} and ] over a V selection): an object's keys lift into its parent at its place and the object goes; an array's items lift as numbered keys (restructure.new-key-1, -2, ...: a lift reshape step). Refused on the document, and where a lifted key would repeat one beside it. One undo step").Many().When("node-unwrappable").
 		Verb("array", toggle("to-array", a.toArray), "Turn the key into an array of itself: its value, or its keys, become the array's item; the document holding keys becomes [ {keys} ]").When("node-to-array").
 		Verb("object", func(c ochazuke.Ctx) ochazuke.Result {
 			e, key, ok := a.toObjectKey(a.current(), c.Instance.ID)
@@ -1285,12 +1320,15 @@ func (a *App) registerRestructureVerbs() {
 	params("node.indent", map[string]ochazuke.Parameter{
 		"into": {Type: "string", Enum: []string{"previous", "next"}, Description: "the sibling to nest into: the nearest above that takes keys (previous, the default) or below (next)"},
 	})
-	params("node.wrap", map[string]ochazuke.Parameter{"key": {Type: "string", Description: "the wrapper's key; omit for a placeholder opened selected"}})
+	params("node.wrap", map[string]ochazuke.Parameter{
+		"key": {Type: "string", Description: "the wrapper's key; omit for a placeholder opened selected"},
+		"as":  {Type: "string", Enum: []string{wrapObject, wrapArray}, Description: "object (the default): the nodes become the new key's keys; array: the new key is an array of their values, the keys dropped"},
+	})
 	params("restructure.add-key", map[string]ochazuke.Parameter{
 		"where": {Type: "string", Enum: []string{"below", "above", "child"}},
 		"key":   {Type: "string", Description: "the new key; omit for a placeholder opened selected"},
 	})
-	setHistory(r, ochazuke.HistoryChange, "node.indent", "node.dedent", "node.rename", "node.delete", "node.wrap", "node.array", "node.object", "restructure.add-key")
+	setHistory(r, ochazuke.HistoryChange, "node.indent", "node.dedent", "node.rename", "node.delete", "node.wrap", "node.unwrap", "node.array", "node.object", "restructure.add-key")
 
 	sendShapes := func(c ochazuke.Ctx, shapes []*Shape) ochazuke.Result {
 		if a.Doc == nil {

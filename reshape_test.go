@@ -66,6 +66,24 @@ var reshapeCases = []struct {
 	name, doc, mapping, want string
 }{
 	{
+		name:    "lift: an array's items become numbered keys at its place",
+		doc:     `{"a":1,"t":["x",{"b":2}],"z":3}`,
+		mapping: `{"map":[{"from":".","to":"."}],"then":[{"op":"lift","path":".t","prefix":"k"}]}`,
+		want:    `{"a":1,"k-1":"x","k-2":{"b":2},"z":3}`,
+	},
+	{
+		name:    "lift under items: a key there that an item takes goes, the lifted value wins; not an array stays",
+		doc:     `{"items":[{"t":[1,2],"k-2":"old"},{"t":"s"},{"u":1},[]]}`,
+		mapping: `{"map":[{"from":".","to":"."}],"then":[{"op":"lift","path":".items[].t","prefix":"k"}]}`,
+		want:    `{"items":[{"k-1":1,"k-2":2},{"t":"s"},{"u":1},[]]}`,
+	},
+	{
+		name:    "lift: the prefix defaults to new-key; an empty array leaves nothing",
+		doc:     `{"t":["x"],"e":[],"q":"\"odd"}`,
+		mapping: `{"map":[{"from":".","to":"."}],"then":[{"op":"lift","path":".t"},{"op":"lift","path":".e"}]}`,
+		want:    `{"new-key-1":"x","q":"\"odd"}`,
+	},
+	{
 		name:    "flatten: dotted fields become leaf names where unique",
 		doc:     reshapeDoc,
 		mapping: `{"map":[{"from":".","to":"."}],"then":[{"op":"flatten","paths":[".items[].name",".items[].address.city"],"arrays":"join"}]}`,
@@ -233,6 +251,7 @@ func TestReshapeRefusesBadSteps(t *testing.T) {
 		`{"map":[{"from":".","to":"."}],"then":[{"op":"key-by","field":"a","duplicates":"many"}]}`:   `duplicates "many"`,
 		`{"map":[{"from":".","to":"."}],"then":[{"op":"flatten","paths":[".[].a"],"arrays":"csv"}]}`: `arrays "csv"`,
 		`{"map":[{"from":".","to":"."}],"then":[{"op":"values","map":[{"from":".nope","to":"."}]}]}`: "no such path",
+		`{"map":[{"from":".","to":"."}],"then":[{"op":"lift","path":"."}]}`:                          `"path" names an object's key`,
 	} {
 		m, err := ReadMapping([]byte(mapping))
 		if err != nil {

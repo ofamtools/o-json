@@ -83,7 +83,11 @@ func treeMap(nodes []ochazuke.TreeNode, meta map[string]nodeMeta, idKey string) 
 // stagedMapping is the mapping with reshape steps: the first tree's map
 // and patches, then each step with the map and patches of the tree after
 // it, the current one last.
-func (a *App) stagedMapping() *Mapping {
+func (a *App) stagedMapping() *Mapping { return a.stagedMappingWith(a.rs.tree.Nodes(), a.rs.meta) }
+
+// stagedMappingWith is stagedMapping with nodes and meta as the current
+// tree.
+func (a *App) stagedMappingWith(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) *Mapping {
 	st := a.rs.stages
 	m := mappingOf(st[0].nodes, st[0].meta)
 	m.Patches = slices.Clone(st[0].patches)
@@ -92,7 +96,7 @@ func (a *App) stagedMapping() *Mapping {
 		if i < len(st) {
 			s.Map, s.Patches = treeMap(st[i].nodes, st[i].meta, st[i].idKey), slices.Clone(st[i].patches)
 		} else {
-			s.Map, s.Patches = treeMap(a.rs.tree.Nodes(), a.rs.meta, a.rs.in.idKey), slices.Clone(a.rs.patches)
+			s.Map, s.Patches = treeMap(nodes, meta, a.rs.in.idKey), slices.Clone(a.rs.patches)
 		}
 		m.Then = append(m.Then, s)
 	}
@@ -102,39 +106,73 @@ func (a *App) stagedMapping() *Mapping {
 // reshape runs a step on the restructured document as one undo step:
 // the tree closes into the steps and becomes the copy of the output.
 func (a *App) reshape(c ochazuke.Ctx, st Stage) ochazuke.Result {
-	if a.Doc == nil {
-		return ochazuke.Failed(errors.New("no document"))
-	}
-	d := a.restructuredDoc()
-	if d.err != nil {
-		return ochazuke.Failed(d.err)
-	}
-	sp, err := prepareStage(st, d.root)
+	sps, _, err := a.reshapeFrom(a.current(), []Stage{st}, st.Op)
 	if err != nil {
 		return ochazuke.Failed(err)
 	}
-	out := normalized(sp.apply(d.root))
-	shape := Infer(out)
-	copied := a.identityOf(shape)
-	idKey := mappingKey(&Mapping{Map: mappingOf(copied.nodes, copied.meta).Map})
-	closed := closedStage{nodes: a.rs.tree.Nodes(), meta: maps.Clone(a.rs.meta), patches: slices.Clone(a.rs.patches), op: sp.st}
-	if a.rs.in != nil {
-		closed.idKey = a.rs.in.idKey
+	a.refocus(rsRootID)
+	c.Info(stageName(sps[0].st) + "; u undoes")
+	return ochazuke.Done(a.Mapping())
+}
+
+// reshapeFrom closes the tree from (the current one, or an edit of it not
+// yet made: node.wrap {as: array} wraps first) into the reshape steps,
+// runs steps on its result in order, and makes the copy of the last
+// output the tree: one undo step back to the tree as it is now. It
+// reports the steps as run and the copy.
+func (a *App) reshapeFrom(from edit, steps []Stage, label string) ([]*stagePlan, edit, error) {
+	if a.Doc == nil {
+		return nil, edit{}, errors.New("no document")
 	}
-	next := stageState{stages: append(slices.Clone(a.rs.stages), closed), in: &stageInput{shape: shape, idKey: idKey}}
+	var in *Node
+	m := a.mappingWith(from.nodes, from.meta)
+	if mappingKey(m) == mappingKey(a.Mapping()) {
+		d := a.restructuredDoc()
+		if d.err != nil {
+			return nil, edit{}, d.err
+		}
+		in = d.root
+	} else {
+		p, err := NewDocPlan(m, a.Doc.Root, a.Doc.Shape)
+		d := buildRestructured(a.Doc, p, err, mappingKey(m))
+		if d.err != nil {
+			return nil, edit{}, d.err
+		}
+		in = d.root
+	}
+	stages := slices.Clone(a.rs.stages)
+	cur := closedStage{nodes: slices.Clone(from.nodes), meta: maps.Clone(from.meta), patches: slices.Clone(a.rs.patches)}
+	if a.rs.in != nil {
+		cur.idKey = a.rs.in.idKey
+	}
+	var sps []*stagePlan
+	var copied edit
+	var next *stageInput
+	for _, st := range steps {
+		sp, err := prepareStage(st, in)
+		if err != nil {
+			return nil, edit{}, err
+		}
+		out := normalized(sp.apply(in))
+		cur.op = sp.st
+		stages = append(stages, cur)
+		shape := Infer(out)
+		copied = a.identityOf(shape)
+		next = &stageInput{shape: shape, idKey: mappingKey(&Mapping{Map: mappingOf(copied.nodes, copied.meta).Map})}
+		cur = closedStage{nodes: slices.Clone(copied.nodes), meta: maps.Clone(copied.meta), idKey: next.idKey}
+		sps, in = append(sps, sp), out
+	}
 	delete(a.rs.marks, rsRootID) // the document node stays; its mark was for the tree that closed
-	if err := a.commitStaged(st.Op, rsRootID, copied, nil, next, false); err != nil {
-		return ochazuke.Failed(err)
+	if err := a.commitStaged(label, rsRootID, copied, nil, stageState{stages: stages, in: next}, false); err != nil {
+		return nil, edit{}, err
 	}
 	if _, err := a.plan(); err != nil { // never expected: the copy of the output checks
-		return ochazuke.Failed(err)
+		return nil, edit{}, err
 	}
 	if err := a.collapseCopy(copied); err != nil {
-		return ochazuke.Failed(err)
+		return nil, edit{}, err
 	}
-	a.refocus(rsRootID)
-	c.Info(stageName(sp.st) + "; u undoes")
-	return ochazuke.Done(a.Mapping())
+	return sps, copied, nil
 }
 
 // --- marks ---

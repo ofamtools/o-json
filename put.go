@@ -329,7 +329,7 @@ func declarePutSettings(r *ochazuke.Runtime) error {
 
 // repeatEdits are the restructure edits . may run again: node.put always,
 // the rest with repeat.scope edit.
-var repeatEdits = []string{"node.indent", "node.dedent", "node.wrap", "node.array", "node.object", "node.delete", "node.rename", "restructure.add-key"}
+var repeatEdits = []string{"node.indent", "node.dedent", "node.wrap", "node.unwrap", "node.array", "node.object", "node.delete", "node.rename", "restructure.add-key"}
 
 // applyRepeatScope marks the restructure edits repeatable as
 // repeat.scope says (dot-repeat reads Operation.Repeatable when . runs).

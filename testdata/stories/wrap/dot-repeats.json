@@ -1,0 +1,14 @@
+{
+  "name": "o-json: with repeat.scope edit, . wraps the node at the cursor as the last { did, its own placeholder numbered",
+  "area": "wrap",
+  "width": 110,
+  "height": 24,
+  "fixture": "viewer",
+  "seed": {"doc": "wrap.json"},
+  "values": {"repeat.scope": "edit"},
+  "script": ["j", "v", "{", "esc", "j", "j", ".", "esc"],
+  "expect": [
+    {"after": 4, "contains": ["new-key"], "lacks": ["new-key-2"]},
+    {"mode": "normal", "contains": ["new-key", "new-key-2"]}
+  ]
+}

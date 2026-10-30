@@ -1,0 +1,44 @@
+{
+  "name": "o-json: } over the wrapper v j { made lifts its keys back into the document at its place, as one undo step",
+  "area": "wrap",
+  "width": 110,
+  "height": 24,
+  "fixture": "viewer",
+  "seed": {
+    "doc": "wrap.json"
+  },
+  "script": [
+    "j",
+    "v",
+    "j",
+    "{",
+    "esc",
+    "v",
+    "}",
+    "u"
+  ],
+  "expect": [
+    {
+      "after": 5,
+      "contains": [
+        "Object [\"new-key\"]",
+        "new-key  object"
+      ]
+    },
+    {
+      "after": 7,
+      "mode": "normal",
+      "contains": [
+        "lifted 2 key(s)"
+      ],
+      "lacks": [
+        "new-key"
+      ]
+    },
+    {
+      "contains": [
+        "Object [\"new-key\"]"
+      ]
+    }
+  ]
+}

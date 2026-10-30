@@ -132,8 +132,9 @@ Sometimes the shape is wrong: you want fewer fields, different names, or a flatt
 4. `> j` nests a node into the nearest object below it, and `> k` into the nearest one above.
 5. `S` wraps a node in a new key. `o` adds a new key below. A new key starts as `new-key`, selected, so you can type its name.
 6. `t` turns a key into an array of itself, and back.
-7. `V` selects several lines. Then a single key (`>`, `<`, `d`, `y`, `p`, `S`) acts on all of them at once.
-8. `u` and `ctrl+r` undo and redo.
+7. `V` (or `v`) selects several lines. Then a single key (`>`, `<`, `d`, `y`, `p`, `S`) acts on all of them at once.
+8. `v j j j {` wraps four fields in a new object: type its name and press `enter`. `[` instead makes a new key holding the array of their values (their keys are dropped, and a notice says which). `}` takes a wrapper away again, its keys back in its parent; on an array, its items become keys `new-key-1`, `new-key-2`, …
+9. `u` and `ctrl+r` undo and redo. A wrap or an unwrap is one step.
 
 The data panel shows the reshaped document as you edit. `T` flips between the original and the edited version. `w` writes the edited document to a new file.
 

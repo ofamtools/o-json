@@ -32,6 +32,11 @@ import (
 //	    dropped.
 //	{"op": "values", "path": P}     the object at P as the array of its values ([.[]])
 //	{"op": "entries", "path": P}    the object at P as {key, value} pairs (to_entries)
+//	{"op": "lift", "path": P, "prefix": K}
+//	    the array at P lifted into the object that holds it, at P's place:
+//	    item i (from 1) becomes the key K-i (K defaults to new-key), and P
+//	    goes (node.unwrap on an array). A key the object has already that
+//	    an item takes goes: the lifted value, at P's place, wins.
 //
 // A path is a structure path in the step's input (keys and []); a value
 // at P that is not the kind the op reads stays as it is. The Go apply
@@ -43,6 +48,7 @@ const (
 	opKeyBy   = "key-by"
 	opValues  = "values"
 	opEntries = "entries"
+	opLift    = "lift"
 )
 
 // The flatten name modes and the key-by duplicate modes.
@@ -67,6 +73,7 @@ type Stage struct {
 	Drop       bool       `json:"drop,omitempty"`
 	Duplicates string     `json:"duplicates,omitempty"`
 	Missing    string     `json:"missing,omitempty"`
+	Prefix     string     `json:"prefix,omitempty"`
 	Map        []MapEntry `json:"map,omitempty"`
 	Patches    []Patch    `json:"patches,omitempty"`
 }
@@ -119,8 +126,19 @@ func (s Stage) defaults() (Stage, error) {
 		if _, err := mappingPath(s.Path); err != nil {
 			return s, fmt.Errorf("%s: %w", s.Op, err)
 		}
+	case opLift:
+		if s.Prefix == "" {
+			s.Prefix = "new-key"
+		}
+		steps, err := mappingPath(s.Path)
+		if err != nil {
+			return s, fmt.Errorf("lift: %w", err)
+		}
+		if len(steps) == 0 || steps[len(steps)-1].kind != 'k' {
+			return s, errors.New(`lift: "path" names an object's key holding the array`)
+		}
 	default:
-		return s, fmt.Errorf("op %q: a reshape step is flatten, key-by, values or entries", s.Op)
+		return s, fmt.Errorf("op %q: a reshape step is flatten, key-by, values, entries or lift", s.Op)
 	}
 	return s, nil
 }
@@ -469,6 +487,10 @@ func (sp *stagePlan) apply(in *Node) *Node {
 			out.Children = append(out.Children, obj)
 		}
 		return out
+	case opLift:
+		steps, _ := mappingPath(s.Path)
+		last := steps[len(steps)-1].key
+		return updateAt(in, steps[:len(steps)-1], func(n *Node) *Node { return lift(n, last, s.Prefix) })
 	}
 	steps, _ := mappingPath(s.Path)
 	return updateAt(in, steps, func(n *Node) *Node {
@@ -491,6 +513,33 @@ func (sp *stagePlan) apply(in *Node) *Node {
 		}
 		return n
 	})
+}
+
+// lift is the object n with the array under key lifted into it at its
+// place, item i as prefix-i (from 1); a key n has already that an item
+// takes goes (the lifted value wins). Any other n stays.
+func lift(n *Node, key, prefix string) *Node {
+	i := childAt(n, pathStep{kind: 'k', key: key})
+	if i < 0 || n.Children[i].Kind != KArray {
+		return n
+	}
+	var lifted []*Node
+	taken := map[string]bool{}
+	for k, item := range n.Children[i].Children {
+		name := fmt.Sprintf("%s-%d", prefix, k+1)
+		lifted, taken[name] = append(lifted, rekey(item, name)), true
+	}
+	out := cloneNode(n)
+	out.Children = nil
+	for j, c := range n.Children {
+		switch {
+		case j == i:
+			out.Children = append(out.Children, lifted...)
+		case !taken[c.Key]:
+			out.Children = append(out.Children, c)
+		}
+	}
+	return out
 }
 
 // updateAt is n with f applied to every value at steps (keys and []):
@@ -642,6 +691,14 @@ func (sp *stagePlan) opJQ() string {
 			prog += " | {" + strings.Join(names, ", ") + "} as $ren | map(with_entries(.key |= ($ren[.] // .)))"
 		}
 		return prog
+	case opLift:
+		steps, _ := mappingPath(s.Path)
+		key := quote(steps[len(steps)-1].key)
+		f := `if type == "object" and has(` + key + `) and (.[` + key + `] | type) == "array" then ` +
+			`([.[` + key + `] | to_entries[] | {key: (` + quote(s.Prefix+"-") + ` + ((.key + 1) | tostring)), value}] as $l | ` +
+			`(reduce $l[] as $e ({}; . + {($e.key): true})) as $has | ` +
+			`reduce (to_entries[] | if .key == ` + key + ` then $l[] elif $has[.key] then empty else . end) as $e ({}; . + {($e.key): $e.value})) else . end`
+		return jqUpdate(steps[:len(steps)-1], f)
 	}
 	steps, _ := mappingPath(s.Path)
 	var f string
@@ -697,6 +754,8 @@ func stageName(s Stage) string {
 		return fmt.Sprintf("flatten %d field(s), arrays %s", len(s.Paths), s.Arrays)
 	case opKeyBy:
 		return fmt.Sprintf("key %s by %s", s.Path, s.Field)
+	case opLift:
+		return fmt.Sprintf("lift %s's items as %s-1, %s-2, ...", s.Path, s.Prefix, s.Prefix)
 	}
 	return s.Op + " " + s.Path
 }
@@ -721,7 +780,7 @@ func formatStage(s Stage, str func(string) string) string {
 	if s.Drop {
 		add("drop", "true")
 	}
-	for _, kv := range [][2]string{{"duplicates", s.Duplicates}, {"missing", s.Missing}} {
+	for _, kv := range [][2]string{{"duplicates", s.Duplicates}, {"missing", s.Missing}, {"prefix", s.Prefix}} {
 		if kv[1] != "" {
 			add(kv[0], str(kv[1]))
 		}

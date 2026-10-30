@@ -1,0 +1,49 @@
+{
+  "name": "o-json: v j j j { wraps the four selected fields in one new object, its key opened selected; typing names it and enter accepts (the owner's sequence)",
+  "area": "wrap",
+  "width": 110,
+  "height": 24,
+  "fixture": "viewer",
+  "seed": {
+    "doc": "wrap.json"
+  },
+  "script": [
+    "j",
+    "v",
+    "j",
+    "j",
+    "j",
+    "{",
+    "w",
+    "h",
+    "o",
+    "enter"
+  ],
+  "expect": [
+    {
+      "after": 2,
+      "mode": "visual-line",
+      "contains": [
+        "VISUAL-LINE"
+      ]
+    },
+    {
+      "after": 6,
+      "contains": [
+        "new-key"
+      ]
+    },
+    {
+      "mode": "normal",
+      "contains": [
+        "Object .who",
+        "who     object",
+        "London"
+      ],
+      "lacks": [
+        "VISUAL-LINE",
+        "new-key"
+      ]
+    }
+  ]
+}

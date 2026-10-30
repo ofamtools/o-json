@@ -101,7 +101,7 @@ func ReadMapping(data []byte) (*Mapping, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&m); err != nil {
-		return nil, fmt.Errorf(`mapping: %w (a mapping is {"map": [{"from": PATH, "to": PATH|null}], "patches": [{"op": "set"|"delete"|"add"|"rename", "path": PATH, ...}], "then": [{"op": "flatten"|"key-by"|"values"|"entries", ..., "map": [...], "patches": [...]}]})`, err)
+		return nil, fmt.Errorf(`mapping: %w (a mapping is {"map": [{"from": PATH, "to": PATH|null}], "patches": [{"op": "set"|"delete"|"add"|"rename", "path": PATH, ...}], "then": [{"op": "flatten"|"key-by"|"values"|"entries"|"lift", ..., "map": [...], "patches": [...]}]})`, err)
 	}
 	return &m, nil
 }
