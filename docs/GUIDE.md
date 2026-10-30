@@ -1,4 +1,225 @@
-# guide
+# o-json guide
+
+o-json shows you what a JSON document looks like: its shape, its arrays as tables, and its values. You can also edit it, reshape it, query it with jq and export it. This guide goes task by task. The [README](../README.md) is the full reference, and each chapter links to the part you need.
+
+The viewer has two panels. The **structure** on the left is the document's shape: one row per path, not one per value. The **data** on the right shows whatever the structure has selected. `tab` moves between them. `?` lists every key the focused panel answers to, and `:` opens the command palette, where you can find any verb by name.
+
+The viewer never writes the file you opened. A write always goes to a new file unless you ask to replace one.
+
+1. [Open a document](#1-open-a-document)
+2. [Read the shape](#2-read-the-shape)
+3. [An array as a table](#3-an-array-as-a-table)
+4. [Drill into a row](#4-drill-into-a-row)
+5. [Edit values](#5-edit-values)
+6. [Restructure the shape](#6-restructure-the-shape)
+7. [Query with jq](#7-query-with-jq)
+8. [Export and write](#8-export-and-write)
+9. [Cheat sheet](#cheat-sheet)
+
+The examples use `testdata/sample.json`: four items, each with an `id`, a `name`, an `owner` and `tags`, and some fields that only a few items have.
+
+## 1. Open a document
+
+You can open a file, read stdin, or start with nothing and pick a file later. Use the last one when you don't yet know which file you want.
+
+1. Open a file: `o-json sample.json`.
+2. Or read stdin: `curl -s https://… | o-json`. (`o-json -` reads stdin too.)
+3. Or start empty: `o-json`. The top line reads `[no file]  ·  e open a file  ·  p paste JSON  ·  M restructure`.
+4. Press `e` to open a file. The path chooser has three sources: `browse` (the current folder), `recent` (files you opened before) and `typed` (type a path). `tab` switches source. Type to narrow the list, then press `enter`.
+5. Or press `p` to paste JSON from the system clipboard. Pasting into the terminal works too: the pasted JSON becomes the document. (`p` pastes a document only in the empty document and the original view, after `T`. In the edited view, `p` puts things: chapters 5 and 6.)
+6. `R` reads the file again from disk.
+
+**What you'll see:** the breadcrumb at the top names the file, then the selected path and its type. If the JSON is invalid you get an error with its line and column, and the document you had stays open.
+
+If you have unsaved edits, `e`, `R` and `p` ask once before they drop them, and `u` brings the edits back.
+
+![The empty document, then e opens sample.json](img/01-open.gif)
+
+Details: [Files and the empty document](../README.md#files-and-the-empty-document).
+
+## 2. Read the shape
+
+The structure tells you every path in the document, its types, and how many values have it. It's the quickest way to understand JSON you didn't write.
+
+1. Move with `j` and `k`. `l` expands a node and `h` collapses it; `enter` folds and unfolds.
+2. Each row of the structure is a shape, not a value. `.items[].owner.name` is the owner's name in *every* item.
+3. Press `T` for the **original** structure (`Structure · original`). It has a `count` column. `4/4` means all four items have the field, `2/4` that only two do.
+4. A field that only some objects have is **optional**. Its name ends in `?` (`email?`, `note?`). In the edited structure (the default, see chapter 6) the `?` comes after the type instead (`string|null?`).
+5. Still in the original, press `t` to keep only one type: string, then number, bool, null, object, array, then off. `esc` clears the filter.
+6. Press `v` to see the selected path's values as indented JSON. `v` again goes back.
+7. On a deep tree, `z +` zooms into the node and `z -` zooms back out.
+8. Press `T` again to go back to the edited structure.
+
+**What you'll see:** the data panel follows the selection. A string shows as a value, an object as `field  type  value` rows, and an array as a table.
+
+**Searching paths by text:** by default `/` opens the jq query line (chapter 7), which also finds things. If you want the plain path search instead, turn the query line off with `: settings set query.line false`. Then, in the original structure, `/` searches the paths, `n` and `N` go to the next and previous match, and `esc` clears the search.
+
+![The structure, T for the original with its counts, the type filter](img/02-shape.gif)
+
+Details: [Structure](../README.md#structure), [The viewer](../README.md#the-viewer), [Keys](../README.md#keys).
+
+## 3. An array as a table
+
+An array of objects is easiest to read as a table. o-json builds one with a column per key, the most common keys first.
+
+1. Select an array in the structure (`.items`), or a `[]` path (`.items[].owner`).
+2. The data panel shows a table. The `#` column is the index. A column whose title ends in `?` is optional, and optional columns come last. A blank cell means the field is missing, which is not the same as `null`.
+3. Press `tab` to move into the table. `j`/`k` move between rows; `h`/`l` move between columns; `$` goes to the last column. `g g` and `G` go to the first and last row.
+4. Widths stay put while you scroll. `z >` and `z <` widen and narrow a column, `z =` makes them all automatic again, and `g c` picks a column by name.
+5. Move the cursor onto a cell that holds an object or an array (`owner`, `tags`). A small **sub-table** of that value opens right under the row.
+6. Press `j` to walk down into the sub-table, line by line, and on out to the next row. `h`/`l` move along a sub-table line. A nested value inside it opens one level deeper.
+
+**What you'll see:** only the chain under the cursor is open; move away and the sub-table closes. Deeper values read `{3 keys}` or `[2]` until you reach them.
+
+If you'd rather see a one-line summary in the cell, run `: settings set table.nested summary`. Then `enter` opens the value in the detail (chapter 4).
+
+![walk.json as a table: sub-tables open under the row as the cursor moves](img/03-table.gif)
+
+Details: [Tables](../README.md#tables), and "Nested data in tables" in [The viewer](../README.md#the-viewer).
+
+## 4. Drill into a row
+
+A wide row is easier to read one field per line. The detail shows a row, or any nested value, as labelled rows that you can step into.
+
+1. In the table, put the cursor on the `#` column, or on a plain cell, and press `enter`. The row opens in the detail.
+2. On a cell holding an object or array, `enter` opens that value instead.
+3. In the detail, `enter` or `l` on an object or array steps into it.
+4. `h` or `backspace` steps back out.
+5. `q` or `esc` closes the detail.
+
+**What you'll see:** the detail's title is the path you're at (`.items[0].tags  array[2]`). The table stays drawn behind it.
+
+![enter opens row 0; l steps into owner and tags, h steps back](img/04-detail.gif)
+
+Details: "Detail" in [The viewer](../README.md#the-viewer).
+
+## 5. Edit values
+
+You can fix a value without leaving the viewer. Each edit is one step you can undo, and nothing is written until you ask.
+
+Value edits work in the data panel of the edited view, which is the default. (After `T`, in the original, the data is read-only.)
+
+1. In the table, move to a cell and press `r` (or `i`). The **value editor** opens over the table. Its title is the value's path, the old value is shown dimmed, and the new text is selected, so typing replaces it.
+2. A badge shows the type the text will get: a number, `true`/`false`, `null`, JSON for an object or array, otherwise a string. To force a string, quote it: `"42"`.
+3. `enter` sets the value; `esc` cancels.
+4. An object or array value opens on several lines. There `enter` adds a new line; press `esc` to go to normal mode, then `enter` sets the value (and `esc` cancels).
+5. `d d` deletes the field (or, on `#`, the whole item).
+6. `o` adds after and `O` before. In an object, the editor asks for the key, then `tab` (or `enter`) moves to the value. In an array, it adds an item.
+7. `K` renames the key in that one object.
+8. `y` copies the value under the cursor (it also goes to the system clipboard), and `p` puts it over another value.
+9. `u` undoes and `ctrl+r` redoes, in the table and in the detail.
+10. To save, press `w`, type a new file name in the path chooser, and press `enter`. If the file already exists, `w` asks first. `W` replaces a file without asking. On the file you opened, `W` asks you to confirm once.
+
+**What you'll see:** the breadcrumb gets `[+]` and counts your edits (`1 value edit`), and the structure's title reads `edited [+]`. After a write, the `[+]` goes away. `q` asks before quitting with unsaved edits; `Q` quits without asking.
+
+If you prefer to edit on the row itself, use `: settings set value.editor inline`: `enter` or `esc` then sets the value.
+
+![r edits a name, o adds a key, d d and u, then w writes edited.json](img/05-edit.gif)
+
+Details: "Value edits" in [The viewer](../README.md#the-viewer), and [Settings](../README.md#settings).
+
+## 6. Restructure the shape
+
+Sometimes the shape is wrong: you want fewer fields, different names, or a flatter document. o-json reshapes by **shape**, so one change applies to every item.
+
+**In the viewer.** The structure on the left is editable. It starts as a copy of the document's shape (`Structure · unchanged`). The `from` column shows where each node came from.
+
+1. `r` renames a key. Type the new name, then press `esc`.
+2. `d d` deletes a node (into the register). `p` puts it back somewhere else: a delete then a put is a move.
+3. `< <` moves a node out one level. Out of an array item, it collects the values into an array (`.items[].id` becomes `.id[]`).
+4. `> j` nests a node into the nearest object below it, and `> k` into the nearest one above.
+5. `S` wraps a node in a new key. `o` adds a new key below. A new key starts as `new-key`, selected, so you can type its name.
+6. `t` turns a key into an array of itself, and back.
+7. `V` selects several lines. Then a single key (`>`, `<`, `d`, `y`, `p`, `S`) acts on all of them at once.
+8. `u` and `ctrl+r` undo and redo.
+
+The data panel shows the reshaped document as you edit. `T` flips between the original and the edited version. `w` writes the edited document to a new file.
+
+**On the restructure page.** `M` opens a page with the original on the left and the new shape on the right, plus the mapping that turns one into the other. It's better when you'd rather build the result from scratch.
+
+1. Press `M`. The new shape starts empty. `u` brings back the copy.
+2. On the original, select a shape and press `s` to send it across. It brings the parents it needs and its fields with it.
+3. Press `tab` to go to the restructured tree, and use the keys above (`< <`, `r`, `d d`, …).
+4. Watch the **Mapping** panel. It is the restructure, live: `{"from": ".items[].owner.name", "to": ".items[].owner_name"}`.
+5. Press `w` to write the result to a new file. `L` switches between the split and single layouts. `q` goes back to the viewer, keeping your edits.
+
+**Save the mapping and reuse it.**
+
+1. Run `: restructure export-map` and type a file name (`people.map.json`).
+2. Run it again on any document of the same shape: `o-json restructure data.json --map people.map.json`.
+3. Get the same thing as a jq program: `o-json restructure data.json --map people.map.json --jq`.
+
+**What you'll see:** the breadcrumb shows `to ← from` for a node that moved. A key that would break the mapping does nothing. For example, `r` on an array item `[]` is ignored, because an item has no key.
+
+![M, s sends two shapes, < < and r reshape them, w writes people.json](img/06-restructure.gif)
+
+Details: [The restructure page](../README.md#the-restructure-page), [restructure](../README.md#restructure).
+
+## 7. Query with jq
+
+jq answers questions the tree can't: which items have tags, how many there are, a few fields side by side. o-json runs jq as you type, with no `jq` binary needed.
+
+**The query line.**
+
+1. Press `/`. The first row of the structure becomes the jq line.
+2. Type a query: `.items[] | select(.tags | length > 0) | .owner`. The data panel shows the results as you type.
+3. Press `esc` or `enter` to leave the line. The query and its results stay.
+4. To clear it: `/`, then `ctrl+u`, then `esc`.
+5. `ctrl+f` picks a jq function (type to narrow, `enter`). It's written with an empty slot for each argument, `sub(□; □)`. Typing fills the selected slot, and `tab` selects the next one.
+
+**What you'll see:** field references like `.items[]` are drawn as chips. An error underlines its column, with a caret line naming it, and the last good results stay on screen. When jq builds new objects, the title says `keys sorted`: jq sorts their keys.
+
+**Path completion** is off by default. Turn it on with `: settings set query.complete-paths true`. Then typing `.` offers the field names at that point. `tab` takes one and `esc` dismisses the list.
+
+**Query mode** builds a query from the tree, without typing paths.
+
+1. On the structure, press `m`. The mode badge reads `QUERY`.
+2. Move to a field. `.` writes its path into the query, `|` writes it with a pipe, and `]` writes it iterated (`.items[]`).
+3. `[` opens an array to fill. Each `.` then adds a field, separated by commas, and `]` closes it. For example `[` `.` `j` `.` `]` gives `[.name, .version]`.
+4. `backspace` takes back the last token, and `u` undoes.
+5. `m` or `esc` goes back to the normal keys.
+
+To build an object (`{id: .id, name: .name}`), type it in the query line for now. In query mode, `{` writes the first field correctly but not the ones after it.
+
+Value edits pause while query results are shown. Clear the query to edit again.
+
+![A query in the line, cleared with ctrl+u, then [.name, .version] built in query mode](img/07-query.gif)
+
+Details: "The jq query line" and "Query mode" in [The viewer](../README.md#the-viewer), and [query](../README.md#query) for the command line.
+
+## 8. Export and write
+
+A table is often headed for a spreadsheet or another tool. o-json writes an array as csv, tsv, JSON Lines or a Markdown table, from the viewer or the command line.
+
+**From the viewer.**
+
+1. Select an array (or a path inside one) in the structure.
+2. Press `w` and give a file name ending in `.csv`, `.tsv`, `.jsonl` or `.md`. That writes the export of the array under the cursor. Any other name writes JSON.
+3. Nested objects become dotted columns (`owner.name`). Arrays in a cell are joined with `;` (the settings `export.arrays`, `export.join` and `export.null` change that).
+4. With `o-csv` on your PATH, `: viewer open-in` opens the table in o-csv directly. It writes a temporary csv and removes it when o-csv exits.
+
+An export is not the document: your edits stay unsaved (`[+]`) until you write JSON.
+
+**From the command line.**
+
+```sh
+o-json export sample.json --of .items                    # csv
+o-json export sample.json --of .items --format md        # a Markdown table (also tsv, jsonl)
+o-json export sample.json --of .items --columns id,owner.name --out items.csv
+o-json export sample.json --of .items --arrays rows      # one row per array item
+o-json export data.json --map people.map.json --of .items   # restructure first
+o-json table sample.json .items                          # a quick text table
+o-json get sample.json '.items[].owner.name' --raw       # values at a path
+o-json query sample.json '.items[] | .name'              # a jq query
+o-json structure sample.json                             # the shape as text
+o-json restructure sample.json --map people.map.json --out people.json
+```
+
+`--out` never replaces an existing file unless you add `--overwrite`.
+
+![o-json export as csv and Markdown, and o-json get](img/08-export.gif)
+
+Details: [export](../README.md#export), [Tables](../README.md#tables), [get](../README.md#get), [restructure](../README.md#restructure).
 
 ## Cheat sheet
 

@@ -1,5 +1,7 @@
 # o-json
 
+New here? Start with the [guide](docs/GUIDE.md).
+
 A JSON structure and table viewer for the o family, built on [ochazuke](../ochazuke) (Bubble Tea v2) with an [oden](../oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out`, `export --out`, the viewer's `w` and `viewer.export` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
 
 ```sh

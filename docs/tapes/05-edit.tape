@@ -45,8 +45,8 @@ Type "1"
 Sleep 600ms
 Enter
 Sleep 1.4s
-# d d deletes a cell's field, u undoes it.
-Type "j"
+# d d deletes a cell's field (row 1's name), u undoes it.
+Type "jh"
 Sleep 400ms
 Type "dd"
 Sleep 1.4s
