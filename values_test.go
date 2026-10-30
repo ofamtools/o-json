@@ -323,7 +323,7 @@ func TestRenameOneKey(t *testing.T) {
 func TestPasteValue(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	onData(t, a, ".", "version")
-	press(t, a, "y")
+	press(t, a, "y", "y")
 	onData(t, a, ".", "name")
 	press(t, a, "p")
 	if got := field(t, a, ".name"); got != "2" {
@@ -332,7 +332,7 @@ func TestPasteValue(t *testing.T) {
 	// A string that reads as a number stays a string.
 	onData(t, a, ".meta", "generated")
 	valueDo(t, a, "edit", ochazuke.Arguments{"text": `"10"`})
-	press(t, a, "y")
+	press(t, a, "y", "y")
 	onData(t, a, ".meta", "count")
 	press(t, a, "p")
 	if got := field(t, a, ".meta.count"); got != `"10"` {
@@ -340,7 +340,7 @@ func TestPasteValue(t *testing.T) {
 	}
 	// An object, from a table cell, into the cell of another row.
 	onData(t, a, ".items", ".items[0]")
-	press(t, a, "l", "l", "l", "y") // owner
+	press(t, a, "l", "l", "l", "y", "y") // owner
 	press(t, a, "j", "j", "p")      // through owner's hover sub-table line to the next row
 	if got := field(t, a, ".items[1].owner"); got != `{"name":"ann","email":"ann@example.com"}` {
 		t.Fatalf("object put: %s", got)

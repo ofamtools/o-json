@@ -385,12 +385,12 @@ func TestBindingRowsAreAtomic(t *testing.T) {
 func TestYankToNamedRegister(t *testing.T) {
 	a := openOriginal(t, sample, 100, 30)
 	selectPath(t, a, ".items[].owner.email")
-	press(t, a, "\"", "a", "y")
+	press(t, a, "\"", "a", "y", "y")
 	if y, _ := a.r.ReadYank("a"); y.Text != ".items[].owner.email" {
 		t.Fatalf(`"a y on the tree stored %q`, y.Text)
 	}
 	selectPath(t, a, ".items")
-	press(t, a, "ctrl+a", "o", "2", "G", "y")
+	press(t, a, "ctrl+a", "o", "2", "G", "y", "y")
 	if y, _ := a.r.ReadYank(""); !strings.Contains(y.Text, `"name": "beta"`) {
 		t.Fatalf("y on row 2 stored %q", y.Text)
 	}
@@ -423,7 +423,7 @@ func TestReadOnlyViewsTakeNoMarks(t *testing.T) {
 func TestYankTellsTheUser(t *testing.T) {
 	a := openOriginal(t, sample, 100, 30)
 	selectPath(t, a, ".items[].owner.email")
-	press(t, a, "y")
+	press(t, a, "y", "y")
 	if a.m.Info != "copied .items[].owner.email" || a.m.Status != "" {
 		t.Fatalf("status after y: info %q, error %q", a.m.Info, a.m.Status)
 	}
@@ -431,6 +431,7 @@ func TestYankTellsTheUser(t *testing.T) {
 		t.Fatalf("a yank reads as an error:\n%s", v)
 	}
 	a.Clipboard = func(string) error { return errors.New("no clipboard tool") }
+	Press(a.m, "y")
 	finish(a, Press(a.m, "y"))
 	if got := strings.Join(a.m.Notices, "\n"); !strings.Contains(got, "clipboard: no clipboard tool") {
 		t.Fatalf("notices: %q", got)
@@ -545,23 +546,23 @@ func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 		}
 	}
 	selectPath(t, a, ".name")
-	key("y", "j", ".")
+	key("y", "y", "j", ".")
 	yanked("tree", ".version")
 	selectPath(t, a, ".items")
-	key("ctrl+a", "o", "y", "j", ".")
+	key("ctrl+a", "o", "y", "y", "j", ".")
 	if y, _ := a.r.ReadYank(""); !strings.Contains(y.Text, `"name": "beta"`) {
 		t.Fatalf("table: register %q", y.Text)
 	}
-	key("enter", "y", "j", ".")
+	key("enter", "y", "y", "j", ".")
 	yanked("detail", "beta")
 	key("esc", "ctrl+a", "o")
 	selectPath(t, a, ".meta")
-	key("ctrl+a", "o", "y", "j", ".")
+	key("ctrl+a", "o", "y", "y", "j", ".")
 	yanked("fields", "4")
 	key("ctrl+a", "o")
 	selectPath(t, a, ".items[].owner")
-	key("2", "D", "ctrl+a", "o", "y", "j", ".")
-	yanked("raw lines", "  {")
+	key("D", "ctrl+a", "o", "y", "y", "j", ".")
+	yanked("flat lines", a.lines[1].text)
 	for _, e := range a.r.HistoryOf(0, ochazuke.HistoryChange) {
 		if strings.HasSuffix(e.Request.Key(), ".yank") && len(e.Request.Args) != 0 {
 			t.Fatalf("%s recorded arguments %v", e.Request.Key(), e.Request.Args)
@@ -574,7 +575,7 @@ func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 func TestDotAcrossPanelsFailsCleanly(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
 	selectPath(t, a, ".items")
-	press(t, a, "y", "ctrl+a", "o")
+	press(t, a, "y", "y", "ctrl+a", "o")
 	Press(a.m, ".")
 	if a.m.Status != "not a path" {
 		t.Fatalf(". on a table row after a tree yank: status %q", a.m.Status)
@@ -593,7 +594,7 @@ func TestDotRepeatsTheLastChange(t *testing.T) {
 		t.Fatal(err)
 	}
 	selectPath(t, a, ".name")
-	press(t, a, "y", "/")
+	press(t, a, "y", "y", "/")
 	for _, q := range []ochazuke.Request{{Noun: "input", Verb: "insert", Args: ochazuke.Arguments{"text": "o"}}, {Noun: "history", Verb: "repeat"}} {
 		if _, err := a.r.Execute(q); err != nil {
 			t.Fatalf("%s: %v", q.Key(), err)
@@ -609,7 +610,7 @@ func TestDotRepeatsTheLastChange(t *testing.T) {
 	if a.r.TopModal() != "" {
 		t.Fatal("esc closes the prompt")
 	}
-	press(t, a, "y", "j", ".")
+	press(t, a, "y", "y", "j", ".")
 	if y, _ := a.r.ReadYank(""); y.Text != ".version" {
 		t.Fatalf("y j .: register %q", y.Text)
 	}

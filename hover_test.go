@@ -197,7 +197,7 @@ func TestHoverJumpsLeaveTheSubTable(t *testing.T) {
 
 func TestHoverYankAndOpenTheCell(t *testing.T) {
 	a := hoverAt(t, 120, 30, 6)
-	press(t, a, "j", "l", "l", "y")
+	press(t, a, "j", "l", "l", "y", "y")
 	if y, _ := a.r.ReadYank(""); y.Text != "US" {
 		t.Fatalf("yanked %q, want US (the country cell)", y.Text)
 	}
@@ -220,7 +220,7 @@ func TestHoverYankAndOpenTheCell(t *testing.T) {
 func TestHoverEditsTheSubTableCell(t *testing.T) {
 	a := hoverAt(t, 120, 30, 6)
 	inlineEditor(t, a)
-	editHints := []string{"r/i edit", "d d delete", "o/O add", "K rename key", "p put"}
+	editHints := []string{"r/i edit", "y/d/c/s/! op", "o/O add", "K rename key", "p put"}
 	edits := []string{"value.edit", "value.delete", "value.add", "value.rename", "value.paste"}
 	hints := func() string { return ochazuke.BindingHints(a.r, a.r.Focus) }
 	onRow := hints()
@@ -264,7 +264,7 @@ func TestHoverEditsTheSubTableCell(t *testing.T) {
 		t.Fatalf("u: %s", got)
 	}
 	// y on country, then p over zip; d d deletes city.
-	press(t, a, "$", "y", "h", "p")
+	press(t, a, "$", "y", "y", "h", "p")
 	if got := field(t, a, ".[2].address.zip"); got != `"US"` {
 		t.Fatalf("p over zip: %s", got)
 	}

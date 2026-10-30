@@ -452,7 +452,7 @@ func TestYankOnTheOriginalPutsOnTheRight(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".name")
 	selectIn(t, a, a.rs.orig, origPath(".meta"))
-	press(t, a, "y")
+	press(t, a, "y", "y")
 	press(t, a, "ctrl+a", "o")
 	a.on(t, ".name")
 	press(t, a, "p")
@@ -472,7 +472,7 @@ func TestYankOnTheOriginalPutsOnTheRight(t *testing.T) {
 	b := open(t, sample, 120, 30)
 	press(t, b, "T")
 	selectPath(t, b, ".version")
-	press(t, b, "y", "T")
+	press(t, b, "y", "y", "T")
 	b.on(t, ".meta")
 	press(t, b, "p")
 	if got := output(t, b); !strings.Contains(got, `"meta":{"version":2,"generated"`) {

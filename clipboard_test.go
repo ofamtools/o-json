@@ -24,11 +24,11 @@ func TestClipboardSettingDecides(t *testing.T) {
 		t.Fatal(err)
 	}
 	selectPath(t, a, ".items[].owner.email")
-	key("y")
+	key("y", "y")
 	if y, _ := a.r.ReadYank(""); y.Text != ".items[].owner.email" || len(clip) != 0 {
 		t.Fatalf("clipboard none: register %q, clipboard %q", y.Text, clip)
 	}
-	key("\"", "+", "y")
+	key("\"", "+", "y", "y")
 	if len(clip) != 1 || clip[0] != ".items[].owner.email" {
 		t.Fatalf(`clipboard none, "+y: clipboard %q`, clip)
 	}
@@ -55,7 +55,7 @@ func TestClipboardSettingDecides(t *testing.T) {
 	if y, _ := a.r.ReadYank(""); y.Text != program || len(clip) != 2 || clip[1] != program {
 		t.Fatalf("restructure.jq {yank}: register %q, clipboard %d copies", y.Text, len(clip))
 	}
-	key("y")
+	key("y", "y")
 	if len(clip) != 3 || clip[2] != ".items[].owner.email" {
 		t.Fatalf("clipboard yanks: clipboard %q", clip)
 	}

@@ -81,10 +81,10 @@ Updated as each item lands; the sections below describe what is built.
 
 | Item | Keys | Status |
 |---|---|---|
-| Operators wait for a motion or object | `y`, `d`, `c`, `s`, `!` | missing |
-| JSON text objects | `iv ik ip io ao ia aa ir ic` | missing |
-| Counts, `.` repeat, registers | `2 d j`, `.`, `" a y iv` | missing |
-| Shortcut rows | `y y`, `y p`, `y k`, `Y` | partial (FLAT/JSON/Results only; TABLE `y` copies at once) |
+| Operators wait for a motion or object | `y`, `d`, `c`, `s`, `!` (structure: `y d c !`; original tree `y !`) | done |
+| JSON text objects | `i`/`a` + `v k p o a r c t` (data), `v k p s` (structure) | done |
+| Counts, `.` repeat, registers | `2 d j`, `.`, `" a y i r` | done |
+| Shortcut rows | `y y`, `y p`, `y k`, `Y`, `d d`, `c c`, `s s`, `! !`, `x` | done |
 
 
 Build with `GOWORK=off go build -o /tmp/o-jj/bin/o-jj .`. The executable
@@ -138,6 +138,45 @@ its trial colour (o-jj colours the application accent by mode).
   `raw: invalid JSON at line L, column C` and the editor reopens at
   `+L` with the text as left; a third invalid exit drops the edits.
 
+## The grammar (SHAPE, TABLE, NESTED, EDIT)
+
+`y` `d` `c` `s` `!` enter ochazuke's `operator_pending` mode (the
+editor's rows, `bindings/editor.json`); the next key is a motion (`j`,
+`k`: this row and the next, Vim's `dj`; counts multiply, `2 d 3 j`) or
+`i` / `a` (the modes `operator_pending_i` / `operator_pending_a`, badge
+`OPERATOR PENDING I`) and a JSON text object:
+
+| Object | `i` (inner) | `a` (around) |
+|---|---|---|
+| `v` value | the cell's value | `"key": value` |
+| `k` key | the key's name | the field (`d a k` = `d d`) |
+| `p` path | `.items[3].name` | `.items[].name` |
+| `o` object | the enclosing object | with its key |
+| `a` array | the enclosing array | with its key |
+| `r` row | the record | the same |
+| `c` column | the column's values (an array) | `{"name": [...]}` |
+| `t` table | the table's array | the same |
+| `s` subtree | (structure) the node's subtree | the same |
+
+| Operator | Does | Needs EDIT (`modes.edit-gate`) |
+|---|---|---|
+| `y` | copies (`" a` picks the register) | no |
+| `d` | value patches, one undo step | yes |
+| `c` | the value editor (`c i k`: rename the key) | yes |
+| `s` | `s i c` sorts the table by the column (a view; `s s` again reverses, `s` on `#` clears); `s i o`, `s i a` sort the value (a patch) | the patch only |
+| `!` | opens the `/` line in its jq type with the path typed (`! i c` → `.items[].name`; `a` the structure path) | no |
+
+Shortcut rows on the same verbs: `y y` value, `y p` path, `y k` key,
+`Y` the row, `d d` the field (an item: the item), `c c`, `s s` the
+column, `! !`; `x` stays `value.delete`. On the structure `y y` and
+`d d` keep `node.yank`/`node.delete`, `c c` renames, `y p`/`y k`/`y i v`
+copy the path, key and the values at the path. One verb per noun on one
+handler (`item.operate`, `field.operate`, `node.operate`,
+`shape.operate`, operate.go); which pairs exist is `operatorPairs`. `.`
+repeats the last operate at the new focus. With `modes.declared off` the
+operators are not bound (they live on the mode tables) and the old keys
+answer.
+
 ## Settings (defaults)
 
 - `modes.declared` `on`: off keeps the plain NORMAL badge (view keys still work).
@@ -170,6 +209,13 @@ its trial colour (o-jj colours the application accent by mode).
 | `x` | `:help x` | Different: deletes the value under the cursor. |
 | `g m` | n/a | o-jj's mode chooser; fuzzy by name. |
 | `g r` | n/a (`:help gr` is virtual replace) | The document in `$EDITOR`, as `:!` would. |
+| `d{motion}`, `y{motion}`, `c{motion}` | `:help operator` | Similar: the motions are rows (`j`, `k`). |
+| `iw`, `aw`, `i"` | `:help text-objects` | Similar: JSON's things (`iv ak ip ao ic ...`). |
+| `yy`, `dd`, `Y`, `x` | `:help yy` | Similar: value, field, row, value. |
+| `.` | `:help .` | Same for operators. |
+| `"a` | `:help quote` | Same. |
+| `!{motion}` | `:help !` | Similar: jq only, into the `/` line. |
+| `:sort` | `:help :sort` | Different: `s i c` sorts the table's view, not the text. |
 
 ## Rough or missing
 

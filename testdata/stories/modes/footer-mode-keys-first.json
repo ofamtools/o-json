@@ -8,7 +8,7 @@
   "script": ["ctrl+w", "h", "ctrl+w", "l", "D", "D", "/", "n"],
   "expect": [
     {"after": 2, "mode": "shape", "contains": ["ctrl+w o only structure · "]},
-    {"after": 4, "mode": "table", "contains": ["ctrl+w o only data · enter open"]},
+    {"after": 4, "mode": "table", "contains": ["ctrl+w o only data · y/d/c/s/! op"]},
     {"after": 6, "mode": "flat", "contains": ["ctrl+w o only data · y y/p/v"]},
     {"mode": "search_·_substr", "contains": ["tab/shift+tab type · ctrl+n/p hit"], "lacks": ["ctrl+f function"]}
   ]

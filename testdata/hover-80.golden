@@ -20,5 +20,5 @@
   │ 1–12 / 28                  │ ┃  6       {2}   {3}       []               ┃  
   ╰────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────  
-  ctrl+w o only data · enter open · y yank · D views · v select rows · r/i ed…  
+  ctrl+w o only data · y/d/c/s/! op · enter open · D views · v select rows · …  
                                                                                 

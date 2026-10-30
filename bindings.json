@@ -1,6 +1,6 @@
 // o-json's default key rows (ochazuke bindings, JSONC): groups by "noun/mode" context, one row per line, {key, action, args, ...}. A key may repeat: the first row whose action is available answers, and an unavailable one passes the key on (t turns a key into an array, or an array back into a key, where the mapping still checks). On a restructure node > and < are prefixes only (> j nests into the nearest object below as its first child, > k into the nearest above as its last, > > and g > are the same two; an unavailable one does nothing; < < moves out, S wraps); alone they do nothing, so they never reach the divider there: ctrl+w > < = resize it on both pages (> < = still do on the original tree and the viewer). The outline's tab, shift+tab, i and d d are unbound (d d deletes through node.delete, into the register, and keeps the document node; y y yanks, p / P put at the level they land on; on the original tree y yanks the shape's path, and p / P on the restructured tree put that shape). v or V enters visual-line on a structure tree (rows are lines; v again ends it, as V does), where single keys act on the selection as one undo step (node/visual-line): > nests into the node above, < moves out (with nothing to act on, > < and g > end the selection: visual.at-edge end, or stay), d deletes, y yanks, p puts (restructure.visual-put), S and { wrap in a new object (restructure.visual-wrap), [ in a new array of their values (their keys dropped), } and ] unwrap (an object's keys, or an array's items as numbered keys, lift into its parent; { [ } ] are visual-only: in normal mode { } move the focus): nesting goes through the JSON rules (> > and < <) and renaming through r; o, O and a add a key with a placeholder opened selected (restructure.add-key). w writes a new file; W (restructure.write {force}) replaces an existing one without asking, and the source after one confirm. In the viewer the structure pane is the restructured tree (structure.editable): the node keys work there as on the restructure page, T (restructure.show) flips the structure and data panes between the original and the edited document, and w / W write the restructured document while the edited one is shown (on the original, w is viewer.write). In the edited view's data pane (data.editable) r / i edit a value in the value editor, a modal over the table (value-field: enter sets, tab / shift+tab between an add's key and value; value-text, an object or array on several lines: enter a new line; in all three, value.editor inline's input on the row, value-input, among them, esc goes to normal mode with the text kept, and there enter sets, esc leaves as value.leave says (set, the default, or cancel) and q cancels), d d deletes it, o adds one after it and O before it, K renames its key in that object and p puts the register's value over it (value.*, value patches); where they are not available the keys pass on (p to viewer.paste). A bracketed paste on the viewer runs viewer.paste {text}: the pasted JSON becomes the buffer. On the edited tree it runs node.paste {text} (setting paste.on-tree: json loads valid JSON so, other text becomes keys; outline; viewer). u / ctrl+r undo and redo from the data pane and the detail. q asks before quitting with edits no write saved; Q quits without asking. A user's bindings.json overrides them. / focuses the jq query line (jq.focus; viewer.search answers / only with query.line off); in it esc / enter leave, ctrl+f picks a function, tab selects the next slot, ctrl+v then [ { ( wraps. m switches the structure pane to query mode (it extends normal: a noun with no query table reads its normal rows; ochazuke.outline/query is its own, so the outline's normal keys stay out), where jq's characters (. | ] [ { ( , a backspace u ctrl+f) build the query and the edit keys stand aside; m or esc goes back.
 {
-  "modes": {"query": {"extends": "normal"}, "shape": {"extends": "normal"}, "table": {"extends": "normal"}, "nested": {"extends": "normal"}, "flat": {"extends": "normal"}, "json": {"extends": "normal"}, "jq": {"extends": "normal"}, "split": {"extends": "normal"}, "search": {"extends": "normal"}, "edit": {"extends": "normal"}, "search_·_substr": {"extends": "insert"}, "search_·_fuzzy": {"extends": "insert"}, "search_·_regex": {"extends": "insert"}},
+  "modes": {"query": {"extends": "normal"}, "shape": {"extends": "normal"}, "table": {"extends": "normal"}, "nested": {"extends": "normal"}, "flat": {"extends": "normal"}, "json": {"extends": "normal"}, "jq": {"extends": "normal"}, "split": {"extends": "normal"}, "search": {"extends": "normal"}, "edit": {"extends": "normal"}, "operator_pending_i": {"pending": true}, "operator_pending_a": {"pending": true}, "search_·_substr": {"extends": "insert"}, "search_·_fuzzy": {"extends": "insert"}, "search_·_regex": {"extends": "insert"}},
   "bindings": [
     {"context": "app/normal", "bindings": [
       {"key": "tab", "unbind": true},
@@ -275,22 +275,232 @@
       {"key": "shift+tab", "unbind": true}
     ]},
     {"context": "shape/shape", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"}
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"},
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/! op"},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
     ]},
     {"context": "node/shape", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"}
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "structure"}, "hint": "only structure"},
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/! op"},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
     ]},
     {"context": "item/table", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "s", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "s"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "Y", "action": "item.operate", "args": {"op": "y", "object": "row", "inner": false}, "hidden": true}
     ]},
     {"context": "field/table", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "s", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "s"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
     ]},
     {"context": "item/nested", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "s", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "s"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "Y", "action": "item.operate", "args": {"op": "y", "object": "row", "inner": false}, "hidden": true}
     ]},
     {"context": "field/nested", "extends": "normal", "bindings": [
-      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"}
+      {"key": "ctrl+w o", "action": "viewer.only", "args": {"pane": "data"}, "hint": "only data"},
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "s", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "s"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
+    ]},
+    {"context": "item/edit", "extends": "normal", "bindings": [
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "s", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "s"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "Y", "action": "item.operate", "args": {"op": "y", "object": "row", "inner": false}, "hidden": true}
+    ]},
+    {"context": "field/edit", "extends": "normal", "bindings": [
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hint": "y/d/c/s/! op"},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "s", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "s"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
+    ]},
+    {"context": "item/operator_pending", "bindings": [
+      {"key": "y", "action": "item.operate", "args": {"op": "y", "object": "value"}, "when": "op:y", "hint": "y/p/k value/path/key"},
+      {"key": "p", "action": "item.operate", "args": {"op": "y", "object": "path"}, "when": "op:y", "hidden": true},
+      {"key": "k", "action": "item.operate", "args": {"op": "y", "object": "key"}, "when": "op:y", "hidden": true},
+      {"key": "d", "action": "item.operate", "args": {"op": "d", "object": "key", "inner": false}, "when": "op:d", "hint": "field"},
+      {"key": "c", "action": "item.operate", "args": {"op": "c", "object": "value"}, "when": "op:c", "hint": "edit"},
+      {"key": "s", "action": "item.operate", "args": {"op": "s", "object": "column"}, "when": "op:s", "hint": "sort"},
+      {"key": "!", "action": "item.operate", "args": {"op": "!", "object": "value"}, "when": "op:!", "hint": "jq"},
+      {"key": "i", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending_i"}, "from": {"op": "op", "opcount": "opcount", "count": "count"}, "hint": "i/a + v k p o a r c t object"},
+      {"key": "a", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending_a"}, "from": {"op": "op", "opcount": "opcount", "count": "count"}, "hidden": true},
+      {"key": "j", "action": "item.operate", "args": {"motion": "down"}, "from": {"op": "op", "steps": "steps"}, "hidden": true},
+      {"key": "down", "action": "item.operate", "args": {"motion": "down"}, "from": {"op": "op", "steps": "steps"}, "hidden": true},
+      {"key": "k", "action": "item.operate", "args": {"motion": "up"}, "from": {"op": "op", "steps": "steps"}, "hidden": true},
+      {"key": "up", "action": "item.operate", "args": {"motion": "up"}, "from": {"op": "op", "steps": "steps"}, "hidden": true},
+      {"key": "0", "action": "ochazuke.count.append", "args": {"digit": 0}, "when": "count", "hidden": true},
+      {"key": "digit-0", "action": "ochazuke.count.append", "from": {"digit": "digit"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "field/operator_pending", "bindings": [
+      {"key": "y", "action": "field.operate", "args": {"op": "y", "object": "value"}, "when": "op:y", "hint": "y/p/k value/path/key"},
+      {"key": "p", "action": "field.operate", "args": {"op": "y", "object": "path"}, "when": "op:y", "hidden": true},
+      {"key": "k", "action": "field.operate", "args": {"op": "y", "object": "key"}, "when": "op:y", "hidden": true},
+      {"key": "d", "action": "field.operate", "args": {"op": "d", "object": "key", "inner": false}, "when": "op:d", "hint": "field"},
+      {"key": "c", "action": "field.operate", "args": {"op": "c", "object": "value"}, "when": "op:c", "hint": "edit"},
+      {"key": "s", "action": "field.operate", "args": {"op": "s", "object": "column"}, "when": "op:s", "hint": "sort"},
+      {"key": "!", "action": "field.operate", "args": {"op": "!", "object": "value"}, "when": "op:!", "hint": "jq"},
+      {"key": "i", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending_i"}, "from": {"op": "op", "opcount": "opcount", "count": "count"}, "hint": "i/a + v k p o a r c t object"},
+      {"key": "a", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending_a"}, "from": {"op": "op", "opcount": "opcount", "count": "count"}, "hidden": true},
+      {"key": "j", "action": "field.operate", "args": {"motion": "down"}, "from": {"op": "op", "steps": "steps"}, "hidden": true},
+      {"key": "down", "action": "field.operate", "args": {"motion": "down"}, "from": {"op": "op", "steps": "steps"}, "hidden": true},
+      {"key": "k", "action": "field.operate", "args": {"motion": "up"}, "from": {"op": "op", "steps": "steps"}, "hidden": true},
+      {"key": "up", "action": "field.operate", "args": {"motion": "up"}, "from": {"op": "op", "steps": "steps"}, "hidden": true},
+      {"key": "0", "action": "ochazuke.count.append", "args": {"digit": 0}, "when": "count", "hidden": true},
+      {"key": "digit-0", "action": "ochazuke.count.append", "from": {"digit": "digit"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "node/operator_pending", "bindings": [
+      {"key": "y", "action": "node.yank", "when": "op:y", "hidden": true},
+      {"key": "d", "action": "node.delete", "when": "op:d", "hint": "delete"},
+      {"key": "c", "action": "node.rename", "when": "op:c", "hint": "rename"},
+      {"key": "p", "action": "node.operate", "args": {"op": "y", "object": "path"}, "when": "op:y", "hint": "y/p/k node/path/key"},
+      {"key": "k", "action": "node.operate", "args": {"op": "y", "object": "key"}, "when": "op:y", "hidden": true},
+      {"key": "!", "action": "node.operate", "args": {"op": "!", "object": "path"}, "when": "op:!", "hint": "jq"},
+      {"key": "i", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending_i"}, "from": {"op": "op", "opcount": "opcount", "count": "count"}, "hint": "i/a + v k p s object"},
+      {"key": "a", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending_a"}, "from": {"op": "op", "opcount": "opcount", "count": "count"}, "hidden": true},
+      {"key": "0", "action": "ochazuke.count.append", "args": {"digit": 0}, "when": "count", "hidden": true},
+      {"key": "digit-0", "action": "ochazuke.count.append", "from": {"digit": "digit"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "shape/operator_pending", "bindings": [
+      {"key": "y", "action": "shape.yank", "when": "op:y", "hidden": true},
+      {"key": "p", "action": "shape.operate", "args": {"op": "y", "object": "path"}, "when": "op:y", "hint": "y/p/k node/path/key"},
+      {"key": "k", "action": "shape.operate", "args": {"op": "y", "object": "key"}, "when": "op:y", "hidden": true},
+      {"key": "!", "action": "shape.operate", "args": {"op": "!", "object": "path"}, "when": "op:!", "hint": "jq"},
+      {"key": "i", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending_i"}, "from": {"op": "op", "opcount": "opcount", "count": "count"}, "hint": "i/a + v k p object"},
+      {"key": "a", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending_a"}, "from": {"op": "op", "opcount": "opcount", "count": "count"}, "hidden": true},
+      {"key": "0", "action": "ochazuke.count.append", "args": {"digit": 0}, "when": "count", "hidden": true},
+      {"key": "digit-0", "action": "ochazuke.count.append", "from": {"digit": "digit"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "item/operator_pending_i", "bindings": [
+      {"key": "v", "action": "item.operate", "args": {"object": "v"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "k", "action": "item.operate", "args": {"object": "k"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "p", "action": "item.operate", "args": {"object": "p"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "o", "action": "item.operate", "args": {"object": "o"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "a", "action": "item.operate", "args": {"object": "a"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "r", "action": "item.operate", "args": {"object": "r"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "c", "action": "item.operate", "args": {"object": "c"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "t", "action": "item.operate", "args": {"object": "t"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "item/operator_pending_a", "bindings": [
+      {"key": "v", "action": "item.operate", "args": {"object": "v", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "k", "action": "item.operate", "args": {"object": "k", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "p", "action": "item.operate", "args": {"object": "p", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "o", "action": "item.operate", "args": {"object": "o", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "a", "action": "item.operate", "args": {"object": "a", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "r", "action": "item.operate", "args": {"object": "r", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "c", "action": "item.operate", "args": {"object": "c", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "t", "action": "item.operate", "args": {"object": "t", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "field/operator_pending_i", "bindings": [
+      {"key": "v", "action": "field.operate", "args": {"object": "v"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "k", "action": "field.operate", "args": {"object": "k"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "p", "action": "field.operate", "args": {"object": "p"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "o", "action": "field.operate", "args": {"object": "o"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "a", "action": "field.operate", "args": {"object": "a"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "r", "action": "field.operate", "args": {"object": "r"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "c", "action": "field.operate", "args": {"object": "c"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "t", "action": "field.operate", "args": {"object": "t"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "field/operator_pending_a", "bindings": [
+      {"key": "v", "action": "field.operate", "args": {"object": "v", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "k", "action": "field.operate", "args": {"object": "k", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "p", "action": "field.operate", "args": {"object": "p", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "o", "action": "field.operate", "args": {"object": "o", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "a", "action": "field.operate", "args": {"object": "a", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "r", "action": "field.operate", "args": {"object": "r", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "c", "action": "field.operate", "args": {"object": "c", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "t", "action": "field.operate", "args": {"object": "t", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "node/operator_pending_i", "bindings": [
+      {"key": "v", "action": "node.operate", "args": {"object": "v"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "k", "action": "node.operate", "args": {"object": "k"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "p", "action": "node.operate", "args": {"object": "p"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "s", "action": "node.operate", "args": {"object": "s"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "node/operator_pending_a", "bindings": [
+      {"key": "v", "action": "node.operate", "args": {"object": "v", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "k", "action": "node.operate", "args": {"object": "k", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "p", "action": "node.operate", "args": {"object": "p", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "s", "action": "node.operate", "args": {"object": "s", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "shape/operator_pending_i", "bindings": [
+      {"key": "v", "action": "shape.operate", "args": {"object": "v"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "k", "action": "shape.operate", "args": {"object": "k"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "p", "action": "shape.operate", "args": {"object": "p"}, "from": {"op": "op"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "shape/operator_pending_a", "bindings": [
+      {"key": "v", "action": "shape.operate", "args": {"object": "v", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "k", "action": "shape.operate", "args": {"object": "k", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "p", "action": "shape.operate", "args": {"object": "p", "inner": false}, "from": {"op": "op"}, "hidden": true},
+      {"key": "esc", "action": "ochazuke.mode.leave", "hint": "cancel"},
+      {"key": "any", "action": "ochazuke.mode.leave", "hidden": true}
+    ]},
+    {"context": "item/count_pending", "bindings": [
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "s", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "s"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "Y", "action": "item.operate", "args": {"op": "y", "object": "row", "inner": false}, "hidden": true}
+    ]},
+    {"context": "field/count_pending", "bindings": [
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "when": "value-editable", "hidden": true},
+      {"key": "s", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "s"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
+    ]},
+    {"context": "node/count_pending", "bindings": [
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
+    ]},
+    {"context": "shape/count_pending", "bindings": [
+      {"key": "y", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "y"}, "from": {"opcount": "count"}, "hidden": true},
+      {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true}
     ]},
     {"context": "item/normal", "bindings": [
       {"key": "enter", "action": "item.open", "hint": "open"},

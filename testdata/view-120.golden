@@ -20,5 +20,5 @@
   ┃ 1–12 / 18                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  ctrl+w o only structure · > j nest below · S wrap · r rename · d d delete · u/ctrl+r undo/redo · y y yank · p/P put…  
+  ctrl+w o only structure · y/d/c/! op · > j nest below · S wrap · r rename · u/ctrl+r undo/redo · p/P put · m query …  
                                                                                                                         

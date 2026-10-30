@@ -1,0 +1,21 @@
+{
+  "name": "o-jj: y, d, s wait for a JSON text object or a motion (y i c the column, d i r the row in EDIT, . again, s i c sorts)",
+  "area": "modes",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {"doc": "sample.json"},
+  "values": {"modes.edit-gate": true},
+  "script": ["j", "j", "j", "ctrl+w", "l", "l", "l", "y", "i", "c", "i", "d", "i", "r", ".", "u", "s", "i", "c"],
+  "expect": [
+    {"after": 8, "mode": "operator_pending", "contains": ["i/a + v k p o a r c t object"]},
+    {"after": 9, "mode": "operator_pending_i", "contains": ["OPERATOR PENDING I"]},
+    {"after": 10, "mode": "table", "contains": ["copied the column name (4 values)"]},
+    {"after": 7, "mode": "table", "contains": ["0  1   alpha"]},
+    {"after": 11, "mode": "edit"},
+    {"after": 14, "mode": "edit", "contains": ["1 value edit"]},
+    {"after": 15, "mode": "edit", "contains": ["2 value edits"]},
+    {"after": 16, "mode": "edit", "contains": ["1 value edit"]},
+    {"mode": "edit", "contains": ["sorted by name"]}
+  ]
+}

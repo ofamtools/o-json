@@ -60,6 +60,8 @@ type App struct {
 	editing bool
 	// raw is the open RAW edit (raw.go), nil when none.
 	raw *rawSession
+	// sort is s ic: the data pane's table sorted (operate.go).
+	sort *tableSort
 	// tuios runs the tuios command and getenv reads the environment
 	// (RAW's pane, rawpane.go); tests replace both. later is commands a
 	// verb leaves for the loop (takeLater).
@@ -169,6 +171,7 @@ func New() (*App, error) {
 	if err := a.registerRaw(); err != nil {
 		return nil, err
 	}
+	a.registerOperate()
 	if err := a.registerQueryMode(); err != nil {
 		return nil, err
 	}
@@ -546,6 +549,7 @@ func (a *App) show(s *Shape) error {
 		return set(out.src)
 	}
 	a.tab = out.tab
+	a.tab.Rows = a.sortedRows(a.tab) // s ic (operate.go): a view of the rows
 	if prevCols != nil {
 		// The same table again (a value edit, an undo): its columns
 		// keep their order (columns.go).
@@ -586,7 +590,11 @@ func tableSource(t *Table) rowSource {
 		cells: func(i int) []string {
 			out := make([]string, 0, len(t.Columns)+1)
 			if t.Items {
-				out = append(out, strconv.Itoa(i))
+				n := i
+				if r := t.Rows[i]; r.Parent != nil && r.Parent.Kind == KArray {
+					n = r.Index // the item's own index, also in a sorted view
+				}
+				out = append(out, strconv.Itoa(n))
 			}
 			for j := range t.Columns {
 				out = append(out, oneLine(t.SummaryText(t.Rows[i], j)))

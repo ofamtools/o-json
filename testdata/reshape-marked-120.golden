@@ -20,5 +20,5 @@
   ┃                                            ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
-  ctrl+w o only structure · < < out · S wrap · t array · r rename · d d delete · u/ctrl+r undo/redo · y y yank · p/P …  
+  ctrl+w o only structure · y/d/c/! op · < < out · S wrap · t array · r rename · u/ctrl+r undo/redo · p/P put · m que…  
                                                                                                                         
