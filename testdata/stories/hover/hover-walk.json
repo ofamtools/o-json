@@ -1,0 +1,25 @@
+{
+  "name": "o-json: hover sub-tables open under the row as the cursor rests on a nested cell; j/k walk into their lines and out the bottom, h/l along them (6-hover.tape)",
+  "area": "hover",
+  "width": 120,
+  "height": 30,
+  "page": {"id": "o-json-nested"},
+  "script": ["tab", "j", "j", "l", "l", "l", "l", "l", "l",
+    "j", "l", "l",
+    "k", "l",
+    "j", "l", "l", "l",
+    "j", "j",
+    "k", "k", "k",
+    "h", "h", "h",
+    "j", "j", "j", "j", "j", "j"],
+  "expect": [
+    {"after": 9, "contains": ["Table .  3/20"], "order": ["Cy C", "city", "zip", "country", "Austin", "73301", "US", "Di D"]},
+    {"after": 12, "order": ["Cy C", "Austin", "73301", "US", "Di D"], "contains": ["Table .  3/20"]},
+    {"after": 14, "order": ["Cy C", "id", "total", "items", "o3-0", "11.67", "[3]", "o3-1", "Di D"], "lacks": ["Austin"]},
+    {"after": 18, "order": ["o3-0", "sku", "qty", "mug", "kettle", "filter", "o3-1", "Di D"]},
+    {"after": 20, "order": ["o3-0", "mug", "kettle", "filter", "o3-1"], "contains": ["Table .  3/20"]},
+    {"after": 23, "order": ["Cy C", "o3-0", "o3-1", "Di D"], "lacks": ["mug"]},
+    {"after": 26, "order": ["Cy C", "churn-risk · beta", "Di D"], "lacks": ["o3-0"]},
+    {"after": 32, "contains": ["Table .  6/20"], "lacks": ["churn-risk · beta"]}
+  ]
+}

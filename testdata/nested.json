@@ -1,0 +1,705 @@
+[
+  {
+    "id": 1,
+    "name": "Ada A",
+    "active": false,
+    "address": {
+      "city": "Paris",
+      "zip": "75001",
+      "country": "FR"
+    },
+    "tags": [],
+    "orders": [],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 0.0
+    }
+  },
+  {
+    "id": 2,
+    "name": "Bo B",
+    "active": true,
+    "address": {
+      "city": "Lyon",
+      "zip": "69001",
+      "country": "FR"
+    },
+    "tags": [
+      "churn-risk"
+    ],
+    "orders": [
+      {
+        "id": "o2-0",
+        "total": 114.0,
+        "items": [
+          {
+            "sku": "whisk",
+            "qty": 1
+          },
+          {
+            "sku": "kettle",
+            "qty": 1
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 3.5
+    }
+  },
+  {
+    "id": 3,
+    "name": "Cy C",
+    "active": true,
+    "address": {
+      "city": "Austin",
+      "zip": "73301",
+      "country": "US"
+    },
+    "tags": [
+      "churn-risk",
+      "beta"
+    ],
+    "orders": [
+      {
+        "id": "o3-0",
+        "total": 11.67,
+        "items": [
+          {
+            "sku": "mug",
+            "qty": 1
+          },
+          {
+            "sku": "kettle",
+            "qty": 4
+          },
+          {
+            "sku": "filter",
+            "qty": 1
+          }
+        ]
+      },
+      {
+        "id": "o3-1",
+        "total": 32.68,
+        "items": [
+          {
+            "sku": "filter",
+            "qty": 1
+          },
+          {
+            "sku": "tray",
+            "qty": 1
+          },
+          {
+            "sku": "mug",
+            "qty": 1
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 7.0
+    }
+  },
+  {
+    "id": 4,
+    "name": "Di D",
+    "active": false,
+    "address": {
+      "city": "Osaka",
+      "zip": "530-0001",
+      "country": "JP"
+    },
+    "tags": [
+      "beta",
+      "apac",
+      "b2b"
+    ],
+    "orders": [],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 10.5
+    }
+  },
+  {
+    "id": 5,
+    "name": "Ed E",
+    "active": true,
+    "address": null,
+    "tags": [],
+    "orders": [
+      {
+        "id": "o5-0",
+        "total": 10.7,
+        "items": [
+          {
+            "sku": "kettle",
+            "qty": 2
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 14.0
+    }
+  },
+  {
+    "id": 6,
+    "name": "Fu F",
+    "active": true,
+    "address": {
+      "city": "Paris",
+      "zip": "75001",
+      "country": "FR"
+    },
+    "tags": [
+      "churn-risk"
+    ],
+    "orders": [
+      {
+        "id": "o6-0",
+        "total": 53.2,
+        "items": [
+          {
+            "sku": "kettle",
+            "qty": 3
+          },
+          {
+            "sku": "tray",
+            "qty": 2
+          },
+          {
+            "sku": "kettle",
+            "qty": 2
+          }
+        ]
+      },
+      {
+        "id": "o6-1",
+        "total": 47.83,
+        "items": [
+          {
+            "sku": "whisk",
+            "qty": 1
+          },
+          {
+            "sku": "tray",
+            "qty": 1
+          },
+          {
+            "sku": "tray",
+            "qty": 2
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 17.5
+    }
+  },
+  {
+    "id": 7,
+    "name": "Gil G",
+    "active": false,
+    "address": {
+      "city": "Lyon",
+      "zip": "69001",
+      "country": "FR"
+    },
+    "tags": [
+      "b2b",
+      "eu"
+    ],
+    "orders": [],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 21.0
+    }
+  },
+  {
+    "id": 8,
+    "name": "Hana H",
+    "active": true,
+    "tags": [
+      "beta",
+      "b2b",
+      "churn-risk"
+    ],
+    "orders": [
+      {
+        "id": "o8-0",
+        "total": 58.54,
+        "items": [
+          {
+            "sku": "tea",
+            "qty": 3
+          },
+          {
+            "sku": "mug",
+            "qty": 2
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 24.5
+    }
+  },
+  {
+    "id": 9,
+    "name": "Ivo I",
+    "active": true,
+    "address": {
+      "city": "Osaka",
+      "zip": "530-0001",
+      "country": "JP"
+    },
+    "tags": [],
+    "orders": [
+      {
+        "id": "o9-0",
+        "total": 85.38,
+        "items": [
+          {
+            "sku": "kettle",
+            "qty": 3
+          }
+        ]
+      },
+      {
+        "id": "o9-1",
+        "total": 65.4,
+        "items": [
+          {
+            "sku": "whisk",
+            "qty": 4
+          },
+          {
+            "sku": "tea",
+            "qty": 1
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 28.0
+    }
+  },
+  {
+    "id": 10,
+    "name": "Jun J",
+    "active": false,
+    "address": {
+      "city": "Berlin",
+      "zip": "10115",
+      "country": "DE"
+    },
+    "tags": null,
+    "orders": [],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 31.5
+    }
+  },
+  {
+    "id": 11,
+    "name": "Ada K",
+    "active": true,
+    "address": {
+      "city": "Paris",
+      "zip": "75001",
+      "country": "FR"
+    },
+    "tags": [
+      "beta",
+      "b2b"
+    ],
+    "orders": [
+      {
+        "id": "o11-0",
+        "total": 23.97,
+        "items": [
+          {
+            "sku": "mug",
+            "qty": 4
+          },
+          {
+            "sku": "filter",
+            "qty": 1
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 35.0
+    }
+  },
+  {
+    "id": 12,
+    "name": "Bo L",
+    "active": true,
+    "address": {
+      "city": "Lyon",
+      "zip": "69001",
+      "country": "FR"
+    },
+    "tags": [
+      "eu",
+      "vip",
+      "beta"
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 38.5
+    }
+  },
+  {
+    "id": 13,
+    "name": "Cy M",
+    "active": false,
+    "address": {
+      "city": "Austin",
+      "zip": "73301",
+      "country": "US"
+    },
+    "tags": [],
+    "orders": [],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 42.0
+    }
+  },
+  {
+    "id": 14,
+    "name": "Di N",
+    "active": true,
+    "address": {
+      "city": "Osaka",
+      "zip": "530-0001",
+      "country": "JP",
+      "geo": {
+        "lat": 34.69,
+        "lng": 135.5
+      }
+    },
+    "tags": [
+      "eu"
+    ],
+    "orders": [
+      {
+        "id": "o14-0",
+        "total": 81.38,
+        "items": [
+          {
+            "sku": "whisk",
+            "qty": 3
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 45.5
+    }
+  },
+  {
+    "id": 15,
+    "name": "Ed O",
+    "active": true,
+    "address": {
+      "city": "Berlin",
+      "zip": "10115",
+      "country": "DE"
+    },
+    "tags": [
+      "eu",
+      "beta"
+    ],
+    "orders": [
+      {
+        "id": "o15-0",
+        "total": 119.21,
+        "items": [
+          {
+            "sku": "tea",
+            "qty": 4
+          },
+          {
+            "sku": "whisk",
+            "qty": 3
+          }
+        ]
+      },
+      {
+        "id": "o15-1",
+        "total": 7.59,
+        "items": [
+          {
+            "sku": "tea",
+            "qty": 2
+          },
+          {
+            "sku": "tray",
+            "qty": 1
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 49.0
+    }
+  },
+  {
+    "id": 16,
+    "name": "Fu P",
+    "active": false,
+    "address": {
+      "city": "Paris",
+      "zip": "75001",
+      "country": "FR"
+    },
+    "tags": [
+      "b2b",
+      "vip",
+      "new"
+    ],
+    "orders": [],
+    "meta": null
+  },
+  {
+    "id": 17,
+    "name": "Gil Q",
+    "active": true,
+    "address": {
+      "city": "Lyon",
+      "zip": "69001",
+      "country": "FR"
+    },
+    "tags": [],
+    "orders": [
+      {
+        "id": "o17-0",
+        "total": 93.35,
+        "items": [
+          {
+            "sku": "whisk",
+            "qty": 2
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 56.0
+    }
+  },
+  {
+    "id": 18,
+    "name": "Hana R",
+    "active": true,
+    "address": {
+      "city": "Austin",
+      "zip": "73301",
+      "country": "US"
+    },
+    "tags": [
+      "b2b"
+    ],
+    "orders": [
+      {
+        "id": "o18-0",
+        "total": 49.96,
+        "items": [
+          {
+            "sku": "kettle",
+            "qty": 2
+          },
+          {
+            "sku": "filter",
+            "qty": 4
+          }
+        ]
+      },
+      {
+        "id": "o18-1",
+        "total": 68.19,
+        "items": [
+          {
+            "sku": "filter",
+            "qty": 3
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 59.5
+    },
+    "extra_0": "wide value 0",
+    "extra_1": "wide value 1",
+    "extra_2": "wide value 2",
+    "extra_3": "wide value 3",
+    "extra_4": "wide value 4",
+    "extra_5": "wide value 5",
+    "extra_6": "wide value 6",
+    "extra_7": "wide value 7",
+    "extra_8": "wide value 8",
+    "extra_9": "wide value 9",
+    "extra_10": "wide value 10",
+    "extra_11": "wide value 11"
+  },
+  {
+    "id": 19,
+    "name": "Ivo S",
+    "active": false,
+    "address": {
+      "city": "Osaka",
+      "zip": "530-0001",
+      "country": "JP"
+    },
+    "tags": [
+      "eu",
+      "b2b"
+    ],
+    "orders": [],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring0",
+          "channel": "email"
+        }
+      },
+      "score": 63.0
+    }
+  },
+  {
+    "id": 20,
+    "name": "Jun T",
+    "active": true,
+    "address": {
+      "city": "Berlin",
+      "zip": "10115",
+      "country": "DE"
+    },
+    "tags": [
+      "churn-risk",
+      "eu",
+      "b2b"
+    ],
+    "orders": [
+      {
+        "id": "o20-0",
+        "total": 115.14,
+        "items": [
+          {
+            "sku": "kettle",
+            "qty": 2
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "source": {
+        "campaign": {
+          "name": "spring1",
+          "channel": "ads"
+        }
+      },
+      "score": 66.5
+    }
+  }
+]

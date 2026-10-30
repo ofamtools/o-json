@@ -320,7 +320,7 @@ func TestPasteValue(t *testing.T) {
 	// An object, from a table cell, into the cell of another row.
 	onData(t, a, ".items", ".items[0]")
 	press(t, a, "l", "l", "l", "y") // owner
-	press(t, a, "j", "p")
+	press(t, a, "j", "j", "p")      // through owner's hover sub-table line to the next row
 	if got := field(t, a, ".items[1].owner"); got != `{"name":"ann","email":"ann@example.com"}` {
 		t.Fatalf("object put: %s", got)
 	}

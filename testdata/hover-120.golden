@@ -1,0 +1,24 @@
+  ◆ o-json                                                                                                     NORMAL   
+   › testdata/nested.json  Restructure                                                                                  
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+  testdata/nested.json  ·  . (array ×1)  ·  row [2]                                                                     
+  ╭─ Structure · unchanged ────────────────────╮ ╭━ Table .  3/20 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮  
+  │ jq / to query                              │ ┃  #  ‹1   name    active  tags    meta    address?  orders?    12› ┃  
+  │ key             type          from         │ ┃  0       Ada A   false   []      {"sou…  {"city"…  []             ┃  
+  │ ▾ . (root)      array                      │ ┃  1       Bo B    true    ["chu…  {"sou…  {"city"…  [{"id"…        ┃  
+  │   ▾ []          object        []           │ ┃  2       Cy C    true    ["chu…  {"sou…  {"city"…  [{"id"…        ┃  
+  │       id        number        [].id        │ ┃     #  id    total  items                                         ┃  
+  │       name      string        [].name      │ ┃     0  o3-0  11.67  [3]                                           ┃  
+  │       active    bool          [].active    │ ┃       #  sku     qty                                              ┃  
+  │       tags      array|null    [].tags      │ ┃       0  mug     1                                                ┃  
+  │       meta      object|null   [].meta      │ ┃       1  kettle  4                                                ┃  
+  │       address   object|null?  [].address   │ ┃       2  filter  1                                                ┃  
+  │     ▾ orders    array         [].orders    │ ┃     1  o3-1  32.68  [3]                                           ┃  
+  │       ▾ []      object        [].orders[]  │ ┃  3       Di D    false   ["bet…  {"sou…  {"city"…  []             ┃  
+  │           id    string        [].orders[]… │ ┃  4       Ed E    true    []      {"sou…  null      [{"id"…        ┃  
+  │           tot…  number        [].orders[]… │ ┃  5       Fu F    true    ["chu…  {"sou…  {"city"…  [{"id"…        ┃  
+  │ 1–12 / 28                                  │ ┃  6       Gil G   false   ["b2b…  {"sou…  {"city"…  []             ┃  
+  ╰────────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+  enter item.open · y item.yank · r/i edit · d d delete · o/O add · K rename key · p put · / jq query · v viewer.raw …  
+                                                                                                                        

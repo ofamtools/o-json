@@ -567,6 +567,9 @@ func (a *App) registerValueVerbs() {
 				return valueAt{}, err
 			}
 		}
+		if a.rowsOf(c.Instance) == a.data && a.hoverIn() {
+			return valueAt{}, errors.New("value edits work on the table's rows, not in a sub-table: k back to the row (table.nested)")
+		}
 		v, ok := a.editableValue(c.Instance.ID)
 		if !ok {
 			return v, errors.New("no value to edit here (the edited view's data pane, data.editable)")
@@ -700,6 +703,9 @@ func (a *App) registerValueVerbs() {
 // yankValue copies the value on the focus (item.yank, field.yank,
 // value.yank).
 func (a *App) yankValue(c ochazuke.Ctx) ochazuke.Result {
+	if n := a.hoverValue(c.Instance); n != nil {
+		return a.copyYank(c, valueYank(n), n.Path())
+	}
 	v, ok := a.valueOf(c.Instance)
 	if !ok || v.node == nil {
 		return ochazuke.Failed(errors.New("no value here"))

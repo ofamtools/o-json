@@ -15,7 +15,7 @@ import (
 //
 //	viewer   the page: open, load (reload), new, paste, write, files, recent, search, next/previous match, type filter, raw, clear, state
 //	shape    a structure tree row: yank (the path)
-//	rows     a windowed table (data panel, detail): move
+//	rows     a windowed table (data panel, detail): move, column (along a hover sub-table, hover.go)
 //	item     a data table row: open (the detail), yank (the row as JSON)
 //	field    a data panel field: open, yank
 //	entry    a detail row: open (drill in), up, yank
@@ -125,12 +125,28 @@ func (a *App) registerVerbs() {
 				return ochazuke.Failed(errors.New("no table here"))
 			}
 			steps := max(1, ochazuke.IntArg(c.Args, "steps", 1))
+			motion := ochazuke.StringArg(c.Args, "motion", "")
+			// On the data pane with table.nested hover, down and up walk
+			// the drawn lines, the open sub-tables' among them (hover.go);
+			// the other motions move by rows and leave any sub-table.
+			walk := v == a.data && a.hoverOn()
+			if walk && motion != "down" && motion != "up" {
+				a.hover.path = nil
+			}
 			var err error
-			switch ochazuke.StringArg(c.Args, "motion", "") {
+			switch motion {
 			case "down":
-				err = v.move(steps)
+				if walk {
+					err = a.hoverDown(steps)
+				} else {
+					err = v.move(steps)
+				}
 			case "up":
-				err = v.move(-steps)
+				if walk {
+					err = a.hoverUp(steps)
+				} else {
+					err = v.move(-steps)
+				}
 			case "half-down":
 				err = v.move(steps * v.page(true))
 			case "half-up":
@@ -174,7 +190,18 @@ func (a *App) registerVerbs() {
 		}
 		return a.copyText(c, text, n.Path())
 	}
-	open := func(c ochazuke.Ctx) ochazuke.Result { return done(a.openDetail(nodeAt(c.Instance))) }
+	open := func(c ochazuke.Ctx) ochazuke.Result {
+		n := nodeAt(c.Instance)
+		// In a sub-table (table.nested hover): the value under the
+		// cursor, or the line's value holding a scalar.
+		if h := a.hoverValue(c.Instance); h != nil {
+			n = h
+			if !n.IsContainer() {
+				n = n.Parent
+			}
+		}
+		return done(a.openDetail(n))
+	}
 	yankValue := func(c ochazuke.Ctx) ochazuke.Result { return a.yankValue(c) }
 	r.Define("item").
 		Verb("open", open, "Open the row's item in the detail as labeled fields").

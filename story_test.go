@@ -13,6 +13,8 @@ import (
 // for a page): "o-json" is o-json's runtime and model on the nest
 // document's restructure page, the focus on the restructured tree's .y;
 // "o-json-viewer" is a fresh viewer on the nest document, as it opens;
+// "o-json-nested" a fresh viewer on the nested document (an array of
+// people with objects and arrays in their cells, hover.go);
 // "o-json-empty" the viewer with no document (o-json alone).
 // The story's script and expectations run against it as o-story runs its
 // own; its settings set o-json's (each one's default is the value); a
@@ -31,6 +33,8 @@ func TestStories(t *testing.T) {
 			switch {
 			case s.Page != nil && s.Page.ID == "o-json-viewer":
 				a = open(t, nestDoc, 120, 30)
+			case s.Page != nil && s.Page.ID == "o-json-nested":
+				a = open(t, nestedDoc, 120, 30)
 			case s.Page != nil && s.Page.ID == "o-json-empty":
 				a = empty(t)
 			default:

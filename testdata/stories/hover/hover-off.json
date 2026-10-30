@@ -1,0 +1,13 @@
+{
+  "name": "o-json: table.nested summary keeps the summary view: no sub-table under the row, and j moves to the next row",
+  "area": "hover",
+  "width": 120,
+  "height": 30,
+  "page": {"id": "o-json-nested"},
+  "settings": [{"name": "table.nested", "type": "string", "default": "summary", "enum": ["hover", "summary"]}],
+  "script": ["tab", "j", "j", "l", "l", "l", "l", "l", "l", "j"],
+  "expect": [
+    {"after": 9, "contains": ["Table .  3/20", "{\"city\"…"], "lacks": ["Austin", "country"]},
+    {"after": 10, "contains": ["Table .  4/20"], "lacks": ["Austin"]}
+  ]
+}

@@ -256,7 +256,7 @@ func (a *App) dataBody(w, h int) string {
 		a.r.Placed(dataID)
 		return "(empty array)"
 	}
-	return a.data.view(w, h)
+	return a.hoverView(w, h)
 }
 
 // wrap breaks text at the width.
