@@ -125,3 +125,23 @@ func TestSearchLargeDocumentRunsOffTheLoop(t *testing.T) {
 		t.Fatalf("landed: running %v hits %d overlay %q", a.sr.running, len(a.sr.hits), a.overlay)
 	}
 }
+
+// A search typing session is one undo step: leaving the line folds its
+// edits (and a tab between types) into one history node.
+func TestSearchTypingSessionIsOneUndoStep(t *testing.T) {
+	a := openQuery(t, "testdata/sample.json")
+	if err := a.r.Settings().Set(settingSearchType, "substring"); err != nil {
+		t.Fatal(err)
+	}
+	in := a.q.in
+	before := in.History[in.Head].Text
+	press(t, a, "/")
+	Type(a.m, "re")
+	press(t, a, "tab")
+	Type(a.m, "d")
+	press(t, a, "enter")
+	head := in.History[in.Head]
+	if head.Text != "red" || head.Parent < 0 || in.History[head.Parent].Text != before {
+		t.Fatalf("session: head %q parent %d (%q), %d nodes", head.Text, head.Parent, in.History[max(head.Parent, 0)].Text, len(in.History))
+	}
+}

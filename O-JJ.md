@@ -49,7 +49,7 @@ Updated as each item lands; the sections below describe what is built.
 | Hits while typing, Results view, n/N, jump, yank | `ctrl+n/p`, `enter`, `n`, `N`, `y y`, `y p` | done |
 | `esc` on the line cancels; `esc` on a pane clears | `esc` | done |
 | Hits computed off the event loop | | done (documents over 20000 nodes; the breadcrumb says `searching…`) |
-| Undo groups per search typing session | `u` on the line | missing |
+| Undo groups per search typing session | `u` on the line | done (o-jj folds the session on leaving: `groupLineSession`, a workaround) |
 | jq slots on `ctrl+n`/`ctrl+p` | | done |
 
 ### EDIT
@@ -176,7 +176,10 @@ its trial colour (o-jj colours the application accent by mode).
   types use `search_·_substr`, `search_·_fuzzy` and `search_·_regex`
   modes that extend insert, which is how their badges read `SEARCH ·
   SUBSTR` (upper case; the tag is not lower case as in the prototype).
-  Their input undo groups per change, not per insert session.
+  The input groups undo only in a mode named insert, so o-jj folds a
+  whole search typing session (from `/` to leaving, a `tab` between
+  types too) into one undo step itself (`groupLineSession`, search.go,
+  marked as the workaround to drop for ochazuke's insert-like modes).
 - The hits (capped at 5000) are computed on the event loop for a
   document of up to 20000 nodes (`searchLoopNodes`), off it for a larger
   one: the last hits stay, the breadcrumb says `searching…`, and an

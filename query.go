@@ -346,6 +346,7 @@ func (a *App) queryDone(err error) ochazuke.Result {
 func (a *App) focusQuery() error {
 	if a.r.Focus != jqFieldID {
 		a.q.from, a.q.fromMode = a.r.Focus, a.r.BaseMode()
+		a.markLineSession()
 	}
 	if err := a.r.SetFocus(jqFieldID); err != nil {
 		return err
@@ -360,6 +361,7 @@ func (a *App) focusQuery() error {
 // leaveQuery goes back where / came from (in the mode it was in), else to
 // the structure pane shown.
 func (a *App) leaveQuery() error {
+	defer a.groupLineSession()
 	if a.r.SetFocus(a.q.from) != nil {
 		t := a.tree
 		if a.editedShown() {

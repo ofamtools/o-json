@@ -72,6 +72,10 @@ type searchState struct {
 	job     tea.Cmd
 	running bool
 	fresh   bool // the job's search is new: its hits show the Results view
+
+	// session is the line's undo history when / focused it (len, head):
+	// leaving folds the session's edits into one step (groupLineSession).
+	session [2]int
 }
 
 // searchDone is an off-loop search's answer, for the search key it ran.
@@ -369,4 +373,39 @@ func (a *App) registerSearch() error {
 	setParams(r, "search.next", map[string]ochazuke.Parameter{"steps": {Type: "integer", Description: "hits to step; negative goes back"}})
 	setHistory(r, ochazuke.HistoryAction, "search.focus", "search.type", "search.accept", "search.cancel", "search.clear", "search.next")
 	return nil
+}
+
+// o-jj workaround (until ochazuke's insert-like modes group undo): the
+// search types' line modes extend insert but are not named insert, so
+// the input makes one undo step per change, and a tab between types ends
+// a group. markLineSession notes the history as / focuses the line;
+// groupLineSession, on leaving it, folds every step the session added
+// into one, so u undoes a whole search typing session.
+func (a *App) markLineSession() {
+	in := a.q.in
+	a.sr.session = [2]int{len(in.History), in.Head}
+}
+
+func (a *App) groupLineSession() {
+	in := a.q.in
+	mark, base := a.sr.session[0], a.sr.session[1]
+	a.sr.session = [2]int{-1, -1}
+	if mark < 0 || mark > len(in.History) || base < 0 || base >= mark || in.Head < mark {
+		return
+	}
+	for n := in.Head; n != base; n = in.History[n].Parent {
+		if n < mark {
+			return // the head is not the session's own line of edits
+		}
+	}
+	last := in.History[in.Head]
+	in.History = in.History[:mark]
+	in.History[base].Children = slices.DeleteFunc(in.History[base].Children, func(c int) bool { return c >= mark })
+	if last.Text == in.History[base].Text {
+		in.Head = base
+		return
+	}
+	in.History[base].Children = append(in.History[base].Children, mark)
+	in.History = append(in.History, ochazuke.EditNode{Text: last.Text, Cursor: last.Cursor, Parent: base})
+	in.Head = mark
 }
