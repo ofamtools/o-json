@@ -24,7 +24,7 @@
     {"after": 26, "mode": "jq_·_line", "contains": ["jq .data[3].customer"]},
     {"after": 28, "mode": "jq", "contains": ["Aiko Abe"]},
     {"after": 29, "contains": ["Table .data"]},
-    {"after": 32, "mode": "flat", "contains": [".data[0].items[0].qty = 3"]},
+    {"after": 32, "mode": "flat", "contains": [".data[ 0].items[0].qty = 3"]},
     {"after": 34, "register": ".data[0].items[0].qty", "contains": ["copied the path .data[0].items[0].qty"]},
     {"after": 36, "register": "3"},
     {"quit": true}

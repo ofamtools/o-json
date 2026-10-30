@@ -21,7 +21,7 @@
     {"after": 13, "contains": ["▸ customer"]},
     {"after": 14, "contains": ["▾ customer", "email?"]},
     {"after": 17, "mode": "table", "contains": ["row .data[0].customer"]},
-    {"after": 18, "mode": "flat", "contains": [".data[2].customer.name = \"Finn Abe\"", ".data[3].customer.email = null"], "lacks": [".data[2].customer.email"]},
+    {"after": 18, "mode": "flat", "contains": [".data[ 2].customer.name = \"Finn Abe\"", ".data[ 3].customer.email = null"], "lacks": [".data[ 2].customer.email"]},
     {"after": 21, "mode": "shape", "contains": ["Structure · unchanged"]},
     {"after": 23, "focus": "mode-picker/query", "contains": ["Modes", "SHAPE", "read and walk the structure", "FLAT"]},
     {"after": 24, "mode": "shape", "lacks": ["read and walk the structure"]},

@@ -21,7 +21,7 @@
     {"after": 9, "contains": ["Table .data  11/25"]},
     {"after": 10, "contains": ["Table .data  25/25"]},
     {"after": 12, "contains": ["Table .data  1/25"]},
-    {"after": 13, "mode": "flat", "contains": ["Flat .data", ".data[0].id = \"ORD-1001\"", ".data[0].customer.email = \"kai.jade@example.com\""]},
+    {"after": 13, "mode": "flat", "contains": ["Flat .data", ".data[ 0].id = \"ORD-1001\"", ".data[ 0].customer.email = \"kai.jade@example.com\""]},
     {"after": 14, "mode": "json", "contains": ["JSON .data", "\"id\": \"ORD-1001\"", "\"customer\": {"]},
     {"after": 17, "contains": ["{… 6 keys},", "\"id\": \"ORD-1002\""]},
     {"after": 20, "contains": ["{… 7 keys},"], "lacks": ["\"id\": \"ORD-1002\""]},
