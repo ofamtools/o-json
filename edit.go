@@ -29,7 +29,6 @@ func (a *App) editGated() bool {
 func (a *App) enterEdit(c ochazuke.Ctx, open bool) ochazuke.Result {
 	a.editing, a.editTree = true, a.structureFocused()
 	_ = a.r.SetMode("edit")
-	a.syncModeAccent()
 	if open {
 		res, err := a.r.Execute(ochazuke.Request{Noun: "value", Verb: "edit", Target: a.r.Focus})
 		if err != nil {

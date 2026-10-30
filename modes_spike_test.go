@@ -61,12 +61,13 @@ func TestTrialModePickerChoosesFuzzyViewAndSplit(t *testing.T) {
 
 func TestTrialPaneKeysAndSplitBadge(t *testing.T) {
 	a := open(t, "testdata/sample.json", 100, 30)
-	shapeColour := fmt.Sprint(a.m.Appearance.Accent)
+	tones := a.m.Appearance.AppTones.Rows()
+	shapeColour := fmt.Sprint(tones["mode.shape"])
 	press(t, a, "ctrl+a", "o")
 	if !a.inData(a.r.Focus) || a.r.BaseMode() != "table" {
 		t.Fatalf("other pane: focus %q mode %q", a.r.Focus, a.r.BaseMode())
 	}
-	if tableColour := fmt.Sprint(a.m.Appearance.Accent); tableColour == shapeColour {
+	if tableColour := fmt.Sprint(tones["mode.table"]); tableColour == shapeColour || a.m.Appearance.Accent != nil {
 		t.Fatalf("shape and table accents are both %q", tableColour)
 	}
 	press(t, a, "ctrl+w", "h")

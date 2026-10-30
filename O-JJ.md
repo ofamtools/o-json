@@ -22,7 +22,7 @@ Updated as each item lands; the sections below describe what is built.
 | SPLIT badge on the restructure page | `ctrl+w v` | done |
 | RAW | `g r` | done (foreground, or a tuios pane; no RAW badge while the editor has the terminal) |
 | Mode picker | `g m` | done |
-| Per-mode accent colours | | partial (o-jj recolours the whole accent; ochazuke tones later) |
+| Per-mode badge colours | | done (`SetModeTone` per mode; themes.json `mode.<name>` overrides) |
 | Opt-outs `modes.declared`, `modes.edit-gate` | | done |
 
 ### Footer and help
@@ -85,7 +85,7 @@ Updated as each item lands; the sections below describe what is built.
 | Bump to v0.61.0 | done |
 | Instance pin: data rows pinned per view, structure pinned to `shape` (no per-event mode setting) | missing |
 | `esc` rows: `mode.set {mode: declared}` | missing |
-| Badge colours: `SetModeTone` per mode (no whole-accent recolour) | missing |
+| Badge colours: `SetModeTone` per mode (no whole-accent recolour) | done |
 | SEARCH / JQ line modes extend insert (completion, per-session undo, `JQ` badge while typing) | done |
 | `ctrl+w o` / `ctrl+w =`: `ochazuke.pane.only` / `pane.restore`, `SplitFocusBlock` | missing |
 
@@ -111,7 +111,7 @@ owner-approved prototype (`/tmp/o-jj/prototype.html`).
 
 Each pane, and each view of the data pane, declares a mode; a key lifts
 you into a doing-mode; `esc` drops one layer. The badge names the mode in
-its trial colour (o-jj colours the application accent by mode).
+its trial colour (each mode's badge tone, `mode.<name>`, declared with ochazuke's `SetModeTone`; a theme's `mode.<name>` row overrides it).
 
 | Mode | Badge | Declared by / entered by | Keys of its own |
 |---|---|---|---|

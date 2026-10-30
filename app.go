@@ -141,6 +141,7 @@ func New() (*App, error) {
 	r := ochazuke.NewRuntime()
 	a := &App{r: r, viewByPath: make(map[string]string), folds: make(map[string]map[string]bool)}
 	a.m = ochazuke.NewModel(r)
+	a.declareModeTones()
 	a.m.Title = appName()
 	r.Instance(pageID, ochazuke.Kind("viewer"))
 	a.registerNouns()

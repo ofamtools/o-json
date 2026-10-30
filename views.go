@@ -10,7 +10,7 @@ package main
 import (
 	"slices"
 
-	"charm.land/lipgloss/v2"
+	"github.com/unixsuperhero/ochazuke"
 )
 
 // cycleDataView steps the data pane's view (D, tab; shift+tab back): the
@@ -79,7 +79,6 @@ var dataViewOrder = []string{viewTable, objectFields, viewFlat, viewJSON}
 // local mode declaration. Ochazuke currently pins modes by noun only;
 // this app-side declaration is the trial equivalent of an instance pin.
 func (a *App) syncDeclaredMode() {
-	defer a.syncModeAccent()
 	if a.r.Settings().String(settingDeclaredModes) == "off" {
 		switch a.r.BaseMode() {
 		case "shape", "table", "nested", "flat", "json", "jq", "split", "search", "edit":
@@ -149,9 +148,10 @@ func (a *App) syncDeclaredMode() {
 	}
 }
 
-// Ochazuke exposes one application accent but no app-defined mode tone
-// table. In this trial the accent follows the mode, colouring the badge and
-// focused chrome together. The library can own per-mode badge tones later.
+// trialModeAccents are the badge hues of o-jj's modes (light, dark),
+// declared as ochazuke mode tones (Appearance.SetModeTone: the tone row
+// mode.<name>, which a themes.json theme overrides). insert and the
+// visual modes keep ochazuke's own hues.
 var trialModeAccents = map[string][2]string{
 	"shape":           {"#266B9A", "#73B6ED"},
 	"table":           {"#237A56", "#72D5A7"},
@@ -162,9 +162,6 @@ var trialModeAccents = map[string][2]string{
 	"query":           {"#A45916", "#F2AD64"},
 	"split":           {"#166C78", "#74CDD4"},
 	"edit":            {"#A44049", "#F2949A"},
-	"insert":          {"#A44049", "#F2949A"},
-	"visual":          {"#8D4A91", "#E59CE2"},
-	"visual-line":     {"#8D4A91", "#E59CE2"},
 	"raw":             {"#516B36", "#9DD077"},
 	"search":          {"#886A1E", "#E9CD6A"},
 	"search_·_substr": {"#886A1E", "#E9CD6A"},
@@ -173,17 +170,11 @@ var trialModeAccents = map[string][2]string{
 	"jq_·_line":       {"#A45916", "#F2AD64"},
 }
 
-func (a *App) syncModeAccent() {
-	colours, ok := trialModeAccents[a.r.BaseMode()]
-	if !ok || a.r.Settings().String(settingDeclaredModes) == "off" {
-		a.m.Appearance.Accent = nil
-		return
+// declareModeTones declares each o-jj mode's badge hue.
+func (a *App) declareModeTones() {
+	for mode, c := range trialModeAccents {
+		a.m.Appearance.SetModeTone(mode, ochazuke.SchemeColor{Light: c[0], Dark: c[1]})
 	}
-	which := 0
-	if a.m.Appearance.Dark {
-		which = 1
-	}
-	a.m.Appearance.Accent = lipgloss.Color(colours[which])
 }
 
 func viewApplies(name string, values []*Node) bool {
