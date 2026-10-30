@@ -29,12 +29,17 @@ func selectIn(t *testing.T, a *App, tree *ochazuke.Tree, match func(ochazuke.Tre
 	if err := tree.Focus(); err != nil {
 		t.Fatal(err)
 	}
+	moved := false
 	for _, key := range []string{"k", "j"} {
 		for range 40 {
 			if n, ok := tree.Selected(); ok && match(n) {
+				if moved {
+					view(a)
+				}
 				return
 			}
-			press(t, a, key)
+			walkKey(t, a, key)
+			moved = true
 		}
 	}
 	t.Fatalf("not in %s: %+v", tree.ID(), tree.Nodes())

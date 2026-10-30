@@ -18,7 +18,9 @@ import (
 // "o-json-empty" the viewer with no document (o-json alone).
 // The story's script and expectations run against it as o-story runs its
 // own; its settings set o-json's (each one's default is the value); a
-// story with a skip ("gap: ...") runs but cannot fail.
+// story with a skip ("gap: ...") runs but cannot fail. Stories run in
+// parallel: a session shares nothing with another (the race detector
+// checks it under -race).
 func TestStories(t *testing.T) {
 	stories, err := story.LoadDir(filepath.Join("testdata", "stories"))
 	if err != nil {
@@ -29,6 +31,7 @@ func TestStories(t *testing.T) {
 	}
 	for _, s := range stories {
 		t.Run(s.Area+"/"+story.Slug(s.Name), func(t *testing.T) {
+			t.Parallel() // each story has its own runtime and model
 			var a *App
 			switch {
 			case s.Page != nil && s.Page.ID == "o-json-viewer":

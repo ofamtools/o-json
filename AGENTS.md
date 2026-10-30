@@ -76,4 +76,6 @@ go run . --smoke testdata/sample.json
 go run . catalog >/dev/null
 ```
 
+The race suite takes about two minutes. To time it, or to keep each run short on a busy machine, `scripts/test-chunks.sh OUT [N] [flags]` runs the top-level tests in N `go test -json` chunks (`scripts/test-chunks.sh /tmp/o-json-race 4 -race`, then `OUT/done`) and `python3 scripts/slowest.py OUT 15` prints failures, the total and the slowest tests (it also reads one `go test -json` file). Keep the suite fast: a selection walk (`selectIn`, `selectPath`) and `press` draw one frame where they stop, not one per key; tests that open their own viewer may `t.Parallel()` (registers, settings and history are per runtime); a test that needs a large document sizes it for `raceOn` (`rebuildWindowItems`), and `TestMain` fails a run in which every rebuild-window test skipped.
+
 ochazuke (`v0.46.0`) and oden (`v0.1.1`) are required at their tags. An untracked `go.work` (`go work init . ../ochazuke ../oden`) builds against the sibling checkouts, and `GOWORK=off` builds from the tags as a fresh clone does. Never commit `go.work` or a `replace`.

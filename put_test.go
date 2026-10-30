@@ -113,6 +113,7 @@ func TestPutTakesTheLevelOfWhereItLands(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel() // each case opens its own viewer
 			a := openPut(t)
 			a.on(t, tc.cut)
 			press(t, a, "d", "d")

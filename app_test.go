@@ -64,6 +64,11 @@ func view(a *App) string { return ansi.Strip(a.m.View().Content) }
 
 // press sends keys one by one, failing on the first error the model
 // shows. A yank's "copied ..." is the plain tone (Model.Info), not an error.
+// It draws one frame, after the last key, for the assertions that follow
+// and the render-time sync (a frame per key cost a third of the suite's
+// time; ochazuke's story driver, like a burst of typed-ahead keys, does
+// not draw between keys either). A test about the frame of each key
+// draws it itself (TestLargeEditStaysFast).
 func press(t *testing.T, a *App, keys ...string) {
 	t.Helper()
 	for _, key := range keys {
@@ -71,24 +76,35 @@ func press(t *testing.T, a *App, keys ...string) {
 		if a.m.Status != "" {
 			t.Fatalf("key %q: %s", key, a.m.Status)
 		}
-		view(a)
+	}
+	view(a)
+}
+
+// walkKey presses one key of a selection walk (selectPath, selectIn)
+// with no frame after it: a walk draws once, where it stops.
+func walkKey(t *testing.T, a *App, key string) {
+	t.Helper()
+	Press(a.m, key)
+	if a.m.Status != "" {
+		t.Fatalf("key %q: %s", key, a.m.Status)
 	}
 }
 
 // selectPath selects a structure path in the tree as the keys would.
 func selectPath(t *testing.T, a *App, path string) {
 	t.Helper()
-	for range 40 {
-		if s := a.selectedShape(); s != nil && s.Path == path {
-			return
+	moved := false
+	for _, key := range []string{"k", "j"} {
+		for range 40 {
+			if s := a.selectedShape(); s != nil && s.Path == path {
+				if moved {
+					view(a)
+				}
+				return
+			}
+			walkKey(t, a, key)
+			moved = true
 		}
-		press(t, a, "k")
-	}
-	for range 40 {
-		if s := a.selectedShape(); s != nil && s.Path == path {
-			return
-		}
-		press(t, a, "j")
 	}
 	t.Fatalf("no %s in the tree", path)
 }

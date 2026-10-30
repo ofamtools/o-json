@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -71,7 +73,27 @@ func waitRebuilt(t *testing.T, a *App) {
 	t.Fatal("the restructured document was never rebuilt")
 }
 
-// inRebuildWindow opens a 60k document under rebuild.value-edit mode,
+// rebuildWindowItems is the size of inRebuildWindow's document: 60k
+// items, or 6k under the race detector, which runs a rebuild several
+// times slower, so 6k still crosses rebuildOnLoop there.
+var rebuildWindowItems = map[bool]int{false: 60_000, true: 6_000}[raceOn]
+
+// offLoopWindows counts the inRebuildWindow calls whose rebuild ran off
+// the loop and offLoopTries every call: TestMain fails a run in which
+// every call skipped, so the off-loop path is never silently untested.
+var offLoopWindows, offLoopTries atomic.Int32
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	if code == 0 && offLoopTries.Load() > 0 && offLoopWindows.Load() == 0 {
+		fmt.Fprintf(os.Stderr, "FAIL: %d inRebuildWindow calls, none ran the rebuild off the loop (rebuildOnLoop %v)\n", offLoopTries.Load(), rebuildOnLoop)
+		code = 1
+	}
+	os.Exit(code)
+}
+
+// inRebuildWindow opens a large document (rebuildWindowItems; 60k when
+// the smaller one rebuilds on the loop) under rebuild.value-edit mode,
 // focuses the data pane's first row on column col (1 is id, 2 name) and
 // deletes the id key from the structure: its rebuild runs off the loop,
 // and until it lands the table still shows the id column.
@@ -80,25 +102,21 @@ func waitRebuilt(t *testing.T, a *App) {
 func inRebuildWindow(t *testing.T, mode string, col int, pre ...Patch) *App {
 	t.Helper()
 	if testing.Short() {
-		t.Skip("a 60k document")
+		t.Skip("a large document")
 	}
-	path := filepath.Join(t.TempDir(), "big.json")
-	if err := os.WriteFile(path, bigDocument(60_000), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	a := open(t, path, 120, 30)
-	if err := a.r.Settings().Set(settingRebuildValueEdit, mode); err != nil {
-		t.Fatal(err)
-	}
-	if len(pre) > 0 {
-		if err := a.commitPatches("pre", pre); err != nil {
-			t.Fatal(err)
+	offLoopTries.Add(1)
+	var a *App
+	for _, n := range []int{rebuildWindowItems, 60_000} {
+		a = largeIn(t, n, mode, pre)
+		if a.rb.slow || n == 60_000 {
+			t.Logf("%d items, rebuild off the loop %v", n, a.rb.slow)
+			break
 		}
 	}
-	waitRebuilt(t, a)
 	if !a.rb.slow {
 		t.Skip("the rebuild ran on the loop: nothing to race")
 	}
+	offLoopWindows.Add(1)
 	// The root's data pane is the items table: # then id, name, ...
 	onRoot(t, a)
 	view(a)
@@ -124,6 +142,27 @@ func inRebuildWindow(t *testing.T, mode string, col int, pre ...Patch) *App {
 	if !a.staleShown() || a.tab == nil || a.tab.Columns[0].Name != "id" {
 		t.Fatalf("not in the rebuild window (stale %v)", a.staleShown())
 	}
+	return a
+}
+
+// largeIn opens a document of n items under rebuild.value-edit mode
+// with the pre patches made and the restructured document built.
+func largeIn(t *testing.T, n int, mode string, pre []Patch) *App {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "big.json")
+	if err := os.WriteFile(path, bigDocument(n), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a := open(t, path, 120, 30)
+	if err := a.r.Settings().Set(settingRebuildValueEdit, mode); err != nil {
+		t.Fatal(err)
+	}
+	if len(pre) > 0 {
+		if err := a.commitPatches("pre", pre); err != nil {
+			t.Fatal(err)
+		}
+	}
+	waitRebuilt(t, a)
 	return a
 }
 
@@ -185,6 +224,7 @@ func TestValueEditDuringRebuildQueues(t *testing.T) {
 		orphaned bool
 	}{{2, "[0].name", false}, {1, "[0].id", true}} {
 		t.Run(tc.path, func(t *testing.T) {
+			t.Parallel() // each case opens its own large document
 			pre := Patch{Op: opSet, Path: "[1].score", Value: []byte("7")}
 			a := inRebuildWindow(t, rebuildEditQueue, tc.col, pre)
 			editCell(t, a)
@@ -216,6 +256,7 @@ func TestValueEditDuringRebuildActsOnThePreviousResult(t *testing.T) {
 		orphaned bool
 	}{{2, "[0].name", false}, {1, "[0].id", true}} {
 		t.Run(tc.path, func(t *testing.T) {
+			t.Parallel() // each case opens its own large document
 			a := inRebuildWindow(t, rebuildEditPrevious, tc.col)
 			editCell(t, a)
 			if len(a.rs.patches) != 1 || a.rs.patches[0].Path != tc.path || len(a.queued) != 0 {

@@ -48,6 +48,7 @@ func TestWalkingTheStructureShowsData(t *testing.T) {
 				name = path + " original"
 			}
 			t.Run(name, func(t *testing.T) {
+				t.Parallel() // each walk opens its own viewer
 				a := open(t, path, 120, 40)
 				selected := func() string {
 					n, _ := a.rs.tree.Selected()
