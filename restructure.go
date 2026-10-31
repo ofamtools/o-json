@@ -38,7 +38,8 @@ import (
 // wrong type (an index into a string) counts as absent, never as an
 // error. The generated jq program (JQ) does the same, so it never fails
 // on a document of this shape. Keys in the new document come in the order
-// the mapping first names them.
+// the mapping first names them, unless an object entry requests document
+// order: each value then keeps its source object's own field positions.
 //
 // Duplicate keys: the parser reads a document as jq reads it (Build), the
 // last value of a repeated key at the position of the first, so the Go
@@ -48,6 +49,9 @@ import (
 type MapEntry struct {
 	From string  `json:"from,omitempty"`
 	To   *string `json:"to"`
+	// Order document retains this source object's per-value key order;
+	// omitted uses the order the mapping names its fields.
+	Order string `json:"order,omitempty"`
 }
 
 // UnmarshalJSON requires "to" (null drops) and refuses unknown fields.
@@ -62,6 +66,10 @@ func (e *MapEntry) UnmarshalJSON(data []byte) error {
 		case "from":
 			if err := json.Unmarshal(v, &e.From); err != nil {
 				return errors.New(`"from" is a path string`)
+			}
+		case "order":
+			if err := json.Unmarshal(v, &e.Order); err != nil {
+				return errors.New(`"order" is "document" or empty`)
 			}
 		case "to":
 			if string(v) == "null" {
@@ -108,15 +116,17 @@ func ReadMapping(data []byte) (*Mapping, error) {
 
 // target is a node of the new document.
 type target struct {
-	key      string // the object key; "" for the root and an item
-	item     bool   // a "[]" item
-	path     string
-	from     []pathStep // nil without a from
-	fromPath string
-	hasFrom  bool
-	declared bool // named by an entry (a wrapper or a from)
-	fields   []*target
-	items    *target
+	key          string // the object key; "" for the root and an item
+	item         bool   // a "[]" item
+	path         string
+	from         []pathStep // nil without a from
+	fromPath     string
+	hasFrom      bool
+	declared     bool                 // named by an entry (a wrapper or a from)
+	order        string               // document or the mapping's field order
+	sourceFields map[string][]*target // target fields in each source key's position
+	fields       []*target
+	items        *target
 
 	// Set by plan: the from relative to the context, and the shape at
 	// the context then after each relative step.
@@ -250,6 +260,12 @@ func stepsPath(steps []pathStep) string {
 }
 
 func (p *Plan) add(e MapEntry) error {
+	if e.Order != "" && e.Order != "document" {
+		return fmt.Errorf("order %q: expected document or empty", e.Order)
+	}
+	if e.Order != "" && (e.From == "" || e.To == nil) {
+		return errors.New("document order needs from and to")
+	}
 	var from []pathStep
 	if e.From != "" {
 		var err error
@@ -276,7 +292,7 @@ func (p *Plan) add(e MapEntry) error {
 	if at.declared {
 		return fmt.Errorf("to %s: an earlier entry maps it", at.path)
 	}
-	at.declared = true
+	at.declared, at.order = true, e.Order
 	if e.From != "" {
 		at.from, at.fromPath, at.hasFrom = from, stepsPath(from), true
 	}
@@ -325,6 +341,19 @@ func (p *Plan) check(t *target, ctx []pathStep, ctxShape *Shape) error {
 	}
 	if t.item {
 		ctx, ctxShape = t.from, t.shapes[len(t.shapes)-1]
+	}
+	if t.order == "document" {
+		if !t.hasFrom || len(t.fields) == 0 || !objectOnly(p.shape.Find(t.fromPath)) {
+			return fmt.Errorf("to %s: document order needs an object source and mapped fields", t.path)
+		}
+		t.sourceFields = make(map[string][]*target, len(t.fields))
+		for _, f := range t.fields {
+			if !f.hasFrom || len(f.from) != len(t.from)+1 || !slices.Equal(f.from[:len(t.from)], t.from) || f.from[len(t.from)].kind != 'k' {
+				return fmt.Errorf("to %s: document order fields must come directly from %s", f.path, t.fromPath)
+			}
+			key := f.from[len(t.from)].key
+			t.sourceFields[key] = append(t.sourceFields[key], f)
+		}
 	}
 	for _, f := range t.fields {
 		if err := p.check(f, ctx, ctxShape); err != nil {
@@ -408,7 +437,18 @@ func (p *Plan) value(t *target, ctx *Node) (*Node, bool) {
 		return out, true
 	case len(t.fields) > 0:
 		out := &Node{Kind: KObject}
-		for _, f := range t.fields {
+		fields := t.fields
+		if t.order == "document" {
+			source := ctx
+			if !t.item {
+				source = found[0]
+			}
+			fields = make([]*target, 0, len(fields))
+			for _, c := range source.Children {
+				fields = append(fields, t.sourceFields[c.Key]...)
+			}
+		}
+		for _, f := range fields {
 			if v, ok := p.value(f, ctx); ok {
 				out.Children = append(out.Children, rekey(v, f.key))
 			}
@@ -522,7 +562,19 @@ func (p *Plan) jqValue(t *target) string {
 			pieces = append(pieces, "(if "+cond+" then {"+kv+"} else {} end)")
 		}
 		flush()
-		return strings.Join(pieces, " + ")
+		expr := strings.Join(pieces, " + ")
+		if t.order == "document" {
+			source := "."
+			if !t.item {
+				source = jqPath(t.rel)
+			}
+			var keys []string
+			for _, f := range t.fields {
+				keys = append(keys, quote(f.key)+": "+quote(f.from[len(t.from)].key))
+			}
+			expr = "(" + source + " | keys_unsorted) as $__order | (" + expr + ") | to_entries | sort_by(.key as $__key | ({" + strings.Join(keys, ", ") + "}[$__key]) as $__source | ($__order | index($__source))) | from_entries"
+		}
+		return expr
 	case t.item:
 		return "."
 	case t.hasFrom:
@@ -759,6 +811,9 @@ func formatEntry(e MapEntry, str func(string) string) string {
 		to = str(*e.To)
 	}
 	fields = append(fields, `"to": `+to)
+	if e.Order != "" {
+		fields = append(fields, `"order": `+str(e.Order))
+	}
 	return "{" + strings.Join(fields, ", ") + "}"
 }
 

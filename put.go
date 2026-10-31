@@ -45,12 +45,13 @@ const nodesShape = "o-json.nodes"
 // clipNode is one restructure node in a register: its tree fields and its
 // meta. A block's root has no parent.
 type clipNode struct {
-	ID     string `json:"id"`
-	Parent string `json:"parent,omitempty"`
-	Label  string `json:"label"`
-	From   string `json:"from,omitempty"`
-	Item   bool   `json:"item,omitempty"`
-	Built  string `json:"built,omitempty"`
+	ID     string   `json:"id"`
+	Parent string   `json:"parent,omitempty"`
+	Label  string   `json:"label"`
+	From   string   `json:"from,omitempty"`
+	Item   bool     `json:"item,omitempty"`
+	Built  string   `json:"built,omitempty"`
+	Order  []string `json:"order,omitempty"`
 }
 
 type clip struct {
@@ -76,7 +77,7 @@ func clipOf(e edit, ids []string) (string, int) {
 		i, end := e.span(n.ID)
 		for _, m := range e.nodes[i:end] {
 			md := e.meta[m.ID]
-			cn := clipNode{ID: m.ID, Parent: m.Parent, Label: m.Label, From: md.from, Item: md.item, Built: md.built}
+			cn := clipNode{ID: m.ID, Parent: m.Parent, Label: m.Label, From: md.from, Item: md.item, Built: md.built, Order: md.order}
 			if m.ID == n.ID {
 				cn.Parent = ""
 			}
@@ -210,7 +211,7 @@ func (a *App) put(e edit, parent string, pos int, blocks [][]clipNode) (edit, st
 					first = tn.ID
 				}
 			}
-			e.meta[tn.ID] = nodeMeta{from: n.From, item: n.Item, built: n.Built}
+			e.meta[tn.ID] = nodeMeta{from: n.From, item: n.Item, built: n.Built, order: n.Order}
 			add = append(add, tn)
 		}
 		e.nodes = slices.Insert(e.nodes, pos, add...)

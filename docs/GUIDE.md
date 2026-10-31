@@ -10,7 +10,7 @@ The viewer never writes the file you opened. A write always goes to a new file u
 2. [Read the shape](#2-read-the-shape)
 3. [An array as a table](#3-an-array-as-a-table)
 4. [Drill into a row](#4-drill-into-a-row)
-5. [Edit values](#5-edit-values)
+5. [Edit a config file without wrecking it](#5-edit-a-config-file-without-wrecking-it)
 6. [Restructure the shape](#6-restructure-the-shape)
 7. [Query with jq](#7-query-with-jq)
 8. [Export and write](#8-export-and-write)
@@ -95,9 +95,9 @@ To read a wide object one field per line, run `: settings set object.view fields
 
 Details: "Detail" in [The viewer](../README.md#the-viewer).
 
-## 5. Edit values
+## 5. Edit a config file without wrecking it
 
-You can fix a value without leaving the viewer. Each edit is one step you can undo, and nothing is written until you ask.
+You can fix a value without leaving the viewer. Each edit is one step you can undo, and nothing is written until you ask. The edited copy keeps object keys in source order, even when records in an array put the same keys in different orders. Editing a version or dependency in a config file changes that value without sorting the rest of the file. Writes re-indent the JSON; `structure.order=frequency` restores the former shared frequency order on the next document.
 
 Value edits work in the data panel of the edited view, which is the default. (After `T`, in the original, the data is read-only.)
 

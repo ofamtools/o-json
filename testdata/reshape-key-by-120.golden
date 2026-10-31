@@ -9,13 +9,13 @@
   ┃ ├─   title         string  .title          ┃ │                                                                   │  
   ┃ └─ ▾ people        object  .people         ┃ │                                                                   │  
   ┃    ├─ ▾ p1         object  .people.p1      ┃ │                                                                   │  
-  ┃    │  ├─   name    string  .people.p1.name ┃ │                                                                   │  
   ┃    │  ├─   id      string  .people.p1.id   ┃ │                                                                   │  
-  ┃    │  ├─ ▾ tags    array   .people.p1.tags ┃ │                                                                   │  
-  ┃    │  │  └─   []   string  .people.p1.tag… ┃ │                                                                   │  
-  ┃    │  └─ ▾ addre…  object  .people.p1.add… ┃ │                                                                   │  
-  ┃    │     ├─   ci…  string  .people.p1.add… ┃ │                                                                   │  
-  ┃    │     └─   zip  string  .people.p1.add… ┃ │                                                                   │  
+  ┃    │  ├─   name    string  .people.p1.name ┃ │                                                                   │  
+  ┃    │  ├─ ▾ addre…  object  .people.p1.add… ┃ │                                                                   │  
+  ┃    │  │  ├─   ci…  string  .people.p1.add… ┃ │                                                                   │  
+  ┃    │  │  └─   zip  string  .people.p1.add… ┃ │                                                                   │  
+  ┃    │  └─ ▾ tags    array   .people.p1.tags ┃ │                                                                   │  
+  ┃    │     └─   []   string  .people.p1.tag… ┃ │                                                                   │  
   ┃    ├─ ▾ p2         object  .people.p2      ┃ │                                                                   │  
   ┃ 1–12 / 25                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  

@@ -15,11 +15,9 @@
     "j",
     "j",
     "j",
+    "j",
     "m",
     "space",
-    "j",
-    "j",
-    "j",
     "j",
     "j",
     "space",
@@ -27,7 +25,7 @@
   ],
   "expect": [
     {
-      "after": 12,
+      "after": 10,
       "contains": [
         "2 marked"
       ]

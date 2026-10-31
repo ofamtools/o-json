@@ -1,0 +1,33 @@
+{
+  "name": "o-json: the identity keeps each item's object key order",
+  "area": "inplace",
+  "width": 110,
+  "height": 36,
+  "fixture": "viewer",
+  "seed": {
+    "doc": "key-order.json"
+  },
+  "script": [
+    "tab",
+    "tab",
+    "tab"
+  ],
+  "expect": [
+    {
+      "contains": [
+        "JSON .",
+        "Structure \u00b7 unchanged"
+      ],
+      "order": [
+        "\"z\": 1,",
+        "\"optional\": true,",
+        "\"a\": {",
+        "\"a\": 4,",
+        "\"z\": 5"
+      ],
+      "lacks": [
+        "Error"
+      ]
+    }
+  ]
+}

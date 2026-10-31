@@ -12,7 +12,7 @@ import (
 )
 
 // sameJSON reports two JSON texts holding the same value (key order
-// aside: the copy writes keys in the shape's order).
+// aside: some tests deliberately compare values after a structure reorder).
 func sameJSON(t *testing.T, got, want string) bool {
 	t.Helper()
 	var g, w any

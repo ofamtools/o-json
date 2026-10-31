@@ -9,13 +9,13 @@
   ┃   ├─   title        string   .title        ┃ │                                                                   │  
   ┃   └─ ▾ people       array    .people       ┃ │                                                                   │  
   ┃      └─ ▾ []        object   .people[]     ┃ │                                                                   │  
-  ┃ *       ├─   name   string   .people[].na… ┃ │                                                                   │  
   ┃         ├─   id     string?  .people[].id  ┃ │                                                                   │  
-  ┃         ├─ ▾ tags   array    .people[].ta… ┃ │                                                                   │  
-  ┃         │  └─   []  string   .people[].ta… ┃ │                                                                   │  
-  ┃         └─ ▾ addr…  object   .people[].ad… ┃ │                                                                   │  
-  ┃ *          ├─   c…  string   .people[].ad… ┃ │                                                                   │  
-  ┃            └─   z…  string?  .people[].ad… ┃ │                                                                   │  
+  ┃ *       ├─   name   string   .people[].na… ┃ │                                                                   │  
+  ┃         ├─ ▾ addr…  object   .people[].ad… ┃ │                                                                   │  
+  ┃ *       │  ├─   c…  string   .people[].ad… ┃ │                                                                   │  
+  ┃         │  └─   z…  string?  .people[].ad… ┃ │                                                                   │  
+  ┃         └─ ▾ tags   array    .people[].ta… ┃ │                                                                   │  
+  ┃            └─   []  string   .people[].ta… ┃ │                                                                   │  
   ┃                                            ┃ │                                                                   │  
   ┃                                            ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  

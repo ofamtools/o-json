@@ -228,7 +228,7 @@ func TestValuesAndEntriesReverseKeyBy(t *testing.T) {
 	keyed := output(t, a)
 	a.onNode(t, ".people")
 	press(t, a, "g", "v")
-	if got := agreesWith(t, a, reshapeFile); !strings.HasPrefix(got, `{"title":"people","people":[{"name":"Ann","id":"p1"`) || strings.Count(got, `"name"`) != 4 {
+	if got := agreesWith(t, a, reshapeFile); !strings.HasPrefix(got, `{"title":"people","people":[{"id":"p1","name":"Ann"`) || strings.Count(got, `"name"`) != 4 {
 		t.Fatalf("values %s", got)
 	}
 	if m := a.Mapping(); len(m.Then) != 2 || m.Then[1].Op != opValues {
@@ -241,7 +241,7 @@ func TestValuesAndEntriesReverseKeyBy(t *testing.T) {
 	a.onNode(t, ".people")
 	press(t, a, "g", "e")
 	got := agreesWith(t, a, reshapeFile)
-	if !strings.Contains(got, `[{"key":"Ann","value":{"name":"Ann","id":"p1"`) {
+	if !strings.Contains(got, `[{"key":"Ann","value":{"id":"p1","name":"Ann"`) {
 		t.Fatalf("entries %s", got)
 	}
 }
@@ -394,7 +394,7 @@ func TestFlattenWithoutMarksKeepsMeaning(t *testing.T) {
 	for name, keys := range map[string][]string{
 		"shape-gated": nil,
 		"edit-node":   {"i"},
-		"visual":      {"v", "j"},
+		"visual":      {"v", "k"},
 		"split-node":  {"ctrl+w", "v", "ctrl+a", "o"},
 		"jq-idle":     {"m"},
 		"original":    {"T"},
@@ -419,7 +419,7 @@ func TestFlattenWithoutMarksKeepsMeaning(t *testing.T) {
 			default:
 				want := []string{".people[].name"}
 				if name == "visual" {
-					want = append(want, ".people[].id")
+					want = []string{".people[].id", ".people[].name"}
 				}
 				if got := a.Mapping().Then; len(got) != 1 || strings.Join(got[0].Paths, " ") != strings.Join(want, " ") {
 					t.Fatalf("flatten targets: %+v", got)

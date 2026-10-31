@@ -1,0 +1,23 @@
+{
+  "name": "o-json: structure.order is filed on the Viewer settings page",
+  "area": "settings",
+  "width": 120,
+  "height": 32,
+  "fixture": "viewer",
+  "script": [
+    ":",
+    {
+      "type": "settings edit"
+    },
+    "enter"
+  ],
+  "expect": [
+    {
+      "page": "__settings",
+      "contains": [
+        "structure.order",
+        "document"
+      ]
+    }
+  ]
+}

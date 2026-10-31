@@ -15,10 +15,8 @@
     "j",
     "j",
     "j",
+    "j",
     "space",
-    "j",
-    "j",
-    "j",
     "j",
     "j",
     "space",
@@ -30,7 +28,7 @@
   ],
   "expect": [
     {
-      "after": 11,
+      "after": 9,
       "contains": [
         "F flatten"
       ]

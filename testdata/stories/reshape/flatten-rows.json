@@ -6,7 +6,7 @@
   "fixture": "viewer",
   "seed": {"doc": "reshape.json"},
   "values": {"flatten.arrays": "rows"},
-  "script": ["j", "j", "j", "j", "space", "j", "j", "space", "F"],
+  "script": ["j", "j", "j", "j", "j", "space", "j", "j", "j", "j", "space", "F"],
   "expect": [
     {"contains": ["arrays rows", "Ann", "Bo"]}
   ]

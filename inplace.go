@@ -36,14 +36,18 @@ import (
 // selection and the edits made in the viewer.
 
 const (
-	settingEditable    = "structure.editable"
-	settingUndoAtStart = "undo.at-start"
+	settingEditable       = "structure.editable"
+	settingStructureOrder = "structure.order"
+	settingUndoAtStart    = "undo.at-start"
 )
 
 func declareEditSettings(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingEditable, Type: ochazuke.SettingBoolean, Default: true,
 		Description: "The viewer's structure pane is the restructure editor, a copy of the document's shape (T shows the original); off keeps the viewer read-only and the restructure page (M) alone edits. Takes effect on the next document",
+	}, ochazuke.Setting{
+		Name: settingStructureOrder, Type: ochazuke.SettingString, Default: "document", Enum: []string{"document", "frequency"},
+		Description: "The starting edited structure: document keeps first appearance and each object's own key order; frequency puts common fields first and writes in that shared order. Takes effect on the next document",
 	}, ochazuke.Setting{
 		Name: settingUndoAtStart, Type: ochazuke.SettingString, Default: "info", Enum: []string{"info", "silent"},
 		Description: "u at the copy a document starts with (the oldest change; nothing is undone): info says \"already at oldest change\" in the plain tone, silent says nothing",
@@ -84,7 +88,7 @@ func (a *App) identityOf(root *Shape) edit {
 		e.meta[rsRootID] = nodeMeta{from: "."}
 		return e
 	}
-	for _, c := range root.Children {
+	for _, c := range a.copyChildren(root) {
 		a.copyShape(&e, c, rsRootID)
 	}
 	return e
@@ -107,12 +111,29 @@ func copyExpands(s *Shape) bool {
 func (a *App) copyShape(e *edit, s *Shape, parent string) {
 	id := a.newNodeID()
 	e.nodes = append(e.nodes, ochazuke.TreeNode{ID: id, Parent: parent, Label: s.Key, Noun: "node"})
-	e.meta[id] = nodeMeta{from: s.Path, item: s.Key == "[]"}
+	md := nodeMeta{from: s.Path, item: s.Key == "[]"}
+	children := a.copyChildren(s)
+	if a.r.Settings().String(settingStructureOrder) == "document" && objectOnly(s) && s.Count > 1 && copyExpands(s) {
+		for _, c := range children {
+			md.order = append(md.order, c.Path)
+		}
+	}
+	e.meta[id] = md
 	if copyExpands(s) {
-		for _, c := range s.Children {
+		for _, c := range children {
 			a.copyShape(e, c, id)
 		}
 	}
+}
+
+// copyChildren orders only the edited structure; inference and table columns
+// retain their frequency order. Shape.first records document first appearance.
+func (a *App) copyChildren(s *Shape) []*Shape {
+	children := slices.Clone(s.Children)
+	if a.r.Settings().String(settingStructureOrder) == "document" {
+		slices.SortStableFunc(children, func(a, b *Shape) int { return a.first - b.first })
+	}
+	return children
 }
 
 // startState makes the restructure state the one a new document starts

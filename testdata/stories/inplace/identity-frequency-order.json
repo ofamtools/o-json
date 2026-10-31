@@ -1,0 +1,36 @@
+{
+  "name": "o-json: structure.order frequency restores the shared field order",
+  "area": "inplace",
+  "width": 110,
+  "height": 36,
+  "fixture": "viewer",
+  "seed": {
+    "doc": "key-order.json"
+  },
+  "script": [
+    "tab",
+    "tab",
+    "tab"
+  ],
+  "expect": [
+    {
+      "contains": [
+        "JSON ."
+      ],
+      "order": [
+        "\"z\": 1,",
+        "\"a\": {",
+        "\"optional\": true",
+        "\"z\": 6,",
+        "\"z\": 5,",
+        "\"a\": 4"
+      ],
+      "lacks": [
+        "Error"
+      ]
+    }
+  ],
+  "values": {
+    "structure.order": "frequency"
+  }
+}

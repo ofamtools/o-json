@@ -75,6 +75,9 @@ type nodeMeta struct {
 	from  string
 	item  bool
 	built string
+	// order is the starting object's source paths in first-appearance order.
+	// Immutable: undo snapshots may share it.
+	order []string
 }
 
 type restructureState struct {
@@ -259,9 +262,38 @@ func mappingOf(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) *Mapping {
 			continue
 		}
 		to := paths[n.ID]
-		m.Map = append(m.Map, MapEntry{From: from, To: &to})
+		entry := MapEntry{From: from, To: &to}
+		if from != "" && keepsDocumentOrder(n.ID, nodes, meta) {
+			entry.Order = "document"
+		}
+		m.Map = append(m.Map, entry)
 	}
 	return m
+}
+
+// keepsDocumentOrder allows a rename or deletion, but a move, new wrapper
+// or copied field makes this object follow the explicitly edited tree order.
+func keepsDocumentOrder(id string, nodes []ochazuke.TreeNode, meta map[string]nodeMeta) bool {
+	order := meta[id].order
+	if len(order) == 0 {
+		return false
+	}
+	rank := make(map[string]int, len(order))
+	for i, path := range order {
+		rank[path] = i
+	}
+	prev, count := -1, 0
+	for _, child := range nodes {
+		if child.Parent != id {
+			continue
+		}
+		at, ok := rank[meta[child.ID].from]
+		if !ok || at <= prev {
+			return false
+		}
+		prev, count = at, count+1
+	}
+	return count > 0
 }
 
 // markBuilt records, on every node that has children, the kind it is
