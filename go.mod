@@ -8,9 +8,9 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/itchyny/gojq v0.12.19
-	ofam.dev/monogatari v0.3.0
-	ofam.dev/ochazuke v0.66.0
-	ofam.dev/oden v0.1.1
+	ofam.dev/monogatari v0.4.0
+	ofam.dev/ochazuke v0.76.0
+	ofam.dev/oden v0.2.0
 )
 
 require (
@@ -37,6 +37,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.30 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
+	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tailscale/hujson v0.0.0-20260727124030-b80ff77dac4f // indirect
 	github.com/xo/terminfo v1.0.0 // indirect
