@@ -1,0 +1,32 @@
+{
+  "area": "reshape",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "reshape.json"
+  },
+  "width": 120,
+  "height": 30,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "name": "o-json: flatten unmarked visual",
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "v",
+    "j",
+    "F"
+  ],
+  "expect": {
+    "contains": [
+      "flatten 2 field(s)",
+      "name",
+      "id"
+    ],
+    "lacks": [
+      "zip"
+    ]
+  }
+}

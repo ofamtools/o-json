@@ -1,0 +1,44 @@
+{
+  "area": "reshape",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "reshape.json"
+  },
+  "width": 140,
+  "height": 30,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "name": "o-json: mark fields directly in JQ and flatten them",
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "m",
+    "space",
+    "j",
+    "j",
+    "j",
+    "j",
+    "j",
+    "space",
+    "F"
+  ],
+  "expect": [
+    {
+      "after": 12,
+      "contains": [
+        "2 marked"
+      ]
+    },
+    {
+      "contains": [
+        "flatten 2 field(s)"
+      ],
+      "lacks": [
+        "zip"
+      ]
+    }
+  ]
+}

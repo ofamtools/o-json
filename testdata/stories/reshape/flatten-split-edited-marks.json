@@ -1,0 +1,38 @@
+{
+  "area": "reshape",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "reshape.json"
+  },
+  "width": 120,
+  "height": 30,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "name": "o-json: flatten split edited marks",
+  "script": [
+    "ctrl+w",
+    "v",
+    "ctrl+a",
+    "o",
+    "j",
+    "j",
+    "j",
+    "j",
+    "space",
+    "j",
+    "j",
+    "j",
+    "j",
+    "j",
+    "space",
+    "F"
+  ],
+  "expect": {
+    "contains": [
+      "flatten 2 field(s)",
+      "city",
+      "Oslo"
+    ]
+  }
+}

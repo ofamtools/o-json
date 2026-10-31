@@ -1,0 +1,39 @@
+{
+  "area": "reshape",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "reshape.json"
+  },
+  "width": 120,
+  "height": 30,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "name": "o-json: flatten source marks from VISUAL",
+  "script": [
+    "ctrl+w",
+    "v",
+    "j",
+    "j",
+    "j",
+    "j",
+    "space",
+    "j",
+    "j",
+    "j",
+    "j",
+    "j",
+    "space",
+    "v",
+    "F"
+  ],
+  "expect": {
+    "contains": [
+      "Table .",
+      "Oslo",
+      "city"
+    ],
+    "focus": "r:root",
+    "page": "restructure"
+  }
+}

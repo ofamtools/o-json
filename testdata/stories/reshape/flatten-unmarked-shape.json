@@ -1,0 +1,29 @@
+{
+  "area": "reshape",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "reshape.json"
+  },
+  "width": 120,
+  "height": 30,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "name": "o-json: flatten unmarked shape",
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "F"
+  ],
+  "expect": {
+    "contains": [
+      "press i first",
+      "zip"
+    ],
+    "lacks": [
+      "flatten 1 field(s)"
+    ]
+  }
+}

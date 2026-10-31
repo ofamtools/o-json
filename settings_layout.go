@@ -44,6 +44,7 @@ var settingSections = []settingSection{
 		{"", []string{settingLayout, settingPreview, settingNewKey, settingVisualPut, settingVisualWrap, settingVisualEdge, settingRepeatScope}},
 	}},
 	{ochazuke.SettingSection{ID: "reshape", Title: "Reshape", Description: "The reshape steps: flatten, key by and the marks they act on"}, []settingGroup{
+		{"Result", []string{settingReshapeFocus}},
 		{"Flatten", []string{settingFlattenArrays, settingFlattenJoin, settingFlattenNames}},
 		{"Key by", []string{settingKeyByKeep, settingKeyByDup, settingKeyByMissing}},
 		{"Marks", []string{settingMarksCount}},

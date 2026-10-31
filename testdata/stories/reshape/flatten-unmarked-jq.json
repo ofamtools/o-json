@@ -1,0 +1,31 @@
+{
+  "area": "reshape",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "reshape.json"
+  },
+  "width": 120,
+  "height": 30,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "name": "o-json: flatten unmarked jq",
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "m",
+    "F"
+  ],
+  "expect": {
+    "mode": "jq",
+    "contains": [
+      "unchanged",
+      "zip"
+    ],
+    "lacks": [
+      "flatten 1 field(s)"
+    ]
+  }
+}
