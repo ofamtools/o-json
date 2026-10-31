@@ -355,6 +355,14 @@ The viewer holds one document, like a vim buffer.
 
 No function keys are bound.
 
+### Yanking keys and objects
+
+In the data pane's TABLE, NESTED and EDIT modes, `y k` copies only the focused key, `y p` its concrete path, and `y y` the focused value. On table item rows, `Y` copies the whole row as JSON. These existing keys and their default behavior are unchanged. JSON value yanks keep their type for put; `"a` selects register a, and `g y` keeps the framework's yank history.
+
+The existing `item.operate` and `field.operate` verbs also accept `format` when `op` is `y`. Omit it, or use `json`, for the existing typed value. Choose `csv`, `tsv`, `jsonl` or `md` for plain export text in the registers and clipboard. For example, with the cursor on a table cell, enter `:item operate --op y --object object --format md` to copy the enclosing object as a Markdown table. One object's fields become columns of one row. Nested objects become dotted columns, and arrays and null follow `export.arrays`, `export.join` and `export.null`, just as file exports do.
+
+Use `object row` for the current row, `object table` for the table's array, or `motion down --steps 1` for the current row and the next. Add `--register a` for a named register. Key-only and path operands remain plain text regardless of `format`; no document file is written. The structure's existing operate verbs share the format choice for their value operands. JSON and FLAT line-yank actions retain their existing behavior.
+
 ### Settings
 
 Every setting o-json declares (`: settings`, or `settings.json`), the default first. The Settings page (`: settings edit`) files them under an o-json tab, beside ochazuke's, in the sections Viewer, Data, jq, Restructure, Reshape and Export (`settingSections` in `settings_layout.go`). A choice between ways of doing one thing is a setting with every way built.

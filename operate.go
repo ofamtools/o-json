@@ -368,6 +368,22 @@ func (a *App) operateYank(c ochazuke.Ctx, object string, o operand) ochazuke.Res
 			n = obj
 		}
 	}
+	format := ochazuke.StringArg(c.Args, "format", "json")
+	if format != "json" {
+		f, err := formatNamed(format)
+		if err != nil {
+			return ochazuke.Failed(err)
+		}
+		rows := n
+		if n.Kind != KArray {
+			rows = &Node{Kind: KArray, Children: []*Node{n}}
+		}
+		data, err := exportBytes(rows, f, a.exportOptions(".", nil))
+		if err != nil {
+			return ochazuke.Failed(err)
+		}
+		return a.copyText(c, string(data), o.what+" as "+f.name)
+	}
 	return a.copyYank(c, valueYank(n), o.what)
 }
 
@@ -612,6 +628,7 @@ func (a *App) registerOperate() {
 		"reverse":  {Type: "boolean", Description: "s: descending"},
 		"again":    {Type: "boolean", Description: "s on the sorted column reverses it (the default); false sorts ascending again"},
 		"register": {Type: "string", Description: "y: the register"},
+		"format":   {Type: "string", Enum: append([]string{"json"}, exportFormatNames()...), Description: "y: json keeps the value and its type (default); csv, tsv, jsonl or md export the selected objects as rows using export.arrays, export.join and export.null; key and path yanks remain plain text"},
 	}
 	keys := []string{"item.operate", "field.operate", "node.operate", "shape.operate"}
 	for _, k := range keys {

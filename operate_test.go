@@ -1,8 +1,12 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"ofam.dev/ochazuke"
 )
 
 func yanked(t *testing.T, a *App, register string) string {
@@ -217,5 +221,82 @@ func TestSortAliases(t *testing.T) {
 	press(t, a, "enter")
 	if a.sort == nil || a.sort.reverse {
 		t.Fatalf(":sort: %+v (%q)", a.sort, a.m.Status)
+	}
+}
+
+func TestYankObjectsAsExportFormats(t *testing.T) {
+	source := `{"rows":[{"name":"Ada","tags":["red","blue"],"owner":{"city":"Oslo"},"nil":null},{"name":"Bea","tags":[],"owner":{"city":"Rome"},"nil":null}]}`
+	path := filepath.Join(t.TempDir(), "objects.json")
+	if err := os.WriteFile(path, []byte(source), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	a := open(t, path, 110, 30)
+	selectPath(t, a, ".rows")
+	press(t, a, "ctrl+w", "l", "l") // first row's name
+	press(t, a, "y", "k")
+	if got := yanked(t, a, ""); got != "name" {
+		t.Fatalf("key-only yank: %q", got)
+	}
+	press(t, a, "y", "y")
+	if got := yanked(t, a, ""); got != "Ada" {
+		t.Fatalf("value yank: %q", got)
+	}
+	press(t, a, "Y")
+	y, err := a.r.ReadYank("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := Compact(mustBuild(t, y.Text), 0); got != `{"name":"Ada","tags":["red","blue"],"owner":{"city":"Oslo"},"nil":null}` || y.Shape != valueShape+":object" {
+		t.Fatalf("whole-object JSON: %q, shape %q", got, y.Shape)
+	}
+	for object, want := range map[string]string{"key": "name", "path": ".rows[0].name"} {
+		if _, err := a.r.Execute(ochazuke.Request{Noun: "item", Verb: "operate", Args: ochazuke.Arguments{"op": "y", "object": object, "format": "csv"}}); err != nil {
+			t.Fatal(err)
+		}
+		if got := yanked(t, a, ""); got != want {
+			t.Fatalf("format changed %s yank: %q, want %q", object, got, want)
+		}
+	}
+	for setting, value := range map[string]string{settingExportJoin: "/", settingExportNull: nullNull} {
+		if err := a.r.Settings().Set(setting, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for format, want := range map[string]string{
+		"csv":   "name,tags,owner.city,nil\nAda,red/blue,Oslo,null\n",
+		"tsv":   "name\ttags\towner.city\tnil\nAda\tred/blue\tOslo\tnull\n",
+		"md":    "| name | tags | owner.city | nil |\n| --- | --- | --- | --- |\n| Ada | red/blue | Oslo | null |\n",
+		"jsonl": "{\"name\":\"Ada\",\"tags\":[\"red\",\"blue\"],\"owner\":{\"city\":\"Oslo\"},\"nil\":null}\n",
+	} {
+		t.Run(format, func(t *testing.T) {
+			_, err := a.r.Execute(ochazuke.Request{Noun: "item", Verb: "operate", Args: ochazuke.Arguments{"op": "y", "object": "object", "format": format, "register": "a"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			y, err := a.r.ReadYank("a")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if y.Text != want || y.Shape != "" {
+				t.Fatalf("export yank %s: %q, shape %q; want %q", format, y.Text, y.Shape, want)
+			}
+		})
+	}
+	_, err = a.r.Execute(ochazuke.Request{Noun: "item", Verb: "operate", Args: ochazuke.Arguments{"op": "y", "motion": "down", "steps": 1, "format": "csv"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := yanked(t, a, ""), "name,tags,owner.city,nil\nAda,red/blue,Oslo,null\nBea,,Rome,null\n"; got != want {
+		t.Fatalf("selected rows: %q, want %q", got, want)
+	}
+	before := yanked(t, a, "")
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "item", Verb: "operate", Args: ochazuke.Arguments{"op": "y", "object": "row", "format": "nope"}}); err == nil {
+		t.Fatal("unknown format accepted")
+	}
+	if got := yanked(t, a, ""); got != before {
+		t.Fatalf("invalid format replaced the register: %q", got)
+	}
+	if data, err := os.ReadFile(path); err != nil || string(data) != source {
+		t.Fatalf("yank changed source: %q, %v", data, err)
 	}
 }
