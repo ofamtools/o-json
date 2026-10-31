@@ -2,7 +2,7 @@
  |   › flat-nested.json  Restructure
  |  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  |  flat-nested.json  ·  . (object ×1)
- |  ╭─ Structure · unchanged ──────────────────╮ ╭━ Flat . ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+ |  ╭─ Structure · unchanged ──────────────────╮ ╭━ Flat .  ·  table fields [flat] json mapping ━━━━━━━━━━━━━━━━━━━━━━━╮
 R|  │ substr / to search                       │ ┃ .bindings[0].keys[0] = "k0"                                         ┃
  |  │ key           type    from               │ ┃ .bindings[0].verb = "v0"                                            ┃
 r|  │ ▾ . (root)    object                     │ ┃ .bindings[1].keys[0] = "k0"                                         ┃
@@ -36,5 +36,5 @@ r|  │ ▾ . (root)    object                     │ ┃ .bindings[1].keys[0] 
  |  │                                          │ ┃ .bindings[6].keys[3] = "k3"                                         ┃
  |  ╰──────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
  |  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
- |  ctrl+w o only data · y y/p/v line/path/value · enter go to path · D views · y line.yank · v select rows · u/ctrl+r …
+ |  ctrl+w o only data · y y/p/v line/path/value · enter go to path · tab/D views · y line.yank · v select rows · u/ctr…
  |
