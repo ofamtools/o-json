@@ -4,13 +4,13 @@
  |  flat-nested.json  ·  . (object ×1)
  |  ╭─ Structure · unchanged ──────────────────╮ ╭━ Flat .  ·  table fields [flat] json mapping ━━━━━━━━━━━━━━━━━━━━━━━╮
 R|  │ substr / to search                       │ ┃ .bindings[0].keys[0] = "k0"                                         ┃
- |  │ key           type    from               │ ┃ .bindings[0].verb = "v0"                                            ┃
-r|  │ ▾ . (root)    object                     │ ┃ .bindings[1].keys[0] = "k0"                                         ┃
- |  │   ▾ bindings  array   .bindings          │ ┃ .bindings[1].keys[1] = "k1"                                         ┃
- |  │     ▾ []      object  .bindings[]        │ ┃ .bindings[1].verb = "v1"                                            ┃
- |  │       ▾ keys  array   .bindings[].keys   │ ┃ .bindings[2].keys[0] = "k0"                                         ┃
- |  │           []  string  .bindings[].keys[] │ ┃ .bindings[2].keys[1] = "k1"                                         ┃
- |  │         verb  string  .bindings[].verb   │ ┃ .bindings[2].keys[2] = "k2"                                         ┃
+ |  │ key               type    from           │ ┃ .bindings[0].verb = "v0"                                            ┃
+r|  │ ▾ . (root)        object                 │ ┃ .bindings[1].keys[0] = "k0"                                         ┃
+ |  │ └─ ▾ bindings     array   .bindings      │ ┃ .bindings[1].keys[1] = "k1"                                         ┃
+ |  │    └─ ▾ []        object  .bindings[]    │ ┃ .bindings[1].verb = "v1"                                            ┃
+ |  │       ├─ ▾ keys   array   .bindings[].k… │ ┃ .bindings[2].keys[0] = "k0"                                         ┃
+ |  │       │  └─   []  string  .bindings[].k… │ ┃ .bindings[2].keys[1] = "k1"                                         ┃
+ |  │       └─   verb   string  .bindings[].v… │ ┃ .bindings[2].keys[2] = "k2"                                         ┃
  |  │                                          │ ┃ .bindings[2].verb = "v2"                                            ┃
  |  │                                          │ ┃ .bindings[3].keys[0] = "k0"                                         ┃
  |  │                                          │ ┃ .bindings[3].keys[1] = "k1"                                         ┃

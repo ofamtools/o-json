@@ -1,0 +1,21 @@
+{
+  "name": "o-json: tree-guides",
+  "area": "follow",
+  "width": 120,
+  "height": 30,
+  "fixture": "viewer",
+  "seed": {
+    "doc": "sample.json"
+  },
+  "values": {},
+  "expect": [
+    {
+      "contains": [
+        "Structure",
+        "\u251c\u2500",
+        "\u2514\u2500",
+        "\u2502"
+      ]
+    }
+  ]
+}

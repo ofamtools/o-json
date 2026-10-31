@@ -22,7 +22,7 @@
       "after": 5,
       "contains": [
         "Object [\"new-key\"]",
-        "new-key  object"
+        "├─ ▾ new-key"
       ]
     },
     {

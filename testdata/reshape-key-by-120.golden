@@ -4,19 +4,19 @@
   testdata/reshape.json [+]  ·  .people (object 1/1)                                                                    
   ╭━ Structure · edited [+] ━━━━━━━━━━━━━━━━━━━╮ ╭─ Object .people  ·  [table] fields flat json mapping ─────────────╮  
   ┃ substr / to search                         ┃ │ p1   p2   p1-2  _missing                                          │  
-  ┃ key              type    from              ┃ │ {4}  {4}  {3}   [1]                                               │  
-  ┃ ▾ . (root)       object                    ┃ │                                                                   │  
-  ┃     title        string  .title            ┃ │                                                                   │  
-  ┃   ▾ people       object  .people           ┃ │                                                                   │  
-  ┃     ▾ p1         object  .people.p1        ┃ │                                                                   │  
-  ┃         name     string  .people.p1.name   ┃ │                                                                   │  
-  ┃         id       string  .people.p1.id     ┃ │                                                                   │  
-  ┃       ▾ tags     array   .people.p1.tags   ┃ │                                                                   │  
-  ┃           []     string  .people.p1.tags[] ┃ │                                                                   │  
-  ┃       ▾ address  object  .people.p1.addre… ┃ │                                                                   │  
-  ┃           city   string  .people.p1.addre… ┃ │                                                                   │  
-  ┃           zip    string  .people.p1.addre… ┃ │                                                                   │  
-  ┃     ▾ p2         object  .people.p2        ┃ │                                                                   │  
+  ┃ key                type    from            ┃ │ {4}  {4}  {3}   [1]                                               │  
+  ┃ ▾ . (root)         object                  ┃ │                                                                   │  
+  ┃ ├─   title         string  .title          ┃ │                                                                   │  
+  ┃ └─ ▾ people        object  .people         ┃ │                                                                   │  
+  ┃    ├─ ▾ p1         object  .people.p1      ┃ │                                                                   │  
+  ┃    │  ├─   name    string  .people.p1.name ┃ │                                                                   │  
+  ┃    │  ├─   id      string  .people.p1.id   ┃ │                                                                   │  
+  ┃    │  ├─ ▾ tags    array   .people.p1.tags ┃ │                                                                   │  
+  ┃    │  │  └─   []   string  .people.p1.tag… ┃ │                                                                   │  
+  ┃    │  └─ ▾ addre…  object  .people.p1.add… ┃ │                                                                   │  
+  ┃    │     ├─   ci…  string  .people.p1.add… ┃ │                                                                   │  
+  ┃    │     └─   zip  string  .people.p1.add… ┃ │                                                                   │  
+  ┃    ├─ ▾ p2         object  .people.p2      ┃ │                                                                   │  
   ┃ 1–12 / 25                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  

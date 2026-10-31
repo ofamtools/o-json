@@ -4,18 +4,18 @@
   testdata/reshape.json  ·  .people[].address.city (string 2/2)                                                         
   ╭━ Structure · 2 marked · unchanged ━━━━━━━━━╮ ╭─ Table .people[].address  1/2  ·  [table] flat json mapping ──────╮  
   ┃ substr / to search                         ┃ │ #  city  zip?                                                     │  
-  ┃   key              type     from           ┃ │ 0  Oslo  0150                                                     │  
-  ┃   ▾ . (root)       object                  ┃ │ 1  Rome                                                           │  
-  ┃       title        string   .title         ┃ │                                                                   │  
-  ┃     ▾ people       array    .people        ┃ │                                                                   │  
-  ┃       ▾ []         object   .people[]      ┃ │                                                                   │  
-  ┃ *         name     string   .people[].name ┃ │                                                                   │  
-  ┃           id       string?  .people[].id   ┃ │                                                                   │  
-  ┃         ▾ tags     array    .people[].tags ┃ │                                                                   │  
-  ┃             []     string   .people[].tag… ┃ │                                                                   │  
-  ┃         ▾ address  object   .people[].add… ┃ │                                                                   │  
-  ┃ *           city   string   .people[].add… ┃ │                                                                   │  
-  ┃             zip    string?  .people[].add… ┃ │                                                                   │  
+  ┃   key               type     from          ┃ │ 0  Oslo  0150                                                     │  
+  ┃   ▾ . (root)        object                 ┃ │ 1  Rome                                                           │  
+  ┃   ├─   title        string   .title        ┃ │                                                                   │  
+  ┃   └─ ▾ people       array    .people       ┃ │                                                                   │  
+  ┃      └─ ▾ []        object   .people[]     ┃ │                                                                   │  
+  ┃ *       ├─   name   string   .people[].na… ┃ │                                                                   │  
+  ┃         ├─   id     string?  .people[].id  ┃ │                                                                   │  
+  ┃         ├─ ▾ tags   array    .people[].ta… ┃ │                                                                   │  
+  ┃         │  └─   []  string   .people[].ta… ┃ │                                                                   │  
+  ┃         └─ ▾ addr…  object   .people[].ad… ┃ │                                                                   │  
+  ┃ *          ├─   c…  string   .people[].ad… ┃ │                                                                   │  
+  ┃            └─   z…  string?  .people[].ad… ┃ │                                                                   │  
   ┃                                            ┃ │                                                                   │  
   ┃                                            ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
