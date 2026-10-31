@@ -1,7 +1,7 @@
 {
   "values": {"modes.edit-gate": true},
   "name": "journey 01: read a minified API dump (open from recent, tree, table, flat, folded JSON, yank, zoom, quit)",
-  "width": 120,
+  "width": 150,
   "height": 30,
   "fixture": "empty",
   "seed": {"files": ["jobs/orders.min.json", "jobs/package.json"]},

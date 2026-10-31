@@ -78,8 +78,6 @@ type App struct {
 	// Stdin is what a "-" path reads.
 	Stdin interface{ Read([]byte) (int, error) }
 
-	treeWidth int // the structure tree's natural width
-
 	shown *Shape // the shape the data panel shows
 	lit   *Shape // the plain-value shape highlighted in it (follow.go), nil for none
 	// litPath is the path last highlighted (kept across a show of the
@@ -332,15 +330,12 @@ func (a *App) rebuild() error {
 	if a.Doc == nil {
 		return a.tree.SetNodes(nil)
 	}
-	nodes, width := shapeNodes(a.Doc.Shape, a.keep(), "", a.duplicateTone())
-	a.treeWidth = width
-	return a.tree.SetNodes(nodes)
+	return a.tree.SetNodes(shapeNodes(a.Doc.Shape, a.keep(), "", a.duplicateTone()))
 }
 
 // shapeNodes is a structure tree's nodes (ids prefix+"s:"+path, noun
-// shape, cells path, type, count) for the shapes keep holds (nil: all),
-// and the tree's natural width.
-func shapeNodes(root *Shape, keep map[*Shape]bool, prefix string, dup ochazuke.ToneSpan) ([]ochazuke.TreeNode, int) {
+// shape, cells path, type, count) for the shapes keep holds (nil: all).
+func shapeNodes(root *Shape, keep map[*Shape]bool, prefix string, dup ochazuke.ToneSpan) []ochazuke.TreeNode {
 	var nodes []ochazuke.TreeNode
 	var add func(s *Shape, parent string)
 	add = func(s *Shape, parent string) {
@@ -374,21 +369,7 @@ func shapeNodes(root *Shape, keep map[*Shape]bool, prefix string, dup ochazuke.T
 		}
 	}
 	add(root, "")
-	// The tree's natural width: indent and marker, then the three cells.
-	cols := [3]int{4, 4, 5}
-	for _, n := range nodes {
-		s, _ := n.Data.(*Shape)
-		depth := 0
-		if s != nil {
-			for p := s.parent; p != nil; p = p.parent {
-				depth++
-			}
-		}
-		cols[0] = max(cols[0], 2*depth+2+ansi.StringWidth(n.Cells[0]))
-		cols[1] = max(cols[1], len(n.Cells[1]))
-		cols[2] = max(cols[2], len(n.Cells[2]))
-	}
-	return nodes, cols[0] + cols[1] + cols[2] + 4
+	return nodes
 }
 
 // keep is the set of shapes the filters keep (matches and their

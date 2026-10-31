@@ -60,10 +60,11 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	} else {
 		// The tree takes its natural width (plus the panel's border and
 		// padding), between 24 cells and two fifths of the page.
-		natural := a.treeWidth
+		tree, cols := a.tree, [3]int{4, 4, 5}
 		if a.editedShown() {
-			natural = a.editedWidth()
+			tree, cols = a.rs.tree, [3]int{4, 4, 4}
 		}
+		natural := a.treeNaturalWidth(tree, cols)
 		lw = l.Divide(min(max(24, natural+4), width*2/5), width-1, ochazuke.PaneMinWidth)
 		lh, rw, rh = bh, width-lw-1, bh
 	}

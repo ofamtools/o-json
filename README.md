@@ -473,6 +473,16 @@ The tests cover structure inference on mixed and optional data, column order, a 
 
 `make story-build` builds `bin/o-json-story` (never installed over `o-json`), whose `story` command is monogatari's host over the same stories, embedded:
 
+The viewer uses ochazuke v0.66.0; the tester uses monogatari v0.3.0.
+Running `bin/o-json-story story` opens the split browser: the story list on
+the left and a live preview on the right. Enter plays in that pane, `p`
+toggles full size, and `q`/`esc` returns through the pane to the list.
+`index.preview=false` restores the single list. Playback starts with
+autoplay running; `space` pauses or resumes and `l`/`right` steps.
+The inspector strip defaults on (`play.inspector`, toggled with `alt+?`).
+`play.stop-after-action=true` pauses tutorial autoplay before each next
+action; its default is false.
+
 ```sh
 bin/o-json-story story run [AREA|NAME...]    # headless; non-zero exit on a failure
 bin/o-json-story story open edit/modal-edit-row   # live in the real chrome
@@ -483,10 +493,6 @@ bin/o-json-story story fixture list          # nest, viewer, empty
 `testdata/stories/journeys` walks each common JSON job from opening the file to quitting (its README lists them and how to watch them).
 
 It reads and writes no user config and no state but its own (recordings under `$XDG_DATA_HOME/o-json-story`, user stories under `$XDG_CONFIG_HOME/o-json-story/stories`); every session's document and state directory are temp dirs.
-
-## License
-
-MIT; see [LICENSE](LICENSE).
 
 ### HTML tutorial exports
 
@@ -500,3 +506,11 @@ untagged build does not link the exporter. Fixture directories use
 ordinary story tests keep independent random directories. The frame data,
 including action captions and expected states, is consumed by ofam.dev's
 unlisted tutorial pages.
+
+`make tutorials-export OUT=/tmp/o-json-tutorials` produces one checked JSON
+export per tutorial plus `index.json`. The tester also accepts
+`story export NAME|AREA --out DIR --format json` for a selected story or area.
+
+## License
+
+MIT; see [LICENSE](LICENSE).

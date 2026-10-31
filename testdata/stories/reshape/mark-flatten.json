@@ -1,7 +1,7 @@
 {
   "name": "o-json: space marks two fields at different depths, the title counts them, F flattens them into one row per person, u brings the tree and its marks back",
   "area": "reshape",
-  "width": 120,
+  "width": 150,
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "reshape.json"},

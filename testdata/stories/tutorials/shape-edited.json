@@ -288,7 +288,7 @@
       "id": "ochazuke.list.yank {\"what\":\"row\"}",
       "expect": {
         "mode": "shape",
-        "register": "  ▾ items\tarray\t.items"
+        "register": "├─ ▾ items\tarray\t.items"
       }
     },
     {

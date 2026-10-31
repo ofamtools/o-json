@@ -452,19 +452,22 @@ func (a *App) selectedOriginal() (*Shape, bool) {
 	return s, s != nil
 }
 
-// editedWidth is the restructured tree's natural width in the viewer:
-// indent and marker, then its three cells.
-func (a *App) editedWidth() int {
+// treeNaturalWidth includes the branch guides when measuring the viewer's
+// structure pane. Read the setting on each render so its opt-out also resizes.
+func (a *App) treeNaturalWidth(tree *ochazuke.Tree, cols [3]int) int {
+	indent := 2
+	if tree.Guides && a.r.Settings().String(ochazuke.TreeGuidesSetting) != "off" {
+		indent = 3
+	}
 	depth := map[string]int{}
-	cols := [3]int{4, 4, 4}
-	for _, n := range a.rs.tree.Nodes() {
+	for _, n := range tree.Nodes() {
 		if n.Parent != "" {
 			depth[n.ID] = depth[n.Parent] + 1
 		}
 		if len(n.Cells) < 3 {
 			continue
 		}
-		cols[0] = max(cols[0], 2*depth[n.ID]+2+ansi.StringWidth(n.Cells[0]))
+		cols[0] = max(cols[0], indent*depth[n.ID]+2+ansi.StringWidth(n.Cells[0]))
 		cols[1] = max(cols[1], len(n.Cells[1]))
 		cols[2] = max(cols[2], len(n.Cells[2]))
 	}

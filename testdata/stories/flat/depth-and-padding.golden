@@ -2,39 +2,39 @@
  |   › flat-nested.json  Restructure
  |  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  |  flat-nested.json  ·  . (object ×1)
- |  ╭─ Structure · unchanged ──────────────────╮ ╭━ Flat .  ·  table fields [flat] json mapping ━━━━━━━━━━━━━━━━━━━━━━━╮
- |  │ substr / to search                       │ ┃ .bindings[229].verb = "v229"                                        ┃
- |  │ key               type    from           │ ┃ .bindings[230].keys[0] = "k0"                                       ┃
-r|  │ ▾ . (root)        object                 │ ┃ .bindings[230].keys[1] = "k1"                                       ┃
- |  │ └─ ▾ bindings     array   .bindings      │ ┃ .bindings[230].keys[2] = "k2"                                       ┃
- |  │    └─ ▾ []        object  .bindings[]    │ ┃ .bindings[230].verb = "v230"                                        ┃
- |  │       ├─ ▾ keys   array   .bindings[].k… │ ┃ .bindings[231].keys[0] = "k0"                                       ┃
- |  │       │  └─   []  string  .bindings[].k… │ ┃ .bindings[231].keys[1] = "k1"                                       ┃
- |  │       └─   verb   string  .bindings[].v… │ ┃ .bindings[231].keys[2] = "k2"                                       ┃
- |  │                                          │ ┃ .bindings[231].keys[3] = "k3"                                       ┃
- |  │                                          │ ┃ .bindings[231].verb = "v231"                                        ┃
- |  │                                          │ ┃ .bindings[232].keys[0] = "k0"                                       ┃
- |  │                                          │ ┃ .bindings[232].keys[1] = "k1"                                       ┃
- |  │                                          │ ┃ .bindings[232].keys[2] = "k2"                                       ┃
- |  │                                          │ ┃ .bindings[232].keys[3] = "k3"                                       ┃
- |  │                                          │ ┃ .bindings[232].keys[4] = "k4"                                       ┃
- |  │                                          │ ┃ .bindings[232].verb = "v232"                                        ┃
- |  │                                          │ ┃ .bindings[233].keys[0] = "k0"                                       ┃
- |  │                                          │ ┃ .bindings[233].keys[1] = "k1"                                       ┃
- |  │                                          │ ┃ .bindings[233].keys[2] = "k2"                                       ┃
- |  │                                          │ ┃ .bindings[233].keys[3] = "k3"                                       ┃
- |  │                                          │ ┃ .bindings[233].keys[4] = "k4"                                       ┃
- |  │                                          │ ┃ .bindings[233].keys[5] = "k5"                                       ┃
- |  │                                          │ ┃ .bindings[233].verb = "v233"                                        ┃
- |  │                                          │ ┃ .bindings[234].keys[0] = "k0"                                       ┃
- |  │                                          │ ┃ .bindings[234].keys[1] = "k1"                                       ┃
- |  │                                          │ ┃ .bindings[234].keys[2] = "k2"                                       ┃
- |  │                                          │ ┃ .bindings[234].keys[3] = "k3"                                       ┃
- |  │                                          │ ┃ .bindings[234].keys[4] = "k4"                                       ┃
- |  │                                          │ ┃ .bindings[234].keys[5] = "k5"                                       ┃
- |  │                                          │ ┃ .bindings[234].keys[6] = "k6"                                       ┃
-R|  │                                          │ ┃ .bindings[234].verb = "v234"                                        ┃
- |  ╰──────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+ |  ╭─ Structure · unchanged ────────────────────╮ ╭━ Flat .  ·  table fields [flat] json mapping ━━━━━━━━━━━━━━━━━━━━━╮
+ |  │ substr / to search                         │ ┃ .bindings[229].verb = "v229"                                      ┃
+ |  │ key               type    from             │ ┃ .bindings[230].keys[0] = "k0"                                     ┃
+r|  │ ▾ . (root)        object                   │ ┃ .bindings[230].keys[1] = "k1"                                     ┃
+ |  │ └─ ▾ bindings     array   .bindings        │ ┃ .bindings[230].keys[2] = "k2"                                     ┃
+ |  │    └─ ▾ []        object  .bindings[]      │ ┃ .bindings[230].verb = "v230"                                      ┃
+ |  │       ├─ ▾ keys   array   .bindings[].keys │ ┃ .bindings[231].keys[0] = "k0"                                     ┃
+ |  │       │  └─   []  string  .bindings[].key… │ ┃ .bindings[231].keys[1] = "k1"                                     ┃
+ |  │       └─   verb   string  .bindings[].verb │ ┃ .bindings[231].keys[2] = "k2"                                     ┃
+ |  │                                            │ ┃ .bindings[231].keys[3] = "k3"                                     ┃
+ |  │                                            │ ┃ .bindings[231].verb = "v231"                                      ┃
+ |  │                                            │ ┃ .bindings[232].keys[0] = "k0"                                     ┃
+ |  │                                            │ ┃ .bindings[232].keys[1] = "k1"                                     ┃
+ |  │                                            │ ┃ .bindings[232].keys[2] = "k2"                                     ┃
+ |  │                                            │ ┃ .bindings[232].keys[3] = "k3"                                     ┃
+ |  │                                            │ ┃ .bindings[232].keys[4] = "k4"                                     ┃
+ |  │                                            │ ┃ .bindings[232].verb = "v232"                                      ┃
+ |  │                                            │ ┃ .bindings[233].keys[0] = "k0"                                     ┃
+ |  │                                            │ ┃ .bindings[233].keys[1] = "k1"                                     ┃
+ |  │                                            │ ┃ .bindings[233].keys[2] = "k2"                                     ┃
+ |  │                                            │ ┃ .bindings[233].keys[3] = "k3"                                     ┃
+ |  │                                            │ ┃ .bindings[233].keys[4] = "k4"                                     ┃
+ |  │                                            │ ┃ .bindings[233].keys[5] = "k5"                                     ┃
+ |  │                                            │ ┃ .bindings[233].verb = "v233"                                      ┃
+ |  │                                            │ ┃ .bindings[234].keys[0] = "k0"                                     ┃
+ |  │                                            │ ┃ .bindings[234].keys[1] = "k1"                                     ┃
+ |  │                                            │ ┃ .bindings[234].keys[2] = "k2"                                     ┃
+ |  │                                            │ ┃ .bindings[234].keys[3] = "k3"                                     ┃
+ |  │                                            │ ┃ .bindings[234].keys[4] = "k4"                                     ┃
+ |  │                                            │ ┃ .bindings[234].keys[5] = "k5"                                     ┃
+ |  │                                            │ ┃ .bindings[234].keys[6] = "k6"                                     ┃
+R|  │                                            │ ┃ .bindings[234].verb = "v234"                                      ┃
+ |  ╰────────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
  |  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
  |  ctrl+w o only data · y y/p/v line/path/value · enter go to path · tab/D views · y line.yank · v select rows · u/ctr…
  |

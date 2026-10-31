@@ -207,7 +207,7 @@ func (a *App) setOriginal() error {
 	if a.Doc == nil {
 		return a.rs.orig.SetNodes(nil)
 	}
-	nodes, _ := shapeNodes(a.Doc.Shape, nil, "o:", a.duplicateTone())
+	nodes := shapeNodes(a.Doc.Shape, nil, "o:", a.duplicateTone())
 	a.rs.origTones = map[string][]ochazuke.ToneSpan{}
 	for _, n := range nodes {
 		a.rs.origTones[n.ID] = n.Tones

@@ -107,7 +107,8 @@ func TestRestructurePageOpensEmpty(t *testing.T) {
 // s sends a shape with the ancestors it needs and its fields; sending
 // one already there adds nothing; the focus stays on the original.
 func TestSendShapeAcross(t *testing.T) {
-	a := openRestructure(t, 120, 30)
+	// Both guided trees need room for the complete origin path below.
+	a := openRestructure(t, 160, 30)
 	sendPaths(t, a, ".items[].owner")
 	want := []string{".items>.items", ".items[]>.items[]", ".items[].owner>.items[].owner", ".items[].owner.name>.items[].owner.name", ".items[].owner.email>.items[].owner.email"}
 	if got := entries(a.Mapping()); !slices.Equal(got, want) {

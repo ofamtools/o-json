@@ -15,7 +15,7 @@ Orders and sample documents supply table, search and editing examples.
 Watch from the o-json worktree in a terminal at least 150 columns by 44 rows:
 
 ```sh
-nice -n 15 make story-build GO_ENV='GOWORK=/tmp/ojj-tutorials/go.work GOTMPDIR=/tmp/ojj-tutorials/go-tmp GOFLAGS="-trimpath -p=2" GOMAXPROCS=3'
+nice -n 15 make story-build GO_ENV='GOWORK=off GOFLAGS="-trimpath -p=2" GOMAXPROCS=3'
 env -u TUIOS_ENV -u TUIOS_SESSION -u TUIOS_PANE_ID \
   HOME=/tmp/ojj-tutorials/o-json/home \
   XDG_CONFIG_HOME=/tmp/ojj-tutorials/o-json/config \
@@ -27,20 +27,23 @@ env -u TUIOS_ENV -u TUIOS_SESSION -u TUIOS_PANE_ID \
 
 Use another stem from the table below to watch that lesson. `story run
 tutorials/<stem>` checks its actions headlessly. The story fixture isolates
-its documents and state; the story command has no `--data` flag. The lane's
-explicit go.work uses the monogatari worktree until the coordinator tags the
-library and updates the dependency. Do not commit a replace or go.work.
+its documents and state; the story command has no `--data` flag. The tester
+uses tagged monogatari v0.3.0 and ochazuke v0.66.0 with `GOWORK=off`.
 
 The player shows one tree: opening/setup steps, a reset row, then action
 titles with captions as detail and key steps as children. Before each action
 the cursor jumps back to the reset row, then follows that action’s steps.
 `play.tree` defaults on; false restores the active-segment column.
 
-Press `a` for autoplay, `space` to step, `[` / `]` for previous/next action,
+Autoplay starts immediately. Press `space` (or `a`) to pause/resume,
+`l` / `right` to step, `[` / `]` for previous/next action,
 and `r` to restart from file opening. Pace remains 400 ms per event with a
 3 second pause before and after each action. `:set play.captions false`
 hides captions (default on); `:set play.action-pause 0s` removes the extra
-pause. The controls apply to every app using monogatari.
+pause. `play.stop-after-action=true` pauses before each next action until
+`space` continues (default false). The inspector strip defaults on;
+`alt+?` toggles `play.inspector`. The controls apply to every app using
+monogatari.
 
 Follow the JSON jobs order:
 
