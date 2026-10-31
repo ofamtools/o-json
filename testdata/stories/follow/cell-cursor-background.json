@@ -1,0 +1,45 @@
+{
+  "name": "o-json: the data pane's current cell is drawn on a background (list.cell.cursor, list.cell-cursor background, the default), not underlined; on the lit column's crossing the current cell takes list.cell.cursor, while the lit column's header keeps list.header.intersect and the other rows its tone",
+  "area": "follow",
+  "width": 120,
+  "height": 30,
+  "theme": "dark",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "sample.json"
+  },
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "ctrl+a",
+    "o",
+    "3",
+    "G",
+    "ctrl+a",
+    "o",
+    "2",
+    "j",
+    "ctrl+a",
+    "o"
+  ],
+  "expect": [
+    {
+      "contains": [
+        "Table .items[]  3/4"
+      ],
+      "cell": "gamma",
+      "styled": {
+        "alpha": "#78BFA5",
+        "delta": "#78BFA5",
+        "gamma": "!#1A1A1A"
+      },
+      "attrs": {
+        "gamma": "reverse,bg,bold,-underline",
+        "alpha": "fg,-bg,-reverse",
+        "third": "reverse,-bg,-underline"
+      }
+    }
+  ]
+}

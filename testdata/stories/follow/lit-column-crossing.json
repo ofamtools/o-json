@@ -1,10 +1,13 @@
 {
-  "name": "o-json: the lit column crosses the selected row: the cell where they meet is drawn in list.cell.intersect (a background, out of the reverse bar), the lit column's header in list.header.intersect, and the \"#\" row numbers in list.rownum (list.rownum.intersect on the selected row)",
+  "name": "o-json: the lit column crosses the selected row: the cell where they meet is drawn in list.cell.intersect (a background, out of the reverse bar), the lit column's header in list.header.intersect, and the \"#\" row numbers in list.rownum (list.rownum.intersect on the selected row); with list.cell-cursor underline, so the cursor on the crossing keeps list.cell.intersect, underlined",
   "area": "follow",
   "width": 120,
   "height": 30,
   "theme": "dark",
   "fixture": "viewer",
+  "values": {
+    "list.cell-cursor": "underline"
+  },
   "seed": {
     "doc": "sample.json"
   },
@@ -36,7 +39,7 @@
         "delta": "#78BFA5"
       },
       "attrs": {
-        "gamma": "bg,bold,-reverse",
+        "gamma": "bg,bold,underline,-reverse",
         "alpha": "fg,-bg,-reverse",
         "third": "reverse,-bg"
       }
