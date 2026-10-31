@@ -1,608 +1,736 @@
 {
-  "name": "o-json: Viewer page · structure pane (edited) · SHAPE",
+  "name": "o-json: navigate the shape and viewer",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
-  "height": 32,
+  "height": 24,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "j",
     "j",
     "j"
   ],
-  "expect": {
-    "mode": "shape"
-  },
   "actions": [
     {
-      "label": "app.quit",
-      "caption": "",
+      "label": "Quit a clean viewer",
+      "caption": "ctrl+c quits this clean viewer. Use it when you have finished reading and have no unwritten edits.",
       "keys": [
         "ctrl+c"
       ],
+      "id": "app.quit",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "app.quit"
+        "mode": "shape",
+        "quit": true
+      }
     },
     {
-      "label": "app.quit {\"force\":true}",
-      "caption": "",
+      "label": "Quit without a write",
+      "caption": "i J makes an edit first; Q quits without asking to write it. Use this deliberately when you want to abandon the edited buffer.",
       "keys": [
+        "i",
+        "J",
         "Q"
       ],
+      "id": "app.quit {\"force\":true}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "app.quit {\"force\":true}"
+        "mode": "edit",
+        "quit": true
+      }
     },
     {
-      "label": "jq-panel.toggle",
-      "caption": "",
+      "label": "See the generated jq",
+      "caption": "g j opens the jq panel. Inspect the program that describes the current structure before applying it elsewhere.",
       "keys": [
         "g",
         "j"
       ],
+      "id": "jq-panel.toggle",
       "expect": {
         "mode": "normal"
-      },
-      "id": "jq-panel.toggle"
+      }
     },
     {
-      "label": "node.operate {\"object\":\"k\"}",
-      "caption": "",
+      "label": "Copy an inner key",
+      "caption": "y i k copies the selected key without its value. Reuse the field name while writing another structure.",
       "keys": [
         "y",
         "i",
         "k"
       ],
+      "id": "node.operate {\"object\":\"k\"}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "node.operate {\"object\":\"k\"}"
+        "mode": "shape",
+        "register": "items"
+      }
     },
     {
-      "label": "node.operate {\"object\":\"p\"}",
-      "caption": "",
+      "label": "Copy an inner path",
+      "caption": "y i p copies the selected path. Use it as the precise starting point for another query.",
       "keys": [
         "y",
         "i",
         "p"
       ],
+      "id": "node.operate {\"object\":\"p\"}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "node.operate {\"object\":\"p\"}"
+        "mode": "shape",
+        "register": ".items"
+      }
     },
     {
-      "label": "node.operate {\"object\":\"s\"}",
-      "caption": "",
+      "label": "Copy a structure subtree",
+      "caption": "y i s copies the selected subtree. Keep its complete structure together for reuse.",
       "keys": [
         "y",
         "i",
         "s"
       ],
+      "id": "node.operate {\"object\":\"s\"}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "node.operate {\"object\":\"s\"}"
+      }
     },
     {
-      "label": "node.operate {\"object\":\"v\"}",
-      "caption": "",
+      "label": "Copy the selected values",
+      "caption": "y i v copies the values under items. Take the collection itself rather than its path or field name.",
       "keys": [
         "y",
         "i",
         "v"
       ],
+      "id": "node.operate {\"object\":\"v\"}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "node.operate {\"object\":\"v\"}"
+      }
     },
     {
-      "label": "ochazuke.count.append",
-      "caption": "",
+      "label": "Extend a pending count",
+      "caption": "Move into data, then y 1 2 j copies up to 12 rows. Appending digits builds a count; copying stops at the end of this small sample.",
       "keys": [
+        "ctrl+w",
+        "l",
         "y",
-        "2"
+        "1",
+        "2",
+        "j"
       ],
-      "id": "ochazuke.count.append"
+      "id": "ochazuke.count.append",
+      "expect": {
+        "mode": "table"
+      }
     },
     {
-      "label": "ochazuke.count.append {\"digit\":0}",
-      "caption": "",
+      "label": "Append zero to a count",
+      "caption": "Move into data, then y 2 0 j requests 20 rows, stopping at the end of this sample. A zero after a digit extends the count.",
       "keys": [
+        "ctrl+w",
+        "l",
         "y",
-        "0"
+        "2",
+        "0",
+        "j"
       ],
+      "id": "ochazuke.count.append {\"digit\":0}",
+      "expect": {
+        "mode": "table"
+      }
+    },
+    {
+      "label": "Move to the other pane",
+      "caption": "ctrl+a o moves focus to the data pane. Read the actual values for the shape you selected.",
+      "keys": [
+        "ctrl+a",
+        "o"
+      ],
+      "id": "ochazuke.focus.next",
+      "expect": {
+        "mode": "table"
+      }
+    },
+    {
+      "label": "Return to the preceding pane",
+      "caption": "ctrl+a o moves into data; ctrl+w W returns to the previous focus stop. Use the reverse window motion to retrace your focus.",
+      "keys": [
+        "ctrl+a",
+        "o",
+        "ctrl+w",
+        "W"
+      ],
+      "id": "ochazuke.focus.previous",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.count.append {\"digit\":0}"
+      }
     },
     {
-      "label": "ochazuke.focus.next",
-      "caption": "",
+      "label": "Cancel an incomplete nesting chord",
+      "caption": "< starts the outdent chord; esc cancels it before it acts. Use this when you begin a nesting command and decide to keep the structure.",
       "keys": [
-        "l"
+        "<",
+        "esc"
       ],
+      "id": "ochazuke.key.ignore",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.focus.next"
+      }
     },
     {
-      "label": "ochazuke.focus.previous",
-      "caption": "",
+      "label": "Fit the outline columns",
+      "caption": "z > widens a column first; z F fits the columns back to their content. Recover readable widths after a manual adjustment.",
       "keys": [
-        "h"
-      ],
-      "expect": {
-        "mode": "shape"
-      },
-      "id": "ochazuke.focus.previous"
-    },
-    {
-      "label": "ochazuke.key.ignore",
-      "caption": "",
-      "keys": [
-        "<"
-      ],
-      "expect": {
-        "mode": "shape <"
-      },
-      "id": "ochazuke.key.ignore"
-    },
-    {
-      "label": "ochazuke.list.fit-columns",
-      "caption": "",
-      "keys": [
+        "z",
+        ">",
         "z",
         "F"
       ],
+      "id": "ochazuke.list.fit-columns",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.fit-columns"
+      }
     },
     {
-      "label": "ochazuke.list.goto {\"position\":\"first\"}",
-      "caption": "",
+      "label": "Go to the document root",
+      "caption": "g g selects the first outline row. Start again at the whole document after exploring a nested branch.",
       "keys": [
         "g",
         "g"
       ],
+      "id": "ochazuke.list.goto {\"position\":\"first\"}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.goto {\"position\":\"first\"}"
+      }
     },
     {
-      "label": "ochazuke.list.goto {\"position\":\"last\"}",
-      "caption": "",
+      "label": "Go to the last field",
+      "caption": "G selects the last visible outline row. Reach the end of a large shape without repeated movement.",
       "keys": [
         "G"
       ],
+      "id": "ochazuke.list.goto {\"position\":\"last\"}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.goto {\"position\":\"last\"}"
+      }
     },
     {
-      "label": "ochazuke.list.mark",
-      "caption": "",
+      "label": "Mark rows in the original tree",
+      "caption": "T switches to the original tree; 2 space marks a range. Keep a small set of outline rows selected for an operation.",
       "keys": [
+        "T",
         "2",
         "space"
       ],
+      "id": "ochazuke.list.mark",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.mark"
+      }
     },
     {
-      "label": "ochazuke.list.move {\"delta\":-1}",
-      "caption": "",
+      "label": "Move up the outline",
+      "caption": "k moves up one visible line. Return to the field immediately above your selection.",
       "keys": [
         "k"
       ],
+      "id": "ochazuke.list.move {\"delta\":-1}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.move {\"delta\":-1}"
+      }
     },
     {
-      "label": "ochazuke.list.move {\"delta\":1}",
-      "caption": "",
+      "label": "Move down the outline",
+      "caption": "j moves down one visible line. Follow the shape before choosing which values to inspect.",
       "keys": [
         "j"
       ],
+      "id": "ochazuke.list.move {\"delta\":1}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.move {\"delta\":1}"
+      }
     },
     {
-      "label": "ochazuke.list.scroll {\"delta\":-1,\"half\":true}",
-      "caption": "",
+      "label": "Move up half a page",
+      "caption": "G reaches the end first; ctrl+u moves half a screen back up. Revisit fields just above the current window.",
       "keys": [
+        "G",
         "ctrl+u"
       ],
+      "id": "ochazuke.list.scroll {\"delta\":-1,\"half\":true}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.scroll {\"delta\":-1,\"half\":true}"
+      }
     },
     {
-      "label": "ochazuke.list.scroll {\"delta\":-1}",
-      "caption": "",
+      "label": "Move back a page",
+      "caption": "G reaches the end first; ctrl+b moves one screen back. Compare a later branch with the fields above it.",
       "keys": [
+        "G",
         "ctrl+b"
       ],
+      "id": "ochazuke.list.scroll {\"delta\":-1}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.scroll {\"delta\":-1}"
+      }
     },
     {
-      "label": "ochazuke.list.scroll {\"delta\":1,\"half\":true}",
-      "caption": "",
+      "label": "Move down half a page",
+      "caption": "ctrl+d moves half a screen down the outline. Scan a large shape while keeping some context in view.",
       "keys": [
         "ctrl+d"
       ],
+      "id": "ochazuke.list.scroll {\"delta\":1,\"half\":true}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.scroll {\"delta\":1,\"half\":true}"
+      }
     },
     {
-      "label": "ochazuke.list.scroll {\"delta\":1}",
-      "caption": "",
+      "label": "Move down a page",
+      "caption": "ctrl+f advances one screen through the outline. Use it to cover more of a large document quickly.",
       "keys": [
         "ctrl+f"
       ],
+      "id": "ochazuke.list.scroll {\"delta\":1}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.list.scroll {\"delta\":1}"
+      }
     },
     {
-      "label": "ochazuke.list.yank {\"what\":\"row\"}",
-      "caption": "",
+      "label": "Copy the displayed row",
+      "caption": "Y copies the current outline row as text. Keep the displayed shape information in your notes.",
       "keys": [
         "Y"
       ],
+      "id": "ochazuke.list.yank {\"what\":\"row\"}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "ochazuke.list.yank {\"what\":\"row\"}"
+        "mode": "shape",
+        "register": "  ▾ items\tarray\t.items"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"!\"}",
-      "caption": "",
+      "label": "Begin a jq operation",
+      "caption": "! starts a jq operation and waits for its object. Build the query from the part of JSON you are already pointing at.",
       "keys": [
         "!"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"!\"}",
       "expect": {
         "mode": "operator_pending"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"!\"}"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"c\"}",
-      "caption": "",
+      "label": "Begin a change operation",
+      "caption": "i enters EDIT first; c starts a change operation. Select the key to rename instead of changing an unrelated value.",
       "keys": [
+        "i",
         "c"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"c\"}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"c\"}"
+        "mode": "operator_pending"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"d\"}",
-      "caption": "",
+      "label": "Begin a delete operation",
+      "caption": "i enters EDIT first; d starts a delete operation. Choose its object next so you remove exactly the intended structure.",
       "keys": [
+        "i",
         "d"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"d\"}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"d\"}"
+        "mode": "operator_pending"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"y\"}",
-      "caption": "",
+      "label": "Begin a copy operation",
+      "caption": "y starts a copy operation and waits for its object. Choose a key, path or value next instead of memorizing a separate command for each.",
       "keys": [
         "y"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"y\"}",
       "expect": {
         "mode": "operator_pending"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"y\"}"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending_a\"}",
-      "caption": "",
+      "label": "Choose an around object",
+      "caption": "y a chooses the around form of a copy object. Include its surrounding key or generalized path when that context matters.",
       "keys": [
         "y",
         "a"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending_a\"}",
       "expect": {
         "mode": "operator_pending_a"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending_a\"}"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending_i\"}",
-      "caption": "",
+      "label": "Choose an inner object",
+      "caption": "y i narrows the copy operation to an inner object. The next letter chooses a value, key, path or subtree.",
       "keys": [
         "y",
         "i"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending_i\"}",
       "expect": {
         "mode": "operator_pending_i"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending_i\"}"
+      }
     },
     {
-      "label": "ochazuke.mode.leave",
-      "caption": "",
+      "label": "Cancel a pending operation",
+      "caption": "y begins a copy operation; esc cancels it. Return to movement when you change your mind before choosing an object.",
       "keys": [
         "y",
         "esc"
       ],
+      "id": "ochazuke.mode.leave",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.mode.leave"
+      }
     },
     {
-      "label": "ochazuke.outline.collapse",
-      "caption": "",
+      "label": "Collapse the selected branch",
+      "caption": "h collapses items. Keep its siblings visible while temporarily hiding the fields inside it.",
       "keys": [
         "h"
       ],
+      "id": "ochazuke.outline.collapse",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.outline.collapse"
+      }
     },
     {
-      "label": "ochazuke.outline.expand",
-      "caption": "",
+      "label": "Expand a branch again",
+      "caption": "h closes items first; l expands it again. Reveal its fields when you are ready to inspect the collection.",
       "keys": [
+        "h",
         "l"
       ],
+      "id": "ochazuke.outline.expand",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.outline.expand"
+      }
     },
     {
-      "label": "ochazuke.outline.move {\"delta\":-1}",
-      "caption": "",
+      "label": "Move a field up",
+      "caption": "i enters EDIT; K moves items up among its siblings. Put the important fields earlier in the output.",
       "keys": [
+        "i",
         "K"
       ],
+      "id": "ochazuke.outline.move {\"delta\":-1}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "ochazuke.outline.move {\"delta\":-1}"
+        "mode": "edit"
+      }
     },
     {
-      "label": "ochazuke.outline.move {\"delta\":1}",
-      "caption": "",
+      "label": "Move a field down",
+      "caption": "i enters EDIT; J moves items down among its siblings. Reorder fields without rewriting their values.",
       "keys": [
+        "i",
         "J"
       ],
+      "id": "ochazuke.outline.move {\"delta\":1}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "ochazuke.outline.move {\"delta\":1}"
+        "mode": "edit"
+      }
     },
     {
-      "label": "ochazuke.outline.zoom-in",
-      "caption": "",
+      "label": "Focus on one subtree",
+      "caption": "z + zooms the outline into items. Set aside unrelated fields while understanding this collection.",
       "keys": [
         "z",
         "+"
       ],
+      "id": "ochazuke.outline.zoom-in",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.outline.zoom-in"
+      }
     },
     {
-      "label": "ochazuke.outline.zoom-out",
-      "caption": "",
+      "label": "Show the surrounding tree",
+      "caption": "z + zooms into items first; z - brings its parent context back. See where the collection belongs in the document.",
       "keys": [
+        "z",
+        "+",
         "z",
         "-"
       ],
+      "id": "ochazuke.outline.zoom-out",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.outline.zoom-out"
+      }
     },
     {
-      "label": "ochazuke.outline.zoom-reset",
-      "caption": "",
+      "label": "Reset the outline zoom",
+      "caption": "z + narrows the outline first; z 0 restores the full tree. Return to a familiar overview after drilling in.",
       "keys": [
+        "z",
+        "+",
         "z",
         "0"
       ],
+      "id": "ochazuke.outline.zoom-reset",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.outline.zoom-reset"
+      }
     },
     {
-      "label": "ochazuke.pane.only",
-      "caption": "",
+      "label": "Give the structure the window",
+      "caption": "ctrl+w o shows only the focused structure pane. Use the full width for long paths and type information.",
       "keys": [
         "ctrl+w",
         "o"
       ],
+      "id": "ochazuke.pane.only",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.pane.only"
+      }
     },
     {
-      "label": "ochazuke.pane.restore",
-      "caption": "",
+      "label": "Restore both panes",
+      "caption": "ctrl+w o shows the structure alone first; press it again to restore both panes. Return to reading shape and values together.",
       "keys": [
+        "ctrl+w",
+        "o",
         "ctrl+w",
         "o"
       ],
+      "id": "ochazuke.pane.restore",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.pane.restore"
+      }
     },
     {
-      "label": "ochazuke.register.select",
-      "caption": "",
+      "label": "Copy into a named register",
+      "caption": "\" a selects register a; y i p copies the selected path there. Keep a useful path while later copies use the unnamed register.",
       "keys": [
         "\"",
-        "a"
+        "a",
+        "y",
+        "i",
+        "p"
       ],
-      "id": "ochazuke.register.select"
+      "id": "ochazuke.register.select",
+      "expect": {
+        "mode": "shape",
+        "register": ".items"
+      }
     },
     {
-      "label": "viewer.edit",
-      "caption": "",
+      "label": "Enter EDIT deliberately",
+      "caption": "i enters EDIT on the structure. The badge and available keys change so you can reshape the buffer deliberately.",
       "keys": [
         "i"
       ],
+      "id": "viewer.edit",
       "expect": {
-        "mode": "edit"
-      },
-      "id": "viewer.edit"
+        "mode": "edit",
+        "badge": "EDIT"
+      }
     },
     {
-      "label": "viewer.load",
-      "caption": "",
+      "label": "Reload the source file",
+      "caption": "i r temporarily renames items; leave EDIT, then R reloads the source and y confirms discarding that edit. Recover the saved JSON when you want to start over.",
       "keys": [
-        "R"
+        "i",
+        "r",
+        {
+          "type": "products"
+        },
+        "esc",
+        "esc",
+        "R",
+        "y",
+        {
+          "job": "viewer.discard"
+        }
       ],
+      "id": "viewer.load",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "viewer.load"
+        "mode": "shape",
+        "contains": [
+          "Structure · unchanged"
+        ],
+        "lacks": [
+          "products"
+        ]
+      }
     },
     {
-      "label": "viewer.mode",
-      "caption": "",
+      "label": "Choose a mode by name",
+      "caption": "g m opens the mode picker. Read the available modes and their purposes when you do not remember an entry key.",
       "keys": [
         "g",
         "m"
       ],
+      "id": "viewer.mode",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "viewer.mode"
+        "mode": "insert",
+        "contains": [
+          "Modes"
+        ]
+      }
     },
     {
-      "label": "viewer.needs-edit",
-      "caption": "",
+      "label": "Recognize the edit gate",
+      "caption": "p on the structure asks you to press i first. The message explains why a put needs EDIT before changing the buffer.",
       "keys": [
         "p"
       ],
+      "id": "viewer.needs-edit",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "viewer.needs-edit"
+        "mode": "shape",
+        "contains": [
+          "press i first"
+        ]
+      }
     },
     {
-      "label": "viewer.open",
-      "caption": "",
+      "label": "Choose another document",
+      "caption": "e opens the file chooser. Select another document while keeping the current one until a choice is made.",
       "keys": [
-        "e"
+        "e",
+        {
+          "job": "ochazuke.chooser.load"
+        }
       ],
+      "id": "viewer.open",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "viewer.open"
+        "mode": "insert",
+        "contains": [
+          "Run viewer.open"
+        ]
+      }
     },
     {
-      "label": "viewer.pane {\"to\":\"left\"}",
-      "caption": "",
+      "label": "Focus the structure pane",
+      "caption": "ctrl+w l enters data; ctrl+w h returns to the structure pane. Move left without changing the selected JSON path.",
       "keys": [
+        "ctrl+w",
+        "l",
         "ctrl+w",
         "h"
       ],
+      "id": "viewer.pane {\"to\":\"left\"}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "viewer.pane {\"to\":\"left\"}"
+      }
     },
     {
-      "label": "viewer.pane {\"to\":\"right\"}",
-      "caption": "",
+      "label": "Focus the data pane",
+      "caption": "ctrl+w l focuses the pane on the right. Keep the shape selected while moving into its table.",
       "keys": [
         "ctrl+w",
         "l"
       ],
+      "id": "viewer.pane {\"to\":\"right\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "viewer.pane {\"to\":\"right\"}"
+      }
     },
     {
-      "label": "viewer.paste",
-      "caption": "",
+      "label": "Open JSON from the clipboard",
+      "caption": "T shows the original tree; p loads our sample clipboard JSON. Inspect a copied response without creating a source file.",
       "keys": [
-        "2",
-        "p"
+        "T",
+        "p",
+        {
+          "job": "viewer.paste"
+        }
       ],
+      "id": "viewer.paste",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "viewer.paste"
+        "mode": "shape",
+        "contains": [
+          "[no file]",
+          "pasted"
+        ]
+      }
     },
     {
-      "label": "viewer.raw-edit",
-      "caption": "",
+      "label": "Edit the raw JSON",
+      "caption": "g r opens RAW in the configured editor. This lesson returns edited JSON, so you can see the buffer update while the source stays unwritten.",
       "keys": [
         "g",
-        "r"
+        "r",
+        {
+          "job": "viewer.raw-edit"
+        },
+        "g",
+        "g"
       ],
+      "id": "viewer.raw-edit",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "viewer.raw-edit"
+        "mode": "shape",
+        "contains": [
+          "hello from RAW",
+          "editedInRaw"
+        ]
+      }
     },
     {
-      "label": "viewer.view",
-      "caption": "",
+      "label": "Read another data view",
+      "caption": "D changes the selected collection from table to FLAT. Read each value beside its path when a table hides nesting.",
       "keys": [
         "D"
       ],
+      "id": "viewer.view",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "viewer.view"
+        "mode": "shape",
+        "contains": [
+          "Flat .items"
+        ]
+      }
     },
     {
-      "label": "viewer.view {\"steps\":-1}",
-      "caption": "",
+      "label": "Cycle views backward",
+      "caption": "shift+tab cycles the data view backward. Reach the previous representation without stepping through all the others.",
       "keys": [
         "shift+tab"
       ],
+      "id": "viewer.view {\"steps\":-1}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "viewer.view {\"steps\":-1}"
+        "mode": "shape",
+        "contains": [
+          "JSON .items"
+        ]
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ],
+    "clipboard": "{\"pasted\": {\"message\":\"hello\",\"count\":2}}",
+    "editorResult": "{\"editedInRaw\":true,\"message\":\"hello from RAW\"}"
+  },
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 8,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "shape"
+  },
+  "state": true
 }

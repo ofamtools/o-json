@@ -1,95 +1,145 @@
 {
-  "name": "o-json: Viewer page · structure pane (original) · SHAPE",
+  "name": "o-json: read and copy the original shape",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "T",
     "j",
     "j",
     "j"
   ],
-  "expect": {
-    "mode": "shape"
-  },
   "actions": [
     {
-      "label": "ochazuke.outline.fold",
-      "caption": "",
+      "label": "Fold a collection",
+      "caption": "enter folds items in the original outline. Hide its fields so the surrounding document is easier to scan.",
       "keys": [
         "enter"
       ],
+      "id": "ochazuke.outline.fold",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.outline.fold"
+      }
     },
     {
-      "label": "shape.operate {\"object\":\"key\",\"op\":\"y\"}",
-      "caption": "",
+      "label": "Copy a field name",
+      "caption": "y k copies just the key items. Use it when you need the name without a full JSON path.",
       "keys": [
         "y",
         "k"
       ],
+      "id": "shape.operate {\"object\":\"key\",\"op\":\"y\"}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "shape.operate {\"object\":\"key\",\"op\":\"y\"}"
+        "mode": "shape",
+        "register": "items"
+      }
     },
     {
-      "label": "shape.operate {\"object\":\"path\",\"op\":\"!\"}",
-      "caption": "",
+      "label": "Start jq with this path",
+      "caption": "! i p puts the selected path on the jq line and runs it. Start a query from the field you already found.",
       "keys": [
-        "y",
-        "!"
+        "!",
+        "i",
+        "p",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "shape.operate {\"object\":\"path\",\"op\":\"!\"}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "shape.operate {\"object\":\"path\",\"op\":\"!\"}"
+        "mode": "jq_·_line"
+      }
     },
     {
-      "label": "shape.operate {\"object\":\"path\",\"op\":\"y\"}",
-      "caption": "",
+      "label": "Copy the structure path",
+      "caption": "y p copies .items from the original shape. Paste the path into a query or another tool without transcribing it.",
       "keys": [
         "y",
         "p"
       ],
+      "id": "shape.operate {\"object\":\"path\",\"op\":\"y\"}",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "shape.operate {\"object\":\"path\",\"op\":\"y\"}"
+        "mode": "shape",
+        "register": ".items"
+      }
     },
     {
-      "label": "shape.send",
-      "caption": "",
+      "label": "Send a shape to the new structure",
+      "caption": "M opens the empty restructure page; s sends items and its fields across. Build a new structure from the source branch you selected.",
       "keys": [
+        "M",
         "s"
       ],
+      "id": "shape.send",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "shape.send"
+        "mode": "split",
+        "contains": [
+          "Restructured  11 nodes"
+        ]
+      }
     },
     {
-      "label": "viewer.write",
-      "caption": "",
+      "label": "Write a new formatted copy",
+      "caption": "w opens the output chooser; switch to the typed path, write original.pretty.json, and enter. Make a readable copy while preserving the source.",
       "keys": [
-        "w"
+        "w",
+        "alt+o",
+        {
+          "type": "original.pretty.json"
+        },
+        {
+          "job": "ochazuke.chooser.load"
+        },
+        "enter",
+        {
+          "job": "viewer.write"
+        }
       ],
+      "id": "viewer.write",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "viewer.write"
+        "mode": "shape",
+        "writes": [
+          "original.pretty.json"
+        ]
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 9,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "shape"
+  },
+  "state": true
 }

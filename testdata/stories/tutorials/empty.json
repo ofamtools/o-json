@@ -1,73 +1,114 @@
 {
-  "name": "o-json: empty document · structure pane",
+  "name": "o-json: filter paths and types",
   "area": "tutorials",
   "app": "o-json",
   "fixture": "empty",
   "width": 110,
-  "height": 32,
+  "height": 24,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false,
+    "query.line": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
-  "setup": [],
-  "expect": {
-    "mode": "shape"
-  },
+  "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
+    "T",
+    "t"
+  ],
   "actions": [
     {
-      "label": "viewer.clear",
-      "caption": "",
+      "label": "Clear the path and type filters",
+      "caption": "esc clears the structure filters. Bring the whole outline back when you finish inspecting one kind of field.",
       "keys": [
         "esc"
       ],
+      "id": "viewer.clear",
       "expect": {
         "mode": "shape"
-      },
-      "id": "viewer.clear"
+      }
     },
     {
-      "label": "viewer.next",
-      "caption": "",
+      "label": "Visit the next matching path",
+      "caption": "n moves to the next path left by the string filter. Step through matching fields without opening every object.",
       "keys": [
         "n"
       ],
+      "id": "viewer.next",
       "expect": {
         "mode": "shape"
-      },
-      "id": "viewer.next"
+      }
     },
     {
-      "label": "viewer.previous",
-      "caption": "",
+      "label": "Visit the previous matching path",
+      "caption": "n moves forward once; N goes back through matching paths. Use it when you pass the field you need.",
       "keys": [
+        "n",
         "N"
       ],
+      "id": "viewer.previous",
       "expect": {
         "mode": "shape"
-      },
-      "id": "viewer.previous"
+      }
     },
     {
-      "label": "viewer.search",
-      "caption": "",
+      "label": "Find a structure path",
+      "caption": "/ opens the path filter; type name and enter to keep matching paths. Use the original structure when you want a compact outline of matching keys.",
       "keys": [
-        "/"
+        "/",
+        {
+          "type": "name"
+        },
+        "enter"
       ],
+      "id": "viewer.search",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "viewer.search"
+        "mode": "shape"
+      }
     },
     {
-      "label": "viewer.type",
-      "caption": "",
+      "label": "Filter by value type",
+      "caption": "t changes the original structure filter from strings to numbers. Find numeric fields before inspecting their values.",
       "keys": [
         "t"
       ],
+      "id": "viewer.type",
       "expect": {
-        "mode": "shape"
-      },
-      "id": "viewer.type"
+        "mode": "shape",
+        "contains": [
+          "number"
+        ]
+      }
     }
-  ]
+  ],
+  "seed": {
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 7,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "shape"
+  },
+  "state": true
 }

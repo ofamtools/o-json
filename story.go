@@ -62,6 +62,11 @@ type storySeed struct {
 	// dir and records in the recent list, opening none: the path
 	// chooser's first choices, for a story that opens one (doc.open).
 	Files []string `json:"files"`
+	// Clipboard is fixture text for paste lessons; it never reads the system clipboard.
+	Clipboard string `json:"clipboard,omitempty"`
+	// EditorResult is the JSON returned by the fixture's foreground RAW editor.
+	// It changes only the raw session's temporary file, without launching an editor.
+	EditorResult string `json:"editorResult,omitempty"`
 }
 
 // storyApp is o-json for stories: the real viewer, its document written
@@ -211,6 +216,19 @@ func buildEmpty(env monogatari.Env) (monogatari.Built, error) {
 	if err := s.stage(seed.Files); err != nil {
 		s.built().Close()
 		return monogatari.Built{}, err
+	}
+	if seed.Clipboard != "" {
+		s.a.Paste = func() (string, error) { return seed.Clipboard, nil }
+	}
+	if seed.EditorResult != "" {
+		s.a.m.Foreground = func(msg ochazuke.ForegroundMsg) tea.Cmd {
+			return func() tea.Msg {
+				if s.a.raw == nil {
+					return msg.Done(errors.New("story editor: no RAW session"))
+				}
+				return msg.Done(os.WriteFile(s.a.raw.file, []byte(seed.EditorResult), 0o600))
+			}
+		}
 	}
 	return s.built(), nil
 }
