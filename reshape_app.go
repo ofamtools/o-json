@@ -35,6 +35,7 @@ const (
 	settingKeyByDup      = "key-by.duplicates"
 	settingKeyByMissing  = "key-by.missing"
 	settingMarksCount    = "marks.count"
+	settingReshapeFocus  = "reshape.focus-result"
 )
 
 // closedStage is a tree a reshape step closed: its nodes, origins and
@@ -107,10 +108,34 @@ func (a *App) stagedMappingWith(nodes []ochazuke.TreeNode, meta map[string]nodeM
 // the tree closes into the steps and becomes the copy of the output.
 func (a *App) reshape(c ochazuke.Ctx, st Stage) ochazuke.Result {
 	sps, _, err := a.reshapeFrom(a.current(), []Stage{st}, st.Op)
+	return a.reshaped(c, sps, err)
+}
+
+func (a *App) reshapeOriginal(c ochazuke.Ctx, st Stage) ochazuke.Result {
+	sps, _, err := a.reshapeInput(a.identityOf(a.Doc.Shape), []Stage{st}, st.Op, a.Doc.Root, stageState{}, nil)
+	return a.reshaped(c, sps, err)
+}
+
+func (a *App) reshaped(c ochazuke.Ctx, sps []*stagePlan, err error) ochazuke.Result {
 	if err != nil {
 		return ochazuke.Failed(err)
 	}
-	a.refocus(rsRootID)
+	if a.r.Settings().Bool(settingReshapeFocus) {
+		a.original = false
+		if !a.editable() {
+			if err := a.r.OpenPage(rsPageID); err != nil {
+				return ochazuke.Failed(err)
+			}
+		}
+		if err := a.rs.tree.Select(rsRootID); err != nil {
+			return ochazuke.Failed(err)
+		}
+		if err := a.rs.tree.Focus(); err != nil {
+			return ochazuke.Failed(err)
+		}
+	} else {
+		a.refocus(rsRootID)
+	}
 	c.Info(stageName(sps[0].st) + "; u undoes")
 	return ochazuke.Done(a.Mapping())
 }
@@ -140,10 +165,17 @@ func (a *App) reshapeFrom(from edit, steps []Stage, label string) ([]*stagePlan,
 		}
 		in = d.root
 	}
-	stages := slices.Clone(a.rs.stages)
-	cur := closedStage{nodes: slices.Clone(from.nodes), meta: maps.Clone(from.meta), patches: slices.Clone(a.rs.patches)}
-	if a.rs.in != nil {
-		cur.idKey = a.rs.in.idKey
+	return a.reshapeInput(from, steps, label, in, a.stagesNow(), a.rs.patches)
+}
+
+// reshapeInput closes from over its input and earlier steps. Source-field
+// marks start at the original document; edited marks keep the current steps.
+// Neither changes the undo state until every step has been prepared.
+func (a *App) reshapeInput(from edit, steps []Stage, label string, in *Node, prior stageState, patches []Patch) ([]*stagePlan, edit, error) {
+	stages := slices.Clone(prior.stages)
+	cur := closedStage{nodes: slices.Clone(from.nodes), meta: maps.Clone(from.meta), patches: slices.Clone(patches)}
+	if prior.in != nil {
+		cur.idKey = prior.in.idKey
 	}
 	var sps []*stagePlan
 	var copied edit
@@ -311,6 +343,8 @@ func (a *App) holdsObjects(id string) bool {
 
 func declareReshapeSettings(r *ochazuke.Runtime) error {
 	for _, s := range []ochazuke.Setting{
+		{Name: settingReshapeFocus, Type: ochazuke.SettingBoolean, Default: true,
+			Description: "A reshape focuses its result in the edited tree (the restructure page when the viewer is read-only); off keeps the source-side focus"},
 		{Name: settingFlattenArrays, Type: ochazuke.SettingString, Default: arraysJoin, Enum: []string{arraysJoin, arraysJSON, arraysRows},
 			Description: "How marks.flatten writes an array among the marked fields: join its items (flatten.join between them), its compact JSON, or one row per item with the other fields repeated (the export's rule, export.arrays)"},
 		{Name: settingFlattenJoin, Type: ochazuke.SettingString, Default: ";",
@@ -351,6 +385,9 @@ func (a *App) registerReshapeVerbs() {
 		return id != "" && a.rs.marks[id]
 	})
 	r.DefineGuard("marks-any", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool { return len(a.markedIDs()) > 0 })
+	r.DefineGuard("shape-marked", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		return len(a.rs.orig.List().Marked()) > 0
+	})
 	r.DefineGuard("node-reshapable", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return a.Doc != nil && a.editable() && (len(a.markedIDs()) > 0 || node(ev) != "")
 	})
@@ -382,12 +419,12 @@ func (a *App) registerReshapeVerbs() {
 			return ochazuke.Done(a.nodePathsOf(a.markedIDs()))
 		}
 	}
-	flatten := func(c ochazuke.Ctx, ids []string) ochazuke.Result {
-		if len(ids) == 0 {
+	flatten := func(c ochazuke.Ctx, paths []string, run func(ochazuke.Ctx, Stage) ochazuke.Result) ochazuke.Result {
+		if len(paths) == 0 {
 			return ochazuke.Failed(errors.New("nothing to flatten: space marks the fields"))
 		}
 		s := a.r.Settings()
-		return a.reshape(c, Stage{Op: opFlatten, Paths: a.nodePathsOf(ids),
+		return run(c, Stage{Op: opFlatten, Paths: paths,
 			Arrays: ochazuke.StringArg(c.Args, "arrays", s.String(settingFlattenArrays)),
 			Join:   ochazuke.StringArg(c.Args, "join", s.String(settingFlattenJoin)),
 			Names:  ochazuke.StringArg(c.Args, "names", s.String(settingFlattenNames))})
@@ -420,7 +457,7 @@ func (a *App) registerReshapeVerbs() {
 	r.Define("node").
 		Verb("mark", setMarks(true), "Mark the node (any depth; space, again unmarks) for marks.flatten and marks.pick; marks survive collapsing, moves and undo").Many().When("node-unmarked").
 		Verb("unmark", setMarks(false), "Unmark the node").Many().When("node-marked").
-		Verb("flatten", func(c ochazuke.Ctx) ochazuke.Result { return flatten(c, subjectIDs(c)) },
+		Verb("flatten", func(c ochazuke.Ctx) ochazuke.Result { return flatten(c, a.nodePathsOf(subjectIDs(c)), a.reshape) },
 			"Flatten the node (or a V selection) as marks.flatten flattens the marks: a flat array of objects, one per item of the nearest common array").Many().When("node-reshapable").
 		Verb("pick", func(c ochazuke.Ctx) ochazuke.Result { return pick(c, subjectIDs(c)) },
 			"Keep only the node (or a V selection) as marks.pick keeps the marks").Many().When("node-reshapable").
@@ -462,12 +499,33 @@ func (a *App) registerReshapeVerbs() {
 		}, "Unmark every node").When("marks-any").
 		Verb("list", func(c ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.nodePathsOf(a.markedIDs())) },
 			"The marked nodes' paths in the restructured document").Fetch().
-		Verb("flatten", func(c ochazuke.Ctx) ochazuke.Result { return flatten(c, a.targets(c)) },
-			"Flatten the marked fields (else the selected node) into a flat array of objects, one per item of their nearest common array, under flat names (flatten.names); an array among them joins, becomes JSON or makes rows (flatten.arrays). A reshape step: one undo step, in the mapping and the jq").When("node-reshapable").
+		Verb("flatten", func(c ochazuke.Ctx) ochazuke.Result { return flatten(c, a.nodePathsOf(a.markedIDs()), a.reshape) },
+			"Flatten the marked fields into a flat array of objects, one per item of their nearest common array, under flat names (flatten.names); an array among them joins, becomes JSON or makes rows (flatten.arrays). A reshape step: one undo step, in the mapping and the jq").When("marks-any").
 		Verb("pick", func(c ochazuke.Ctx) ochazuke.Result { return pick(c, a.targets(c)) },
 			"Keep only the marked fields (else the selected node), at their paths, with the objects and arrays they are in: the rest of the tree is dropped, as one undo step").When("node-reshapable")
+	r.Define("shape").
+		Verb("flatten", func(c ochazuke.Ctx) ochazuke.Result {
+			list := a.rs.orig.List()
+			marked := list.Marked()
+			if list.Visual() {
+				if _, err := r.Execute(ochazuke.Request{Noun: "ochazuke.list", Verb: "end-visual", Target: rsOrigID + "/list"}); err != nil {
+					return ochazuke.Failed(err)
+				}
+				if kept := list.Marked(); len(kept) > 0 {
+					marked = kept
+				}
+			}
+			var paths []string
+			for _, it := range marked {
+				if s, ok := it.Data.(*Shape); ok {
+					paths = append(paths, s.Path)
+				}
+			}
+			return flatten(c, paths, a.reshapeOriginal)
+		}, "Flatten the original tree's marked source fields into a new restructured result; u restores the previous edits").Many().When("shape-marked")
 	params("node.flatten", flattenParams)
 	params("marks.flatten", flattenParams)
+	params("shape.flatten", flattenParams)
 	params("node.key-by", map[string]ochazuke.Parameter{
 		"field":      {Type: "string", Required: true, Source: "node.key-fields", Description: "the field each item is filed under (a scalar field of the items)"},
 		"keep":       {Type: "boolean", Description: "keep the field in each value (default key-by.keep-field)"},
@@ -475,5 +533,5 @@ func (a *App) registerReshapeVerbs() {
 		"missing":    {Type: "string", Description: "the key for items without the field (default key-by.missing)"},
 	})
 	setHistory(r, ochazuke.HistoryAction, "node.mark", "node.unmark", "marks.clear")
-	setHistory(r, ochazuke.HistoryChange, "node.flatten", "node.pick", "node.key-by", "node.values", "node.entries", "marks.flatten", "marks.pick")
+	setHistory(r, ochazuke.HistoryChange, "node.flatten", "node.pick", "node.key-by", "node.values", "node.entries", "marks.flatten", "marks.pick", "shape.flatten")
 }

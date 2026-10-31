@@ -55,7 +55,7 @@ func (a *App) registerEdit() error {
 	r := a.r
 	if err := declareOwn(r, ochazuke.Setting{
 		Name: settingEditGate, Type: ochazuke.SettingBoolean, Default: editGateDefault,
-		Description: "The edits answer only in EDIT (i enters it, esc or leaving the pane leaves): the data pane's value edits (r, i, x, d d, o, O, K, p; r enters EDIT and edits the value) and the edited structure's (> < S t c d o O a p P F g p g k g v g e); off, they answer at once as before",
+		Description: "The edits answer only in EDIT (i enters it, esc or leaving the pane leaves): the data pane's value edits (r, i, x, d d, o, O, K, p; r enters EDIT and edits the value) and the edited structure's (> < S t c d o O a p P F g p g k g v g e; F with marks acts in every structure mode); off, they answer at once as before",
 	}); err != nil {
 		return err
 	}

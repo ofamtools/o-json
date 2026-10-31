@@ -1,0 +1,48 @@
+{
+  "area": "reshape",
+  "fixture": "viewer",
+  "seed": {
+    "doc": "reshape.json"
+  },
+  "width": 120,
+  "height": 30,
+  "values": {
+    "modes.edit-gate": true
+  },
+  "name": "o-json: flatten marked help",
+  "script": [
+    "j",
+    "j",
+    "j",
+    "j",
+    "space",
+    "j",
+    "j",
+    "j",
+    "j",
+    "j",
+    "space",
+    "?",
+    "/",
+    {
+      "type": "flatten"
+    }
+  ],
+  "expect": [
+    {
+      "after": 11,
+      "contains": [
+        "F flatten"
+      ]
+    },
+    {
+      "contains": [
+        "flatten",
+        "Flatten the marked fields"
+      ],
+      "lacks": [
+        "node.flatten"
+      ]
+    }
+  ]
+}
