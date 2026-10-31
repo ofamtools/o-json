@@ -670,7 +670,7 @@
     },
     {
       "label": "Cycle views backward",
-      "caption": "shift+tab cycles the data view backward. Reach the previous representation without stepping through all the others.",
+      "caption": "shift+tab cycles backward from TABLE to Mapping. Inspect how output fields map to source paths without leaving the selected shape.",
       "keys": [
         "shift+tab"
       ],
@@ -678,7 +678,8 @@
       "expect": {
         "mode": "shape",
         "contains": [
-          "JSON .items"
+          "Mapping",
+          "[mapping]"
         ]
       }
     }

@@ -31,6 +31,11 @@ its documents and state; the story command has no `--data` flag. The lane's
 explicit go.work uses the monogatari worktree until the coordinator tags the
 library and updates the dependency. Do not commit a replace or go.work.
 
+The player shows one tree: opening/setup steps, a reset row, then action
+titles with captions as detail and key steps as children. Before each action
+the cursor jumps back to the reset row, then follows that action’s steps.
+`play.tree` defaults on; false restores the active-segment column.
+
 Press `a` for autoplay, `space` to step, `[` / `]` for previous/next action,
 and `r` to restart from file opening. Pace remains 400 ms per event with a
 3 second pause before and after each action. `:set play.captions false`
@@ -85,8 +90,13 @@ right-side d p intentionally explains that the original cannot be edited.
 These are limits taught explicitly, not claims that the inherited keys
 perform a visible scroll on these pages.
 
-The separate split-preview lane changes the restructure page. These lessons
-target a4b8e6b; the coordinator will rebase and gate them after it lands.
+These lessons are rebased onto the preview page at 2c2e3a1. SPLIT keeps the
+edited copy and shows its reshaped data below; D/tab/shift+tab cycle views,
+including Mapping, with the current view in the title strip. Enter folds the
+edited structure. Lessons that construct a small output explicitly run
+`:restructure clear` first; source-tree lessons explicitly focus left. The
+approved first tutorial keeps all action captions, keys and order unchanged;
+its setup now clears the copied structure and returns to the source tree.
 Proposed hidden/hint changes are recorded in the lane report, without
 editing any binding rows or owner configuration.
 

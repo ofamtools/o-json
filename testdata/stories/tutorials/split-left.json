@@ -22,7 +22,9 @@
     "j",
     "j",
     "j",
-    "M"
+    "M",
+    "ctrl+w",
+    "h"
   ],
   "actions": [
     {
@@ -42,9 +44,10 @@
     },
     {
       "label": "Copy a source branch as a path",
-      "caption": "y copies .items from the original tree. Put this structure path into the new tree when building an output from selected branches.",
+      "caption": "Press y then h: y copies .items, then h collapses its branch. The next key resolves y because y j and y m now copy recipes. Keep the source path ready for a new output.",
       "keys": [
-        "y"
+        "y",
+        "h"
       ],
       "id": "shape.yank",
       "expect": {
@@ -72,8 +75,12 @@
       "note": "e opens the file chooser; ctrl+o shows our recent sample files."
     },
     {
-      "after": 9,
+      "after": 11,
       "note": "Reset point: every action begins here again; earlier actions never change this starting state."
     }
-  ]
+  ],
+  "expect": {
+    "mode": "split",
+    "focus": "o:s:.items"
+  }
 }

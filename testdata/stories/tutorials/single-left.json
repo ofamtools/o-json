@@ -20,6 +20,8 @@
       "job": "viewer.open"
     },
     "M",
+    "ctrl+w",
+    "h",
     "L"
   ],
   "actions": [
@@ -64,8 +66,12 @@
       "note": "e opens the file chooser; ctrl+o shows our recent sample files."
     },
     {
-      "after": 7,
+      "after": 9,
       "note": "Reset point: every action begins here again; earlier actions never change this starting state."
     }
-  ]
+  ],
+  "expect": {
+    "mode": "split",
+    "focus": "o:s:."
+  }
 }

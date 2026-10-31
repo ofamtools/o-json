@@ -80,9 +80,16 @@
     },
     {
       "label": "Send a shape to the new structure",
-      "caption": "M opens the empty restructure page; s sends items and its fields across. Build a new structure from the source branch you selected.",
+      "caption": "M opens the copied structure; :restructure clear empties it, and ctrl+w h returns to the original. s sends items and its fields across so the new output contains just this collection.",
       "keys": [
         "M",
+        ":",
+        {
+          "type": "restructure clear"
+        },
+        "enter",
+        "ctrl+w",
+        "h",
         "s"
       ],
       "id": "shape.send",

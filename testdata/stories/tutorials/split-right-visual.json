@@ -23,8 +23,15 @@
     },
     {
       "key": "M",
-      "note": "M opens SPLIT: the source on the left, a new structure on the right."
+      "note": "M opens SPLIT on the edited copy, with reshaped data in the preview. :restructure clear empties the new structure; ctrl+w h returns to the original before we copy source fields."
     },
+    ":",
+    {
+      "type": "restructure clear"
+    },
+    "enter",
+    "ctrl+w",
+    "h",
     "G",
     "k",
     "k",
@@ -49,7 +56,8 @@
       "VISUAL-LINE",
       "first",
       "last"
-    ]
+    ],
+    "register": ".customers[].contact.city"
   },
   "actions": [
     {
@@ -218,7 +226,7 @@
   },
   "notes": [
     {
-      "after": 23,
+      "after": 28,
       "note": "Reset point: first and last are selected in the right structure. Each lesson starts here again."
     }
   ]
