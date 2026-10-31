@@ -300,3 +300,22 @@ func TestYankObjectsAsExportFormats(t *testing.T) {
 		t.Fatalf("yank changed source: %q, %v", data, err)
 	}
 }
+
+func TestYankSubtreeRejectsExportFormats(t *testing.T) {
+	a := open(t, "testdata/sample.json", 110, 30)
+	selectPath(t, a, ".items[].name")
+	if err := a.r.StoreYank(ochazuke.Yank{Text: "keep this register"}, "a", false); err != nil {
+		t.Fatal(err)
+	}
+	for _, format := range []string{"csv", "tsv", "jsonl", "md"} {
+		_, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "operate", Args: ochazuke.Arguments{"op": "y", "object": "subtree", "format": format, "register": "a"}})
+		if err == nil {
+			t.Fatalf("%s subtree yank accepted", format)
+		}
+		for _, register := range []string{"", "a"} {
+			if got := yanked(t, a, register); got != "keep this register" {
+				t.Fatalf("%s replaced register %q: %q", format, register, got)
+			}
+		}
+	}
+}

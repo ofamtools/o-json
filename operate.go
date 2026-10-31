@@ -353,6 +353,9 @@ func (a *App) operateYank(c ochazuke.Ctx, object string, o operand) ochazuke.Res
 	case o.text != "":
 		return a.copyText(c, o.text, o.what)
 	case o.what == "the subtree":
+		if ochazuke.StringArg(c.Args, "format", "json") != "json" {
+			return ochazuke.Failed(errors.New("subtree yanks preserve structure clipboard data; format must be json"))
+		}
 		return a.forward(c, "node", "yank")
 	}
 	if len(o.nodes) == 0 {
@@ -628,7 +631,7 @@ func (a *App) registerOperate() {
 		"reverse":  {Type: "boolean", Description: "s: descending"},
 		"again":    {Type: "boolean", Description: "s on the sorted column reverses it (the default); false sorts ascending again"},
 		"register": {Type: "string", Description: "y: the register"},
-		"format":   {Type: "string", Enum: append([]string{"json"}, exportFormatNames()...), Description: "y: json keeps the value and its type (default); csv, tsv, jsonl or md export the selected objects as rows using export.arrays, export.join and export.null; key and path yanks remain plain text"},
+		"format":   {Type: "string", Enum: append([]string{"json"}, exportFormatNames()...), Description: "y: json keeps the value and its type (default); csv, tsv, jsonl or md export the selected objects as rows using export.arrays, export.join and export.null; key and path yanks remain plain text; structural subtree yanks accept only json"},
 	}
 	keys := []string{"item.operate", "field.operate", "node.operate", "shape.operate"}
 	for _, k := range keys {

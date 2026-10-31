@@ -361,7 +361,7 @@ In the data pane's TABLE, NESTED and EDIT modes, `y k` copies only the focused k
 
 The existing `item.operate` and `field.operate` verbs also accept `format` when `op` is `y`. Omit it, or use `json`, for the existing typed value. Choose `csv`, `tsv`, `jsonl` or `md` for plain export text in the registers and clipboard. For example, with the cursor on a table cell, enter `:item operate --op y --object object --format md` to copy the enclosing object as a Markdown table. One object's fields become columns of one row. Nested objects become dotted columns, and arrays and null follow `export.arrays`, `export.join` and `export.null`, just as file exports do.
 
-Use `object row` for the current row, `object table` for the table's array, or `motion down --steps 1` for the current row and the next. Add `--register a` for a named register. Key-only and path operands remain plain text regardless of `format`; no document file is written. The structure's existing operate verbs share the format choice for their value operands. JSON and FLAT line-yank actions retain their existing behavior.
+Use `object row` for the current row, `object table` for the table's array, or `motion down --steps 1` for the current row and the next. Add `--register a` for a named register. Key-only and path operands remain plain text regardless of `format`; no document file is written. The structure's existing operate verbs share the format choice for their value operands. Structural `subtree` yanks keep their existing node-and-origin clipboard data for structure put; non-JSON formats are refused without replacing a register. JSON and FLAT line-yank actions retain their existing behavior.
 
 ### Settings
 
