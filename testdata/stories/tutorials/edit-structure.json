@@ -1,152 +1,223 @@
 {
-  "name": "o-json: EDIT (structure, edited tree)",
+  "name": "o-json: reshape a document in the viewer",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
-    "j",
-    "j",
+    "e",
+    "ctrl+o",
+    {
+      "type": "tutorial-reshape"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "j",
     "i"
   ],
-  "expect": {
-    "mode": "edit"
-  },
   "actions": [
     {
-      "label": "node.put {\"before\":true}",
-      "caption": "",
+      "label": "Give a field a clearer name",
+      "caption": "r opens title for renaming; type heading and esc to keep it. Clarify the output key while preserving its original value.",
       "keys": [
+        "r",
+        {
+          "type": "heading"
+        },
+        "esc"
+      ],
+      "id": "node.rename",
+      "expect": {
+        "mode": "edit",
+        "contains": [
+          "heading"
+        ]
+      }
+    },
+    {
+      "label": "Put a copy above the current field",
+      "caption": "y y copies title and P puts it above. Copy a field in the output without altering its source.",
+      "keys": [
+        "y",
+        "y",
         "P"
       ],
+      "id": "node.put {\"before\":true}",
       "expect": {
-        "mode": "edit"
-      },
-      "id": "node.put {\"before\":true}"
+        "mode": "edit",
+        "contains": [
+          "title-2"
+        ],
+        "register": "{\"o-json.nodes\":[{\"id\":\"r:1\",\"label\":\"title\",\"from\":\".title\"}]}\n"
+      }
     },
     {
-      "label": "marks.flatten",
-      "caption": "",
-      "keys": [
-        "F"
-      ],
-      "expect": {
-        "mode": "edit"
-      },
-      "id": "marks.flatten"
-    },
-    {
-      "label": "marks.pick",
-      "caption": "",
-      "keys": [
-        "g",
-        "p"
-      ],
-      "expect": {
-        "mode": "edit"
-      },
-      "id": "marks.pick"
-    },
-    {
-      "label": "node.indent {\"into\":\"next\"}",
-      "caption": "",
+      "label": "Nest a field into the object below",
+      "caption": "> j moves title into the next object, container. Group this field with the review metadata instead of leaving it at the document root.",
       "keys": [
         ">",
         "j"
       ],
+      "id": "node.indent {\"into\":\"next\"}",
       "expect": {
-        "mode": "edit"
-      },
-      "id": "node.indent {\"into\":\"next\"}"
+        "mode": "edit",
+        "contains": [
+          ".container",
+          "reviewed"
+        ]
+      }
     },
     {
-      "label": "node.key-by",
-      "caption": "",
+      "label": "Keep only a marked field",
+      "caption": "space marks title, then g p keeps only the marked branch and its ancestors. Reduce an output to the fields the next tool needs.",
       "keys": [
+        "space",
         "g",
-        "k"
-      ],
-      "expect": {
-        "mode": "normal"
-      },
-      "id": "node.key-by"
-    },
-    {
-      "label": "node.operate {\"object\":\"key\",\"op\":\"y\"}",
-      "caption": "",
-      "keys": [
-        "d",
-        "k"
-      ],
-      "expect": {
-        "mode": "edit"
-      },
-      "id": "node.operate {\"object\":\"key\",\"op\":\"y\"}"
-    },
-    {
-      "label": "node.operate {\"object\":\"path\",\"op\":\"!\"}",
-      "caption": "",
-      "keys": [
-        "d",
-        "!"
-      ],
-      "expect": {
-        "mode": "edit"
-      },
-      "id": "node.operate {\"object\":\"path\",\"op\":\"!\"}"
-    },
-    {
-      "label": "node.operate {\"object\":\"path\",\"op\":\"y\"}",
-      "caption": "",
-      "keys": [
-        "d",
         "p"
       ],
+      "id": "marks.pick",
       "expect": {
-        "mode": "edit"
-      },
-      "id": "node.operate {\"object\":\"path\",\"op\":\"y\"}"
+        "mode": "edit",
+        "contains": [
+          "1 marked"
+        ]
+      }
     },
     {
-      "label": "node.paste",
-      "caption": "",
+      "label": "Make rows from marked fields",
+      "caption": "space marks title, then F flattens it into an array of rows. Make a small, exportable table from selected fields.",
       "keys": [
+        "space",
+        "F"
+      ],
+      "id": "marks.flatten",
+      "expect": {
+        "mode": "edit",
+        "contains": [
+          "Table .",
+          "Quarterly orders"
+        ]
+      }
+    },
+    {
+      "label": "File records under their IDs",
+      "caption": "g g and four j motions select records; g k opens key-by. Enter opens the field choices, enter picks id, and a final enter runs it so each record can be addressed by its ID.",
+      "keys": [
+        "g",
+        "g",
+        "4",
+        "j",
+        "g",
+        "k",
+        "enter",
+        "enter",
+        "enter"
+      ],
+      "id": "node.key-by",
+      "expect": {
+        "mode": "edit",
+        "contains": [
+          ".records.A",
+          ".records.B"
+        ]
+      }
+    },
+    {
+      "label": "Copy a key while reshaping",
+      "caption": "y k copies the selected key title. Keep the output field name ready for a query or another structure.",
+      "keys": [
+        "y",
+        "k"
+      ],
+      "id": "node.operate {\"object\":\"key\",\"op\":\"y\"}",
+      "expect": {
+        "mode": "edit",
+        "register": "title"
+      }
+    },
+    {
+      "label": "Copy an output path",
+      "caption": "y p copies .title from the edited tree. Use the output path when checking what the reshape will produce.",
+      "keys": [
+        "y",
+        "p"
+      ],
+      "id": "node.operate {\"object\":\"path\",\"op\":\"y\"}",
+      "expect": {
+        "mode": "edit",
+        "register": ".title"
+      }
+    },
+    {
+      "label": "Query the output path",
+      "caption": "! ! sends .title to the jq line and runs it. Check a reshaped field against its current data.",
+      "keys": [
+        "!",
+        "!",
         {
-          "paste": "{\"tutorial\":true}"
+          "job": "jq.run"
         }
       ],
-      "id": "node.paste"
-    },
-    {
-      "label": "node.rename",
-      "caption": "",
-      "keys": [
-        "r"
-      ],
+      "id": "node.operate {\"object\":\"path\",\"op\":\"!\"}",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "node.rename"
+        "mode": "jq_·_line"
+      }
     },
     {
-      "label": "ochazuke.mode.set {\"mode\":\"declared\"}",
-      "caption": "",
+      "label": "Paste a small outline",
+      "caption": "Paste notes and an indented reviewed line to create nested object keys in the output. Sketch a grouping structure quickly before moving source fields into it.",
+      "keys": [
+        {
+          "paste": "notes\n  reviewed"
+        }
+      ],
+      "id": "node.paste",
+      "expect": {
+        "mode": "edit",
+        "contains": [
+          "notes",
+          "reviewed"
+        ]
+      }
+    },
+    {
+      "label": "Leave EDIT and keep the reshape",
+      "caption": "esc leaves EDIT and restores SHAPE. Continue reading the edited document without making further structural changes.",
       "keys": [
         "esc"
       ],
+      "id": "ochazuke.mode.set {\"mode\":\"declared\"}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.mode.set {\"mode\":\"declared\"}"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json",
+      "tutorial-reshape.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 7,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }

@@ -1,47 +1,71 @@
 {
-  "name": "o-json: Restructure page · single layout (L) · original",
+  "name": "o-json: scroll a single-pane structure",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
-  "height": 32,
+  "height": 24,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
-    "ctrl+w",
-    "v",
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
+    "M",
     "L"
   ],
-  "expect": {
-    "mode": "split"
-  },
   "actions": [
     {
-      "label": "ochazuke.view.scroll {\"lines\":-1}",
-      "caption": "",
+      "label": "Scroll back one line",
+      "caption": "ctrl+e moves the window down twice first; ctrl+y scrolls it up one line. Recover the field just above the visible window.",
       "keys": [
+        "ctrl+e",
+        "ctrl+e",
         "ctrl+y"
       ],
+      "id": "ochazuke.view.scroll {\"lines\":-1}",
       "expect": {
         "mode": "split"
-      },
-      "id": "ochazuke.view.scroll {\"lines\":-1}"
+      }
     },
     {
-      "label": "ochazuke.view.scroll {\"lines\":1}",
-      "caption": "",
+      "label": "Scroll the structure down one line",
+      "caption": "ctrl+e scrolls the single-pane structure down one line. Keep scanning a long outline without a full-page jump.",
       "keys": [
         "ctrl+e"
       ],
+      "id": "ochazuke.view.scroll {\"lines\":1}",
       "expect": {
         "mode": "split"
-      },
-      "id": "ochazuke.view.scroll {\"lines\":1}"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 7,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }

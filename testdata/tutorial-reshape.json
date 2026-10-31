@@ -1,0 +1,9 @@
+{
+  "title": "Quarterly orders",
+  "container": {"reviewed": true},
+  "records": [
+    {"id": "A", "name": "Alpha", "total": 12},
+    {"id": "B", "name": "Beta", "total": 24}
+  ],
+  "source": "tutorial"
+}

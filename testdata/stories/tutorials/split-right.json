@@ -1,160 +1,281 @@
 {
-  "name": "o-json: Restructure page · SPLIT · right (restructured) side",
+  "name": "o-json: build and export a restructured tree",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "tutorial-reshape"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
+    "j",
+    "M",
+    "s",
     "ctrl+w",
-    "v",
-    "ctrl+w",
-    "l"
+    "l",
+    "j"
   ],
-  "expect": {
-    "mode": "split"
-  },
   "actions": [
     {
-      "label": "node.array",
-      "caption": "",
+      "label": "Make this field an array",
+      "caption": "t turns title into an array of its value. Use an array when the receiving format expects a list even for one value.",
       "keys": [
         "t"
       ],
+      "id": "node.array",
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "array"
+        ]
+      }
+    },
+    {
+      "label": "Add a grouping key above",
+      "caption": "O creates an empty object above title. Type metadata and esc so the new output has a place for metadata fields.",
+      "keys": [
+        "O",
+        {
+          "type": "metadata"
+        },
+        "esc"
+      ],
+      "id": "restructure.add-key {\"where\":\"above\"}",
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "metadata"
+        ]
+      }
+    },
+    {
+      "label": "Add a grouping key below",
+      "caption": "o creates an empty object below title. Type metadata and esc to reserve a named place for more output fields.",
+      "keys": [
+        "o",
+        {
+          "type": "metadata"
+        },
+        "esc"
+      ],
+      "id": "restructure.add-key {\"where\":\"below\"}",
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "metadata"
+        ]
+      }
+    },
+    {
+      "label": "Add a child grouping key",
+      "caption": "g g selects the new document root; a adds a child object. Type metadata and esc to create a grouping key inside the output.",
+      "keys": [
+        "g",
+        "g",
+        "a",
+        {
+          "type": "metadata"
+        },
+        "esc"
+      ],
+      "id": "restructure.add-key {\"where\":\"child\"}",
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "metadata"
+        ]
+      }
+    },
+    {
+      "label": "Undo a structure edit",
+      "caption": "r renames title to heading first; u restores title. Review an experiment and step back without losing the original document.",
+      "keys": [
+        "r",
+        {
+          "type": "heading"
+        },
+        "esc",
+        "u"
+      ],
+      "id": "restructure.undo",
       "expect": {
         "mode": "split"
-      },
-      "id": "node.array"
+      }
     },
     {
-      "label": "restructure.add-key {\"where\":\"above\"}",
-      "caption": "",
+      "label": "Restore an undone edit",
+      "caption": "Rename title to heading, undo it with u, then ctrl+r restores heading. Compare the two names before deciding which output to keep.",
       "keys": [
-        "O"
+        "r",
+        {
+          "type": "heading"
+        },
+        "esc",
+        "u",
+        "ctrl+r"
       ],
+      "id": "restructure.redo",
       "expect": {
-        "mode": "split"
-      },
-      "id": "restructure.add-key {\"where\":\"above\"}"
+        "mode": "split",
+        "contains": [
+          "heading"
+        ]
+      }
     },
     {
-      "label": "restructure.add-key {\"where\":\"below\"}",
-      "caption": "",
-      "keys": [
-        "o"
-      ],
-      "expect": {
-        "mode": "insert"
-      },
-      "id": "restructure.add-key {\"where\":\"below\"}"
-    },
-    {
-      "label": "restructure.add-key {\"where\":\"child\"}",
-      "caption": "",
-      "keys": [
-        "a"
-      ],
-      "expect": {
-        "mode": "insert"
-      },
-      "id": "restructure.add-key {\"where\":\"child\"}"
-    },
-    {
-      "label": "restructure.close",
-      "caption": "",
-      "keys": [
-        "q"
-      ],
-      "expect": {
-        "mode": "shape"
-      },
-      "id": "restructure.close"
-    },
-    {
-      "label": "restructure.layout",
-      "caption": "",
+      "label": "Give the new structure more room",
+      "caption": "L changes the page from two trees to the single layout. Focus on the new structure when its paths need more room.",
       "keys": [
         "L"
       ],
+      "id": "restructure.layout",
       "expect": {
         "mode": "split"
-      },
-      "id": "restructure.layout"
+      }
     },
     {
-      "label": "restructure.one-way",
-      "caption": "",
+      "label": "Read the split direction reminder",
+      "caption": "d p on the new tree shows the one-way reminder: the original is read-only. Push from the original side or obtain here when you need to bring a source shape across.",
       "keys": [
         "d",
         "p"
       ],
+      "id": "restructure.one-way",
       "expect": {
-        "mode": "split"
-      },
-      "id": "restructure.one-way"
+        "mode": "split",
+        "contains": [
+          "the original side is read-only"
+        ]
+      }
     },
     {
-      "label": "restructure.open",
-      "caption": "",
+      "label": "Write the reshaped data to a new file",
+      "caption": "w opens an output path; type reshaped.json and enter. Export the title-only document while keeping the input intact.",
       "keys": [
+        "w",
+        "alt+o",
+        {
+          "type": "reshaped.json"
+        },
+        {
+          "job": "ochazuke.chooser.load"
+        },
+        "enter",
+        {
+          "job": "restructure.write"
+        }
+      ],
+      "id": "restructure.write",
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "wrote the restructured document"
+        ],
+        "writes": [
+          "reshaped.json"
+        ]
+      }
+    },
+    {
+      "label": "Replace an earlier output file",
+      "caption": "First write reshaped.json, rename title to heading, then W writes to that same output path. Refresh an export after a change without overwriting the source.",
+      "keys": [
+        "w",
+        "alt+o",
+        {
+          "type": "reshaped.json"
+        },
+        {
+          "job": "ochazuke.chooser.load"
+        },
+        "enter",
+        {
+          "job": "restructure.write"
+        },
+        "r",
+        {
+          "type": "heading"
+        },
+        "esc",
+        "W",
+        "alt+o",
+        {
+          "type": "reshaped.json"
+        },
+        {
+          "job": "ochazuke.chooser.load"
+        },
+        "enter",
+        {
+          "job": "restructure.write"
+        }
+      ],
+      "id": "restructure.write {\"force\":true}",
+      "expect": {
+        "mode": "split",
+        "contains": [
+          "wrote the restructured document"
+        ],
+        "writes": [
+          "reshaped.json"
+        ]
+      }
+    },
+    {
+      "label": "Return to the viewer",
+      "caption": "q closes the restructure page and returns to the edited viewer. Inspect the output values with the shape you just built.",
+      "keys": [
+        "q"
+      ],
+      "id": "restructure.close",
+      "expect": {
+        "mode": "shape"
+      }
+    },
+    {
+      "label": "Reopen the structure workspace",
+      "caption": "q returns to the viewer first; ctrl+w v reopens the restructure page. Continue working with the same mapping and undo history.",
+      "keys": [
+        "q",
         "ctrl+w",
         "v"
       ],
+      "id": "restructure.open",
       "expect": {
         "mode": "split"
-      },
-      "id": "restructure.open"
-    },
-    {
-      "label": "restructure.redo",
-      "caption": "",
-      "keys": [
-        "ctrl+r"
-      ],
-      "expect": {
-        "mode": "split"
-      },
-      "id": "restructure.redo"
-    },
-    {
-      "label": "restructure.undo",
-      "caption": "",
-      "keys": [
-        "u"
-      ],
-      "expect": {
-        "mode": "split"
-      },
-      "id": "restructure.undo"
-    },
-    {
-      "label": "restructure.write",
-      "caption": "",
-      "keys": [
-        "w"
-      ],
-      "expect": {
-        "mode": "insert"
-      },
-      "id": "restructure.write"
-    },
-    {
-      "label": "restructure.write {\"force\":true}",
-      "caption": "",
-      "keys": [
-        "W"
-      ],
-      "expect": {
-        "mode": "insert"
-      },
-      "id": "restructure.write {\"force\":true}"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json",
+      "tutorial-reshape.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 11,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }
