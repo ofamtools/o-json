@@ -42,6 +42,17 @@
         "mode": "insert"
       },
       "id": "value.rename"
+    },
+    {
+      "label": "ochazuke.list.yank {\"what\":\"cell\"}",
+      "caption": "",
+      "keys": [
+        "y"
+      ],
+      "expect": {
+        "mode": "normal"
+      },
+      "id": "ochazuke.list.yank {\"what\":\"cell\"}"
     }
   ],
   "seed": {

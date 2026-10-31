@@ -1,133 +1,213 @@
 {
-  "name": "o-json: open (e): the path chooser",
+  "name": "o-json: choose and open a file",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
-    "e"
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
+    "e",
+    {
+      "job": "ochazuke.chooser.load"
+    }
   ],
-  "expect": {
-    "mode": "insert"
-  },
   "actions": [
     {
-      "label": "ochazuke.chooser.cancel",
-      "caption": "",
+      "label": "Keep the current document",
+      "caption": "esc closes the chooser and keeps the open document. Use it when you decide against switching files.",
       "keys": [
         "esc"
       ],
+      "id": "ochazuke.chooser.cancel",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.chooser.cancel"
+      }
     },
     {
-      "label": "ochazuke.chooser.move {\"delta\":-1}",
-      "caption": "",
+      "label": "Choose the previous file",
+      "caption": "ctrl+j moves down once; ctrl+k moves back up. Use it to correct a choice without closing the chooser.",
       "keys": [
+        "ctrl+j",
         "ctrl+k"
       ],
+      "id": "ochazuke.chooser.move {\"delta\":-1}",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.chooser.move {\"delta\":-1}"
+      }
     },
     {
-      "label": "ochazuke.chooser.move {\"delta\":1}",
-      "caption": "",
+      "label": "Choose the next file",
+      "caption": "ctrl+j moves down the file choices. Check the highlighted name before you open it.",
       "keys": [
         "ctrl+j"
       ],
+      "id": "ochazuke.chooser.move {\"delta\":1}",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.chooser.move {\"delta\":1}"
+      }
     },
     {
-      "label": "ochazuke.chooser.next-source",
-      "caption": "",
+      "label": "Show recent files",
+      "caption": "ctrl+o switches from browsing folders to recent files. Use it to reopen a document without remembering its path.",
       "keys": [
         "ctrl+o"
       ],
+      "id": "ochazuke.chooser.next-source",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.chooser.next-source"
+        "mode": "insert",
+        "contains": [
+          "[recent]"
+        ]
+      }
     },
     {
-      "label": "ochazuke.chooser.open",
-      "caption": "",
+      "label": "Browse inside a folder",
+      "caption": "Type jobs, then ctrl+l opens that folder. Browse its JSON files before choosing which job to inspect.",
       "keys": [
-        "ctrl+l"
+        {
+          "type": "jobs"
+        },
+        "ctrl+l",
+        {
+          "job": "ochazuke.chooser.load"
+        }
       ],
+      "id": "ochazuke.chooser.open",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.chooser.open"
+        "mode": "insert",
+        "contains": [
+          "orders.min.json",
+          "package.json"
+        ]
+      }
     },
     {
-      "label": "ochazuke.chooser.pick",
-      "caption": "",
+      "label": "Open the highlighted file",
+      "caption": "Type nested, then alt+enter picks that JSON file. The chooser closes and o-json shows its structure.",
       "keys": [
-        "alt+enter"
+        {
+          "type": "nested"
+        },
+        "alt+enter",
+        {
+          "job": "viewer.open"
+        }
       ],
+      "id": "ochazuke.chooser.pick",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.chooser.pick"
+        "mode": "shape",
+        "contains": [
+          "nested.json",
+          "1/20"
+        ]
+      }
     },
     {
-      "label": "ochazuke.chooser.previous-source",
-      "caption": "",
+      "label": "Choose the previous source",
+      "caption": "alt+o cycles backward through file sources. Use the typed-path source when you already know the filename.",
       "keys": [
         "alt+o"
       ],
+      "id": "ochazuke.chooser.previous-source",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.chooser.previous-source"
+        "mode": "insert",
+        "contains": [
+          "[typed]"
+        ]
+      }
     },
     {
-      "label": "ochazuke.chooser.up",
-      "caption": "",
+      "label": "Browse the parent folder",
+      "caption": "Type jobs and press ctrl+l to enter it; alt+up returns to the sample folder. Use it to recover your place while browsing.",
       "keys": [
-        "alt+up"
+        {
+          "type": "jobs"
+        },
+        "ctrl+l",
+        {
+          "job": "ochazuke.chooser.load"
+        },
+        "alt+up",
+        {
+          "job": "ochazuke.chooser.load"
+        }
       ],
+      "id": "ochazuke.chooser.up",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.chooser.up"
+      }
     },
     {
-      "label": "ochazuke.search.cycle-match",
-      "caption": "",
+      "label": "Match a partial filename",
+      "caption": "Type smpl, then shift+tab chooses substring matching and tab returns to fuzzy. Find sample.json even when you remember only some letters.",
       "keys": [
+        {
+          "type": "smpl"
+        },
+        "shift+tab",
         "tab"
       ],
+      "id": "ochazuke.search.cycle-match",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.search.cycle-match"
+        "mode": "insert",
+        "contains": [
+          "fuzzy",
+          "sample.json"
+        ]
+      }
     },
     {
-      "label": "ochazuke.search.cycle-match {\"step\":-1}",
-      "caption": "",
+      "label": "Match with a different search style",
+      "caption": "Type sample, then shift+tab cycles filename matching backward. Choose the style that fits the text you remember.",
       "keys": [
+        {
+          "type": "sample"
+        },
         "shift+tab"
       ],
+      "id": "ochazuke.search.cycle-match {\"step\":-1}",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.search.cycle-match {\"step\":-1}"
+        "mode": "insert",
+        "contains": [
+          "substr",
+          "sample.json"
+        ]
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 7,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "insert"
   }
 }

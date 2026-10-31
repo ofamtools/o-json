@@ -1,122 +1,186 @@
 {
-  "name": "o-json: command palette (:)",
+  "name": "o-json: run commands by name",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     ":"
   ],
-  "expect": {
-    "mode": "insert"
-  },
   "actions": [
     {
-      "label": "ochazuke.palette.cancel",
-      "caption": "",
+      "label": "Cancel a command",
+      "caption": "Type viewer, then esc clears the command; esc again closes the empty palette. Cancel an unfinished command without changing the document.",
       "keys": [
+        {
+          "type": "viewer"
+        },
+        "esc",
         "esc"
       ],
+      "id": "ochazuke.palette.cancel",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.palette.cancel"
+      }
     },
     {
-      "label": "ochazuke.palette.close",
-      "caption": "",
+      "label": "Close with Ctrl+C",
+      "caption": "Type viewer, then ctrl+c closes the palette. It cancels this command line without quitting o-json.",
       "keys": [
+        {
+          "type": "viewer"
+        },
         "ctrl+c"
       ],
+      "id": "ochazuke.palette.close",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.palette.close"
+      }
     },
     {
-      "label": "ochazuke.palette.complete",
-      "caption": "",
+      "label": "Complete a command name",
+      "caption": "Type viewer vie, then tab completes view. Completion saves typing and shows which verbs are available.",
       "keys": [
+        {
+          "type": "viewer vie"
+        },
         "tab"
       ],
+      "id": "ochazuke.palette.complete",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.palette.complete"
+        "mode": "insert",
+        "contains": [
+          ": viewer view"
+        ]
+      }
     },
     {
-      "label": "ochazuke.palette.move {\"delta\":-1}",
-      "caption": "",
+      "label": "Move back through commands",
+      "caption": "Type viewer and move down twice; ctrl+p returns to the previous match. Use it to refine the command choice.",
       "keys": [
+        {
+          "type": "viewer "
+        },
+        "ctrl+n",
+        "ctrl+n",
         "ctrl+p"
       ],
+      "id": "ochazuke.palette.move {\"delta\":-1}",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.palette.move {\"delta\":-1}"
+      }
     },
     {
-      "label": "ochazuke.palette.move {\"delta\":1}",
-      "caption": "",
+      "label": "Choose a command",
+      "caption": "Type viewer and a space, then ctrl+n highlights the first matching command. Read the command name before running it.",
       "keys": [
+        {
+          "type": "viewer "
+        },
         "ctrl+n"
       ],
+      "id": "ochazuke.palette.move {\"delta\":1}",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.palette.move {\"delta\":1}"
+      }
     },
     {
-      "label": "ochazuke.palette.open",
-      "caption": "",
+      "label": "Open the command palette",
+      "caption": "esc closes the current palette; ctrl+space opens a fresh one. Use this alternative to : when reaching for named commands.",
       "keys": [
+        "esc",
         "ctrl+space"
       ],
+      "id": "ochazuke.palette.open",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.palette.open"
+      }
     },
     {
-      "label": "ochazuke.palette.recall {\"delta\":-1}",
-      "caption": "",
+      "label": "Return to an empty command line",
+      "caption": "Run viewer view, reopen, and recall it with up; down returns to the empty command line so you can type something new.",
       "keys": [
+        {
+          "type": "viewer view"
+        },
+        "enter",
+        ":",
+        "up",
         "down"
       ],
+      "id": "ochazuke.palette.recall {\"delta\":-1}",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.palette.recall {\"delta\":-1}"
+      }
     },
     {
-      "label": "ochazuke.palette.recall {\"delta\":1}",
-      "caption": "",
+      "label": "Recall a command",
+      "caption": "Run viewer view once, reopen the palette, then up recalls it. Reuse a command without typing it again.",
       "keys": [
+        {
+          "type": "viewer view"
+        },
+        "enter",
+        ":",
         "up"
       ],
+      "id": "ochazuke.palette.recall {\"delta\":1}",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.palette.recall {\"delta\":1}"
+      }
     },
     {
-      "label": "ochazuke.palette.run",
-      "caption": "",
+      "label": "Run a named command",
+      "caption": "Type viewer view, then enter runs it. The data view changes just as it does with its bound key.",
       "keys": [
+        {
+          "type": "viewer view"
+        },
         "enter"
       ],
+      "id": "ochazuke.palette.run",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.palette.run"
+        "mode": "shape",
+        "contains": [
+          "Fields ."
+        ]
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 6,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "insert"
   }
 }

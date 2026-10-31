@@ -1,78 +1,107 @@
 {
-  "name": "o-json: help (?)",
+  "name": "o-json: find a key in help",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "?"
   ],
-  "expect": {
-    "mode": "normal"
-  },
   "actions": [
     {
-      "label": "ochazuke.bindings-help.view",
-      "caption": "",
+      "label": "Switch the help layout",
+      "caption": "S switches the help view. Use it to compare the binding tree with the flat list.",
       "keys": [
         "S"
       ],
+      "id": "ochazuke.bindings-help.view",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.bindings-help.view"
+        "mode": "normal",
+        "contains": [
+          "Keys · pick"
+        ]
+      }
     },
     {
-      "label": "ochazuke.bindings-help.view {\"step\":-1}",
-      "caption": "",
+      "label": "Read the previous help view",
+      "caption": "shift+tab cycles help backward. Return to the view that makes the key you need easiest to find.",
       "keys": [
         "shift+tab"
       ],
+      "id": "ochazuke.bindings-help.view {\"step\":-1}",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.bindings-help.view {\"step\":-1}"
+        "mode": "normal",
+        "contains": [
+          "Keys · table"
+        ]
+      }
     },
     {
-      "label": "ochazuke.bindings-help.view {\"step\":1}",
-      "caption": "",
+      "label": "Read the next help view",
+      "caption": "tab changes how help presents the live bindings. Compare the views to find keys by noun or by their rows.",
       "keys": [
         "tab"
       ],
+      "id": "ochazuke.bindings-help.view {\"step\":1}",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.bindings-help.view {\"step\":1}"
+        "mode": "normal",
+        "contains": [
+          "Keys · pick"
+        ]
+      }
     },
     {
-      "label": "ochazuke.list.filter-open",
-      "caption": "",
+      "label": "Filter the binding list",
+      "caption": "/ opens the help filter; type yank to narrow the rows. Find copying commands without reading every binding.",
       "keys": [
-        "/"
+        "/",
+        {
+          "type": "yank"
+        }
       ],
+      "id": "ochazuke.list.filter-open",
       "expect": {
-        "mode": "list_filter"
-      },
-      "id": "ochazuke.list.filter-open"
-    },
-    {
-      "label": "ochazuke.list.yank {\"what\":\"cell\"}",
-      "caption": "",
-      "keys": [
-        "y"
-      ],
-      "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.list.yank {\"what\":\"cell\"}"
+        "mode": "list_filter",
+        "contains": [
+          "/yank"
+        ]
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 6,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "normal"
   }
 }
