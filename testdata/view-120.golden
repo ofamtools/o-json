@@ -6,17 +6,17 @@
   ┃ substr / to search                         ┃ │ #  id  name   owner  tags  archived?  note?                       │  
   ┃ key             type          from         ┃ │ 0  1   alpha  {2}    [2]                                          │  
   ┃ ▾ . (root)      object                     ┃ │ 1  2   beta   {1}    []    true                                   │  
-  ┃     name        string        .name        ┃ │ 2  3   gamma  {2}    [1]              third                       │  
-  ┃     version     number        .version     ┃ │ 3  4   delta  {1}    [1]                                          │  
-  ┃   ▾ items       array         .items       ┃ │                                                                   │  
-  ┃     ▾ []        object        .items[]     ┃ │                                                                   │  
-  ┃         id      number        .items[].id  ┃ │                                                                   │  
-  ┃         name    string        .items[].na… ┃ │                                                                   │  
-  ┃       ▾ owner   object        .items[].ow… ┃ │                                                                   │  
-  ┃           name  string        .items[].ow… ┃ │                                                                   │  
-  ┃           ema…  string|null?  .items[].ow… ┃ │                                                                   │  
-  ┃       ▾ tags    array         .items[].ta… ┃ │                                                                   │  
-  ┃           []    string        .items[].ta… ┃ │                                                                   │  
+  ┃ ├─   name       string        .name        ┃ │ 2  3   gamma  {2}    [1]              third                       │  
+  ┃ ├─   version    number        .version     ┃ │ 3  4   delta  {1}    [1]                                          │  
+  ┃ ├─ ▾ items      array         .items       ┃ │                                                                   │  
+  ┃ │  └─ ▾ []      object        .items[]     ┃ │                                                                   │  
+  ┃ │     ├─   id   number        .items[].id  ┃ │                                                                   │  
+  ┃ │     ├─   na…  string        .items[].na… ┃ │                                                                   │  
+  ┃ │     ├─ ▾ ow…  object        .items[].ow… ┃ │                                                                   │  
+  ┃ │     │  ├─  …  string        .items[].ow… ┃ │                                                                   │  
+  ┃ │     │  └─  …  string|null?  .items[].ow… ┃ │                                                                   │  
+  ┃ │     ├─ ▾ ta…  array         .items[].ta… ┃ │                                                                   │  
+  ┃ │     │  └─  …  string        .items[].ta… ┃ │                                                                   │  
   ┃ 1–12 / 18                                  ┃ │                                                                   │  
   ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  

@@ -161,12 +161,12 @@ func (a *App) registerRestructure() error {
 	r := a.r
 	r.Instance(rsPageID, ochazuke.Kind("restructure"))
 	cols := func(c ...ochazuke.Column) ochazuke.InstanceOption { return ochazuke.Columns(c...) }
-	orig, err := r.AddTree(rsOrigID, nil, ochazuke.Parent(rsPageID), ochazuke.NoSpill(),
+	orig, err := r.AddTree(rsOrigID, nil, ochazuke.Parent(rsPageID), ochazuke.NoSpill(), ochazuke.Guides(),
 		cols(ochazuke.Column{Title: "path", Min: 8}, ochazuke.Column{Title: "type", Priority: 2}, ochazuke.Column{Title: "count", Align: ochazuke.AlignRight, Priority: 1}))
 	if err != nil {
 		return err
 	}
-	tree, err := r.AddTree(rsTreeID, nil, ochazuke.Parent(rsPageID), ochazuke.NoSpill(),
+	tree, err := r.AddTree(rsTreeID, nil, ochazuke.Parent(rsPageID), ochazuke.NoSpill(), ochazuke.Guides(),
 		cols(ochazuke.Column{Title: "key", Min: 12}, ochazuke.Column{Title: "type", Priority: 1}, ochazuke.Column{Title: "from", Priority: 2}))
 	if err != nil {
 		return err

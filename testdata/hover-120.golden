@@ -6,17 +6,17 @@
   │ substr / to search                         │ ┃  #       id  name    active  tags  meta  address?  orders?    12› ┃  
   │ key             type          from         │ ┃  0       1   Ada A   false   []    {2}   {3}       []             ┃  
   │ ▾ . (root)      array                      │ ┃  1       2   Bo B    true    [1]   {2}   {3}       [1]            ┃  
-  │   ▾ []          object        []           │ ┃  2       3   Cy C    true    [2]   {2}   {3}       [2]            ┃  
-  │       id        number        [].id        │ ┃     #  id    total  items                                         ┃  
-  │       name      string        [].name      │ ┃     0  o3-0  11.67  [3]                                           ┃  
-  │       active    bool          [].active    │ ┃       #  sku     qty                                              ┃  
-  │       tags      array|null    [].tags      │ ┃       0  mug     1                                                ┃  
-  │       meta      object|null   [].meta      │ ┃       1  kettle  4                                                ┃  
-  │       address   object|null?  [].address   │ ┃       2  filter  1                                                ┃  
-  │     ▾ orders    array         [].orders    │ ┃     1  o3-1  32.68  [3]                                           ┃  
-  │       ▾ []      object        [].orders[]  │ ┃  3       4   Di D    false   [3]   {2}   {3}       []             ┃  
-  │           id    string        [].orders[]… │ ┃  4       5   Ed E    true    []    {2}   null      [1]            ┃  
-  │           tot…  number        [].orders[]… │ ┃  5       6   Fu F    true    [1]   {2}   {3}       [2]            ┃  
+  │ └─ ▾ []         object        []           │ ┃  2       3   Cy C    true    [2]   {2}   {3}       [2]            ┃  
+  │    ├─   id      number        [].id        │ ┃     #  id    total  items                                         ┃  
+  │    ├─   name    string        [].name      │ ┃     0  o3-0  11.67  [3]                                           ┃  
+  │    ├─   active  bool          [].active    │ ┃       #  sku     qty                                              ┃  
+  │    ├─   tags    array|null    [].tags      │ ┃       0  mug     1                                                ┃  
+  │    ├─   meta    object|null   [].meta      │ ┃       1  kettle  4                                                ┃  
+  │    ├─   addre…  object|null?  [].address   │ ┃       2  filter  1                                                ┃  
+  │    ├─ ▾ orders  array         [].orders    │ ┃     1  o3-1  32.68  [3]                                           ┃  
+  │    │  └─ ▾ []   object        [].orders[]  │ ┃  3       4   Di D    false   [3]   {2}   {3}       []             ┃  
+  │    │     ├─  …  string        [].orders[]… │ ┃  4       5   Ed E    true    []    {2}   null      [1]            ┃  
+  │    │     ├─  …  number        [].orders[]… │ ┃  5       6   Fu F    true    [1]   {2}   {3}       [2]            ┃  
   │ 1–12 / 28                                  │ ┃  6       7   Gil G   false   [2]   {2}   {3}       []             ┃  
   ╰────────────────────────────────────────────╯ ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯  
   ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
