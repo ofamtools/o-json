@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/unixsuperhero/ochazuke"
 )
 
@@ -335,6 +336,91 @@ func TestHoverRenderGolden(t *testing.T) {
 		if got != string(want) {
 			t.Errorf("%d columns\n%s\nwant\n%s", width, got, want)
 		}
+	}
+}
+
+func TestHoverPartTonesAtEachDepth(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	a := hoverAt(t, 120, 30, 7)
+	a.m.Appearance.Theme = "dark"
+	// Override the theme tokens: the hover must resolve the same tokens as
+	// the main table, including user overrides rather than fixed colours.
+	for i, tone := range []string{ochazuke.ToneHeader, ochazuke.ToneHeaderIntersect, ochazuke.ToneRowNumber, ochazuke.ToneRowNumberIntersect} {
+		hue := ochazuke.SchemeColor{Light: itoa(i + 1), Dark: itoa(i + 1)}
+		a.m.Appearance.SetTone(tone, ochazuke.ToneStyle{Fg: hue})
+	}
+	press(t, a, "j", "l", "l", "l", "j", "l")
+	s := ochazuke.NewStyles(*a.m.Appearance)
+	levels := a.hoverLevels()
+	if len(levels) != 2 {
+		t.Fatalf("got %d levels", len(levels))
+	}
+	for depth := range levels {
+		lines, _ := a.hoverBlock(s, levels, depth, 120)
+		t.Logf("depth %d header: %q", depth+1, lines[0])
+		if !strings.Contains(lines[0], s.Tone(ochazuke.ToneHeader).Render("#")) {
+			t.Errorf("depth %d: header token missing: %q", depth+1, lines[0])
+		}
+		col := a.hover.path[depth].col
+		title := levels[depth].header[col]
+		width := ansi.StringWidth(title)
+		for _, row := range levels[depth].rows {
+			width = max(width, ansi.StringWidth(row[col]))
+		}
+		title += strings.Repeat(" ", min(width, hoverColMax)-ansi.StringWidth(title))
+		if !strings.Contains(lines[0], s.Tone(ochazuke.ToneHeaderIntersect).Render(title)) {
+			t.Errorf("depth %d: header crossing missing: %q", depth+1, lines[0])
+		}
+		if !strings.Contains(lines[1], s.Tone(ochazuke.ToneRowNumberIntersect).Render("0")) {
+			t.Errorf("depth %d: cursor row number token missing: %q", depth+1, lines[1])
+		}
+		found := false
+		for _, line := range lines[2:] {
+			found = found || strings.Contains(line, s.Tone(ochazuke.ToneRowNumber).Render("1"))
+		}
+		if !found {
+			t.Errorf("depth %d: plain row number token missing", depth+1)
+		}
+		if err := a.r.Settings().Set(ochazuke.IntersectSetting, false); err != nil {
+			t.Fatal(err)
+		}
+		uncrossed, _ := a.hoverBlock(s, levels, depth, 120)
+		if !strings.Contains(uncrossed[0], s.Tone(ochazuke.ToneHeader).Render(title)) {
+			t.Errorf("depth %d: intersect off must keep base header tone", depth+1)
+		}
+		if !strings.Contains(uncrossed[1], s.Tone(ochazuke.ToneRowNumber).Render("0")) {
+			t.Errorf("depth %d: intersect off must keep base row number tone", depth+1)
+		}
+		if err := a.r.Settings().Set(ochazuke.IntersectSetting, true); err != nil {
+			t.Fatal(err)
+		}
+		if err := a.r.Settings().Set(ochazuke.PartTonesSetting, false); err != nil {
+			t.Fatal(err)
+		}
+		legacy, _ := a.hoverBlock(s, levels, depth, 120)
+		if !strings.Contains(legacy[0], s.Muted.Render("#")) || ansi.Strip(legacy[0]) != ansi.Strip(lines[0]) {
+			t.Errorf("depth %d: part tones off must restore muted header and preserve text: %q", depth+1, legacy[0])
+		}
+		if err := a.r.Settings().Set(ochazuke.PartTonesSetting, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestHoverChromeKeepsScalarDataPlain(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	a := hoverAt(t, 120, 30, 7)
+	a.m.Appearance.Theme = "dark"
+	s := ochazuke.NewStyles(*a.m.Appearance)
+	g := gridOf(build(t, `["a · b", "c"]`))
+	lines, _ := a.hoverBlock(s, []hoverGrid{g}, 0, 120)
+	if strings.Count(lines[0], s.Muted.Render(" · ")) != 1 || !strings.Contains(lines[0], "a · b") {
+		t.Fatalf("only the separator is chrome: %q", lines[0])
+	}
+	g = gridOf(build(t, `{"#": {"x": 1}}`))
+	lines, _ = a.hoverBlock(s, []hoverGrid{g}, 0, 120)
+	if g.rownum || !strings.Contains(lines[1], s.Muted.Render("{1}")) {
+		t.Fatalf("object keys are data headers, size summaries are chrome: %q", lines)
 	}
 }
 

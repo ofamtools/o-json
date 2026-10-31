@@ -84,6 +84,8 @@ type hoverState struct {
 // the line stands for (an item, the object, an element, the joined array).
 type hoverGrid struct {
 	header []string
+	rownum bool     // the leading column is an index, not a document key named "#"
+	joined []string // scalar values, with the separators kept out of the data
 	rows   [][]string
 	nodes  [][]*Node
 	lines  []*Node
@@ -99,6 +101,7 @@ func gridOf(n *Node) hoverGrid {
 	var g hoverGrid
 	switch {
 	case n.Kind == KArray && slices.ContainsFunc(n.Children, func(c *Node) bool { return c.Kind == KObject }):
+		g.rownum = true
 		t := NewTable(n.Path(), []*Node{n}, false)
 		g.header, g.keys = []string{"#"}, []string{""}
 		for _, c := range t.Columns {
@@ -132,7 +135,9 @@ func gridOf(n *Node) hoverGrid {
 			vals = append(vals, hoverText(c))
 		}
 		g.rows, g.nodes, g.lines = [][]string{{strings.Join(vals, " · ")}}, [][]*Node{{nil}}, []*Node{n}
+		g.joined = vals
 	default:
+		g.rownum = true
 		g.header = []string{"#", "value"}
 		for i, c := range n.Children {
 			g.rows = append(g.rows, []string{strconv.Itoa(i), hoverText(c)})
@@ -472,23 +477,60 @@ func (a *App) hoverBlock(s ochazuke.Styles, levels []hoverGrid, k, w int) (lines
 			first++
 		}
 	}
-	line := func(cells []string, sel int, style func(string) string) string {
+	partTones := a.r.Settings().Bool(ochazuke.PartTonesSetting)
+	intersect := a.r.Settings().Bool(ochazuke.IntersectSetting)
+	line := func(cells []string, row, sel int, style func(string) string) string {
 		var b strings.Builder
 		if first > 0 {
 			b.WriteString(s.Muted.Render("‹ "))
 		}
 		for j := first; j < len(cells); j++ {
-			if j > first {
-				b.WriteString(strings.Repeat(" ", hoverGap))
+			gap := ""
+			if j+1 < len(cells) {
+				gap = strings.Repeat(" ", hoverGap)
 			}
-			c := ansi.Truncate(cells[j], widths[j], "…")
+			text := cells[j]
+			if partTones && g.joined != nil {
+				text = strings.Join(g.joined, s.Muted.Render(" · "))
+			}
+			c := ansi.Truncate(text, widths[j], "…")
 			c += strings.Repeat(" ", widths[j]-ansi.StringWidth(c))
-			if j == sel {
+			tone := ""
+			if partTones {
+				switch {
+				case row < 0:
+					tone = ochazuke.ToneHeader
+					if intersect && pos != nil && j == pos.col {
+						tone = ochazuke.ToneHeaderIntersect
+					}
+				case g.rownum && j == 0:
+					tone = ochazuke.ToneRowNumber
+					if intersect && pos != nil && pos.row == row {
+						tone = ochazuke.ToneRowNumberIntersect
+					}
+				}
+			}
+			if tone != "" {
+				// Part crossings carry their own fill, outside the cursor's
+				// reverse bar, just as ochazuke's main table draws them.
+				st := s.Tone(tone)
+				if j == sel && (!intersect || row < 0) {
+					st = st.Reverse(true)
+				}
+				c = st.Render(c)
+				if row < 0 && gap != "" {
+					gap = s.Tone(ochazuke.ToneHeader).Render(gap)
+				}
+			} else if j == sel {
 				c = s.Accent.Reverse(true).Render(c)
 			} else {
+				if partTones && row >= 0 && nested(g.cell(hoverPos{row, j})) {
+					c = s.Muted.Render(c) // size summaries describe hidden data
+				}
 				c = style(c)
 			}
 			b.WriteString(c)
+			b.WriteString(gap)
 		}
 		return ind + ansi.Truncate(b.String(), inner, "…")
 	}
@@ -497,7 +539,7 @@ func (a *App) hoverBlock(s ochazuke.Styles, levels []hoverGrid, k, w int) (lines
 	accent := func(c string) string { return s.Accent.Render(c) }
 
 	if g.header != nil {
-		lines = append(lines, line(g.header, -1, muted))
+		lines = append(lines, line(g.header, -1, -1, muted))
 	}
 	limit := a.hoverLimit(k)
 	off := 0
@@ -520,7 +562,7 @@ func (a *App) hoverBlock(s ochazuke.Styles, levels []hoverGrid, k, w int) (lines
 				style = accent // on the way to the cursor
 			}
 		}
-		lines = append(lines, line(g.rows[i], sel, style))
+		lines = append(lines, line(g.rows[i], i, sel, style))
 		if pos != nil && pos.row == i && k+1 < len(levels) {
 			sub, at := a.hoverBlock(s, levels, k+1, w)
 			if at >= 0 {
