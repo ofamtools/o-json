@@ -1,298 +1,366 @@
 {
-  "name": "o-json: SEARCH line (substring; tab cycles fuzzy, regex, jq)",
+  "name": "o-json: edit the search line",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "/",
-    "a"
+    {
+      "type": "name alpha"
+    },
+    "ctrl+a",
+    "ctrl+f",
+    "ctrl+f",
+    "ctrl+f",
+    "ctrl+f"
   ],
-  "expect": {
-    "mode": "search_·_substr"
-  },
   "actions": [
     {
-      "label": "ochazuke.input.delete",
-      "caption": "",
+      "label": "Delete the next character",
+      "caption": "ctrl+d deletes the space after name. Fix the character under the search cursor without retyping the whole query.",
       "keys": [
         "ctrl+d"
       ],
+      "id": "ochazuke.input.delete",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.delete"
+      }
     },
     {
-      "label": "ochazuke.input.delete {\"direction\":\"backward\"}",
-      "caption": "",
+      "label": "Delete the previous character",
+      "caption": "backspace deletes the e before the cursor. Correct the text you just typed while keeping the rest of the query.",
       "keys": [
         "backspace"
       ],
+      "id": "ochazuke.input.delete {\"direction\":\"backward\"}",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.delete {\"direction\":\"backward\"}"
+      }
     },
     {
-      "label": "ochazuke.input.insert",
-      "caption": "",
+      "label": "Paste search text",
+      "caption": "ctrl+a ctrl+k clears the line; paste owner into it. Reuse a copied key or value as your search instead of typing it.",
       "keys": [
+        "ctrl+a",
+        "ctrl+k",
         {
-          "paste": "{\"tutorial\":true}"
+          "paste": "owner"
         }
       ],
-      "id": "ochazuke.input.insert"
-    },
-    {
-      "label": "ochazuke.input.insert {\"text\":\" \"}",
-      "caption": "",
-      "keys": [
-        "space"
-      ],
+      "id": "ochazuke.input.insert",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.insert {\"text\":\" \"}"
+        "mode": "search_·_substr",
+        "register": "name alpha"
+      }
     },
     {
-      "label": "ochazuke.input.kill {\"motion\":\"line-end\"}",
-      "caption": "",
+      "label": "Insert a space",
+      "caption": "ctrl+a ctrl+k clears the line; type owner, space, then name. A space lets the search text include a phrase.",
+      "keys": [
+        "ctrl+a",
+        "ctrl+k",
+        {
+          "type": "owner"
+        },
+        "space",
+        {
+          "type": "name"
+        }
+      ],
+      "id": "ochazuke.input.insert {\"text\":\" \"}",
+      "expect": {
+        "mode": "search_·_substr",
+        "register": "name alpha"
+      }
+    },
+    {
+      "label": "Remove the rest of the line",
+      "caption": "ctrl+k cuts from the cursor to the end. Keep name and replace the trailing search text.",
       "keys": [
         "ctrl+k"
       ],
+      "id": "ochazuke.input.kill {\"motion\":\"line-end\"}",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.kill {\"motion\":\"line-end\"}"
+        "mode": "search_·_substr",
+        "register": " alpha"
+      }
     },
     {
-      "label": "ochazuke.input.kill {\"motion\":\"line-start\"}",
-      "caption": "",
+      "label": "Remove text before the cursor",
+      "caption": "ctrl+u cuts from the start to the cursor. Keep the trailing text when the beginning of your query is wrong.",
       "keys": [
         "ctrl+u"
       ],
+      "id": "ochazuke.input.kill {\"motion\":\"line-start\"}",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.kill {\"motion\":\"line-start\"}"
+        "mode": "search_·_substr",
+        "register": "name"
+      }
     },
     {
-      "label": "ochazuke.input.kill {\"motion\":\"word-backward\"}",
-      "caption": "",
+      "label": "Cut the previous word",
+      "caption": "ctrl+w cuts the word before the cursor. Remove one search term while leaving the following term intact.",
       "keys": [
         "ctrl+w"
       ],
+      "id": "ochazuke.input.kill {\"motion\":\"word-backward\"}",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.kill {\"motion\":\"word-backward\"}"
+        "mode": "search_·_substr",
+        "register": "name"
+      }
     },
     {
-      "label": "ochazuke.input.kill {\"motion\":\"word-next\"}",
-      "caption": "",
+      "label": "Cut the next word",
+      "caption": "alt+d cuts forward by a word. Replace the next search term without touching the first one.",
       "keys": [
         "alt+d"
       ],
+      "id": "ochazuke.input.kill {\"motion\":\"word-next\"}",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.kill {\"motion\":\"word-next\"}"
+        "mode": "search_·_substr",
+        "register": " alpha"
+      }
     },
     {
-      "label": "ochazuke.input.kill {\"motion\":\"word-previous\"}",
-      "caption": "",
+      "label": "Cut backward by a word",
+      "caption": "alt+backspace cuts the preceding word. Use this alternative word-delete key when correcting a longer query.",
       "keys": [
         "alt+backspace"
       ],
+      "id": "ochazuke.input.kill {\"motion\":\"word-previous\"}",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.kill {\"motion\":\"word-previous\"}"
+        "mode": "search_·_substr",
+        "register": "name"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"down\"}",
-      "caption": "",
-      "keys": [
-        "down"
-      ],
-      "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"down\"}"
-    },
-    {
-      "label": "ochazuke.input.move {\"motion\":\"left\"}",
-      "caption": "",
+      "label": "Move left in the query",
+      "caption": "ctrl+b moves the search cursor left one character. Position it precisely before deleting or inserting text.",
       "keys": [
         "ctrl+b"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"left\"}",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"left\"}"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"line-end\"}",
-      "caption": "",
+      "label": "Go to the end of the query",
+      "caption": "ctrl+e moves the cursor to the end. Add another term without stepping across each character.",
       "keys": [
         "ctrl+e"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"line-end\"}",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"line-end\"}"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"line-start\"}",
-      "caption": "",
+      "label": "Go to the start of the query",
+      "caption": "ctrl+a moves the cursor to the start. Replace or extend the first term directly.",
       "keys": [
         "ctrl+a"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"line-start\"}",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"line-start\"}"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"right\"}",
-      "caption": "",
+      "label": "Move right in the query",
+      "caption": "ctrl+f moves the search cursor right one character. Skip past the space before editing the next word.",
       "keys": [
         "ctrl+f"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"right\"}",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"right\"}"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"up\"}",
-      "caption": "",
-      "keys": [
-        "up"
-      ],
-      "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"up\"}"
-    },
-    {
-      "label": "ochazuke.input.move {\"motion\":\"word-next\"}",
-      "caption": "",
+      "label": "Move forward by a word",
+      "caption": "alt+f moves to the next word boundary. Navigate a long search query in larger steps.",
       "keys": [
         "alt+f"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"word-next\"}",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"word-next\"}"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"word-previous\"}",
-      "caption": "",
+      "label": "Move backward by a word",
+      "caption": "alt+b moves back to the preceding word. Return to the term you want to correct.",
       "keys": [
         "alt+b"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"word-previous\"}",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"word-previous\"}"
+      }
     },
     {
-      "label": "ochazuke.input.paste {\"before\":true,\"literal\":true}",
-      "caption": "",
+      "label": "Restore cut search text",
+      "caption": "ctrl+w cuts name; ctrl+y puts it back literally. Recover a term you removed while editing the query.",
       "keys": [
+        "ctrl+w",
         "ctrl+y"
       ],
+      "id": "ochazuke.input.paste {\"before\":true,\"literal\":true}",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.input.paste {\"before\":true,\"literal\":true}"
+        "mode": "search_·_substr",
+        "register": "name"
+      }
     },
     {
-      "label": "ochazuke.input.select {\"shape\":\"char\"}",
-      "caption": "",
+      "label": "Select part of the query",
+      "caption": "ctrl+v starts a character selection; right extends it. Select just the text you want to replace or copy.",
       "keys": [
-        "ctrl+v"
+        "ctrl+v",
+        "right"
       ],
+      "id": "ochazuke.input.select {\"shape\":\"char\"}",
       "expect": {
         "mode": "visual"
-      },
-      "id": "ochazuke.input.select {\"shape\":\"char\"}"
+      }
     },
     {
-      "label": "ochazuke.search.accept",
-      "caption": "",
+      "label": "Read matching values",
+      "caption": "Clear the line, type name, then enter moves to the Results view. Read the matching values beside their paths.",
       "keys": [
+        "ctrl+a",
+        "ctrl+k",
+        {
+          "type": "name"
+        },
         "enter"
       ],
+      "id": "ochazuke.search.accept",
       "expect": {
-        "mode": "search"
-      },
-      "id": "ochazuke.search.accept"
+        "mode": "search",
+        "register": "name alpha",
+        "contains": [
+          "Results /name",
+          "1/9"
+        ]
+      }
     },
     {
-      "label": "ochazuke.search.cancel",
-      "caption": "",
+      "label": "Cancel this search",
+      "caption": "esc leaves the search line and restores the document view. Use it when the query is unfinished or no longer useful.",
       "keys": [
         "esc"
       ],
+      "id": "ochazuke.search.cancel",
       "expect": {
         "mode": "shape"
-      },
-      "id": "ochazuke.search.cancel"
+      }
     },
     {
-      "label": "ochazuke.search.type",
-      "caption": "",
+      "label": "Try fuzzy matching",
+      "caption": "tab changes substring search to fuzzy search. Find a key even when you remember only some of its letters.",
       "keys": [
         "tab"
       ],
+      "id": "ochazuke.search.type",
       "expect": {
         "mode": "search_·_fuzzy"
-      },
-      "id": "ochazuke.search.type"
+      }
     },
     {
-      "label": "ochazuke.search.type {\"steps\":-1}",
-      "caption": "",
+      "label": "Use jq in the search line",
+      "caption": "Clear the text and type .items; shift+tab switches backward to jq and runs it. Turn a search into an extraction without leaving the viewer.",
       "keys": [
-        "shift+tab"
+        "ctrl+a",
+        "ctrl+k",
+        {
+          "type": ".items"
+        },
+        "shift+tab",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "ochazuke.search.type {\"steps\":-1}",
       "expect": {
-        "mode": "jq_·_line"
-      },
-      "id": "ochazuke.search.type {\"steps\":-1}"
+        "mode": "jq_·_line",
+        "register": "name alpha"
+      }
     },
     {
-      "label": "ochazuke.surface.scroll {\"lines\":-8}",
-      "caption": "",
+      "label": "Return within the text window",
+      "caption": "pgup addresses the page surface; this mapping scrolls with ctrl+u. After moving down, use the editor motion to return to earlier lines.",
       "keys": [
-        "pgup"
+        "esc",
+        ":",
+        {
+          "type": "restructure mapping"
+        },
+        "enter",
+        "ctrl+d",
+        "pgup",
+        "ctrl+u"
       ],
+      "id": "ochazuke.surface.scroll {\"lines\":-8}",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.surface.scroll {\"lines\":-8}"
+        "mode": "normal"
+      }
     },
     {
-      "label": "ochazuke.surface.scroll {\"lines\":8}",
-      "caption": "",
+      "label": "Choose the right scroll target",
+      "caption": "pgdown scrolls page surfaces. This mapping is an editor window, so ctrl+d moves its text instead. Use the window motion when a page key stays put.",
       "keys": [
-        "pgdown"
+        "esc",
+        ":",
+        {
+          "type": "restructure mapping"
+        },
+        "enter",
+        "pgdown",
+        "ctrl+d"
       ],
+      "id": "ochazuke.surface.scroll {\"lines\":8}",
       "expect": {
-        "mode": "search_·_substr"
-      },
-      "id": "ochazuke.surface.scroll {\"lines\":8}"
+        "mode": "normal"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 12,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "search_·_substr"
   }
 }

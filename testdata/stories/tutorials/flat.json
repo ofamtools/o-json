@@ -1,86 +1,116 @@
 {
-  "name": "o-json: Viewer page · data pane · FLAT",
+  "name": "o-json: copy paths and values from FLAT",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "j",
     "j",
     "j",
     "ctrl+w",
     "l",
-    "D"
+    "D",
+    "j"
   ],
-  "expect": {
-    "mode": "flat"
-  },
   "actions": [
     {
-      "label": "line.jump",
-      "caption": "",
+      "label": "Jump from a value to its structure",
+      "caption": "enter jumps from the FLAT name line to its structure field. Find where an interesting value belongs in the document.",
       "keys": [
         "enter"
       ],
+      "id": "line.jump",
       "expect": {
         "mode": "table"
-      },
-      "id": "line.jump"
+      }
     },
     {
-      "label": "line.yank",
-      "caption": "",
+      "label": "Choose what to copy",
+      "caption": "y starts the FLAT copy chord. Choose y for the whole line, p for its path, or v for its value.",
       "keys": [
         "y"
       ],
+      "id": "line.yank",
       "expect": {
         "mode": "flat y"
-      },
-      "id": "line.yank"
+      }
     },
     {
-      "label": "line.yank-part {\"part\":\"line\"}",
-      "caption": "",
+      "label": "Copy the whole FLAT line",
+      "caption": "y y copies the displayed path and value together. Keep an explanation of both the location and the data.",
       "keys": [
         "y",
         "y"
       ],
+      "id": "line.yank-part {\"part\":\"line\"}",
       "expect": {
-        "mode": "flat"
-      },
-      "id": "line.yank-part {\"part\":\"line\"}"
+        "mode": "flat",
+        "register": ".items[0].name = \"alpha\""
+      }
     },
     {
-      "label": "line.yank-part {\"part\":\"path\"}",
-      "caption": "",
+      "label": "Copy only the path",
+      "caption": "y p copies the concrete path to this name. Paste it into jq or another tool without copying the displayed value.",
       "keys": [
         "y",
         "p"
       ],
+      "id": "line.yank-part {\"part\":\"path\"}",
       "expect": {
-        "mode": "flat"
-      },
-      "id": "line.yank-part {\"part\":\"path\"}"
+        "mode": "flat",
+        "register": ".items[0].name"
+      }
     },
     {
-      "label": "line.yank-part {\"part\":\"value\"}",
-      "caption": "",
+      "label": "Copy only the value",
+      "caption": "y v copies just the name value. Reuse the JSON data without carrying its path along.",
       "keys": [
         "y",
         "v"
       ],
+      "id": "line.yank-part {\"part\":\"value\"}",
       "expect": {
-        "mode": "flat"
-      },
-      "id": "line.yank-part {\"part\":\"value\"}"
+        "mode": "flat",
+        "register": "alpha"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 12,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "flat"
   }
 }

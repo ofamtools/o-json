@@ -1,100 +1,131 @@
 {
-  "name": "o-json: Viewer page · data pane · JSON",
+  "name": "o-json: read and fold formatted JSON",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "j",
     "j",
     "j",
     "ctrl+w",
     "l",
     "D",
-    "D"
+    "D",
+    "j"
   ],
-  "expect": {
-    "mode": "json"
-  },
   "actions": [
     {
-      "label": "line.bracket",
-      "caption": "",
+      "label": "Find the matching bracket",
+      "caption": "% jumps to the closing brace of the first record. See where this JSON object ends without counting nested braces.",
       "keys": [
         "%"
       ],
+      "id": "line.bracket",
       "expect": {
         "mode": "json"
-      },
-      "id": "line.bracket"
+      }
     },
     {
-      "label": "line.fold {\"how\":\"close\"}",
-      "caption": "",
+      "label": "Fold one JSON collection",
+      "caption": "z c folds the first record. Hide its values temporarily while keeping the surrounding JSON readable.",
       "keys": [
         "z",
         "c"
       ],
+      "id": "line.fold {\"how\":\"close\"}",
       "expect": {
         "mode": "json"
-      },
-      "id": "line.fold {\"how\":\"close\"}"
+      }
     },
     {
-      "label": "line.fold {\"how\":\"close-all\"}",
-      "caption": "",
+      "label": "Fold every nested collection",
+      "caption": "z M closes all JSON folds. Start with a compact overview of a deeply nested response.",
       "keys": [
         "z",
         "M"
       ],
+      "id": "line.fold {\"how\":\"close-all\"}",
       "expect": {
         "mode": "json"
-      },
-      "id": "line.fold {\"how\":\"close-all\"}"
+      }
     },
     {
-      "label": "line.fold {\"how\":\"open\"}",
-      "caption": "",
+      "label": "Open a folded collection",
+      "caption": "z c folds the record first; z o opens it again. Reveal the values when you are ready to read them.",
       "keys": [
+        "z",
+        "c",
         "z",
         "o"
       ],
+      "id": "line.fold {\"how\":\"open\"}",
       "expect": {
         "mode": "json"
-      },
-      "id": "line.fold {\"how\":\"open\"}"
+      }
     },
     {
-      "label": "line.fold {\"how\":\"open-all\"}",
-      "caption": "",
+      "label": "Open every JSON fold",
+      "caption": "z M folds the response first; z R opens every fold. Read the complete formatted JSON without opening each object separately.",
       "keys": [
+        "z",
+        "M",
         "z",
         "R"
       ],
+      "id": "line.fold {\"how\":\"open-all\"}",
       "expect": {
         "mode": "json"
-      },
-      "id": "line.fold {\"how\":\"open-all\"}"
+      }
     },
     {
-      "label": "line.fold {\"how\":\"toggle\"}",
-      "caption": "",
+      "label": "Toggle a JSON fold",
+      "caption": "z a toggles the selected fold. Open or close the collection with one chord when you already know its current state.",
       "keys": [
         "z",
         "a"
       ],
+      "id": "line.fold {\"how\":\"toggle\"}",
       "expect": {
         "mode": "json"
-      },
-      "id": "line.fold {\"how\":\"toggle\"}"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 13,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ],
+  "expect": {
+    "mode": "json"
   }
 }

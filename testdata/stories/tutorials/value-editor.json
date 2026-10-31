@@ -42,6 +42,28 @@
         "mode": "normal"
       },
       "id": "ochazuke.mode.set {\"mode\":\"normal\"}"
+    },
+    {
+      "label": "ochazuke.input.move {\"motion\":\"up\"}",
+      "caption": "",
+      "keys": [
+        "up"
+      ],
+      "expect": {
+        "mode": "search_·_substr"
+      },
+      "id": "ochazuke.input.move {\"motion\":\"up\"}"
+    },
+    {
+      "label": "ochazuke.input.move {\"motion\":\"down\"}",
+      "caption": "",
+      "keys": [
+        "down"
+      ],
+      "expect": {
+        "mode": "search_·_substr"
+      },
+      "id": "ochazuke.input.move {\"motion\":\"down\"}"
     }
   ],
   "seed": {
