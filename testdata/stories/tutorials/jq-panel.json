@@ -1,314 +1,373 @@
 {
-  "name": "o-json: jq panel (g j), focused",
+  "name": "o-json: read the generated jq and mapping",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "g",
-    "j"
+    "j",
+    "tab"
   ],
-  "expect": {
-    "mode": "normal"
-  },
   "actions": [
     {
-      "label": "jq-panel.close",
-      "caption": "",
+      "label": "Close the jq panel",
+      "caption": "q closes the jq panel and returns its space to the document. Use it when the recipe no longer needs to stay visible.",
       "keys": [
         "q"
       ],
+      "id": "jq-panel.close",
       "expect": {
         "mode": "shape"
-      },
-      "id": "jq-panel.close"
+      }
     },
     {
-      "label": "jq-panel.leave",
-      "caption": "",
+      "label": "Return focus to the document",
+      "caption": "esc returns focus to the structure and keeps the jq panel visible. Continue editing while watching the generated recipe.",
       "keys": [
         "esc"
       ],
+      "id": "jq-panel.leave",
       "expect": {
         "mode": "shape"
-      },
-      "id": "jq-panel.leave"
+      }
     },
     {
-      "label": "jq-panel.view",
-      "caption": "",
+      "label": "Switch between mapping and jq",
+      "caption": "tab switches from the mapping to its jq program. Compare the declarative field map with the program you can run elsewhere.",
       "keys": [
         "tab"
       ],
+      "id": "jq-panel.view",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "jq-panel.view"
+        "mode": "normal",
+        "contains": [
+          "jq program"
+        ]
+      }
     },
     {
-      "label": "jq-panel.yank",
-      "caption": "",
+      "label": "Copy the displayed mapping",
+      "caption": "Y copies the whole mapping shown in this panel. Keep a reusable recipe for the structure you built.",
       "keys": [
         "Y"
       ],
+      "id": "jq-panel.yank",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "jq-panel.yank"
+        "mode": "normal",
+        "register": "{\"map\": [\n  {\"from\": \".name\", \"to\": \".name\"},\n  {\"from\": \".version\", \"to\": \".version\"},\n  {\"from\": \".items\", \"to\": \".items\"},\n  {\"from\": \".items[]\", \"to\": \".items[]\"},\n  {\"from\": \".items[].id\", \"to\": \".items[].id\"},\n  {\"from\": \".items[].name\", \"to\": \".items[].name\"},\n  {\"from\": \".items[].owner\", \"to\": \".items[].owner\"},\n  {\"from\": \".items[].owner.name\", \"to\": \".items[].owner.name\"},\n  {\"from\": \".items[].owner.email\", \"to\": \".items[].owner.email\"},\n  {\"from\": \".items[].tags\", \"to\": \".items[].tags\"},\n  {\"from\": \".items[].tags[]\", \"to\": \".items[].tags[]\"},\n  {\"from\": \".items[].archived\", \"to\": \".items[].archived\"},\n  {\"from\": \".items[].note\", \"to\": \".items[].note\"},\n  {\"from\": \".meta\", \"to\": \".meta\"},\n  {\"from\": \".meta.generated\", \"to\": \".meta.generated\"},\n  {\"from\": \".meta.count\", \"to\": \".meta.count\"},\n  {\"from\": \".meta.source\", \"to\": \".meta.source\"}\n]}"
+      }
     },
     {
-      "label": "ochazuke.bindings.help",
-      "caption": "",
+      "label": "Find the panel keys",
+      "caption": "? opens help for this read-only panel. Discover selection, copy and navigation keys in the context where they work.",
       "keys": [
         "?"
       ],
+      "id": "ochazuke.bindings.help",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.bindings.help"
+      }
     },
     {
-      "label": "ochazuke.detail.scroll {\"lines\":-1}",
-      "caption": "",
+      "label": "Read earlier text in the panel",
+      "caption": "K addresses detail scrolling. In this mapping editor, G reaches the end and k moves up through its text instead.",
       "keys": [
-        "K"
+        "G",
+        "K",
+        "k"
       ],
+      "id": "ochazuke.detail.scroll {\"lines\":-1}",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.detail.scroll {\"lines\":-1}"
+      }
     },
     {
-      "label": "ochazuke.detail.scroll {\"lines\":1}",
-      "caption": "",
+      "label": "Distinguish detail scrolling",
+      "caption": "J addresses an overflowing detail panel. This mapping is a text editor, so j moves its cursor and scrolls its window instead.",
       "keys": [
-        "J"
+        "J",
+        "8",
+        "j"
       ],
+      "id": "ochazuke.detail.scroll {\"lines\":1}",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.detail.scroll {\"lines\":1}"
+      }
     },
     {
-      "label": "ochazuke.focus.next {\"scope\":\"region\"}",
-      "caption": "",
+      "label": "Move to the next region",
+      "caption": ") chooses the next focus region. This page has one region; esc then ctrl+a o moves into data instead. Choose pane motion when region motion stays put.",
       "keys": [
-        ")"
+        ")",
+        "esc",
+        "ctrl+a",
+        "o"
       ],
+      "id": "ochazuke.focus.next {\"scope\":\"region\"}",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.focus.next {\"scope\":\"region\"}"
+        "mode": "table"
+      }
     },
     {
-      "label": "ochazuke.focus.previous {\"scope\":\"region\"}",
-      "caption": "",
+      "label": "Move to the preceding region",
+      "caption": "( chooses the preceding region. This page has one region; esc then ctrl+w l focuses data explicitly. Use the pane direction when you know where to go.",
       "keys": [
-        "("
+        "(",
+        "esc",
+        "ctrl+w",
+        "l"
       ],
+      "id": "ochazuke.focus.previous {\"scope\":\"region\"}",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.focus.previous {\"scope\":\"region\"}"
+        "mode": "table"
+      }
     },
     {
-      "label": "ochazuke.history.repeat",
-      "caption": "",
+      "label": "Repeat a structure put",
+      "caption": "esc returns to the structure; i y y p makes a copy and . repeats that put. Reuse a change at the current focus.",
       "keys": [
+        "esc",
+        "j",
+        "i",
+        "y",
+        "y",
+        "p",
         "."
       ],
+      "id": "ochazuke.history.repeat",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.history.repeat"
+        "mode": "edit",
+        "register": "{\"o-json.nodes\":[{\"id\":\"r:1\",\"label\":\"name\",\"from\":\".name\"}]}\n",
+        "contains": [
+          "name-3"
+        ]
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"last-line\"}",
-      "caption": "",
+      "label": "Read the end of the mapping",
+      "caption": "G moves to the last line of the mapping. Check the final fields without scrolling one line at a time.",
       "keys": [
         "G"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"last-line\"}",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"last-line\"}"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"word-backward\"}",
-      "caption": "",
+      "label": "Move back in the recipe",
+      "caption": "w w moves forward twice; b returns by a word. Revisit the preceding part of a mapping entry.",
       "keys": [
+        "w",
+        "w",
         "b"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"word-backward\"}",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"word-backward\"}"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"word-end\"}",
-      "caption": "",
+      "label": "Reach the end of a word",
+      "caption": "w reaches the next word; e moves to its end. Position a selection exactly on the text you want.",
       "keys": [
+        "w",
         "e"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"word-end\"}",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"word-end\"}"
+      }
     },
     {
-      "label": "ochazuke.input.move {\"motion\":\"word-forward\"}",
-      "caption": "",
+      "label": "Move forward in the recipe",
+      "caption": "w moves to the next word in the read-only mapping. Inspect a field reference more precisely before copying part of it.",
       "keys": [
         "w"
       ],
+      "id": "ochazuke.input.move {\"motion\":\"word-forward\"}",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.input.move {\"motion\":\"word-forward\"}"
+      }
     },
     {
-      "label": "ochazuke.input.select {\"shape\":\"block\"}",
-      "caption": "",
+      "label": "Select a block of text",
+      "caption": "ctrl+v starts a rectangular selection; j l extends it. Select aligned parts of several mapping lines.",
       "keys": [
-        "ctrl+v"
+        "ctrl+v",
+        "j",
+        "l"
       ],
+      "id": "ochazuke.input.select {\"shape\":\"block\"}",
       "expect": {
         "mode": "visual-block"
-      },
-      "id": "ochazuke.input.select {\"shape\":\"block\"}"
+      }
     },
     {
-      "label": "ochazuke.input.select {\"shape\":\"line\"}",
-      "caption": "",
+      "label": "Select mapping lines",
+      "caption": "V selects a whole mapping line; j extends the selection. Copy complete entries without cutting through a JSON line.",
       "keys": [
-        "V"
+        "V",
+        "j"
       ],
+      "id": "ochazuke.input.select {\"shape\":\"line\"}",
       "expect": {
         "mode": "visual-line"
-      },
-      "id": "ochazuke.input.select {\"shape\":\"line\"}"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"g_pending\"}",
-      "caption": "",
+      "label": "Begin a g motion",
+      "caption": "g begins a two-key motion in the read-only editor. The next key can choose a larger jump, such as g g to its start.",
       "keys": [
         "g"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"g_pending\"}",
       "expect": {
         "mode": "normal g"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"g_pending\"}"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"register_pending\"}",
-      "caption": "",
+      "label": "Choose a copy register",
+      "caption": "\" begins register selection. Type the register name next to keep a recipe separately from later copies.",
       "keys": [
         "\""
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"register_pending\"}",
       "expect": {
         "mode": "register_pending"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"register_pending\"}"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"replay_pending\"}",
-      "caption": "",
+      "label": "Choose a macro to replay",
+      "caption": "@ begins macro-register selection. Pick a recorded macro next when repeating a navigation or editing sequence.",
       "keys": [
         "@"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"replay_pending\"}",
       "expect": {
         "mode": "replay_pending"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"replay_pending\"}"
+      }
     },
     {
-      "label": "ochazuke.page.next",
-      "caption": "",
+      "label": "Visit the next page",
+      "caption": "ctrl+j moves to the next page, the SPLIT restructure page. Switch tasks without reopening the file.",
       "keys": [
         "ctrl+j"
       ],
+      "id": "ochazuke.page.next",
       "expect": {
         "mode": "split"
-      },
-      "id": "ochazuke.page.next"
+      }
     },
     {
-      "label": "ochazuke.page.pick",
-      "caption": "",
+      "label": "Choose a page by name",
+      "caption": "' opens the page picker. Choose the page you need directly when several are available.",
       "keys": [
         "'"
       ],
+      "id": "ochazuke.page.pick",
       "expect": {
         "mode": "insert"
-      },
-      "id": "ochazuke.page.pick"
+      }
     },
     {
-      "label": "ochazuke.page.previous",
-      "caption": "",
+      "label": "Visit the preceding page",
+      "caption": "ctrl+k selects the preceding page in the page order. Walk backward through the available workspaces.",
       "keys": [
         "ctrl+k"
       ],
+      "id": "ochazuke.page.previous",
       "expect": {
         "mode": "split"
-      },
-      "id": "ochazuke.page.previous"
+      }
     },
     {
-      "label": "ochazuke.pane.grow",
-      "caption": "",
+      "label": "Give a pane more width",
+      "caption": "ctrl+w > grows the active pane divider. Make long field paths easier to read while the jq panel stays open.",
       "keys": [
         "ctrl+w",
         ">"
       ],
+      "id": "ochazuke.pane.grow",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.pane.grow"
+      }
     },
     {
-      "label": "ochazuke.pane.reset",
-      "caption": "",
+      "label": "Reset the pane divider",
+      "caption": "ctrl+w > changes the divider first; ctrl+w = restores its balanced position. Recover the normal layout after comparing long fields.",
       "keys": [
+        "ctrl+w",
+        ">",
         "ctrl+w",
         "="
       ],
+      "id": "ochazuke.pane.reset",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.pane.reset"
+      }
     },
     {
-      "label": "ochazuke.pane.shrink",
-      "caption": "",
+      "label": "Give the neighboring pane room",
+      "caption": "ctrl+w < shrinks the active pane divider. Rebalance the document panes without closing the recipe.",
       "keys": [
         "ctrl+w",
         "<"
       ],
+      "id": "ochazuke.pane.shrink",
       "expect": {
         "mode": "normal"
-      },
-      "id": "ochazuke.pane.shrink"
+      }
     },
     {
-      "label": "ochazuke.yank-history.open",
-      "caption": "",
+      "label": "Choose an earlier copy",
+      "caption": "Y copies the mapping; esc returns to the structure, then g y opens yank history. Recover a previous copy without rebuilding the selection.",
       "keys": [
+        "Y",
+        "esc",
         "g",
         "y"
       ],
+      "id": "ochazuke.yank-history.open",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.yank-history.open"
+        "mode": "normal",
+        "register": "{\"map\": [\n  {\"from\": \".name\", \"to\": \".name\"},\n  {\"from\": \".version\", \"to\": \".version\"},\n  {\"from\": \".items\", \"to\": \".items\"},\n  {\"from\": \".items[]\", \"to\": \".items[]\"},\n  {\"from\": \".items[].id\", \"to\": \".items[].id\"},\n  {\"from\": \".items[].name\", \"to\": \".items[].name\"},\n  {\"from\": \".items[].owner\", \"to\": \".items[].owner\"},\n  {\"from\": \".items[].owner.name\", \"to\": \".items[].owner.name\"},\n  {\"from\": \".items[].owner.email\", \"to\": \".items[].owner.email\"},\n  {\"from\": \".items[].tags\", \"to\": \".items[].tags\"},\n  {\"from\": \".items[].tags[]\", \"to\": \".items[].tags[]\"},\n  {\"from\": \".items[].archived\", \"to\": \".items[].archived\"},\n  {\"from\": \".items[].note\", \"to\": \".items[].note\"},\n  {\"from\": \".meta\", \"to\": \".meta\"},\n  {\"from\": \".meta.generated\", \"to\": \".meta.generated\"},\n  {\"from\": \".meta.count\", \"to\": \".meta.count\"},\n  {\"from\": \".meta.source\", \"to\": \".meta.source\"}\n]}"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 8,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }

@@ -1,177 +1,250 @@
 {
-  "name": "o-json: Viewer page · structure pane · JQ (query mode, m)",
+  "name": "o-json: build jq from the highlighted shape",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
+    "j",
+    "j",
+    "j",
     "m"
   ],
-  "expect": {
-    "mode": "jq"
-  },
   "actions": [
     {
-      "label": "jq.anchor",
-      "caption": "",
+      "label": "Resume at a field reference",
+      "caption": ". inserts items; k selects version and a anchors it in the query. Choose where the next query edit belongs without retyping the existing text.",
       "keys": [
-        "a"
+        ".",
+        "k",
+        "a",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.anchor",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.anchor"
+      }
     },
     {
-      "label": "jq.comma",
-      "caption": "",
+      "label": "Return a second field",
+      "caption": ". inserts items; comma, k and . add version as another output. Use a comma when one extraction should return several parts of the document.",
       "keys": [
-        ","
+        ".",
+        ",",
+        "k",
+        ".",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.comma",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.comma"
+      }
     },
     {
-      "label": "jq.erase",
-      "caption": "",
+      "label": "Remove the previous query token",
+      "caption": ". writes the selected path; backspace removes that whole reference. Correct the last building step without deleting its characters one by one.",
       "keys": [
+        ".",
         "backspace"
       ],
+      "id": "jq.erase",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.erase"
+      }
     },
     {
-      "label": "jq.function",
-      "caption": "",
+      "label": "Pick a jq function",
+      "caption": "ctrl+f opens the function picker. Read function names and argument counts before inserting one into the query.",
       "keys": [
         "ctrl+f"
       ],
+      "id": "jq.function",
       "expect": {
         "mode": "insert"
-      },
-      "id": "jq.function"
+      }
     },
     {
-      "label": "jq.iterate",
-      "caption": "",
+      "label": "Read each array item",
+      "caption": "] writes .items[] for the selected array. Work with each record separately instead of the collection as one value.",
       "keys": [
-        "]"
+        "]",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.iterate",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.iterate"
+      }
     },
     {
-      "label": "jq.mode",
-      "caption": "",
+      "label": "Return to the shape mode",
+      "caption": "m leaves JQ mode and restores the shape keys. Move or reshape the document again after building a query.",
       "keys": [
         "m"
       ],
+      "id": "jq.mode",
       "expect": {
         "mode": "shape"
-      },
-      "id": "jq.mode"
+      }
     },
     {
-      "label": "jq.mode {\"to\":\"edit\"}",
-      "caption": "",
+      "label": "Leave JQ with Escape",
+      "caption": "esc leaves JQ mode. Use it when you want to stop building the query and resume normal structure navigation.",
       "keys": [
         "esc"
       ],
+      "id": "jq.mode {\"to\":\"edit\"}",
       "expect": {
         "mode": "shape"
-      },
-      "id": "jq.mode {\"to\":\"edit\"}"
+      }
     },
     {
-      "label": "jq.open {\"bracket\":\"(\"}",
-      "caption": "",
+      "label": "Group a query expression",
+      "caption": "( opens a grouped expression; . fills it and ) closes it. Keep one part of a larger query together.",
       "keys": [
-        "("
+        "(",
+        ".",
+        ")",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.open {\"bracket\":\"(\"}",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.open {\"bracket\":\"(\"}"
+      }
     },
     {
-      "label": "jq.open {\"bracket\":\"[\"}",
-      "caption": "",
+      "label": "Collect results into an array",
+      "caption": "[ opens an array expression; . adds items and ] closes it. Collect several query results into a single JSON array.",
       "keys": [
-        "["
+        "[",
+        ".",
+        "]",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.open {\"bracket\":\"[\"}",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.open {\"bracket\":\"[\"}"
+      }
     },
     {
-      "label": "jq.open {\"bracket\":\"{\"}",
-      "caption": "",
+      "label": "Build an output object",
+      "caption": "{ opens an object expression; . inserts the selected field and } closes it. Give the output a deliberate set of named fields.",
       "keys": [
-        "{"
+        "{",
+        ".",
+        "}",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.open {\"bracket\":\"{\"}",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.open {\"bracket\":\"{\"}"
+      }
     },
     {
-      "label": "jq.path",
-      "caption": "",
+      "label": "Insert the selected path",
+      "caption": ". inserts .items into the jq line. Build an extraction from the highlighted shape without typing its full path.",
       "keys": [
-        "."
+        ".",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.path",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.path"
+      }
     },
     {
-      "label": "jq.pipe",
-      "caption": "",
+      "label": "Start the next query stage",
+      "caption": "| writes the selected array and a pipe; ctrl+f then length completes the next stage. Count the items flowing through the query.",
       "keys": [
-        "|"
+        "|",
+        "ctrl+f",
+        {
+          "type": "length"
+        },
+        "enter",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.pipe",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.pipe"
+      }
     },
     {
-      "label": "jq.redo",
-      "caption": "",
+      "label": "Restore an undone query edit",
+      "caption": ". inserts a path and u undoes it; ctrl+r restores it. Compare the query before and after an edit.",
       "keys": [
-        "ctrl+r"
+        ".",
+        "u",
+        "ctrl+r",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "jq.redo",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.redo"
+      }
     },
     {
-      "label": "jq.undo",
-      "caption": "",
+      "label": "Undo a query edit",
+      "caption": ". inserts the path; u undoes that query change. Explore a query and step back without altering the document.",
       "keys": [
+        ".",
         "u"
       ],
+      "id": "jq.undo",
       "expect": {
         "mode": "jq"
-      },
-      "id": "jq.undo"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 9,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }
