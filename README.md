@@ -487,3 +487,16 @@ It reads and writes no user config and no state but its own (recordings under `$
 ## License
 
 MIT; see [LICENSE](LICENSE).
+
+### HTML tutorial exports
+
+The tagged tester also has monogatari's `story export` command. The
+`tutorials-export` make target builds the tester and exports all 25 tutorials,
+using isolated HOME/XDG directories and a stable TMPDIR under
+`/tmp/html-tutorials/o-json`. `OUT` selects the output directory; `GO_ENV` can
+select an explicit Go workspace for a local monogatari checkout. A normal
+untagged build does not link the exporter. Fixture directories use
+`Env.TempDir`, so exports have stable paths before layout and clipping, while
+ordinary story tests keep independent random directories. The frame data,
+including action captions and expected states, is consumed by ofam.dev's
+unlisted tutorial pages.

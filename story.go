@@ -130,7 +130,7 @@ func (s *storySession) writes() []string {
 // newStorySession is a sandboxed viewer (the story's values set before
 // anything loads) sized to the story.
 func newStorySession(env monogatari.Env) (s *storySession, err error) {
-	dir, err := os.MkdirTemp("", "o-json-story-")
+	dir, err := env.TempDir("o-json")
 	if err != nil {
 		return nil, err
 	}
