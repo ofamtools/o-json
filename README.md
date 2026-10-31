@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
-    <img alt="o-json" src="assets/logo-light.svg" width="257">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-animated-dark.svg">
+    <img alt="o-json" src="assets/logo-animated-light.svg" width="257">
   </picture>
   <br>
   <a href="https://github.com/ofamtools/o-json/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/ofamtools/o-json?sort=semver&amp;label=release"></a>
