@@ -26,7 +26,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 const (

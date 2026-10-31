@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // The wrap family on the restructured tree: node.wrap {as} and its

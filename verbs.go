@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // The nouns and verbs. Keys are bound in bindings.go; a verb without a

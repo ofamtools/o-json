@@ -14,8 +14,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
-	"github.com/unixsuperhero/oden"
+	"ofam.dev/ochazuke"
+	"ofam.dev/oden"
 )
 
 // Export: one array of a document as a table file. The rows are the

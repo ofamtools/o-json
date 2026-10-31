@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/unixsuperhero/monogatari/host"
+	"ofam.dev/monogatari/host"
 )
 
 var updateStories = flag.Bool("update", false, "rewrite the stories' golden frames")

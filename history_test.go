@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
-	ocli "github.com/unixsuperhero/ochazuke/cli"
+	"ofam.dev/ochazuke"
+	ocli "ofam.dev/ochazuke/cli"
 )
 
 // frameworkOperations are the operations ochazuke registers on its own for

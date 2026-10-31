@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 const settingRawEditor = "raw.editor"

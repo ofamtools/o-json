@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // Yank, delete and put on the restructured tree, through ochazuke's

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/unixsuperhero/ochazuke/keytest"
+import "ofam.dev/ochazuke/keytest"
 
 // Tests drive the model with the key names bindings use ("ctrl+c", "esc",
 // "enter", "shift+tab", "alt+b", "space", "x") through ochazuke's keytest

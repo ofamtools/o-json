@@ -18,11 +18,11 @@ import (
 	"slices"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/unixsuperhero/monogatari"
-	"github.com/unixsuperhero/monogatari/host"
-	"github.com/unixsuperhero/ochazuke"
-	"github.com/unixsuperhero/ochazuke/keytest"
-	"github.com/unixsuperhero/oden"
+	"ofam.dev/monogatari"
+	"ofam.dev/monogatari/host"
+	"ofam.dev/ochazuke"
+	"ofam.dev/ochazuke/keytest"
+	"ofam.dev/oden"
 )
 
 //go:embed testdata/stories

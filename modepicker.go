@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // modeChoices is the trial's mode catalog. The chooser keeps the key and

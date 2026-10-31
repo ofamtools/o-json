@@ -11,7 +11,7 @@ package main
 import (
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 const settingEditGate = "modes.edit-gate"

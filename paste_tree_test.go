@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // A bracketed paste on the edited structure tree is node.paste, decided

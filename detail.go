@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // The detail: enter on a table row (or on a field holding an object or an

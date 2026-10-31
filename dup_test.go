@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // A key repeated in one object counts once: .items[].id is 3/3, not 4/3,

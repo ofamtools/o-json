@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/x/ansi"
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // A rowsView shows n rows of a source through an ochazuke list (a table)

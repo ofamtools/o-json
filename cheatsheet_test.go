@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // The cheat sheet at the end of docs/GUIDE.md is generated from the key

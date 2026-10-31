@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // cycleDataView steps the data pane's view (D, tab; shift+tab back): the

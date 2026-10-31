@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 func docDo(t *testing.T, a *App, verb string, args ochazuke.Arguments) any {

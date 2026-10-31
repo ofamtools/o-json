@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // Every yank goes through ochazuke's registers, so the clipboard setting

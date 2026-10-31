@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // Where the Settings page files o-json's settings: its own tab (owner

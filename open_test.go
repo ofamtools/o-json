@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // empty is the viewer with no file, as o-json with no file argument

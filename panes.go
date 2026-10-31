@@ -10,7 +10,7 @@ package main
 import (
 	"errors"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 const (

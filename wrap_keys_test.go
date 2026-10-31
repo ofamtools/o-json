@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // wrapDoc opens testdata/wrap.json in the viewer, the focus on the

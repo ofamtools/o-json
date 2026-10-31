@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // suggest is what the "." trigger offers with the cursor at the end of

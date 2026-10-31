@@ -10,8 +10,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/unixsuperhero/ochazuke"
-	"github.com/unixsuperhero/oden"
+	"ofam.dev/ochazuke"
+	"ofam.dev/oden"
 )
 
 // viewCommand is o-json view: the two-panel viewer.

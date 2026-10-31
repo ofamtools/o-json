@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // Every setting o-json declares is filed in one of settingSections, every

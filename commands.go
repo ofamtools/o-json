@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/unixsuperhero/oden"
+	"ofam.dev/oden"
 )
 
 // The top-level commands, structure, table and get, print text for a

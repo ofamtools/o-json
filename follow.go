@@ -3,7 +3,7 @@ package main
 import (
 	"slices"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // What the data pane shows for the structure tree's selection.

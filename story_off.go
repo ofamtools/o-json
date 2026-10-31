@@ -2,7 +2,7 @@
 
 package main
 
-import "github.com/unixsuperhero/oden"
+import "ofam.dev/oden"
 
 // storyCommands is empty in a normal build: only the tester (-tags
 // monogatari, story.go) has o-json story, so the shipped binary links no

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // The jq panel: the restructure's jq program (Plan.JQ, what restructure.jq

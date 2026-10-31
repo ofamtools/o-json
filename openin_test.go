@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // viewer.open-in hands the table to o-csv in the foreground: a temporary

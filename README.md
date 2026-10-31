@@ -4,10 +4,10 @@
     <img alt="o-json" src="assets/logo-light.svg" width="257">
   </picture>
   <br>
-  <a href="https://github.com/unixsuperhero/o-json/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/unixsuperhero/o-json?sort=semver&amp;label=release"></a>
-  <a href="https://pkg.go.dev/github.com/unixsuperhero/o-json"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/unixsuperhero/o-json.svg"></a>
-  <a href="go.mod"><img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/unixsuperhero/o-json"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/unixsuperhero/o-json"></a>
+  <a href="https://github.com/ofamtools/o-json/tags"><img alt="Latest release" src="https://img.shields.io/github/v/tag/ofamtools/o-json?sort=semver&amp;label=release"></a>
+  <a href="https://pkg.go.dev/ofam.dev/o-json"><img alt="Go Reference" src="https://pkg.go.dev/badge/ofam.dev/o-json.svg"></a>
+  <a href="go.mod"><img alt="Go version" src="https://img.shields.io/github/go-mod/go-version/ofamtools/o-json"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/ofamtools/o-json"></a>
 </p>
 
 <p align="center">See a JSON document's shape and its arrays as tables, then edit, reshape and query it with jq.</p>
@@ -16,7 +16,7 @@
 
 New here? Start with the [guide](docs/GUIDE.md).
 
-A JSON structure and table viewer for the o family, built on [ochazuke](https://github.com/unixsuperhero/ochazuke) (Bubble Tea v2) with an [oden](https://github.com/unixsuperhero/oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out`, `export --out`, the viewer's `w` and `viewer.export` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
+A JSON structure and table viewer for the o family, built on [ochazuke](https://github.com/ofamtools/ochazuke) (Bubble Tea v2) with an [oden](https://github.com/ofamtools/oden) command line. It answers two questions about a document: what shape is it (every path, its types, how many values have it, which fields are optional), and what does an array of objects look like as a table. It never writes the document it reads unless asked: `restructure --out`, `export --out`, the viewer's `w` and `viewer.export` and the restructure page's write make a new file, and replace an existing one only when asked (`--overwrite`, or `W` on the page, which confirms before it writes the source).
 
 ```sh
 o-json data.json                        # open the viewer (also: o-json view data.json)
@@ -39,12 +39,12 @@ o-json --smoke data.json                # render one 80x24 frame to stdout and e
 - **Restructure and reshape, with the live jq panel.** Rename, move, nest and wrap shapes in the structure itself or on the restructure page, flatten and key arrays by a field; `g j` keeps the jq program and the mapping for every change on screen ([guide](docs/GUIDE.md#6-restructure-the-shape), [reference](#the-restructure-page)).
 - **The query line.** jq as you type, with path completion, field chips and a function picker; path answers are the document's own nodes ([guide](docs/GUIDE.md#7-query-with-jq), [reference](#query)).
 - **Export.** An array as csv, tsv, jsonl or markdown, from the command line or the viewer, or straight into o-csv ([guide](docs/GUIDE.md#8-export-and-write), [reference](#export)).
-- **A story tester.** The viewer's interactions are [monogatari](https://github.com/unixsuperhero/monogatari) stories, played headless under `go test` and live in a separate tester build ([reference](#the-story-tester)).
+- **A story tester.** The viewer's interactions are [monogatari](https://github.com/ofamtools/monogatari) stories, played headless under `go test` and live in a separate tester build ([reference](#the-story-tester)).
 
 ## Install
 
 ```sh
-go install github.com/unixsuperhero/o-json@latest
+go install ofam.dev/o-json@latest
 ```
 
 Requires Go 1.27 or newer. From a checkout: `go build -o ~/bin/o-json .`; `make story-build` builds the story tester as `bin/o-json-story`, never over `o-json` (see [The story tester](#the-story-tester)).
@@ -55,11 +55,11 @@ o-json is one of the o family's `o-*` tools, so `o json` and `mtm json` reach it
 
 | Repo | Relation |
 |---|---|
-| [ochazuke](https://github.com/unixsuperhero/ochazuke) | The TUI framework the viewer is built on: panes, lists, the tree, modals, keys as binding rows, the palette, settings. |
-| [oden](https://github.com/unixsuperhero/oden) | The command line: `o-json structure`, `table`, `doc ...`, and `o json` from the family root. |
-| [monogatari](https://github.com/unixsuperhero/monogatari) | The story tester: o-json's stories run through its host, in the `monogatari` build only. |
-| [matomeru](https://github.com/unixsuperhero/matomeru) (`mtm`) | Reaches o-json as `mtm json`, as it does every `o-*` tool. |
-| [o-csv](https://github.com/unixsuperhero/o-csv) | The sibling o-json copies its shape from; `viewer.open-in` opens a table there. |
+| [ochazuke](https://github.com/ofamtools/ochazuke) | The TUI framework the viewer is built on: panes, lists, the tree, modals, keys as binding rows, the palette, settings. |
+| [oden](https://github.com/ofamtools/oden) | The command line: `o-json structure`, `table`, `doc ...`, and `o json` from the family root. |
+| [monogatari](https://github.com/ofamtools/monogatari) | The story tester: o-json's stories run through its host, in the `monogatari` build only. |
+| [matomeru](https://github.com/ofamtools/matomeru) (`mtm`) | Reaches o-json as `mtm json`, as it does every `o-*` tool. |
+| [o-csv](https://github.com/ofamtools/o-csv) | The sibling o-json copies its shape from; `viewer.open-in` opens a table there. |
 
 The full gate is under [Checks](#checks); o-json is MIT licensed ([License](#license)).
 
@@ -468,7 +468,7 @@ go run . --smoke testdata/sample.json
 go run . catalog >/dev/null
 ```
 
-The tests cover structure inference on mixed and optional data, column order, a 50 MB document (100,000 items; 10,000 under `-race`), the viewer through its keys, the empty document, open, paste, new and the recent list, frames at 80 and 120 columns (`testdata/view-*.golden`, `UPDATE_GOLDEN=1` rewrites them), the windowed table at 100,000 rows, and `ValidateBindings`. `TestStories` (`-tags monogatari` only) plays the stories in `testdata/stories/<area>/<name>.json` through [monogatari](https://github.com/unixsuperhero/monogatari)'s `host.Test` against the real viewer: a script of keys and expectations, the story's `fixture` the starting state (`nest`, the default: the restructure page on nest.json with .a .x .y .z sent and .y selected; `viewer`: a fresh viewer; `empty`: no document), its `seed` the document (`{"doc": "nested.json"}`, any `testdata/*.json`; for `nest` also `send` and `on`) and its `values` o-json's settings. The document is copied to a temp dir, so a write lands there.
+The tests cover structure inference on mixed and optional data, column order, a 50 MB document (100,000 items; 10,000 under `-race`), the viewer through its keys, the empty document, open, paste, new and the recent list, frames at 80 and 120 columns (`testdata/view-*.golden`, `UPDATE_GOLDEN=1` rewrites them), the windowed table at 100,000 rows, and `ValidateBindings`. `TestStories` (`-tags monogatari` only) plays the stories in `testdata/stories/<area>/<name>.json` through [monogatari](https://github.com/ofamtools/monogatari)'s `host.Test` against the real viewer: a script of keys and expectations, the story's `fixture` the starting state (`nest`, the default: the restructure page on nest.json with .a .x .y .z sent and .y selected; `viewer`: a fresh viewer; `empty`: no document), its `seed` the document (`{"doc": "nested.json"}`, any `testdata/*.json`; for `nest` also `send` and `on`) and its `values` o-json's settings. The document is copied to a temp dir, so a write lands there.
 
 ### The story tester
 

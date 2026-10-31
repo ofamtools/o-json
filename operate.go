@@ -34,7 +34,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // operand is what an object or motion resolved to.

@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // Documents in and out of the viewer, like a vim buffer: o-json with no

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // o-json's alias rows are bare words with preset args: w writes what w

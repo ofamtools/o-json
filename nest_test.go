@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // nest.json is {"a": 1, "x": {"b": 2, "c": 3}, "y": 4, "z": 5}.

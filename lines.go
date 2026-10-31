@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // dataLine is one line of a line view: its text, the value it shows (nil

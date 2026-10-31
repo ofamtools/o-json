@@ -3,7 +3,7 @@ package main
 import (
 	"slices"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // Stable columns: a table's columns are ordered by how many rows have

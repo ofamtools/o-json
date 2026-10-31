@@ -11,8 +11,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/unixsuperhero/ochazuke"
-	"github.com/unixsuperhero/ochazuke/strictcheck"
+	"ofam.dev/ochazuke"
+	"ofam.dev/ochazuke/strictcheck"
 )
 
 func open(t *testing.T, path string, width, height int) *App {

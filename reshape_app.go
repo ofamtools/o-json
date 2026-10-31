@@ -6,7 +6,7 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // Marks and reshape steps on the restructured tree.

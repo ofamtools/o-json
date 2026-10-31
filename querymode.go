@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // Query mode on the structure pane. m switches the pane between its edit

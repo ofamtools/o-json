@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // The function picker: ctrl+f (in the query line, or in query mode on

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // wrapped opens the page with .name and .version sent, the focus on

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/unixsuperhero/ochazuke"
+	"ofam.dev/ochazuke"
 )
 
 // hasReverse reports reverse video (SGR 7) in text.

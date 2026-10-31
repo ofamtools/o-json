@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/unixsuperhero/ochazuke"
-	ocli "github.com/unixsuperhero/ochazuke/cli"
+	"ofam.dev/ochazuke"
+	ocli "ofam.dev/ochazuke/cli"
 )
 
 // The doc noun is the command line a host mounts: o-json doc VERB FILE
