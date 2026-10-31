@@ -9,35 +9,19 @@ import (
 	ocli "ofam.dev/ochazuke/cli"
 )
 
-// frameworkOperations are the operations ochazuke registers on its own for
-// the parts o-json builds on (the runtime, the model, a tree): every other
-// operation is a verb o-json defines.
-func frameworkOperations() map[string]bool {
-	r := ochazuke.NewRuntime()
-	ochazuke.NewModel(r)
-	r.Instance("page", ochazuke.Kind("viewer"))
-	if _, err := r.AddTree("tree", nil, ochazuke.Parent("page")); err != nil {
-		panic(err)
-	}
-	out := map[string]bool{}
-	for key := range r.Operations {
-		out[key] = true
-	}
-	return out
-}
-
 // Every verb o-json defines declares its history kind (Operation.HistoryKind)
 // rather than leaving it to the default, in the viewer and in the catalog, and
 // the catalog's history is that kind. A new verb without one fails here.
+// Framework verbs (Operation.Builtin, the catalog's builtin) are ochazuke's
+// and skipped.
 func TestEveryVerbDeclaresItsHistory(t *testing.T) {
-	framework := frameworkOperations()
 	a, err := New()
 	if err != nil {
 		t.Fatal(err)
 	}
 	n := 0
 	for key, op := range a.r.Operations {
-		if framework[key] {
+		if op.Builtin {
 			continue
 		}
 		n++
@@ -58,7 +42,7 @@ func TestEveryVerbDeclaresItsHistory(t *testing.T) {
 	for _, noun := range doc.Nouns {
 		for _, v := range noun.Verbs {
 			key := noun.Name + "." + v.Name
-			if framework[key] {
+			if v.Builtin {
 				continue
 			}
 			n++
