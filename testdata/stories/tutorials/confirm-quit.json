@@ -1,17 +1,24 @@
 {
-  "name": "o-json: confirm (q with unsaved edits)",
+  "name": "o-json: decide what to do with unsaved edits",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
-    "j",
-    "j",
+    "e",
+    "ctrl+o",
+    {
+      "type": "sample"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "j",
     "i",
     "d",
@@ -19,34 +26,51 @@
     "esc",
     "q"
   ],
-  "expect": {
-    "mode": "shape"
-  },
   "actions": [
     {
-      "label": "ochazuke.confirm.accept",
-      "caption": "",
+      "label": "Quit after reviewing the warning",
+      "caption": "y confirms quitting with unsaved edits. Choose it only when you are finished with this edited view; the source file remains intact.",
       "keys": [
         "y"
       ],
       "expect": {
+        "quit": true,
         "mode": "shape"
       },
       "id": "ochazuke.confirm.accept"
     },
     {
-      "label": "ochazuke.modal.pop",
-      "caption": "",
+      "label": "Keep working on the edited document",
+      "caption": "esc closes the quit confirmation and keeps the edited view. Return to your work when you still need to inspect or export it.",
       "keys": [
         "esc"
       ],
       "expect": {
+        "quit": false,
+        "modal": "",
         "mode": "shape"
       },
       "id": "ochazuke.modal.pop"
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 11,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }

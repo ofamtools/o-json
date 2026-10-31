@@ -1,83 +1,149 @@
 {
-  "name": "o-json: EDIT (data pane)",
+  "name": "o-json: edit values without touching the source",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
-    "j",
-    "j",
+    "e",
+    "ctrl+o",
+    {
+      "type": "orders.min"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "j",
     "ctrl+w",
     "l",
+    "l",
     "i"
   ],
-  "expect": {
-    "mode": "edit"
-  },
   "actions": [
     {
-      "label": "value.add",
-      "caption": "",
+      "label": "Change an order ID",
+      "caption": "i opens the selected ID for editing. Type REVIEW and enter to update this record while leaving the source file untouched.",
       "keys": [
-        "o"
+        "i",
+        {
+          "type": "REVIEW"
+        },
+        "enter"
       ],
+      "id": "value.edit",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "value.add"
+        "mode": "edit",
+        "contains": [
+          "REVIEW"
+        ]
+      }
     },
     {
-      "label": "value.add {\"before\":true}",
-      "caption": "",
+      "label": "Add a field after this one",
+      "caption": "o opens a new field after id. Name it reviewed, enter true as its value, and enter again so this order carries an explicit review flag.",
       "keys": [
-        "O"
+        "o",
+        {
+          "type": "reviewed"
+        },
+        "enter",
+        {
+          "type": "true"
+        },
+        "enter"
       ],
+      "id": "value.add",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "value.add {\"before\":true}"
+        "mode": "edit",
+        "contains": [
+          "reviewed?",
+          "true"
+        ]
+      }
     },
     {
-      "label": "value.delete",
-      "caption": "",
+      "label": "Add a field before this one",
+      "caption": "O opens a field before id. Name it priority and set 1 to put an important value near the front of this record.",
+      "keys": [
+        "O",
+        {
+          "type": "priority"
+        },
+        "enter",
+        {
+          "type": "1"
+        },
+        "enter"
+      ],
+      "id": "value.add {\"before\":true}",
+      "expect": {
+        "mode": "edit",
+        "contains": [
+          "priority?"
+        ]
+      }
+    },
+    {
+      "label": "Remove the selected value",
+      "caption": "x deletes id from this order in the edited view. Remove a field you do not want in the output; u can bring it back.",
       "keys": [
         "x"
       ],
+      "id": "value.delete",
       "expect": {
-        "mode": "edit"
-      },
-      "id": "value.delete"
+        "mode": "edit",
+        "contains": [
+          "id?"
+        ]
+      }
     },
     {
-      "label": "value.edit",
-      "caption": "",
+      "label": "Replace a value from the register",
+      "caption": "First set the ID to ONE with i and enter; y y copies it, j selects the next order, and p puts the value there. Reuse a known value without typing it twice.",
       "keys": [
-        "i"
-      ],
-      "expect": {
-        "mode": "insert"
-      },
-      "id": "value.edit"
-    },
-    {
-      "label": "value.paste",
-      "caption": "",
-      "keys": [
+        "i",
+        {
+          "type": "ONE"
+        },
+        "enter",
+        "y",
+        "y",
+        "j",
         "p"
       ],
+      "id": "value.paste",
       "expect": {
-        "mode": "edit"
-      },
-      "id": "value.paste"
+        "mode": "edit",
+        "contains": [
+          "ONE"
+        ]
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 10,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }
