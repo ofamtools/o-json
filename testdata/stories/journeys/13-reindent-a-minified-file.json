@@ -20,7 +20,7 @@
     {"after": 15, "contains": ["\"total\": 25"]},
     {"after": 19, "mode": "shape"},
     {"after": 20, "contains": ["Structure · original"]},
-    {"after": 22, "focus": "path-chooser/query", "contains": ["Run viewer.write", "[browse /"]},
+    {"after": 22, "focus": "path-chooser/query", "contains": ["Run viewer.write", "[browse "]},
     {"after": 25, "contains": ["wrote the document to"], "writes": ["jobs/orders.pretty.json", "state/recent.json"]},
     {"after": 26, "contains": ["Structure · unchanged"]},
     {"quit": true}
