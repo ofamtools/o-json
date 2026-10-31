@@ -1,507 +1,570 @@
 {
-  "name": "o-json: Viewer page · data pane · TABLE (.items)",
+  "name": "o-json: read, copy and sort order rows",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
-  "height": 32,
+  "height": 26,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
-    "j",
-    "j",
+    "e",
+    "ctrl+o",
+    {
+      "type": "orders.min"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "j",
     "ctrl+w",
-    "l"
+    "l",
+    "l",
+    "2",
+    "j"
   ],
-  "expect": {
-    "mode": "table"
-  },
   "actions": [
     {
-      "label": "item.open",
-      "caption": "",
+      "label": "Open a record detail",
+      "caption": "enter opens the selected order as labeled fields. Read one record without squeezing all its values into table columns.",
       "keys": [
         "enter"
       ],
+      "id": "item.open",
       "expect": {
         "mode": "normal"
-      },
-      "id": "item.open"
+      }
     },
     {
-      "label": "item.operate {\"inner\":false,\"object\":\"key\",\"op\":\"d\"}",
-      "caption": "",
+      "label": "Remove a field from one order",
+      "caption": "i enters EDIT; d d deletes the id field of this record. Change the buffer deliberately without writing the source.",
       "keys": [
-        "y",
+        "i",
+        "d",
         "d"
       ],
+      "id": "item.operate {\"inner\":false,\"object\":\"key\",\"op\":\"d\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"inner\":false,\"object\":\"key\",\"op\":\"d\"}"
+        "mode": "edit"
+      }
     },
     {
-      "label": "item.operate {\"inner\":false,\"object\":\"row\",\"op\":\"y\"}",
-      "caption": "",
+      "label": "Copy a whole record",
+      "caption": "Y copies the selected order row. Keep the entire record when one cell would omit its context.",
       "keys": [
         "Y"
       ],
+      "id": "item.operate {\"inner\":false,\"object\":\"row\",\"op\":\"y\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"inner\":false,\"object\":\"row\",\"op\":\"y\"}"
+        "mode": "table",
+        "register": "{\n  \"id\": \"ORD-1003\",\n  \"status\": \"refunded\",\n  \"customer\": {\n    \"name\": \"Finn Abe\"\n  },\n  \"items\": [\n    {\n      \"sku\": \"TEA-MAT\",\n      \"qty\": 1,\n      \"price\": 26\n    }\n  ],\n  \"total\": 26,\n  \"created_at\": \"2026-10-02T10:00:00Z\"\n}"
+      }
     },
     {
-      "label": "item.operate {\"motion\":\"down\"}",
-      "caption": "",
+      "label": "Copy this and the next row",
+      "caption": "y j copies the selected row and the row below it. Extract a short run of adjacent orders together.",
       "keys": [
         "y",
         "j"
       ],
+      "id": "item.operate {\"motion\":\"down\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"motion\":\"down\"}"
+        "mode": "table",
+        "register": "[\n  {\n    \"id\": \"ORD-1003\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Finn Abe\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 1,\n        \"price\": 26\n      }\n    ],\n    \"total\": 26,\n    \"created_at\": \"2026-10-02T10:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1004\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Aiko Abe\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 2,\n        \"price\": 18\n      },\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 4,\n        \"price\": 24\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 3,\n        \"price\": 9\n      }\n    ],\n    \"total\": 159,\n    \"created_at\": \"2026-10-02T16:00:00Z\"\n  }\n]"
+      }
     },
     {
-      "label": "item.operate {\"motion\":\"up\"}",
-      "caption": "",
+      "label": "Copy this and the preceding row",
+      "caption": "y up copies the selected row and the one above. Include the preceding record without moving the cursor first.",
       "keys": [
-        "s",
-        "k"
+        "y",
+        "up"
       ],
+      "id": "item.operate {\"motion\":\"up\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"motion\":\"up\"}"
+        "mode": "table",
+        "register": "[\n  {\n    \"id\": \"ORD-1002\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Kai Abe\",\n      \"email\": \"kai.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 1,\n        \"price\": 42\n      }\n    ],\n    \"total\": 42,\n    \"created_at\": \"2026-10-02T00:00:00Z\",\n    \"coupon\": \"AUTUMN5\"\n  },\n  {\n    \"id\": \"ORD-1003\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Finn Abe\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 1,\n        \"price\": 26\n      }\n    ],\n    \"total\": 26,\n    \"created_at\": \"2026-10-02T10:00:00Z\"\n  }\n]"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"a\"}",
-      "caption": "",
+      "label": "Copy the enclosing array",
+      "caption": "y i a copies the array containing these orders. Extract the collection without copying unrelated document metadata.",
       "keys": [
         "y",
         "i",
         "a"
       ],
+      "id": "item.operate {\"object\":\"a\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"a\"}"
+        "mode": "table",
+        "register": "[\n  {\n    \"id\": \"ORD-1001\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Kai Jade\",\n      \"email\": \"kai.jade@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 3,\n        \"price\": 6\n      },\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 4,\n        \"price\": 35\n      }\n    ],\n    \"total\": 158,\n    \"created_at\": \"2026-10-01T19:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1002\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Kai Abe\",\n      \"email\": \"kai.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 1,\n        \"price\": 42\n      }\n    ],\n    \"total\": 42,\n    \"created_at\": \"2026-10-02T00:00:00Z\",\n    \"coupon\": \"AUTUMN5\"\n  },\n  {\n    \"id\": \"ORD-1003\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Finn Abe\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 1,\n        \"price\": 26\n      }\n    ],\n    \"total\": 26,\n    \"created_at\": \"2026-10-02T10:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1004\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Aiko Abe\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 2,\n        \"price\": 18\n      },\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 4,\n        \"price\": 24\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 3,\n        \"price\": 9\n      }\n    ],\n    \"total\": 159,\n    \"created_at\": \"2026-10-02T16:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1005\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Dev Abe\",\n      \"email\": \"dev.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 1,\n        \"price\": 29\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 1,\n        \"price\": 7\n      }\n    ],\n    \"total\": 36,\n    \"created_at\": \"2026-10-02T22:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1006\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Finn Brook\",\n      \"email\": \"finn.brook@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 4,\n        \"price\": 42\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 1,\n        \"price\": 38\n      },\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 2,\n        \"price\": 24\n      }\n    ],\n    \"total\": 254,\n    \"created_at\": \"2026-10-03T07:00:00Z\",\n    \"coupon\": \"WELCOME10\"\n  },\n  {\n    \"id\": \"ORD-1007\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Emi Abe\",\n      \"email\": \"emi.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 4,\n        \"price\": 13\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 4,\n        \"price\": 41\n      }\n    ],\n    \"total\": 216,\n    \"created_at\": \"2026-10-03T14:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1008\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Chika Grove\",\n      \"email\": \"chika.grove@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 4,\n        \"price\": 21\n      }\n    ],\n    \"total\": 84,\n    \"created_at\": \"2026-10-03T19:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1009\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Finn Abe\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 4,\n        \"price\": 40\n      },\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 3,\n        \"price\": 29\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 3,\n        \"price\": 23\n      }\n    ],\n    \"total\": 316,\n    \"created_at\": \"2026-10-04T00:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1010\",\n    \"status\": \"pending\",\n    \"customer\": {\n      \"name\": \"Aiko Castle\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 1,\n        \"price\": 16\n      }\n    ],\n    \"total\": 16,\n    \"created_at\": \"2026-10-04T07:00:00Z\",\n    \"coupon\": \"AUTUMN5\"\n  },\n  {\n    \"id\": \"ORD-1011\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Emi Isle\",\n      \"email\": \"emi.isle@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 4,\n        \"price\": 24\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 3,\n        \"price\": 25\n      }\n    ],\n    \"total\": 171,\n    \"created_at\": \"2026-10-04T17:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1012\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Aiko Jade\",\n      \"email\": \"aiko.jade@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 4,\n        \"price\": 31\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 1,\n        \"price\": 38\n      }\n    ],\n    \"total\": 162,\n    \"created_at\": \"2026-10-04T21:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1013\",\n    \"status\": \"pending\",\n    \"customer\": {\n      \"name\": \"Gus Ember\",\n      \"email\": \"gus.ember@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 26\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 2,\n        \"price\": 14\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 3,\n        \"price\": 28\n      }\n    ],\n    \"total\": 138,\n    \"created_at\": \"2026-10-05T05:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1014\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Kai Isle\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 2,\n        \"price\": 40\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 2,\n        \"price\": 38\n      }\n    ],\n    \"total\": 156,\n    \"created_at\": \"2026-10-05T13:00:00Z\",\n    \"coupon\": \"WELCOME10\"\n  },\n  {\n    \"id\": \"ORD-1015\",\n    \"status\": \"pending\",\n    \"customer\": {\n      \"name\": \"Gus Fern\",\n      \"email\": \"gus.fern@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 38\n      }\n    ],\n    \"total\": 38,\n    \"created_at\": \"2026-10-05T21:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1016\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Dev Ember\",\n      \"email\": \"dev.ember@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 2,\n        \"price\": 13\n      },\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 2,\n        \"price\": 42\n      },\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 25\n      }\n    ],\n    \"total\": 135,\n    \"created_at\": \"2026-10-06T04:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1017\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Ivo Isle\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 4,\n        \"price\": 19\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 3,\n        \"price\": 40\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 4,\n        \"price\": 22\n      }\n    ],\n    \"total\": 284,\n    \"created_at\": \"2026-10-06T10:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1018\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Aiko Abe\",\n      \"email\": \"aiko.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 4,\n        \"price\": 36\n      }\n    ],\n    \"total\": 144,\n    \"created_at\": \"2026-10-06T19:00:00Z\",\n    \"coupon\": \"AUTUMN5\"\n  },\n  {\n    \"id\": \"ORD-1019\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Ben Isle\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 22\n      }\n    ],\n    \"total\": 22,\n    \"created_at\": \"2026-10-07T02:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1020\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Ben Hill\",\n      \"email\": \"ben.hill@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 3,\n        \"price\": 35\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 3,\n        \"price\": 30\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 1,\n        \"price\": 39\n      }\n    ],\n    \"total\": 234,\n    \"created_at\": \"2026-10-07T08:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1021\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Dev Castle\",\n      \"email\": \"dev.castle@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 4,\n        \"price\": 32\n      }\n    ],\n    \"total\": 128,\n    \"created_at\": \"2026-10-07T13:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1022\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Aiko Isle\",\n      \"email\": \"aiko.isle@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 4,\n        \"price\": 14\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 2,\n        \"price\": 16\n      },\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 24\n      }\n    ],\n    \"total\": 112,\n    \"created_at\": \"2026-10-07T21:00:00Z\",\n    \"coupon\": \"WELCOME10\"\n  },\n  {\n    \"id\": \"ORD-1023\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Finn Fern\",\n      \"email\": \"finn.fern@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 3,\n        \"price\": 12\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 3,\n        \"price\": 39\n      }\n    ],\n    \"total\": 153,\n    \"created_at\": \"2026-10-08T05:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1024\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Aiko Fern\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 3,\n        \"price\": 32\n      },\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 4,\n        \"price\": 10\n      }\n    ],\n    \"total\": 136,\n    \"created_at\": \"2026-10-08T14:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1025\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Gus Isle\",\n      \"email\": \"gus.isle@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 3,\n        \"price\": 4\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 3,\n        \"price\": 20\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 4,\n        \"price\": 4\n      }\n    ],\n    \"total\": 88,\n    \"created_at\": \"2026-10-08T21:00:00Z\"\n  }\n]"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"c\"}",
-      "caption": "",
+      "label": "Copy the column values",
+      "caption": "y i c copies the order-ID column. Build a list of identifiers without including the other fields.",
       "keys": [
         "y",
         "i",
         "c"
       ],
+      "id": "item.operate {\"object\":\"c\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"c\"}"
+        "mode": "table",
+        "register": "[\n  \"ORD-1001\",\n  \"ORD-1002\",\n  \"ORD-1003\",\n  \"ORD-1004\",\n  \"ORD-1005\",\n  \"ORD-1006\",\n  \"ORD-1007\",\n  \"ORD-1008\",\n  \"ORD-1009\",\n  \"ORD-1010\",\n  \"ORD-1011\",\n  \"ORD-1012\",\n  \"ORD-1013\",\n  \"ORD-1014\",\n  \"ORD-1015\",\n  \"ORD-1016\",\n  \"ORD-1017\",\n  \"ORD-1018\",\n  \"ORD-1019\",\n  \"ORD-1020\",\n  \"ORD-1021\",\n  \"ORD-1022\",\n  \"ORD-1023\",\n  \"ORD-1024\",\n  \"ORD-1025\"\n]"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"column\",\"op\":\"s\"}",
-      "caption": "",
+      "label": "Sort by a column",
+      "caption": "l selects status; s s sorts the table by that column. Group orders with the same status without changing source order.",
       "keys": [
-        "y",
+        "l",
+        "s",
         "s"
       ],
+      "id": "item.operate {\"object\":\"column\",\"op\":\"s\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"column\",\"op\":\"s\"}"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"k\"}",
-      "caption": "",
+      "label": "Copy an inner key",
+      "caption": "y i k copies the field name. Keep the spelling of the selected key without including its value.",
       "keys": [
         "y",
         "i",
         "k"
       ],
+      "id": "item.operate {\"object\":\"k\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"k\"}"
+        "mode": "table",
+        "register": "id"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"key\",\"op\":\"y\"}",
-      "caption": "",
+      "label": "Copy the column key",
+      "caption": "y k copies the key id. Use the exact column name while writing a query or mapping.",
       "keys": [
         "y",
         "k"
       ],
+      "id": "item.operate {\"object\":\"key\",\"op\":\"y\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"key\",\"op\":\"y\"}"
+        "mode": "table",
+        "register": "id"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"o\"}",
-      "caption": "",
+      "label": "Copy the enclosing object",
+      "caption": "y i o copies the object enclosing this ID. Keep the order context around a value you found.",
       "keys": [
         "y",
         "i",
         "o"
       ],
+      "id": "item.operate {\"object\":\"o\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"o\"}"
+        "mode": "table",
+        "register": "{\n  \"id\": \"ORD-1003\",\n  \"status\": \"refunded\",\n  \"customer\": {\n    \"name\": \"Finn Abe\"\n  },\n  \"items\": [\n    {\n      \"sku\": \"TEA-MAT\",\n      \"qty\": 1,\n      \"price\": 26\n    }\n  ],\n  \"total\": 26,\n  \"created_at\": \"2026-10-02T10:00:00Z\"\n}"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"p\"}",
-      "caption": "",
+      "label": "Copy an inner path",
+      "caption": "y i p copies the cell path with its concrete row index. Use it to locate this one value again.",
       "keys": [
         "y",
         "i",
         "p"
       ],
+      "id": "item.operate {\"object\":\"p\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"p\"}"
+        "mode": "table",
+        "register": ".data[2].id"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"path\",\"op\":\"y\"}",
-      "caption": "",
+      "label": "Copy the cell path",
+      "caption": "y p copies the concrete path of this order ID. Refer to the exact value in another tool.",
       "keys": [
         "y",
         "p"
       ],
+      "id": "item.operate {\"object\":\"path\",\"op\":\"y\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"path\",\"op\":\"y\"}"
+        "mode": "table",
+        "register": ".data[2].id"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"r\"}",
-      "caption": "",
+      "label": "Copy the current record",
+      "caption": "y i r copies the current table record. Extract an order while leaving the table selection in place.",
       "keys": [
         "y",
         "i",
         "r"
       ],
+      "id": "item.operate {\"object\":\"r\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"r\"}"
+        "mode": "table",
+        "register": "{\n  \"id\": \"ORD-1003\",\n  \"status\": \"refunded\",\n  \"customer\": {\n    \"name\": \"Finn Abe\"\n  },\n  \"items\": [\n    {\n      \"sku\": \"TEA-MAT\",\n      \"qty\": 1,\n      \"price\": 26\n    }\n  ],\n  \"total\": 26,\n  \"created_at\": \"2026-10-02T10:00:00Z\"\n}"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"t\"}",
-      "caption": "",
+      "label": "Copy the whole table array",
+      "caption": "y i t copies the table array. Keep all the records represented by this table in one JSON value.",
       "keys": [
         "y",
         "i",
         "t"
       ],
+      "id": "item.operate {\"object\":\"t\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"t\"}"
+        "mode": "table",
+        "register": "[\n  {\n    \"id\": \"ORD-1001\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Kai Jade\",\n      \"email\": \"kai.jade@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 3,\n        \"price\": 6\n      },\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 4,\n        \"price\": 35\n      }\n    ],\n    \"total\": 158,\n    \"created_at\": \"2026-10-01T19:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1002\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Kai Abe\",\n      \"email\": \"kai.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 1,\n        \"price\": 42\n      }\n    ],\n    \"total\": 42,\n    \"created_at\": \"2026-10-02T00:00:00Z\",\n    \"coupon\": \"AUTUMN5\"\n  },\n  {\n    \"id\": \"ORD-1003\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Finn Abe\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 1,\n        \"price\": 26\n      }\n    ],\n    \"total\": 26,\n    \"created_at\": \"2026-10-02T10:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1004\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Aiko Abe\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 2,\n        \"price\": 18\n      },\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 4,\n        \"price\": 24\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 3,\n        \"price\": 9\n      }\n    ],\n    \"total\": 159,\n    \"created_at\": \"2026-10-02T16:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1005\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Dev Abe\",\n      \"email\": \"dev.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 1,\n        \"price\": 29\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 1,\n        \"price\": 7\n      }\n    ],\n    \"total\": 36,\n    \"created_at\": \"2026-10-02T22:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1006\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Finn Brook\",\n      \"email\": \"finn.brook@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 4,\n        \"price\": 42\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 1,\n        \"price\": 38\n      },\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 2,\n        \"price\": 24\n      }\n    ],\n    \"total\": 254,\n    \"created_at\": \"2026-10-03T07:00:00Z\",\n    \"coupon\": \"WELCOME10\"\n  },\n  {\n    \"id\": \"ORD-1007\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Emi Abe\",\n      \"email\": \"emi.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 4,\n        \"price\": 13\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 4,\n        \"price\": 41\n      }\n    ],\n    \"total\": 216,\n    \"created_at\": \"2026-10-03T14:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1008\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Chika Grove\",\n      \"email\": \"chika.grove@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 4,\n        \"price\": 21\n      }\n    ],\n    \"total\": 84,\n    \"created_at\": \"2026-10-03T19:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1009\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Finn Abe\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 4,\n        \"price\": 40\n      },\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 3,\n        \"price\": 29\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 3,\n        \"price\": 23\n      }\n    ],\n    \"total\": 316,\n    \"created_at\": \"2026-10-04T00:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1010\",\n    \"status\": \"pending\",\n    \"customer\": {\n      \"name\": \"Aiko Castle\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 1,\n        \"price\": 16\n      }\n    ],\n    \"total\": 16,\n    \"created_at\": \"2026-10-04T07:00:00Z\",\n    \"coupon\": \"AUTUMN5\"\n  },\n  {\n    \"id\": \"ORD-1011\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Emi Isle\",\n      \"email\": \"emi.isle@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 4,\n        \"price\": 24\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 3,\n        \"price\": 25\n      }\n    ],\n    \"total\": 171,\n    \"created_at\": \"2026-10-04T17:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1012\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Aiko Jade\",\n      \"email\": \"aiko.jade@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 4,\n        \"price\": 31\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 1,\n        \"price\": 38\n      }\n    ],\n    \"total\": 162,\n    \"created_at\": \"2026-10-04T21:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1013\",\n    \"status\": \"pending\",\n    \"customer\": {\n      \"name\": \"Gus Ember\",\n      \"email\": \"gus.ember@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 26\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 2,\n        \"price\": 14\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 3,\n        \"price\": 28\n      }\n    ],\n    \"total\": 138,\n    \"created_at\": \"2026-10-05T05:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1014\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Kai Isle\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 2,\n        \"price\": 40\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 2,\n        \"price\": 38\n      }\n    ],\n    \"total\": 156,\n    \"created_at\": \"2026-10-05T13:00:00Z\",\n    \"coupon\": \"WELCOME10\"\n  },\n  {\n    \"id\": \"ORD-1015\",\n    \"status\": \"pending\",\n    \"customer\": {\n      \"name\": \"Gus Fern\",\n      \"email\": \"gus.fern@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 38\n      }\n    ],\n    \"total\": 38,\n    \"created_at\": \"2026-10-05T21:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1016\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Dev Ember\",\n      \"email\": \"dev.ember@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 2,\n        \"price\": 13\n      },\n      {\n        \"sku\": \"TEA-GEN\",\n        \"qty\": 2,\n        \"price\": 42\n      },\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 25\n      }\n    ],\n    \"total\": 135,\n    \"created_at\": \"2026-10-06T04:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1017\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Ivo Isle\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 4,\n        \"price\": 19\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 3,\n        \"price\": 40\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 4,\n        \"price\": 22\n      }\n    ],\n    \"total\": 284,\n    \"created_at\": \"2026-10-06T10:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1018\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Aiko Abe\",\n      \"email\": \"aiko.abe@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 4,\n        \"price\": 36\n      }\n    ],\n    \"total\": 144,\n    \"created_at\": \"2026-10-06T19:00:00Z\",\n    \"coupon\": \"AUTUMN5\"\n  },\n  {\n    \"id\": \"ORD-1019\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Ben Isle\",\n      \"email\": null\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 22\n      }\n    ],\n    \"total\": 22,\n    \"created_at\": \"2026-10-07T02:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1020\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Ben Hill\",\n      \"email\": \"ben.hill@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 3,\n        \"price\": 35\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 3,\n        \"price\": 30\n      },\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 1,\n        \"price\": 39\n      }\n    ],\n    \"total\": 234,\n    \"created_at\": \"2026-10-07T08:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1021\",\n    \"status\": \"refunded\",\n    \"customer\": {\n      \"name\": \"Dev Castle\",\n      \"email\": \"dev.castle@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 4,\n        \"price\": 32\n      }\n    ],\n    \"total\": 128,\n    \"created_at\": \"2026-10-07T13:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1022\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Aiko Isle\",\n      \"email\": \"aiko.isle@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 4,\n        \"price\": 14\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 2,\n        \"price\": 16\n      },\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 1,\n        \"price\": 24\n      }\n    ],\n    \"total\": 112,\n    \"created_at\": \"2026-10-07T21:00:00Z\",\n    \"coupon\": \"WELCOME10\"\n  },\n  {\n    \"id\": \"ORD-1023\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Finn Fern\",\n      \"email\": \"finn.fern@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"TEA-MAT\",\n        \"qty\": 3,\n        \"price\": 12\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 3,\n        \"price\": 39\n      }\n    ],\n    \"total\": 153,\n    \"created_at\": \"2026-10-08T05:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1024\",\n    \"status\": \"shipped\",\n    \"customer\": {\n      \"name\": \"Aiko Fern\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 3,\n        \"price\": 32\n      },\n      {\n        \"sku\": \"POT-02\",\n        \"qty\": 4,\n        \"price\": 10\n      }\n    ],\n    \"total\": 136,\n    \"created_at\": \"2026-10-08T14:00:00Z\"\n  },\n  {\n    \"id\": \"ORD-1025\",\n    \"status\": \"paid\",\n    \"customer\": {\n      \"name\": \"Gus Isle\",\n      \"email\": \"gus.isle@example.com\"\n    },\n    \"items\": [\n      {\n        \"sku\": \"CUP-01\",\n        \"qty\": 3,\n        \"price\": 4\n      },\n      {\n        \"sku\": \"TEA-SEN\",\n        \"qty\": 3,\n        \"price\": 20\n      },\n      {\n        \"sku\": \"TEA-HOJ\",\n        \"qty\": 4,\n        \"price\": 4\n      }\n    ],\n    \"total\": 88,\n    \"created_at\": \"2026-10-08T21:00:00Z\"\n  }\n]"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"v\"}",
-      "caption": "",
+      "label": "Copy an inner value",
+      "caption": "y i v copies just this cell value. Use an inner object when you want the data without its surrounding key.",
       "keys": [
         "y",
         "i",
         "v"
       ],
+      "id": "item.operate {\"object\":\"v\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"v\"}"
+        "mode": "table",
+        "register": "ORD-1003"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"value\",\"op\":\"!\"}",
-      "caption": "",
+      "label": "Use a cell value in jq",
+      "caption": "! ! places the selected value on the jq line and runs it. Start an extraction from the cell you are already inspecting.",
       "keys": [
-        "y",
-        "!"
+        "!",
+        "!",
+        {
+          "job": "jq.run"
+        }
       ],
+      "id": "item.operate {\"object\":\"value\",\"op\":\"!\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"value\",\"op\":\"!\"}"
+        "mode": "jq_·_line"
+      }
     },
     {
-      "label": "item.operate {\"object\":\"value\",\"op\":\"c\"}",
-      "caption": "",
+      "label": "Change the current value",
+      "caption": "i c c opens this ID for change; type ORD-REVIEW and enter. Correct one value while preserving the rest of its record.",
       "keys": [
-        "y",
-        "c"
+        "i",
+        "c",
+        "c",
+        "ctrl+u",
+        {
+          "type": "ORD-REVIEW"
+        },
+        "enter"
       ],
+      "id": "item.operate {\"object\":\"value\",\"op\":\"c\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"value\",\"op\":\"c\"}"
+        "mode": "edit",
+        "register": "ORD-1003",
+        "contains": [
+          "ORD-R"
+        ]
+      }
     },
     {
-      "label": "item.operate {\"object\":\"value\",\"op\":\"y\"}",
-      "caption": "",
+      "label": "Copy the current cell",
+      "caption": "y y copies the selected order ID. Reuse one value without copying the row or its path.",
       "keys": [
         "y",
         "y"
       ],
+      "id": "item.operate {\"object\":\"value\",\"op\":\"y\"}",
       "expect": {
-        "mode": "table"
-      },
-      "id": "item.operate {\"object\":\"value\",\"op\":\"y\"}"
+        "mode": "table",
+        "register": "ORD-1003"
+      }
     },
     {
-      "label": "ochazuke.list.choose-column",
-      "caption": "",
+      "label": "Choose a column by name",
+      "caption": "g c opens the column chooser; type total and enter. Reach an off-screen column without counting movements.",
       "keys": [
         "g",
-        "c"
+        "c",
+        {
+          "type": "total"
+        },
+        "enter"
       ],
+      "id": "ochazuke.list.choose-column",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "ochazuke.list.choose-column"
+        "mode": "table"
+      }
     },
     {
-      "label": "ochazuke.list.column",
-      "caption": "",
+      "label": "Jump to a numbered column",
+      "caption": "3 | selects the third visible column. Use a counted column jump when you know its position.",
       "keys": [
+        "3",
         "|"
       ],
+      "id": "ochazuke.list.column",
       "expect": {
         "mode": "table"
-      },
-      "id": "ochazuke.list.column"
+      }
     },
     {
-      "label": "ochazuke.list.column {\"delta\":-1}",
-      "caption": "",
+      "label": "Move one column left",
+      "caption": "l selects status first; h returns to id. Move back across a wide record without changing rows.",
       "keys": [
+        "l",
         "h"
       ],
+      "id": "ochazuke.list.column {\"delta\":-1}",
       "expect": {
         "mode": "table"
-      },
-      "id": "ochazuke.list.column {\"delta\":-1}"
+      }
     },
     {
-      "label": "ochazuke.list.column {\"delta\":1}",
-      "caption": "",
+      "label": "Move one column right",
+      "caption": "l moves to status. Compare neighboring fields while keeping the same order selected.",
       "keys": [
         "l"
       ],
+      "id": "ochazuke.list.column {\"delta\":1}",
       "expect": {
         "mode": "table"
-      },
-      "id": "ochazuke.list.column {\"delta\":1}"
+      }
     },
     {
-      "label": "ochazuke.list.column {\"to\":\"first\"}",
-      "caption": "",
+      "label": "Go to the first column",
+      "caption": "0 selects the first table column. Start reading a record again from its row number.",
       "keys": [
         "0"
       ],
+      "id": "ochazuke.list.column {\"to\":\"first\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "ochazuke.list.column {\"to\":\"first\"}"
+      }
     },
     {
-      "label": "ochazuke.list.column {\"to\":\"last\"}",
-      "caption": "",
+      "label": "Go to the last column",
+      "caption": "$ selects the last column and brings it into view. Inspect optional fields at the far end of a wide table.",
       "keys": [
         "$"
       ],
+      "id": "ochazuke.list.column {\"to\":\"last\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "ochazuke.list.column {\"to\":\"last\"}"
+      }
     },
     {
-      "label": "ochazuke.list.resize-column {\"delta\":-1}",
-      "caption": "",
+      "label": "Narrow the current column",
+      "caption": "z < narrows the ID column. Make room for neighboring fields when you recognize the values already.",
       "keys": [
         "z",
         "<"
       ],
+      "id": "ochazuke.list.resize-column {\"delta\":-1}",
       "expect": {
         "mode": "table"
-      },
-      "id": "ochazuke.list.resize-column {\"delta\":-1}"
+      }
     },
     {
-      "label": "ochazuke.list.resize-column {\"delta\":1}",
-      "caption": "",
+      "label": "Widen the current column",
+      "caption": "z > widens the ID column. Give longer values room without changing the document.",
       "keys": [
         "z",
         ">"
       ],
+      "id": "ochazuke.list.resize-column {\"delta\":1}",
       "expect": {
         "mode": "table"
-      },
-      "id": "ochazuke.list.resize-column {\"delta\":1}"
+      }
     },
     {
-      "label": "ochazuke.list.toggle-pin-column",
-      "caption": "",
+      "label": "Pin the current column",
+      "caption": "z p toggles the ID column pin. Keep an identifier visible while you move across the other fields.",
       "keys": [
         "z",
-        "p"
+        "p",
+        "$"
       ],
+      "id": "ochazuke.list.toggle-pin-column",
       "expect": {
         "mode": "table"
-      },
-      "id": "ochazuke.list.toggle-pin-column"
+      }
     },
     {
-      "label": "ochazuke.list.visual",
-      "caption": "",
+      "label": "Select several order rows",
+      "caption": "v starts a row selection; j extends it to two orders. Prepare a group for a single copy or edit operation.",
       "keys": [
-        "v"
+        "v",
+        "j"
       ],
+      "id": "ochazuke.list.visual",
       "expect": {
         "mode": "visual-line"
-      },
-      "id": "ochazuke.list.visual"
+      }
     },
     {
-      "label": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"s\"}",
-      "caption": "",
+      "label": "Begin a sort operation",
+      "caption": "s starts sorting and waits for an object. Choose a column, object or array according to what you want ordered.",
       "keys": [
         "s"
       ],
+      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"s\"}",
       "expect": {
         "mode": "operator_pending"
-      },
-      "id": "ochazuke.mode.enter {\"mode\":\"operator_pending\",\"op\":\"s\"}"
+      }
     },
     {
-      "label": "ochazuke.search.focus",
-      "caption": "",
+      "label": "Search beyond this table",
+      "caption": "/ opens the shared search line. Find a key or value anywhere in the document, including inside nested objects.",
       "keys": [
         "/"
       ],
+      "id": "ochazuke.search.focus",
       "expect": {
         "mode": "search_·_substr"
-      },
-      "id": "ochazuke.search.focus"
+      }
     },
     {
-      "label": "restructure.show",
-      "caption": "",
+      "label": "Compare with the original document",
+      "caption": "T switches the structure and data to the original document. Compare the source view with the editable buffer.",
       "keys": [
         "T"
       ],
+      "id": "restructure.show",
       "expect": {
         "mode": "table"
-      },
-      "id": "restructure.show"
+      }
     },
     {
-      "label": "rows.move {\"motion\":\"bottom\"}",
-      "caption": "",
+      "label": "Go to the last order",
+      "caption": "G reaches the last order. Check the end of the collection without paging through every record.",
       "keys": [
         "G"
       ],
+      "id": "rows.move {\"motion\":\"bottom\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "rows.move {\"motion\":\"bottom\"}"
+      }
     },
     {
-      "label": "rows.move {\"motion\":\"down\"}",
-      "caption": "",
+      "label": "Read the next order",
+      "caption": "j moves down one order. Scan records while keeping the same column selected.",
       "keys": [
         "j"
       ],
+      "id": "rows.move {\"motion\":\"down\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "rows.move {\"motion\":\"down\"}"
+      }
     },
     {
-      "label": "rows.move {\"motion\":\"half-down\"}",
-      "caption": "",
+      "label": "Read half a screen lower",
+      "caption": "ctrl+d moves down half a table window. Keep some rows visible for context while scanning.",
       "keys": [
         "ctrl+d"
       ],
+      "id": "rows.move {\"motion\":\"half-down\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "rows.move {\"motion\":\"half-down\"}"
+      }
     },
     {
-      "label": "rows.move {\"motion\":\"half-up\"}",
-      "caption": "",
+      "label": "Read half a screen higher",
+      "caption": "G reaches the end; ctrl+u moves half a window up. Compare the final records with the preceding group.",
       "keys": [
+        "G",
         "ctrl+u"
       ],
+      "id": "rows.move {\"motion\":\"half-up\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "rows.move {\"motion\":\"half-up\"}"
+      }
     },
     {
-      "label": "rows.move {\"motion\":\"page-down\"}",
-      "caption": "",
+      "label": "Read the next screen of orders",
+      "caption": "ctrl+f moves down a table window. Cover a larger collection quickly while retaining the current column.",
       "keys": [
         "ctrl+f"
       ],
+      "id": "rows.move {\"motion\":\"page-down\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "rows.move {\"motion\":\"page-down\"}"
+      }
     },
     {
-      "label": "rows.move {\"motion\":\"page-up\"}",
-      "caption": "",
+      "label": "Read the preceding screen",
+      "caption": "G reaches the end; ctrl+b moves up a table window. Revisit the previous group of orders.",
       "keys": [
+        "G",
         "ctrl+b"
       ],
+      "id": "rows.move {\"motion\":\"page-up\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "rows.move {\"motion\":\"page-up\"}"
+      }
     },
     {
-      "label": "rows.move {\"motion\":\"top\"}",
-      "caption": "",
+      "label": "Go to the first order",
+      "caption": "home returns to the first record. Restart your scan from the beginning of the table.",
       "keys": [
         "home"
       ],
+      "id": "rows.move {\"motion\":\"top\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "rows.move {\"motion\":\"top\"}"
+      }
     },
     {
-      "label": "rows.move {\"motion\":\"up\"}",
-      "caption": "",
+      "label": "Read the preceding order",
+      "caption": "k moves up one order. Return to the previous record without losing your column.",
       "keys": [
         "k"
       ],
+      "id": "rows.move {\"motion\":\"up\"}",
       "expect": {
         "mode": "table"
-      },
-      "id": "rows.move {\"motion\":\"up\"}"
+      }
     },
     {
-      "label": "viewer.edit {\"open\":true}",
-      "caption": "",
+      "label": "Open a value for editing",
+      "caption": "r enters EDIT and opens the current value editor. Inspect the old value and its type before changing it.",
       "keys": [
         "r"
       ],
+      "id": "viewer.edit {\"open\":true}",
       "expect": {
         "mode": "insert"
-      },
-      "id": "viewer.edit {\"open\":true}"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 11,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }

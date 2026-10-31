@@ -1,61 +1,102 @@
 {
-  "name": "o-json: detail (enter on a table row)",
+  "name": "o-json: drill into a record detail",
   "area": "tutorials",
   "app": "o-json",
-  "fixture": "viewer",
+  "fixture": "empty",
   "width": 110,
   "height": 32,
   "values": {
-    "modes.edit-gate": true
+    "modes.edit-gate": true,
+    "chooser.remember-source": false
   },
-  "skip": "later: generated tutorial skeleton; captions and visible effects need authoring",
   "setup": [
-    "j",
-    "j",
+    "e",
+    "ctrl+o",
+    {
+      "type": "orders.min"
+    },
+    "enter",
+    {
+      "job": "viewer.open"
+    },
     "j",
     "ctrl+w",
     "l",
+    "3",
+    "j",
+    "i",
     "enter"
   ],
-  "expect": {
-    "mode": "normal"
-  },
   "actions": [
     {
-      "label": "entry.up",
-      "caption": "",
+      "label": "Return to the enclosing record",
+      "caption": "l l selects customer and enter opens it; backspace returns to the order. Follow a nested object and keep your route back.",
       "keys": [
+        "l",
+        "l",
+        "enter",
         "backspace"
       ],
+      "id": "entry.up",
       "expect": {
-        "mode": "table"
-      },
-      "id": "entry.up"
+        "mode": "normal",
+        "contains": [
+          ".data[3]",
+          "customer"
+        ]
+      }
     },
     {
-      "label": "value.rename",
-      "caption": "",
+      "label": "Rename a field in detail",
+      "caption": "K opens the selected key for renaming. Type order_id and enter to clarify this record without editing its value.",
       "keys": [
-        "K"
+        "K",
+        "ctrl+u",
+        {
+          "type": "order_id"
+        },
+        "enter"
       ],
+      "id": "value.rename",
       "expect": {
-        "mode": "insert"
-      },
-      "id": "value.rename"
+        "mode": "normal",
+        "register": "id",
+        "contains": [
+          "order_id"
+        ]
+      }
     },
     {
-      "label": "ochazuke.list.yank {\"what\":\"cell\"}",
-      "caption": "",
+      "label": "Copy the selected detail cell",
+      "caption": "y copies the selected cell in this detail table. Reuse a displayed field label or value without taking the whole record.",
       "keys": [
         "y"
       ],
+      "id": "ochazuke.list.yank {\"what\":\"cell\"}",
       "expect": {
-        "mode": "normal"
-      },
-      "id": "ochazuke.list.yank {\"what\":\"cell\"}"
+        "mode": "normal",
+        "register": "ORD-1004"
+      }
     }
   ],
   "seed": {
-    "doc": "sample.json"
-  }
+    "files": [
+      "sample.json",
+      "nested.json",
+      "tutorial-selection.json",
+      "jobs/orders.min.json",
+      "jobs/package.json"
+    ]
+  },
+  "state": true,
+  "notes": [
+    {
+      "after": 0,
+      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+    },
+    {
+      "after": 12,
+      "note": "Reset point: every action begins here again; earlier actions never change this starting state."
+    }
+  ]
 }
