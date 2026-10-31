@@ -68,9 +68,13 @@
     },
     {
       "label": "Copy the selected detail cell",
-      "caption": "y copies the selected cell in this detail table. Reuse a displayed field label or value without taking the whole record.",
+      "caption": ":ochazuke.list yank --what cell and enter copies the current cell text. Keep a displayed value handy using a named command as well as the detail view’s y shortcut.",
       "keys": [
-        "y"
+        ":",
+        {
+          "type": "ochazuke.list yank --what cell"
+        },
+        "enter"
       ],
       "id": "ochazuke.list.yank {\"what\":\"cell\"}",
       "expect": {

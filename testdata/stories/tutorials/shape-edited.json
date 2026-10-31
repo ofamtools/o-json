@@ -175,18 +175,6 @@
       }
     },
     {
-      "label": "Cancel an incomplete nesting chord",
-      "caption": "< starts the outdent chord; esc cancels it before it acts. Use this when you begin a nesting command and decide to keep the structure.",
-      "keys": [
-        "<",
-        "esc"
-      ],
-      "id": "ochazuke.key.ignore",
-      "expect": {
-        "mode": "shape"
-      }
-    },
-    {
       "label": "Fit the outline columns",
       "caption": "z > widens a column first; z F fits the columns back to their content. Recover readable widths after a manual adjustment.",
       "keys": [
@@ -219,19 +207,6 @@
         "G"
       ],
       "id": "ochazuke.list.goto {\"position\":\"last\"}",
-      "expect": {
-        "mode": "shape"
-      }
-    },
-    {
-      "label": "Mark rows in the original tree",
-      "caption": "T switches to the original tree; 2 space marks a range. Keep a small set of outline rows selected for an operation.",
-      "keys": [
-        "T",
-        "2",
-        "space"
-      ],
-      "id": "ochazuke.list.mark",
       "expect": {
         "mode": "shape"
       }

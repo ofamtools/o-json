@@ -348,6 +348,20 @@
         "mode": "normal",
         "register": "{\"map\": [\n  {\"from\": \".name\", \"to\": \".name\"},\n  {\"from\": \".version\", \"to\": \".version\"},\n  {\"from\": \".items\", \"to\": \".items\"},\n  {\"from\": \".items[]\", \"to\": \".items[]\"},\n  {\"from\": \".items[].id\", \"to\": \".items[].id\"},\n  {\"from\": \".items[].name\", \"to\": \".items[].name\"},\n  {\"from\": \".items[].owner\", \"to\": \".items[].owner\"},\n  {\"from\": \".items[].owner.name\", \"to\": \".items[].owner.name\"},\n  {\"from\": \".items[].owner.email\", \"to\": \".items[].owner.email\"},\n  {\"from\": \".items[].tags\", \"to\": \".items[].tags\"},\n  {\"from\": \".items[].tags[]\", \"to\": \".items[].tags[]\"},\n  {\"from\": \".items[].archived\", \"to\": \".items[].archived\"},\n  {\"from\": \".items[].note\", \"to\": \".items[].note\"},\n  {\"from\": \".meta\", \"to\": \".meta\"},\n  {\"from\": \".meta.generated\", \"to\": \".meta.generated\"},\n  {\"from\": \".meta.count\", \"to\": \".meta.count\"},\n  {\"from\": \".meta.source\", \"to\": \".meta.source\"}\n]}"
       }
+    },
+    {
+      "label": "Keep a read-only mapping unchanged",
+      "caption": "R is ignored in the read-only mapping editor. Inspect the generated mapping here; return to the structure to change what it produces.",
+      "keys": [
+        "R"
+      ],
+      "id": "ochazuke.key.ignore",
+      "expect": {
+        "mode": "normal",
+        "contains": [
+          "Mapping"
+        ]
+      }
     }
   ],
   "seed": {
