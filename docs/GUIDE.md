@@ -22,8 +22,8 @@ The examples use `testdata/sample.json`: four items, each with an `id`, a `name`
 
 You can open a file, read stdin, or start with nothing and pick a file later. Use the last one when you don't yet know which file you want.
 
-1. Open a file: `o-json sample.json`.
-2. Or read stdin: `curl -s https://… | o-json`. (`o-json -` reads stdin too.)
+1. Open a file: `o json sample.json`.
+2. Or read stdin: `curl -s https://… | o json`. (`o json -` reads stdin too.)
 3. Or start empty: `o-json`. The top line reads `[no file]  ·  e open a file  ·  p paste JSON  ·  M restructure`, and the data pane says `No document is open.` with the same keys.
 4. Press `e` (or `: doc open`) to open a file. The path chooser has three sources: `browse` (the current folder), `recent` (files you opened before) and `typed` (type a path). `ctrl+o` switches source (`alt+o` goes back). Type to narrow the list (`tab` cycles how the text matches: substring, fuzzy or regex), then press `enter`.
 5. Or press `p` to paste JSON from the system clipboard. Pasting into the terminal works too: the pasted JSON becomes the document. (`p` pastes a document only in the empty document and the original view, after `T`. In the edited view, `p` puts things: chapters 5 and 6.)
@@ -149,8 +149,8 @@ The data panel shows the reshaped document as you edit. `T` flips between the or
 **Save the mapping and reuse it.**
 
 1. Run `: restructure export-map` and type a file name (`people.map.json`).
-2. Run it again on any document of the same shape: `o-json restructure data.json --map people.map.json`.
-3. Get the same thing as a jq program: `o-json restructure data.json --map people.map.json --jq`.
+2. Run it again on any document of the same shape: `o json restructure data.json --map people.map.json`.
+3. Get the same thing as a jq program: `o json restructure data.json --map people.map.json --jq`.
 4. Or, without leaving the viewer, run `: restructure jq`: the program opens in a read-only view (move, `v` to select, `y` to copy, `q` to close). Opening it copies nothing; `y` does. `: restructure mapping` shows the mapping the same way, and `g j` keeps the program on screen beside your edits.
 
 **What you'll see:** the breadcrumb shows `to ← from` for a node that moved. A key that would break the mapping does nothing. For example, `r` on an array item `[]` is ignored, because an item has no key.
@@ -207,16 +207,16 @@ An export is not the document: your edits stay unsaved (`[+]`) until you write J
 **From the command line.**
 
 ```sh
-o-json export sample.json --of .items                    # csv
-o-json export sample.json --of .items --format md        # a Markdown table (also tsv, jsonl)
-o-json export sample.json --of .items --columns id,owner.name --out items.csv
-o-json export sample.json --of .items --arrays rows      # one row per array item
-o-json export data.json --map people.map.json --of .items   # restructure first
-o-json table sample.json .items                          # a quick text table
-o-json get sample.json '.items[].owner.name' --raw       # values at a path
-o-json query sample.json '.items[] | .name'              # a jq query
-o-json structure sample.json                             # the shape as text
-o-json restructure sample.json --map people.map.json --out people.json
+o json export sample.json --of .items                    # csv
+o json export sample.json --of .items --format md        # a Markdown table (also tsv, jsonl)
+o json export sample.json --of .items --columns id,owner.name --out items.csv
+o json export sample.json --of .items --arrays rows      # one row per array item
+o json export data.json --map people.map.json --of .items   # restructure first
+o json table sample.json .items                          # a quick text table
+o json get sample.json '.items[].owner.name' --raw       # values at a path
+o json query sample.json '.items[] | .name'              # a jq query
+o json structure sample.json                             # the shape as text
+o json restructure sample.json --map people.map.json --out people.json
 ```
 
 `--out` never replaces an existing file unless you add `--overwrite`.
