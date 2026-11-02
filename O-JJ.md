@@ -104,8 +104,8 @@ uses `o-jj` for its CLI name and the ochazuke config and state directories:
 `$XDG_CONFIG_HOME/o-jj` and `$XDG_STATE_HOME/o-jj` (or the matching paths
 under `~`). It does not use the installed `o-json` directories.
 
-o-jj builds Design D (`~/hub/o-plans/plans/o-json-modes.md`) close to the
-owner-approved prototype (`/tmp/o-jj/prototype.html`).
+o-jj uses a mode per pane and data view, with temporary action modes
+that close one layer at a time with `esc`.
 
 ## Modes
 
