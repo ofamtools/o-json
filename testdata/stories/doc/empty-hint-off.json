@@ -6,6 +6,6 @@
   "fixture": "empty",
   "values": {"empty.hint": false},
   "expect": [
-    {"contains": ["(empty list)", "[no file]"], "lacks": ["No document is open."]}
+    {"contains": ["no rows", "[no file]"], "lacks": ["No document is open."]}
   ]
 }

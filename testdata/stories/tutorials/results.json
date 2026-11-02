@@ -32,7 +32,7 @@
       "keys": [
         "esc"
       ],
-      "id": "ochazuke.search.clear",
+      "id": "search.clear",
       "expect": {
         "mode": "table"
       }
@@ -43,7 +43,7 @@
       "keys": [
         "n"
       ],
-      "id": "ochazuke.search.next",
+      "id": "search.next",
       "expect": {
         "mode": "search",
         "contains": [
@@ -58,7 +58,7 @@
         "n",
         "N"
       ],
-      "id": "ochazuke.search.next {\"steps\":-1}",
+      "id": "search.next {\"steps\":-1}",
       "expect": {
         "mode": "search"
       }

@@ -143,7 +143,7 @@ func (a *App) openModal(ve *valueEdit, text string, sel bool) error {
 	for _, f := range vm.fields {
 		f.in.Cursor = len(f.in.Text)
 	}
-	inst, err := a.r.OpenModal(valueEditorID, ochazuke.Payload{Prompt: vm.title}, ochazuke.WithInput(first.in, ochazuke.Kind(first.noun())))
+	inst, err := a.r.OpenModal(valueEditorID, ochazuke.Payload{Prompt: vm.title}, ochazuke.CloseWith(ochazuke.Request{Noun: valueEditorID, Verb: "cancel"}), ochazuke.WithInput(first.in, ochazuke.Kind(first.noun())))
 	if err != nil {
 		return err
 	}

@@ -65,7 +65,7 @@ func (a *App) prompt(label, text string, commit func(string) error) error {
 	view.Title = label
 	a.m.ModalViews[promptFrame] = view
 	a.ask = &question{commit: commit}
-	if _, err := a.r.OpenModal(promptFrame, ochazuke.Payload{Prompt: label}, ochazuke.WithInput(a.in, ochazuke.Kind("query"))); err != nil {
+	if _, err := a.r.OpenModal(promptFrame, ochazuke.Payload{Prompt: label}, ochazuke.CloseWith(ochazuke.Request{Noun: "query", Verb: "cancel"}), ochazuke.WithInput(a.in, ochazuke.Kind("query"))); err != nil {
 		a.ask = nil
 		return err
 	}

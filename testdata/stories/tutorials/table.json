@@ -429,7 +429,7 @@
       "keys": [
         "/"
       ],
-      "id": "ochazuke.search.focus",
+      "id": "search.focus",
       "expect": {
         "mode": "search_·_substr"
       }

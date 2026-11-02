@@ -515,14 +515,14 @@ func (a *App) hoverBlock(s ochazuke.Styles, levels []hoverGrid, k, w int) (lines
 				// reverse bar, just as ochazuke's main table draws them.
 				st := s.Tone(tone)
 				if j == sel && (!intersect || row < 0) {
-					st = st.Reverse(true)
+					st = s.Selection(true).Inherit(st)
 				}
 				c = st.Render(c)
 				if row < 0 && gap != "" {
 					gap = s.Tone(ochazuke.ToneHeader).Render(gap)
 				}
 			} else if j == sel {
-				c = s.Accent.Reverse(true).Render(c)
+				c = s.Selection(true).Inherit(s.Accent).Render(c)
 			} else {
 				if partTones && row >= 0 && nested(g.cell(hoverPos{row, j})) {
 					c = s.Muted.Render(c) // size summaries describe hidden data

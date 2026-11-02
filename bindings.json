@@ -633,7 +633,7 @@
       {"key": "y", "action": "entry.yank"}
     ]},
     {"context": "detail/normal", "bindings": [
-      {"key": "q", "action": "modal.pop"},
+      {"key": "q", "action": "ochazuke.modal.close"},
       {"key": "backspace", "action": "entry.up", "hint": "back"}
     ]},
     {"context": "value-input/insert", "bindings": [

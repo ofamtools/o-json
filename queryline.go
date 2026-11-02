@@ -279,7 +279,7 @@ func chipLine(s ochazuke.Styles, in *ochazuke.Input, toks []jqTok, focused, whol
 	// Runes of one look are drawn as one run.
 	var run []rune
 	look, runLook := 0, -1
-	looks := []lipgloss.Style{lipgloss.NewStyle(), s.Tone(ochazuke.ToneChip), lipgloss.NewStyle().Reverse(true).Underline(true), s.Error.Underline(true), s.Tone(ochazuke.ToneChipFocused)}
+	looks := []lipgloss.Style{lipgloss.NewStyle(), s.Tone(ochazuke.ToneChip), s.Selection(focused).Underline(true), s.Error.Underline(true), s.Tone(ochazuke.ToneChipFocused)}
 	flush := func() {
 		if len(run) > 0 {
 			b.WriteString(looks[runLook].Render(string(run)))

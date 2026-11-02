@@ -335,7 +335,8 @@ func (a *App) registerSearch() error {
 		return a.overlay != "" || len(a.sr.hits) > 0
 	})
 	r.DefineGuard("search-hits", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return len(a.sr.hits) > 0 })
-	r.Define("search").
+	// Keep the JSON search actions alongside the framework text finder.
+	r.DefineOwn("search").
 		Verb("focus", func(ochazuke.Ctx) ochazuke.Result { return done(a.focusSearch()) },
 			"Open the search line (/) in the type search.type names; tab and shift+tab cycle substring, fuzzy, regex and jq").When("query-line").
 		Verb("type", func(c ochazuke.Ctx) ochazuke.Result {

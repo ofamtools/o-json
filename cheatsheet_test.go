@@ -81,7 +81,7 @@ var cheatSheet = []sheetSection{
 		{"item/normal", "item.open", nil, "open the row in the detail"},
 		{"entry/normal", "entry.open", nil, "detail: step into a nested value"},
 		{"entry/normal", "entry.up", nil, "detail: step back out"},
-		{"detail/normal", "modal.pop", nil, "close the detail"},
+		{"detail/normal", "ochazuke.modal.close", nil, "close the detail"},
 		{"item/normal", "item.yank", nil, "copy the value under the cursor"},
 	}},
 	{"Edit values (chapter 5)", []sheetLine{

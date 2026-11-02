@@ -108,7 +108,7 @@ func (a *App) openJQPanel(view string) error {
 	text := a.panelText()
 	a.jqp.in = ochazuke.NewInput(jqPanelTextID, text, strings.Contains(text, "\n"))
 	if where == "modal" {
-		inst, err := a.r.OpenModal(jqPanelModalID, ochazuke.Payload{Prompt: a.panelTitle()}, ochazuke.WithInput(a.jqp.in, ochazuke.Kind("jq-panel-text"), ochazuke.ReadOnly()))
+		inst, err := a.r.OpenModal(jqPanelModalID, ochazuke.Payload{Prompt: a.panelTitle()}, ochazuke.CloseWith(ochazuke.Request{Noun: "jq-panel", Verb: "close"}), ochazuke.WithInput(a.jqp.in, ochazuke.Kind("jq-panel-text"), ochazuke.ReadOnly()))
 		if err != nil {
 			return err
 		}

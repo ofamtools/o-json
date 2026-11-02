@@ -191,7 +191,7 @@ func TestLitColumnCrossesTheSelectedRow(t *testing.T) {
 	frame := a.m.View().Content
 	sel := ""
 	for _, l := range strings.Split(frame, "\n") {
-		if strings.Contains(l, "\x1b[7m") && strings.Contains(ansi.Strip(l), "alpha") {
+		if hasReverse(l) && strings.Contains(ansi.Strip(l), "alpha") {
 			sel = l
 		}
 	}

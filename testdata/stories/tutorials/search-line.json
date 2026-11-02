@@ -250,7 +250,7 @@
         },
         "enter"
       ],
-      "id": "ochazuke.search.accept",
+      "id": "search.accept",
       "expect": {
         "mode": "search",
         "register": "name alpha",
@@ -266,7 +266,7 @@
       "keys": [
         "esc"
       ],
-      "id": "ochazuke.search.cancel",
+      "id": "search.cancel",
       "expect": {
         "mode": "shape"
       }
@@ -277,7 +277,7 @@
       "keys": [
         "tab"
       ],
-      "id": "ochazuke.search.type",
+      "id": "search.type",
       "expect": {
         "mode": "search_·_fuzzy"
       }
@@ -296,7 +296,7 @@
           "job": "jq.run"
         }
       ],
-      "id": "ochazuke.search.type {\"steps\":-1}",
+      "id": "search.type {\"steps\":-1}",
       "expect": {
         "mode": "jq_·_line",
         "register": "name alpha"

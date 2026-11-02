@@ -5,7 +5,7 @@
  |  ╭─ Structure · unchanged ────────────────────╮ ╭━ Flat .  ·  table fields [flat] json mapping ━━━━━━━━━━━━━━━━━━━━━╮
 R|  │ substr / to search                         │ ┃ .bindings[0].keys[0] = "k0"                                       ┃
  |  │ key               type    from             │ ┃ .bindings[0].verb = "v0"                                          ┃
-r|  │ ▾ . (root)        object                   │ ┃ .bindings[1].keys[0] = "k0"                                       ┃
+R|  │ ▾ . (root)        object                   │ ┃ .bindings[1].keys[0] = "k0"                                       ┃
  |  │ └─ ▾ bindings     array   .bindings        │ ┃ .bindings[1].keys[1] = "k1"                                       ┃
  |  │    └─ ▾ []        object  .bindings[]      │ ┃ .bindings[1].verb = "v1"                                          ┃
  |  │       ├─ ▾ keys   array   .bindings[].keys │ ┃ .bindings[2].keys[0] = "k0"                                       ┃
