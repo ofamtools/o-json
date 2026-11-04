@@ -605,7 +605,7 @@ var aliases = []ochazuke.ActionAlias{
 // modeAliases are the o-jj aliases of verbs registered after the open
 // verbs (registerOperate adds them).
 var modeAliases = []ochazuke.ActionAlias{
-	{Alias: "sort", Action: "item.operate", Args: ochazuke.Arguments{"op": "s", "object": "column", "again": false}, Note: "sort the table by the cursor's column (vim :sort; s i c)"},
+	{Alias: "sort", Shadows: true, Action: "item.operate", Args: ochazuke.Arguments{"op": "s", "object": "column", "again": false}, Note: "sort the table by the cursor's column (vim :sort; s i c)"},
 	{Alias: "sort!", Action: "item.operate", Args: ochazuke.Arguments{"op": "s", "object": "column", "reverse": true}, Note: "sort the table by the cursor's column, descending (vim :sort!)"},
 	{Alias: "find", Action: "search.focus", Shadows: true, Note: "the search line (/)"},
 }

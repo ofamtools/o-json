@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/itchyny/gojq v0.12.19
 	ofam.dev/monogatari v0.4.1
-	ofam.dev/ochazuke v0.83.0
+	ofam.dev/ochazuke v0.84.0
 	ofam.dev/oden v0.2.0
 )
 
