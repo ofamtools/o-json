@@ -44,7 +44,7 @@ func (a *App) on(t *testing.T, path string) {
 // divider is the column the right panel starts at.
 func divider(t *testing.T, a *App) int {
 	t.Helper()
-	for _, ln := range strings.Split(view(a), "\n") {
+	for _, ln := range strings.Split(lightCorners(view(a)), "\n") {
 		if first := strings.Index(ln, "╭"); first >= 0 {
 			if second := strings.Index(ln[first+1:], "╭"); second >= 0 {
 				return len([]rune(ln[:first+1+second]))

@@ -293,7 +293,10 @@
       {"key": "J", "action": "ochazuke.outline.move", "args": {"delta": 1}, "hidden": true},
       {"key": "K", "action": "ochazuke.outline.move", "args": {"delta": -1}, "hidden": true},
       {"key": "i", "unbind": true},
-      {"key": "d d", "unbind": true}
+      {"key": "d d", "unbind": true},
+      {"key": "y y", "unbind": true},
+      {"key": "p", "unbind": true},
+      {"key": "P", "unbind": true}
     ]},
     {"context": "ochazuke.outline-line/insert", "bindings": [
       {"key": "enter", "action": "ochazuke.outline.leave"},

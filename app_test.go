@@ -473,7 +473,7 @@ func finishWithin(a *App, cmd tea.Cmd, d time.Duration) {
 func TestPaneKeysResizeTheSplit(t *testing.T) {
 	// divider is the column the data panel starts at, side by side.
 	divider := func(a *App) int {
-		for _, line := range strings.Split(view(a), "\n") {
+		for _, line := range strings.Split(lightCorners(view(a)), "\n") {
 			if first := strings.Index(line, "╭"); first >= 0 {
 				if second := strings.Index(line[first+1:], "╭"); second >= 0 {
 					return len([]rune(line[:first+1+second]))
@@ -501,7 +501,7 @@ func TestPaneKeysResizeTheSplit(t *testing.T) {
 	// top is the line the data panel starts on, stacked.
 	top := func(a *App) int {
 		seen := 0
-		for i, line := range strings.Split(view(a), "\n") {
+		for i, line := range strings.Split(lightCorners(view(a)), "\n") {
 			if strings.Contains(line, "╭") {
 				if seen++; seen == 2 {
 					return i
@@ -650,3 +650,10 @@ func TestDataTableMovesByCell(t *testing.T) {
 }
 
 func TestNoDeprecatedOchazuke(t *testing.T) { strictcheck.Check(t) }
+
+// lightCorners draws the focused panel's joined heavy corners (┏ ┓, the
+// default chrome.border since ochazuke v0.89) as the rounded ones, so a
+// scan for a panel's top-left corner finds the focused panel too.
+func lightCorners(frame string) string {
+	return strings.NewReplacer("┏", "╭", "┓", "╮").Replace(frame)
+}
