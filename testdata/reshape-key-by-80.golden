@@ -2,7 +2,7 @@
    › testdata/reshape.json  Restructure                                         
   ────────────────────────────────────────────────────────────────────────────  
   testdata/reshape.json [+]  ·  .people (object 1/1)                            
-  ╭━ Structure · edited [+] ━━━╮ ╭─ Object .people  ·  [table] fields flat… ─╮  
+  ┏━ Structure · edited [+] ━━━┓ ╭─ Object .people  ·  [table] fields flat… ─╮  
   ┃ substr / to search         ┃ │ p1   p2   p1-2  _missing                  │  
   ┃ key                     2› ┃ │ {4}  {4}  {3}   [1]                       │  
   ┃ ▾ . (root)                 ┃ │                                           │  
@@ -18,7 +18,7 @@
   ┃    │     └─   []           ┃ │                                           │  
   ┃    ├─ ▾ p2                 ┃ │                                           │  
   ┃ 1–12 / 25                  ┃ │                                           │  
-  ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯ ╰───────────────────────────────────────────╯  
+  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ ╰───────────────────────────────────────────╯  
   ────────────────────────────────────────────────────────────────────────────  
   ctrl+w o only structure · tab/D views · ctrl+w l data · ctrl+w v split · y/…  
                                                                                 
