@@ -84,7 +84,7 @@ Updated as each item lands; the sections below describe what is built.
 |---|---|
 | Bump to v0.61.0 | done |
 | Instance pin: data rows pinned per view, structure pinned to `shape` (no per-event mode setting) | done (`PinInstance` from `syncDeclaredMode`, which sets no mode; one workaround: a frame left in `normal` by a library row goes to the declared mode) |
-| `esc` rows: `mode.set {mode: declared}` | done (EDIT's `esc`; `viewer.edit-leave` kept as a verb) |
+| `esc` rows: `mode.switch {mode: declared}` | done (EDIT's `esc`; `viewer.edit-leave` kept as a verb) |
 | Badge colours: `SetModeTone` per mode (no whole-accent recolour) | done |
 | SEARCH / JQ line modes extend insert (completion, per-session undo, `JQ` badge while typing) | done |
 | `ctrl+w o` / `ctrl+w =`: `ochazuke.pane.only` / `pane.restore`, `SplitFocusBlock` | done (UX-RULES R3.16; `viewer.only`/`viewer.restore` kept as verbs over them) |

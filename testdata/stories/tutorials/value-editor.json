@@ -86,7 +86,7 @@
       "keys": [
         "esc"
       ],
-      "id": "ochazuke.mode.set {\"mode\":\"normal\"}",
+      "id": "ochazuke.mode.switch {\"mode\":\"normal\"}",
       "expect": {
         "mode": "normal",
         "contains": [

@@ -157,7 +157,7 @@ var dataViewOrder = []string{viewTable, objectFields, viewFlat, viewJSON}
 // on the Results, JQ on the jq result). The library applies a pin when
 // the focus lands on the pane, and a re-pin of the focused pane at once
 // unless the user lifted into another mode (EDIT, VISUAL, a pending
-// mode); esc rows return with mode.set {mode: declared}. It runs after
+// mode); esc rows return with mode.switch {mode: declared}. It runs after
 // each event (the jq runner's PendingCommand) and after a view change;
 // it sets no mode itself. modes.declared off drops the pins: every pane
 // declares normal.
@@ -183,7 +183,7 @@ func (a *App) syncDeclaredMode() {
 	}
 	if a.editing && (!a.onEditPane() || a.r.Mode.Name == a.r.DeclaredMode(a.r.Focus) && a.r.Input(a.r.Focus) == nil) {
 		// EDIT is per pane: leaving the pane leaves it, and so does the
-		// esc row back to the declared mode (mode.set {mode: declared}).
+		// esc row back to the declared mode (mode.switch {mode: declared}).
 		a.editing = false
 	}
 	// o-jj workaround: ochazuke's own rows that end a lifted mode (the

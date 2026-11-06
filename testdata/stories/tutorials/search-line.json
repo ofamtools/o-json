@@ -36,7 +36,7 @@
       "keys": [
         "ctrl+d"
       ],
-      "id": "ochazuke.input.delete",
+      "id": "ochazuke.input.erase",
       "expect": {
         "mode": "search_·_substr"
       }
@@ -47,7 +47,7 @@
       "keys": [
         "backspace"
       ],
-      "id": "ochazuke.input.delete {\"direction\":\"backward\"}",
+      "id": "ochazuke.input.erase {\"direction\":\"backward\"}",
       "expect": {
         "mode": "search_·_substr"
       }

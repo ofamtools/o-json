@@ -193,7 +193,7 @@
       "keys": [
         "esc"
       ],
-      "id": "ochazuke.mode.set {\"mode\":\"declared\"}",
+      "id": "ochazuke.mode.switch {\"mode\":\"declared\"}",
       "expect": {
         "mode": "shape"
       }

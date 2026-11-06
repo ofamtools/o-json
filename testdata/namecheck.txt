@@ -193,6 +193,7 @@ reshape.go	formatStage	compare	"join"	2
 reshape.go	jqFlattenDefs	compare	"json"	1
 reshape.go	jqFlattenDefs	compare	"rows"	1
 reshape.go	keyBy	compare	"last"	1
+reshape.go	keyBy	compare	"group"	2	duplicates-policy enum value of the key-by stage, not a library parameter (ochazuke R1 added a list parameter group)
 reshape.go	lift	compare	"array"	1
 reshape.go	prepareStage	compare	"flatten"	1
 reshape.go	prune	compare	"array"	1
@@ -214,8 +215,11 @@ reshape.go	stagePlan.opJQ	case	"flatten"	1
 reshape.go	stagePlan.opJQ	case	"key-by"	1
 reshape.go	stagePlan.opJQ	case	"last"	1
 reshape.go	stagePlan.opJQ	case	"values"	1
+reshape.go	stagePlan.opJQ	case	"group"	1	duplicates-policy enum value of the key-by stage, not a library parameter
 reshape.go	updateAt	compare	"array"	1
 restructure.go	MapEntry.UnmarshalJSON	case	"to"	1
+restructure.go	MapEntry.UnmarshalJSON	case	"from"	1	JSON key of a restructure map entry, not the library create parameter from
+restructure.go	MapEntry.UnmarshalJSON	case	"order"	1	JSON key of a restructure map entry
 restructure.go	restructureOutput	case	"jq"	1
 restructure.go	restructureOutput	case	"mapping"	1
 restructure.go	stream	compare	"array"	1

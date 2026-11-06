@@ -78,7 +78,7 @@
       {"key": "p", "action": "viewer.needs-edit", "from": {"key": "prefix key"}, "hidden": true}
     ]},
     {"context": "rows/edit", "extends": "normal", "bindings": [
-      {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "declared"}, "hint": "leave EDIT"}
+      {"key": "esc", "action": "ochazuke.mode.switch", "args": {"mode": "declared"}, "hint": "leave EDIT"}
     ]},
     {"context": "rows/count_pending", "extends": "normal", "bindings": []},
     {"context": "rows/visual-line", "bindings": [
@@ -352,7 +352,7 @@
       {"key": "d", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "d"}, "from": {"opcount": "count"}, "hidden": true},
       {"key": "c", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "c"}, "from": {"opcount": "count"}, "hidden": true},
       {"key": "!", "action": "ochazuke.mode.enter", "args": {"mode": "operator_pending", "op": "!"}, "from": {"opcount": "count"}, "hidden": true},
-      {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "declared"}, "hint": "leave EDIT"}
+      {"key": "esc", "action": "ochazuke.mode.switch", "args": {"mode": "declared"}, "hint": "leave EDIT"}
     ]},
     {"context": "item/table", "extends": "normal", "bindings": [
       {"key": "ctrl+w o", "action": "ochazuke.pane.restore", "when": "pane-only", "hint": "both panes"},
@@ -641,7 +641,7 @@
     ]},
     {"context": "value-input/insert", "bindings": [
       {"key": "enter", "action": "value-input.accept", "hint": "set"},
-      {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "normal"}, "hint": "normal"}
+      {"key": "esc", "action": "ochazuke.mode.switch", "args": {"mode": "normal"}, "hint": "normal"}
     ]},
     {"context": "value-input/normal", "bindings": [
       {"key": "enter", "action": "value-input.accept", "hint": "set"},
@@ -654,7 +654,7 @@
       {"key": "enter", "action": "value-editor.next", "hint": "next"},
       {"key": "tab", "action": "value-editor.next", "hidden": true},
       {"key": "shift+tab", "action": "value-editor.previous", "hidden": true},
-      {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "normal"}, "hint": "normal"}
+      {"key": "esc", "action": "ochazuke.mode.switch", "args": {"mode": "normal"}, "hint": "normal"}
     ]},
     {"context": "value-field/normal", "bindings": [
       {"key": "enter", "action": "value-editor.set", "hint": "set"},
@@ -666,7 +666,7 @@
       {"key": "q", "action": "value-editor.cancel", "hidden": true}
     ]},
     {"context": "value-text/insert", "bindings": [
-      {"key": "esc", "action": "ochazuke.mode.set", "args": {"mode": "normal"}, "hint": "normal, then enter sets"},
+      {"key": "esc", "action": "ochazuke.mode.switch", "args": {"mode": "normal"}, "hint": "normal, then enter sets"},
       {"key": "tab", "action": "value-editor.next", "hidden": true},
       {"key": "shift+tab", "action": "value-editor.previous", "hidden": true}
     ]},
