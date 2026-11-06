@@ -225,6 +225,7 @@ func New() (*App, error) {
 	a.registerReshapeVerbs()
 	a.registerJQPanel()
 	a.registerHover()
+	a.defineStores()
 	a.placeTree(pageID)
 	if err := a.bind(); err != nil {
 		return nil, err

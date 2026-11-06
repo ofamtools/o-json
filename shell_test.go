@@ -149,7 +149,7 @@ func TestCatalog(t *testing.T) {
 			}
 		}
 	}
-	if cat.Name != "o-json" || strings.Join(verbs, " ") != "get rows structure table" {
+	if cat.Name != "o-json" || strings.Join(verbs, " ") != "archive create delete edit get list rows set structure table" {
 		t.Fatalf("catalog %s %v", cat.Name, verbs)
 	}
 }
@@ -183,5 +183,18 @@ func TestDocRowsFormats(t *testing.T) {
 	}
 	if got := run(t, "", "doc", "rows", sample, ".items[].owner", "--format", "table"); got != "name  email?\nann   ann@example.com\nbob\ncy    null\ndee\n" {
 		t.Errorf("a [] path\n%s", got)
+	}
+}
+
+// doc is a thing noun named by its file: its own get (the value at a path)
+// stays, and the standard list is unavailable, there being no list of
+// documents.
+func TestDocIsAThingNoun(t *testing.T) {
+	var out, errOut bytes.Buffer
+	if err := Main([]string{"doc", "list"}, strings.NewReader(""), &out, &errOut); err == nil {
+		t.Fatal("doc list answered")
+	}
+	if got := run(t, "", "doc", "get", sample, "."); got == "" {
+		t.Fatal("doc get FILE PATH answered nothing")
 	}
 }

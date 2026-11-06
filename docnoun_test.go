@@ -108,3 +108,32 @@ func TestEmptyHint(t *testing.T) {
 		t.Fatalf("empty.hint off:\n%s", frame)
 	}
 }
+
+// The viewer's nouns are thing nouns over the state they answer with: get
+// reads a singleton (doc, jq, viewer, restructure), list the many (node,
+// marks, value), and the verbs the tool names itself stay.
+func TestViewerNounsAreThingNouns(t *testing.T) {
+	a := open(t, sample, 100, 30)
+	get := func(noun, verb string) any {
+		t.Helper()
+		v, err := a.r.Execute(ochazuke.Request{Noun: noun, Verb: verb})
+		if err != nil {
+			t.Fatalf("%s.%s: %v", noun, verb, err)
+		}
+		settle(a)
+		return v
+	}
+	if doc, _ := get("doc", "show").(map[string]any); doc["opened"] == nil && doc["open"] == nil {
+		t.Fatalf("doc show %v", doc)
+	}
+	if v := get("viewer", "get"); v == nil {
+		t.Fatal("viewer get answered nothing")
+	}
+	if v := get("jq", "get"); v == nil {
+		t.Fatal("jq get answered nothing")
+	}
+	press(t, a, "M")
+	if v := get("node", "list"); v == nil {
+		t.Fatal("node list answered nothing")
+	}
+}

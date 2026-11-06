@@ -93,6 +93,7 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 		op.Result = results[key]
 		r.Operations[r.CanonicalKey(key)] = op
 	}
+	defineDocStore(r, stdin)
 	sh := ocli.New(r, "o-json", stdin, stdout, stderr)
 	sh.Usage = ocli.DefaultUsage("o-json")
 	return sh

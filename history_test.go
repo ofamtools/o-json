@@ -51,8 +51,10 @@ func TestEveryVerbDeclaresItsHistory(t *testing.T) {
 			}
 		}
 	}
-	if n != 4 {
-		t.Fatalf("the catalog has %d o-json verbs, want the doc noun's 4", n)
+	// structure, table, get and rows, and the doc thing noun's other core
+	// verbs (create, set, delete, archive, edit, list: unavailable).
+	if n != 10 {
+		t.Fatalf("the catalog has %d o-json verbs, want the doc noun's 10", n)
 	}
 }
 
