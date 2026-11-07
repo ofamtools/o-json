@@ -182,7 +182,7 @@ func TestEnterOnRowShowsItemFields(t *testing.T) {
 	}
 	press(t, a, "q")
 	if a.r.TopModal() != "" || !a.data.list.Focused() {
-		t.Fatalf("q closes the detail back onto the table (focus %s)", a.r.Focus)
+		t.Fatalf("q closes the detail back onto the table (focus %s)", a.r.FocusID())
 	}
 }
 

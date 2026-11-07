@@ -105,7 +105,7 @@ type valueModal struct {
 // openModal opens the value editor for ve, its first field holding text
 // (selected when sel).
 func (a *App) openModal(ve *valueEdit, text string, sel bool) error {
-	view := a.rowsOf(a.r.Instances[a.r.Focus])
+	view := a.rowsOf(a.r.Instances[a.r.FocusID()])
 	if view == nil {
 		view = a.data
 	}
@@ -196,10 +196,11 @@ func (ve *valueEdit) title() string {
 	return at.path()
 }
 
-// focused is the field holding the focus, its index; nil off the modal.
-func (vm *valueModal) focused() (*editField, int) {
+// focused is the field holding focus, its index; nil off the modal. A
+// handler passes the live FocusID, the modal's drawing its PresentationAt.
+func (vm *valueModal) focused(focus string) (*editField, int) {
 	for i, f := range vm.fields {
-		if f.in.ID == vm.a.r.Focus {
+		if f.in.ID == focus {
 			return f, i
 		}
 	}
@@ -209,7 +210,7 @@ func (vm *valueModal) focused() (*editField, int) {
 // move focuses the field delta away, in insert mode, a text still as it
 // opened selected so typing replaces it.
 func (vm *valueModal) move(delta int) error {
-	_, i := vm.focused()
+	_, i := vm.focused(vm.a.r.FocusID())
 	j := i + delta
 	if i < 0 || j < 0 || j >= len(vm.fields) {
 		return errors.New("no field there")
@@ -381,7 +382,7 @@ func (vm *valueModal) ModalBlock(s ochazuke.Styles, width, height int) ochazuke.
 		pad := max(0, ansi.StringWidth(badge(kind))-len(kind))
 		return strings.Repeat(" ", pad/2) + s.Muted.Render(string(kind)) + strings.Repeat(" ", pad-pad/2)
 	}
-	focus, _ := vm.focused()
+	focus, _ := vm.focused(vm.a.r.PresentationAt(valueEditorID).Focus)
 	for _, f := range vm.fields {
 		if f.had {
 			tag := ""

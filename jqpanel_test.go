@@ -11,8 +11,8 @@ import (
 func TestJQPanelSplitFollowsEditsAndYanks(t *testing.T) {
 	a := openReshape(t, 120, 30)
 	press(t, a, "g", "j")
-	if !a.jqp.open || a.r.Focus != jqPanelTextID {
-		t.Fatalf("g j: open %v focus %q", a.jqp.open, a.r.Focus)
+	if !a.jqp.open || a.r.FocusID() != jqPanelTextID {
+		t.Fatalf("g j: open %v focus %q", a.jqp.open, a.r.FocusID())
 	}
 	frame := view(a)
 	if !strings.Contains(frame, "jq program") || !strings.Contains(frame, `"title": .title`) {
@@ -23,8 +23,8 @@ func TestJQPanelSplitFollowsEditsAndYanks(t *testing.T) {
 	h0 := height()
 	// An edit beside it: the panel follows.
 	press(t, a, "esc")
-	if a.r.Focus == jqPanelTextID || !a.jqp.open {
-		t.Fatalf("esc: focus %q open %v", a.r.Focus, a.jqp.open)
+	if a.r.FocusID() == jqPanelTextID || !a.jqp.open {
+		t.Fatalf("esc: focus %q open %v", a.r.FocusID(), a.jqp.open)
 	}
 	markPaths(t, a, ".people[].name", ".people[].address.city")
 	press(t, a, "F")
@@ -37,7 +37,7 @@ func TestJQPanelSplitFollowsEditsAndYanks(t *testing.T) {
 	}
 	// Edits in the panel are no-ops.
 	press(t, a, "g", "j") // focus it again
-	if !a.jqp.open || a.r.Focus != jqPanelTextID {
+	if !a.jqp.open || a.r.FocusID() != jqPanelTextID {
 		t.Fatal("g j on the tree with the panel open does not focus it")
 	}
 	before := a.panelText()
@@ -47,8 +47,8 @@ func TestJQPanelSplitFollowsEditsAndYanks(t *testing.T) {
 		t.Fatalf("an edit stuck: %q", got[:min(40, len(got))])
 	}
 	// Y copies all of it into the registers; v then y the selection.
-	if a.r.Focus != jqPanelTextID {
-		t.Fatalf("focus %q before Y", a.r.Focus)
+	if a.r.FocusID() != jqPanelTextID {
+		t.Fatalf("focus %q before Y", a.r.FocusID())
 	}
 	press(t, a, "Y")
 	if y, err := a.r.ReadYank(""); err != nil || y.Text != before {
@@ -157,14 +157,14 @@ func TestJQPanelKeysChangeNothing(t *testing.T) {
 							t.Errorf("%s: the text changed", key)
 						case mappingKey(a.Mapping()) != mapping:
 							t.Errorf("%s: the restructure changed", key)
-						case a.r.Focus != jqPanelTextID:
-							t.Errorf("%s: focus %q", key, a.r.Focus)
+						case a.r.FocusID() != jqPanelTextID:
+							t.Errorf("%s: focus %q", key, a.r.FocusID())
 						case a.original != side:
 							t.Errorf("%s: the viewer flipped", key)
 						case a.r.Page != page || a.r.TopModal() != modal:
 							t.Errorf("%s: page %q modal %q (was %q %q)", key, a.r.Page, a.r.TopModal(), page, modal)
-						case a.r.Mode.Name == "insert" || a.r.Mode.Name == "replace":
-							t.Errorf("%s: mode %q", key, a.r.Mode.Name)
+						case a.r.CurrentMode().Name == "insert" || a.r.CurrentMode().Name == "replace":
+							t.Errorf("%s: mode %q", key, a.r.CurrentMode().Name)
 						}
 					}
 				})
@@ -179,7 +179,7 @@ func TestJQPanelKeysChangeNothing(t *testing.T) {
 // view back on the tree, and palette.text-results plain shows neither.
 func TestRestructureTextResultsOpenTheTextView(t *testing.T) {
 	a := openReshape(t, 120, 30)
-	focus := a.r.Focus
+	focus := a.r.FocusID()
 	p, err := a.plan()
 	if err != nil {
 		t.Fatal(err)
@@ -190,19 +190,19 @@ func TestRestructureTextResultsOpenTheTextView(t *testing.T) {
 	if a.r.TopModal() != ochazuke.TextViewID {
 		t.Fatalf(": restructure jq: modal %q\n%s", a.r.TopModal(), view(a))
 	}
-	if in := a.r.Input(a.r.Focus); in == nil || string(in.Text) != strings.TrimRight(p.JQ(), "\n") || !in.ReadOnly {
+	if in := a.r.Input(a.r.FocusID()); in == nil || string(in.Text) != strings.TrimRight(p.JQ(), "\n") || !in.ReadOnly {
 		t.Fatalf("the text view does not hold the program read-only: %+v", in)
 	}
 	if y, _ := a.r.ReadYank(""); y.Text != "" {
 		t.Fatalf("opening restructure jq copied %q", y.Text)
 	}
 	press(t, a, "q")
-	if a.r.TopModal() != "" || a.r.Focus != focus {
-		t.Fatalf("q: modal %q focus %q, want %q", a.r.TopModal(), a.r.Focus, focus)
+	if a.r.TopModal() != "" || a.r.FocusID() != focus {
+		t.Fatalf("q: modal %q focus %q, want %q", a.r.TopModal(), a.r.FocusID(), focus)
 	}
 	press(t, a, append([]string{":"}, append(strings.Split("restructure mapping", ""), "enter")...)...)
 	settle(a)
-	if in := a.r.Input(a.r.Focus); a.r.TopModal() != ochazuke.TextViewID || in == nil || !strings.Contains(string(in.Text), "\n  \"map\": [") {
+	if in := a.r.Input(a.r.FocusID()); a.r.TopModal() != ochazuke.TextViewID || in == nil || !strings.Contains(string(in.Text), "\n  \"map\": [") {
 		t.Fatalf(": restructure mapping: modal %q\n%s", a.r.TopModal(), view(a))
 	}
 	press(t, a, "q")

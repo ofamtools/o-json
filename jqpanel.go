@@ -99,16 +99,16 @@ func (a *App) openJQPanel(view string) error {
 	if a.jqp.open {
 		// Focused from elsewhere: esc gives the focus back to where it
 		// came from this time, not where the panel was first opened.
-		if a.r.Focus != jqPanelTextID && a.r.Instances[a.r.Focus] != nil {
-			a.jqp.back = a.r.Focus
+		if a.r.FocusID() != jqPanelTextID && a.r.Instances[a.r.FocusID()] != nil {
+			a.jqp.back = a.r.FocusID()
 		}
 		return a.r.SetFocus(jqPanelTextID)
 	}
-	a.jqp.back, a.jqp.where, a.jqp.key = a.r.Focus, where, ""
+	a.jqp.back, a.jqp.where, a.jqp.key = a.r.FocusID(), where, ""
 	text := a.panelText()
 	a.jqp.in = ochazuke.NewInput(jqPanelTextID, text, strings.Contains(text, "\n"))
 	if where == "modal" {
-		inst, err := a.r.OpenModal(jqPanelModalID, ochazuke.Payload{Prompt: a.panelTitle()}, ochazuke.CloseWith(ochazuke.Request{Noun: "jq-panel", Verb: "close"}), ochazuke.WithInput(a.jqp.in, ochazuke.Kind("jq-panel-text"), ochazuke.ReadOnly()))
+		inst, err := a.r.OpenModal(jqPanelModalID, ochazuke.Payload{Prompt: a.panelTitle(a.r.FocusID())}, ochazuke.CloseWith(ochazuke.Request{Noun: "jq-panel", Verb: "close"}), ochazuke.WithInput(a.jqp.in, ochazuke.Kind("jq-panel-text"), ochazuke.ReadOnly()))
 		if err != nil {
 			return err
 		}
@@ -153,8 +153,9 @@ func (a *App) giveBack() {
 
 // syncJQPanel keeps an open panel current: the text for the view and the
 // mapping, the input on the page that is open, an input of the right
-// kind (one line or several).
-func (a *App) syncJQPanel() {
+// kind (one line or several). focus is the focus the caller sees (the
+// drawn one from a renderer): a split input rebuilt keeps the focus there.
+func (a *App) syncJQPanel(focus string) {
 	if !a.jqp.open || a.jqp.in == nil {
 		return
 	}
@@ -164,7 +165,7 @@ func (a *App) syncJQPanel() {
 	}
 	text := a.panelText()
 	if multi := strings.Contains(text, "\n"); multi != a.jqp.in.Multiline && a.jqp.where != "modal" {
-		focused := a.r.Focus == jqPanelTextID
+		focused := focus == jqPanelTextID
 		_ = a.r.RemoveInstance(jqPanelTextID)
 		a.jqp.in = ochazuke.NewInput(jqPanelTextID, text, multi)
 		if err := a.r.AddInput(a.jqp.in, ochazuke.Parent(a.r.Page), ochazuke.Kind("jq-panel-text"), ochazuke.ReadOnly()); err != nil {
@@ -189,18 +190,19 @@ func (a *App) syncJQPanel() {
 	}
 }
 
-// panelTitle names the view and the keys that switch and close it.
-func (a *App) panelTitle() string {
+// panelTitle names the view and the keys that switch and close it, the
+// keys bound at focus (keyFor).
+func (a *App) panelTitle(focus string) string {
 	title := "jq program"
 	other := "mapping"
 	if a.jqp.view == jqPanelMapping {
 		title, other = "Mapping", "jq"
 	}
 	var hints []string
-	if k := a.keyFor("jq-panel.view"); k != "" {
+	if k := a.keyFor(focus, "jq-panel.view"); k != "" {
 		hints = append(hints, k+" "+other)
 	}
-	if k := a.keyFor("jq-panel.yank"); k != "" {
+	if k := a.keyFor(focus, "jq-panel.yank"); k != "" {
 		hints = append(hints, k+" copy")
 	}
 	if len(hints) > 0 {
@@ -220,28 +222,31 @@ func (a *App) splitHeight(height int) int {
 
 // jqPanelBlock draws the split panel at width x height.
 func (a *App) jqPanelBlock(l ochazuke.Layout, width, height int) ochazuke.Block {
-	a.syncJQPanel()
+	a.syncJQPanel(a.drawnFocus())
 	if a.jqp.in == nil {
 		return ochazuke.Text("")
 	}
 	a.r.Placed(jqPanelTextID)
 	cw, ch := ochazuke.PanelContentSize(width, height)
-	focused := a.r.Focus == jqPanelTextID
+	focus := a.drawnFocus()
+	focused := focus == jqPanelTextID
 	body := ochazuke.InputBlock(a.jqp.in, cw, ch)
 	if !focused {
 		body.Cursor = nil
 	}
-	return l.PanelBlock(a.panelTitle(), body, width, height, focused)
+	return l.PanelBlock(a.panelTitle(focus), body, width, height, focused)
 }
 
 // jqPanelModal is the modal form: the same input at a fixed size.
 type jqPanelModal struct{ a *App }
 
-func (m *jqPanelModal) ModalTitle() string { return m.a.panelTitle() }
+func (m *jqPanelModal) ModalTitle() string {
+	return m.a.panelTitle(m.a.r.PresentationAt(jqPanelModalID).Focus)
+}
 
 func (m *jqPanelModal) ModalBlock(s ochazuke.Styles, width, height int) ochazuke.Block {
 	a := m.a
-	a.syncJQPanel()
+	a.syncJQPanel(a.r.PresentationAt(jqPanelModalID).Focus)
 	if a.jqp.in == nil {
 		return ochazuke.Text("")
 	}
@@ -267,7 +272,7 @@ func (a *App) registerJQPanel() {
 	r.DefineGuard("jq-panel-open", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return a.jqp.open })
 	r.Define(jqPanelID).
 		Verb("toggle", func(c ochazuke.Ctx) ochazuke.Result {
-			if a.jqp.open && a.r.Focus == jqPanelTextID {
+			if a.jqp.open && a.r.FocusID() == jqPanelTextID {
 				return a.doneErr(a.closeJQPanel())
 			}
 			return a.doneErr(a.openJQPanel(ochazuke.StringArg(c.Args, "view", "")))
@@ -292,9 +297,9 @@ func (a *App) registerJQPanel() {
 				return ochazuke.Failed(fmt.Errorf("view %q (jq or mapping)", v))
 			}
 			a.jqp.view = v
-			a.syncJQPanel()
+			a.syncJQPanel(a.r.FocusID())
 			if inst := r.Instances[jqPanelModalID]; inst != nil {
-				inst.Payload.Prompt = a.panelTitle()
+				inst.Payload.Prompt = a.panelTitle(a.r.FocusID())
 			}
 			return ochazuke.Done(v)
 		}, "Show the jq program or the mapping in the jq panel (without view, the other one)").When("jq-panel-open").

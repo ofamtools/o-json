@@ -104,8 +104,8 @@ func TestEditValueTypes(t *testing.T) {
 	inlineEditor(t, a)
 	onData(t, a, ".", "version")
 	press(t, a, "r")
-	if a.r.Focus != valueInputID || a.r.Mode.Name != "insert" {
-		t.Fatalf("r: focus %q mode %q", a.r.Focus, a.r.Mode.Name)
+	if a.r.FocusID() != valueInputID || a.r.CurrentMode().Name != "insert" {
+		t.Fatalf("r: focus %q mode %q", a.r.FocusID(), a.r.CurrentMode().Name)
 	}
 	if sel := selected(a); sel != "2" {
 		t.Fatalf("r did not select the value: %q", sel)
@@ -118,8 +118,8 @@ func TestEditValueTypes(t *testing.T) {
 	if got := field(t, a, ".version"); got != "42" {
 		t.Fatalf("number: %s", got)
 	}
-	if a.r.Focus == valueInputID || a.r.Mode.Name != "table" || a.dataNode() == nil || a.dataNode().Key != "version" {
-		t.Fatalf("after enter: focus %q mode %q", a.r.Focus, a.r.Mode.Name)
+	if a.r.FocusID() == valueInputID || a.r.CurrentMode().Name != "table" || a.dataNode() == nil || a.dataNode().Key != "version" {
+		t.Fatalf("after enter: focus %q mode %q", a.r.FocusID(), a.r.CurrentMode().Name)
 	}
 	frame := view(a)
 	if !strings.Contains(frame, "sample.json [+]") || !strings.Contains(frame, "1 value edit") || !a.unsaved() {
@@ -368,7 +368,7 @@ func TestValueUndoRedo(t *testing.T) {
 	valueDo(t, a, "delete", nil)
 	press(t, a, "u")
 	if got := field(t, a, ".name"); got != `"x"` || a.data.list.Focused() == false {
-		t.Fatalf("u: %s (focus %q)", got, a.r.Focus)
+		t.Fatalf("u: %s (focus %q)", got, a.r.FocusID())
 	}
 	press(t, a, "u")
 	if got := field(t, a, ".name"); got != `"o-json sample"` || len(a.rs.patches) != 0 {

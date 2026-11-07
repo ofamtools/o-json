@@ -302,12 +302,12 @@ func (a *App) registerLineVerbs() {
 		}
 		return ochazuke.Done(nil)
 	}
-	r.DefineGuard("line-has-value", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
-		l := lineAt(r.Instances[r.Focus])
+	r.DefineGuard("line-has-value", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		l := lineAt(r.Instances[ev.Focus])
 		return l != nil && l.node != nil
 	})
-	r.DefineGuard("line-has-partner", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
-		l := lineAt(r.Instances[r.Focus])
+	r.DefineGuard("line-has-partner", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		l := lineAt(r.Instances[ev.Focus])
 		return l != nil && l.partner >= 0
 	})
 	r.DefineGuard("line-json", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return a.viewName == viewJSON && a.lines != nil })

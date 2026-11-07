@@ -251,8 +251,8 @@ func (a *App) registerVerbs() {
 		Verb("yank", yankValue, "Copy the field's value (JSON for an object or array) into the registers (and the system clipboard, as the clipboard setting says) (value.yank); p puts it with its type")
 	// l and enter on a scalar entry stand aside: nothing to step into, so
 	// nothing happens (an edge is quiet), never an error.
-	r.DefineGuard("entry-container", func(r *ochazuke.Runtime, _ ochazuke.KeyEvent) bool {
-		n := nodeAt(r.Instances[r.Focus])
+	r.DefineGuard("entry-container", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
+		n := nodeAt(r.Instances[ev.Focus])
 		return n != nil && n.IsContainer()
 	})
 	r.Define("entry").

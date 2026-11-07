@@ -27,9 +27,10 @@ func (a *App) focusStructure() error {
 	return a.tree.Focus()
 }
 
-// structureFocused reports the focus in the viewer's structure pane.
-func (a *App) structureFocused() bool {
-	return a.tree.List().Focused() || a.rs.tree.List().Focused() || a.r.Focus == treeID || a.r.Focus == rsTreeID
+// structureFocused reports focus in the viewer's structure pane: the
+// live focus for a handler, the drawn one (drawnFocus) for a renderer.
+func (a *App) structureFocused(focus string) bool {
+	return a.tree.List().Focused() || a.rs.tree.List().Focused() || focus == treeID || focus == rsTreeID
 }
 
 // onlyPane is viewer.only, kept as a verb over ochazuke's pane.only and
@@ -66,7 +67,7 @@ func (a *App) onlyPane(c ochazuke.Ctx, pane string) error {
 // down and up move as right and left do).
 func (a *App) movePane(to string) error {
 	if a.r.Page == rsPageID {
-		inData := a.inData(a.r.Focus)
+		inData := a.inData(a.r.FocusID())
 		preview := a.preview() == previewData && a.Doc != nil
 		switch to {
 		case "left":
@@ -88,7 +89,7 @@ func (a *App) movePane(to string) error {
 		switch {
 		case inData:
 			return nil
-		case a.sideOf(a.r.Focus) == rsTreeID && preview:
+		case a.sideOf(a.r.FocusID()) == rsTreeID && preview:
 			return a.data.list.Focus()
 		}
 		return a.rs.tree.Focus()
@@ -101,12 +102,12 @@ func (a *App) movePane(to string) error {
 		to = map[string]string{"up": "left", "down": "right"}[to]
 	}
 	if to == "left" {
-		if a.structureFocused() {
+		if a.structureFocused(a.r.FocusID()) {
 			return nil
 		}
 		return a.focusStructure()
 	}
-	if a.inData(a.r.Focus) {
+	if a.inData(a.r.FocusID()) {
 		return nil
 	}
 	return a.data.list.Focus()

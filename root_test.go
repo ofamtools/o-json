@@ -18,7 +18,7 @@ func onRoot(t *testing.T, a *App) {
 }
 
 func (a *App) available(noun, verb string) bool {
-	return a.r.Available(ochazuke.Request{Noun: noun, Verb: verb}, a.r.Focus, a.r.Mode)
+	return a.r.Available(ochazuke.Request{Noun: noun, Verb: verb}, a.r.FocusID(), a.r.CurrentMode())
 }
 
 // agrees checks the page's mapping against o-json restructure --map (the
@@ -84,7 +84,7 @@ func TestRootIsTheDocument(t *testing.T) {
 	}
 	press(t, a, "d", "d")
 	press(t, a, "r")
-	if a.r.Input(a.r.Focus) != nil {
+	if a.r.Input(a.r.FocusID()) != nil {
 		t.Fatal("r opened a line on the root")
 	}
 	press(t, a, "<", "<")

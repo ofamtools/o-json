@@ -70,7 +70,7 @@ func (a *App) insertFunction(f jqFunc) error {
 		lo, hi = s, e
 	}
 	text := funcText(f)
-	if lo == hi && a.r.Focus != jqFieldID && jqContextAt(in.Text, lo).sepNeeded() {
+	if lo == hi && a.r.FocusID() != jqFieldID && jqContextAt(in.Text, lo).sepNeeded() {
 		text = " | " + text
 	}
 	if err := in.Replace(lo, hi, text); err != nil {
@@ -81,7 +81,7 @@ func (a *App) insertFunction(f jqFunc) error {
 		return nil
 	}
 	slot := lo + len([]rune(text[:strings.IndexRune(text, jqSlot)]))
-	if a.r.Focus == jqFieldID {
+	if a.r.FocusID() == jqFieldID {
 		return in.SelectText(slot, slot+1)
 	}
 	in.Cursor = slot
@@ -102,7 +102,7 @@ func (a *App) nextSlot() error {
 	} else if i = slices.Index(in.Text, jqSlot); i < 0 {
 		return errors.New("no empty slot")
 	}
-	if a.r.Focus == jqFieldID {
+	if a.r.FocusID() == jqFieldID {
 		return in.SelectText(i, i+1)
 	}
 	in.Cursor = i
@@ -133,7 +133,7 @@ func (a *App) previousSlot() error {
 			return errors.New("no empty slot")
 		}
 	}
-	if a.r.Focus == jqFieldID {
+	if a.r.FocusID() == jqFieldID {
 		return in.SelectText(i, i+1)
 	}
 	in.Cursor = i

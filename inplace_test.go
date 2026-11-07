@@ -57,8 +57,8 @@ func TestIdentityStart(t *testing.T) {
 	for _, path := range []string{sample, nestDoc, "testdata/top-array.json", "testdata/duplicate-keys.json", mixed} {
 		t.Run(filepath.Base(path), func(t *testing.T) {
 			a := open(t, path, 120, 30)
-			if !a.editedShown() || a.sideOf(a.r.Focus) != rsTreeID {
-				t.Fatalf("not the edited view: focus %q", a.r.Focus)
+			if !a.editedShown() || a.sideOf(a.r.FocusID()) != rsTreeID {
+				t.Fatalf("not the edited view: focus %q", a.r.FocusID())
 			}
 			if !strings.Contains(view(a), "Structure · unchanged") {
 				t.Fatalf("title\n%s", view(a))
@@ -175,8 +175,8 @@ func TestToggleOriginalAndEdited(t *testing.T) {
 	press(t, a, "<", "<")
 	press(t, a, "T")
 	frame := view(a)
-	if !a.original || a.sideOf(a.r.Focus) == rsTreeID || !strings.Contains(frame, "Structure · original [+]") {
-		t.Fatalf("T: focus %q\n%s", a.r.Focus, frame)
+	if !a.original || a.sideOf(a.r.FocusID()) == rsTreeID || !strings.Contains(frame, "Structure · original [+]") {
+		t.Fatalf("T: focus %q\n%s", a.r.FocusID(), frame)
 	}
 	if s := a.selectedShape(); s == nil || s.Path != ".meta.count" || !strings.Contains(frame, "Value .meta.count") {
 		t.Fatalf("original shows %v\n%s", s, frame)
@@ -186,18 +186,18 @@ func TestToggleOriginalAndEdited(t *testing.T) {
 	}
 	press(t, a, "T")
 	frame = view(a)
-	if a.original || a.sideOf(a.r.Focus) != rsTreeID || !strings.Contains(frame, "Value .count") || !strings.Contains(frame, "Structure · edited [+]") {
-		t.Fatalf("T again: focus %q\n%s", a.r.Focus, frame)
+	if a.original || a.sideOf(a.r.FocusID()) != rsTreeID || !strings.Contains(frame, "Value .count") || !strings.Contains(frame, "Structure · edited [+]") {
+		t.Fatalf("T again: focus %q\n%s", a.r.FocusID(), frame)
 	}
 	if a.available("viewer", "search") || !a.available("restructure", "write") {
 		t.Fatal("the edited view's keys")
 	}
 	// From the data pane T flips the data and leaves the focus there.
 	press(t, a, "ctrl+a", "o")
-	focus := a.r.Focus
+	focus := a.r.FocusID()
 	press(t, a, "T")
-	if a.r.Focus != focus || !strings.Contains(view(a), "Value .meta.count") {
-		t.Fatalf("T from the data pane: focus %q (was %q)\n%s", a.r.Focus, focus, view(a))
+	if a.r.FocusID() != focus || !strings.Contains(view(a), "Value .meta.count") {
+		t.Fatalf("T from the data pane: focus %q (was %q)\n%s", a.r.FocusID(), focus, view(a))
 	}
 }
 

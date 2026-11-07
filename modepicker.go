@@ -130,7 +130,7 @@ func (a *App) gotoMode(name string) ochazuke.Result {
 		if err := dataView(viewTable); err != nil {
 			return fail(err)
 		}
-		if !a.r.Available(ochazuke.Request{Noun: "viewer", Verb: "edit"}, a.r.Focus, a.r.Mode) {
+		if !a.r.Available(ochazuke.Request{Noun: "viewer", Verb: "edit"}, a.r.FocusID(), a.r.CurrentMode()) {
 			return fail(errors.New("EDIT needs the edited document's table (T shows it; modes.edit-gate on)"))
 		}
 		return a.enterEdit(ochazuke.Ctx{Runtime: a.r}, false)
@@ -138,7 +138,7 @@ func (a *App) gotoMode(name string) ochazuke.Result {
 		if err := dataView(viewTable); err != nil {
 			return fail(err)
 		}
-		_, err := a.r.Execute(ochazuke.Request{Noun: "ochazuke.list", Verb: "visual", Target: a.r.Focus})
+		_, err := a.r.Execute(ochazuke.Request{Noun: "ochazuke.list", Verb: "visual", Target: a.r.FocusID()})
 		return fail(err)
 	case "RAW":
 		if err := toViewer(); err != nil {

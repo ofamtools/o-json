@@ -27,10 +27,10 @@ func (a *App) editGated() bool {
 
 // enterEdit is i (and r, with open): EDIT on the data pane.
 func (a *App) enterEdit(c ochazuke.Ctx, open bool) ochazuke.Result {
-	a.editing, a.editTree = true, a.structureFocused()
+	a.editing, a.editTree = true, a.structureFocused(a.r.FocusID())
 	_ = a.r.SetMode("edit")
 	if open {
-		res, err := a.r.Execute(ochazuke.Request{Noun: "value", Verb: "edit", Target: a.r.Focus})
+		res, err := a.r.Execute(ochazuke.Request{Noun: "value", Verb: "edit", Target: a.r.FocusID()})
 		if err != nil {
 			return ochazuke.Failed(err)
 		}
@@ -94,8 +94,8 @@ func (a *App) registerEdit() error {
 
 // renaming reports the focus in the structure's inline key input (a
 // rename or a new key in EDIT): EDIT stays while it is open.
-func (a *App) renaming() bool {
-	inst := a.r.Instances[a.r.Focus]
+func (a *App) renaming(focus string) bool {
+	inst := a.r.Instances[focus]
 	return inst != nil && inst.Noun == "ochazuke.outline-line"
 }
 

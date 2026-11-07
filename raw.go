@@ -62,7 +62,7 @@ func (a *App) rawTarget() ([]*Node, bool, error) {
 	if d.err != nil {
 		return nil, false, d.err
 	}
-	if inst := a.r.Instances[a.r.Focus]; inst != nil && a.inData(a.r.Focus) && a.overlay == "" {
+	if inst := a.r.Instances[a.r.FocusID()]; inst != nil && a.inData(a.r.FocusID()) && a.overlay == "" {
 		if a.data.list.Visual() {
 			rows := a.selectedRows()
 			if len(rows) == 0 {
@@ -77,7 +77,7 @@ func (a *App) rawTarget() ([]*Node, bool, error) {
 			return []*Node{n}, false, nil
 		}
 	}
-	if a.structureFocused() && a.r.SelectionShape(a.r.BaseMode()) != "" {
+	if a.structureFocused(a.r.FocusID()) && a.r.SelectionShape(a.r.BaseMode()) != "" {
 		return nil, false, errors.New("raw: select rows, a value or the document (the structure's selection is shapes)")
 	}
 	return []*Node{d.root}, false, nil

@@ -279,16 +279,14 @@ verbs.go	App.registerVerbs	compare	"json"	1
 verbs.go	App.registerVerbs	compare	"top"	1
 verbs.go	App.registerVerbs	cyclo	"-"	46
 view.go	App.breadcrumb	cyclo	"-"	34
-view.go	App.render	compare	"structure"	1
-view.go	App.render	cyclo	"-"	27
 view.go	App.viewTitle	compare	"flat"	1
 views.go	App.cycleDataView	case	"jq"	1
 views.go	App.cycleDataView	case	"mapping"	1
 views.go	App.dataMode	compare	"flat"	1
 views.go	App.dataMode	compare	"json"	1
 views.go	App.mappingShowing	compare	"mapping"	1
-views.go	App.syncDeclaredMode	compare	"normal"	2
-views.go	App.syncDeclaredMode	compare	"restructure"	1
+views.go	App.syncDeclaredModeAt	compare	"normal"	2
+views.go	App.syncDeclaredModeAt	compare	"restructure"	1
 views.go	defaultDataView	compare	"fields"	1
 views.go	oneObject	compare	"object"	1
 views.go	var trialModeAccents	table	"edit"	1

@@ -12,7 +12,7 @@ import (
 func TestStructureTreesZoom(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	a.on(t, ".items[].owner")
-	id := a.r.Focus
+	id := a.r.FocusID()
 	press(t, a, "z", "+")
 	if a.rs.tree.Zoomed() != id {
 		t.Fatalf("z + zoomed %q, want %q", a.rs.tree.Zoomed(), id)

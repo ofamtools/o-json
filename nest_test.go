@@ -138,8 +138,8 @@ func TestIndentIntoNextObject(t *testing.T) {
 	if got := output(t, a); got != `{"x":{"a":1,"b":2,"c":3},"y":4,"z":5}` {
 		t.Fatalf("g >: %s", got)
 	}
-	if n, _ := a.rs.tree.Selected(); a.rs.meta[n.ID].from != ".a" || a.r.Focus != n.ID {
-		t.Fatalf("cursor on %q (focus %q)", a.rs.meta[n.ID].from, a.r.Focus)
+	if n, _ := a.rs.tree.Selected(); a.rs.meta[n.ID].from != ".a" || a.r.FocusID() != n.ID {
+		t.Fatalf("cursor on %q (focus %q)", a.rs.meta[n.ID].from, a.r.FocusID())
 	}
 	press(t, a, "u")
 	a.on(t, ".z")
@@ -171,8 +171,8 @@ func TestIndentDirections(t *testing.T) {
 	}
 	a.on(t, ".b")
 	press(t, a, ">", "k")
-	if got := output(t, a); got != `{"a":1,"b":2,"c":{"d":33}}` || a.r.Mode.Name != "split" {
-		t.Fatalf("> k with no object above: %s (mode %q)", got, a.r.Mode.Name)
+	if got := output(t, a); got != `{"a":1,"b":2,"c":{"d":33}}` || a.r.CurrentMode().Name != "split" {
+		t.Fatalf("> k with no object above: %s (mode %q)", got, a.r.CurrentMode().Name)
 	}
 
 	a = openNest(t, nestDoc, ".a", ".x", ".y", ".z")
@@ -191,8 +191,8 @@ func TestIndentDirections(t *testing.T) {
 	press(t, a, "u")
 	a.on(t, ".y")
 	press(t, a, ">", "j")
-	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"z":5}` || a.r.Mode.Name != "split" {
-		t.Fatalf("> j with no object below: %s (mode %q)", got, a.r.Mode.Name)
+	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3},"y":4,"z":5}` || a.r.CurrentMode().Name != "split" {
+		t.Fatalf("> j with no object below: %s (mode %q)", got, a.r.CurrentMode().Name)
 	}
 	press(t, a, ">", ">")
 	if got := output(t, a); got != `{"a":1,"x":{"b":2,"c":3,"y":4},"z":5}` {
@@ -226,27 +226,27 @@ func TestRestructureHintsFollowAvailability(t *testing.T) {
 	for _, path := range []string{".a", ".x", ".x.b", ".x.c", ".y"} {
 		a.on(t, path)
 		hinted := map[string]bool{}
-		for _, b := range ochazuke.HintBindings(a.r, a.r.Focus) {
+		for _, b := range ochazuke.HintBindings(a.r, a.r.FocusID()) {
 			hinted[b.Keys] = true
 		}
-		for _, b := range a.r.ListBindings(a.r.Focus) {
+		for _, b := range a.r.ListBindings(a.r.FocusID()) {
 			if b.Request.Noun != "node" || b.Hidden {
 				continue
 			}
 			if b.Hint == "" {
 				t.Errorf("%s: row %s has no hint", path, b.Keys)
 			}
-			if avail := a.r.Available(b.Request, a.r.Focus, a.r.Mode); avail != hinted[b.Keys] {
+			if avail := a.r.Available(b.Request, a.r.FocusID(), a.r.CurrentMode()); avail != hinted[b.Keys] {
 				t.Errorf("%s: %s available %v, hinted %v", path, b.Keys, avail, hinted[b.Keys])
 			}
 		}
 	}
 	a.on(t, ".x.c")
-	if hints := ochazuke.BindingHints(a.r, a.r.Focus); !strings.Contains(hints, "< < out") || !strings.Contains(hints, "S wrap") {
+	if hints := ochazuke.BindingHints(a.r, a.r.FocusID()); !strings.Contains(hints, "< < out") || !strings.Contains(hints, "S wrap") {
 		t.Fatalf("hints on c: %s", hints)
 	}
 	a.on(t, ".y")
-	if hints := ochazuke.BindingHints(a.r, a.r.Focus); !strings.Contains(hints, "> k nest above") || strings.Contains(hints, "> > nest") {
+	if hints := ochazuke.BindingHints(a.r, a.r.FocusID()); !strings.Contains(hints, "> k nest above") || strings.Contains(hints, "> > nest") {
 		t.Fatalf("hints on y: %s", hints)
 	}
 }
@@ -311,8 +311,8 @@ func TestRootWithKeysBecomesArrayOfItself(t *testing.T) {
 		t.Fatalf("output %s", got)
 	}
 	agreesWith(t, a, nestDoc)
-	if a.r.Focus != rsRootID {
-		t.Fatalf("focus %q", a.r.Focus)
+	if a.r.FocusID() != rsRootID {
+		t.Fatalf("focus %q", a.r.FocusID())
 	}
 	press(t, a, "t")
 	if got := entries(a.Mapping()); !slices.Equal(got, start) {

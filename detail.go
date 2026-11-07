@@ -125,7 +125,7 @@ func (a *App) detailView(r *ochazuke.Runtime, _ *ochazuke.Instance, w, h int) oc
 	if a.detail == nil || r.Instances[rowsID] == nil {
 		return ochazuke.Text("")
 	}
-	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view == a.detail && r.Focus != valueInputID {
+	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view == a.detail && r.PresentationAt(rowsID).Focus != valueInputID {
 		// The focus left the detail's inline input: its text is the edit.
 		if err := a.accept(); err != nil {
 			a.LoadErr = err

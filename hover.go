@@ -583,7 +583,7 @@ func (a *App) hoverBlock(s ochazuke.Styles, levels []hoverGrid, k, w int) (lines
 func (a *App) hoverView(w, h int) string {
 	body := a.data.view(w, h)
 	a.hover.cursorY = -1
-	if !a.inData(a.r.Focus) { // the inline value input is the pane's child too
+	if !a.inData(a.drawnFocus()) { // the inline value input is the pane's child too
 		return body
 	}
 	levels := a.hoverLevels()

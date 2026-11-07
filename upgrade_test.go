@@ -16,8 +16,8 @@ func TestJSONSearchCoexistsWithTextFinder(t *testing.T) {
 	press(t, a, ":")
 	Type(a.m, "find")
 	press(t, a, "enter")
-	if a.r.Focus != jqFieldID {
-		t.Fatalf(":find focused %q, want the JSON search line", a.r.Focus)
+	if a.r.FocusID() != jqFieldID {
+		t.Fatalf(":find focused %q, want the JSON search line", a.r.FocusID())
 	}
 }
 

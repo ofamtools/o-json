@@ -394,7 +394,7 @@ func (a *App) openInput(ve *valueEdit, text string, sel bool) error {
 	if a.modalEditor() {
 		return a.openModal(ve, text, sel)
 	}
-	row := a.r.Focus
+	row := a.r.FocusID()
 	view := a.rowsOf(a.r.Instances[row])
 	if view == nil {
 		view, row = a.data, a.data.id

@@ -215,11 +215,11 @@ var _ = ochazuke.Done
 // structure pane with the query kept. The line is no stop of tab's ring.
 func TestQuerySlashFocusesAndEscLeaves(t *testing.T) {
 	a := openQuery(t, sample)
-	from := a.r.Focus
+	from := a.r.FocusID()
 	press(t, a, "/")
 	// insert while a slot is selected (ochazuke's SelectText; views.go).
-	if a.r.Focus != jqFieldID || a.q.in.Mode != "insert" && a.q.in.Mode != a.lineMode() {
-		t.Fatalf("/ focus %q mode %q", a.r.Focus, a.q.in.Mode)
+	if a.r.FocusID() != jqFieldID || a.q.in.Mode != "insert" && a.q.in.Mode != a.lineMode() {
+		t.Fatalf("/ focus %q mode %q", a.r.FocusID(), a.q.in.Mode)
 	}
 	finish(a, Type(a.m, ".name"))
 	if got := a.queryText(); got != ".name" {
@@ -229,12 +229,12 @@ func TestQuerySlashFocusesAndEscLeaves(t *testing.T) {
 		t.Fatal("the results do not show while typing")
 	}
 	press(t, a, "esc")
-	if a.r.Focus != from || a.queryText() != ".name" {
-		t.Fatalf("esc: focus %q (want %q), query %q", a.r.Focus, from, a.queryText())
+	if a.r.FocusID() != from || a.queryText() != ".name" {
+		t.Fatalf("esc: focus %q (want %q), query %q", a.r.FocusID(), from, a.queryText())
 	}
 	for range 4 {
 		press(t, a, "tab")
-		if a.r.Focus == jqFieldID {
+		if a.r.FocusID() == jqFieldID {
 			t.Fatal("tab reached the query line")
 		}
 	}
@@ -242,8 +242,8 @@ func TestQuerySlashFocusesAndEscLeaves(t *testing.T) {
 	press(t, a, "/")
 	Type(a.m, " | length")
 	press(t, a, "enter")
-	if a.r.Focus == jqFieldID || a.queryText() != ".name | length" {
-		t.Fatalf("enter: focus %q query %q", a.r.Focus, a.queryText())
+	if a.r.FocusID() == jqFieldID || a.queryText() != ".name | length" {
+		t.Fatalf("enter: focus %q query %q", a.r.FocusID(), a.queryText())
 	}
 }
 
@@ -479,8 +479,8 @@ func TestQueryFunctionSlots(t *testing.T) {
 		t.Fatalf("%d slots", n)
 	}
 	// insert while a slot is selected (ochazuke's SelectText; views.go).
-	if a.r.Focus != jqFieldID || a.q.in.Mode != "insert" && a.q.in.Mode != a.lineMode() {
-		t.Fatalf("back in the line: focus %q mode %q", a.r.Focus, a.q.in.Mode)
+	if a.r.FocusID() != jqFieldID || a.q.in.Mode != "insert" && a.q.in.Mode != a.lineMode() {
+		t.Fatalf("back in the line: focus %q mode %q", a.r.FocusID(), a.q.in.Mode)
 	}
 	Type(a.m, `"t"`)
 	press(t, a, "ctrl+n")
@@ -509,7 +509,7 @@ func TestQueryFunctionSlots(t *testing.T) {
 // answer is the verb the first row of keys answers with at the focus.
 func (a *App) answer(t *testing.T, keys string) string {
 	t.Helper()
-	for _, b := range a.r.ListBindings(a.r.Focus) {
+	for _, b := range a.r.ListBindings(a.r.FocusID()) {
 		if b.Keys == keys && !b.Unbind {
 			return a.r.CanonicalKey(b.Request.Key())
 		}

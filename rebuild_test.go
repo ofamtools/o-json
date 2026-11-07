@@ -175,7 +175,7 @@ func largeIn(t *testing.T, n int, mode string, pre []Patch) *App {
 // editCell is value.edit {text: "edited"} on the cell at the cursor.
 func editCell(t *testing.T, a *App) {
 	t.Helper()
-	if _, err := a.r.Execute(ochazuke.Request{Noun: "value", Verb: "edit", Target: a.r.Focus, Args: ochazuke.Arguments{"text": "edited"}}); err != nil {
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "value", Verb: "edit", Target: a.r.FocusID(), Args: ochazuke.Arguments{"text": "edited"}}); err != nil {
 		t.Fatal(err)
 	}
 }

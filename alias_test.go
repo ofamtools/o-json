@@ -64,8 +64,8 @@ func TestAliases(t *testing.T) {
 		press(t, a, string(ch))
 	}
 	press(t, a, "enter")
-	if a.r.TopModal() != "path-chooser" || a.r.Focus != "path-chooser/query" {
-		t.Fatalf(":w! with no path: modal %q focus %q", a.r.TopModal(), a.r.Focus)
+	if a.r.TopModal() != "path-chooser" || a.r.FocusID() != "path-chooser/query" {
+		t.Fatalf(":w! with no path: modal %q focus %q", a.r.TopModal(), a.r.FocusID())
 	}
 	for range 2 { // browse, recent, then typed
 		finish(a, Press(a.m, "tab"))

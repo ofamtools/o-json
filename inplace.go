@@ -205,7 +205,7 @@ func (a *App) openedViewer() {
 	a.placeTree(pageID)
 	// The page keeps the focus it had; one on the page itself or on the
 	// hidden original moves to the structure pane shown.
-	if a.editedShown() && (a.r.Focus == pageID || slices.Contains(a.r.Ancestry(a.r.Focus), treeID)) {
+	if a.editedShown() && (a.r.FocusID() == pageID || slices.Contains(a.r.Ancestry(a.r.FocusID()), treeID)) {
 		_ = a.rs.tree.Focus()
 	}
 }
@@ -424,7 +424,7 @@ func (a *App) flip(side string) error {
 	if !a.editable() || a.Doc == nil {
 		return errors.New("the viewer is read-only (structure.editable is off)")
 	}
-	inTree := a.sideOf(a.r.Focus) == rsTreeID || slices.Contains(a.r.Ancestry(a.r.Focus), treeID)
+	inTree := a.sideOf(a.r.FocusID()) == rsTreeID || slices.Contains(a.r.Ancestry(a.r.FocusID()), treeID)
 	if side == "" {
 		side = "original"
 		if a.original {

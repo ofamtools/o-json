@@ -312,8 +312,8 @@ func TestPathVerbsOpenTheChooser(t *testing.T) {
 			finish(a, Press(a.m, k))
 			view(a)
 		}
-		if a.r.TopModal() != "path-chooser" || a.r.Focus != "path-chooser/query" {
-			t.Errorf("%v: top %q focus %q", keys, a.r.TopModal(), a.r.Focus)
+		if a.r.TopModal() != "path-chooser" || a.r.FocusID() != "path-chooser/query" {
+			t.Errorf("%v: top %q focus %q", keys, a.r.TopModal(), a.r.FocusID())
 		}
 	}
 }
@@ -367,14 +367,14 @@ func TestReloadKeepsPlace(t *testing.T) {
 	}
 	reload()
 	if s := a.selectedShape(); s == nil || s.Path != ".items" || !a.data.list.Focused() || a.data.Selected() != 1 || a.data.list.Column() != 2 {
-		t.Fatalf("R: shape %v focus %q row %d column %d", a.selectedShape(), a.r.Focus, a.data.Selected(), a.data.list.Column())
+		t.Fatalf("R: shape %v focus %q row %d column %d", a.selectedShape(), a.r.FocusID(), a.data.Selected(), a.data.list.Column())
 	}
 	if err := a.r.Settings().Set(settingReloadPlace, false); err != nil {
 		t.Fatal(err)
 	}
 	reload()
 	if s := a.selectedShape(); s == nil || s.Path == ".items" || a.data.list.Focused() {
-		t.Fatalf("R with reload.keep-place off kept the place: shape %v focus %q", s, a.r.Focus)
+		t.Fatalf("R with reload.keep-place off kept the place: shape %v focus %q", s, a.r.FocusID())
 	}
 }
 

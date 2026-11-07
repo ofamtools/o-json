@@ -114,7 +114,7 @@ func (a *App) columnAnchors() map[string]columnAnchor {
 // the next show puts the cursor on its column (stable columns on, not in
 // a hover sub-table, whose walk keeps its own cursor).
 func (a *App) followPatch(p Patch) {
-	if a.tab == nil || a.hoverIn() || a.rowsOf(a.r.Instances[a.r.Focus]) != a.data || !a.r.Settings().Bool(settingStableColumns) {
+	if a.tab == nil || a.hoverIn() || a.rowsOf(a.r.Instances[a.r.FocusID()]) != a.data || !a.r.Settings().Bool(settingStableColumns) {
 		return
 	}
 	steps, err := parsePath(p.Path)

@@ -77,7 +77,7 @@ func rawKey(t *testing.T, a *App) {
 
 func TestRawKeyIsBound(t *testing.T) {
 	a := open(t, "testdata/sample.json", 110, 30)
-	for _, b := range a.r.ListBindings(a.r.Focus) {
+	for _, b := range a.r.ListBindings(a.r.FocusID()) {
 		if b.Keys == "g r" && b.Request.Noun == "viewer" && b.Request.Verb == "raw-edit" {
 			return
 		}

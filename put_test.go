@@ -241,13 +241,13 @@ func TestPutRefusedIntoAnArrayItem(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			selectIn(t, a, a.rs.tree, tc.at)
-			focus := a.r.Focus
+			focus := a.r.FocusID()
 			press(t, a, tc.key)
 			if got := entries(a.Mapping()); !slices.Equal(got, before) {
 				t.Fatalf("mapping changed: %v", got)
 			}
-			if !strings.HasPrefix(a.m.Info, "put does not go here") || a.r.Focus != focus {
-				t.Fatalf("info %q, focus %s (was %s)", a.m.Info, a.r.Focus, focus)
+			if !strings.HasPrefix(a.m.Info, "put does not go here") || a.r.FocusID() != focus {
+				t.Fatalf("info %q, focus %s (was %s)", a.m.Info, a.r.FocusID(), focus)
 			}
 		})
 	}
@@ -304,7 +304,7 @@ func TestPutKeysOnEveryNode(t *testing.T) {
 	}
 	answers := func() (map[string]string, map[string]bool) {
 		got, hints := map[string]string{}, map[string]bool{}
-		for _, b := range a.r.ListBindings(a.r.Focus) {
+		for _, b := range a.r.ListBindings(a.r.FocusID()) {
 			if b.Keys != "" && !b.Unbind && got[b.Keys] == "" {
 				got[b.Keys] = a.r.CanonicalKey(b.Request.Key())
 				hints[b.Keys] = b.Hint != ""

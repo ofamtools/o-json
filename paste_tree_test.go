@@ -35,8 +35,8 @@ func TestPasteOnTheEditedTree(t *testing.T) {
 			if err := a.r.Settings().Set(settingPasteOnTree, tc.mode); err != nil {
 				t.Fatal(err)
 			}
-			if !a.editedShown() || a.sideOf(a.r.Focus) != rsTreeID {
-				t.Fatalf("not on the edited tree: focus %q", a.r.Focus)
+			if !a.editedShown() || a.sideOf(a.r.FocusID()) != rsTreeID {
+				t.Fatalf("not on the edited tree: focus %q", a.r.FocusID())
 			}
 			finish(a, Paste(a.m, tc.text))
 			settle(a)

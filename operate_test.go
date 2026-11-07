@@ -58,8 +58,8 @@ func TestOperatorYankObjects(t *testing.T) {
 		}
 	}
 	keys(a, "y", "i")
-	if a.r.Mode.Name != "operator_pending_i" || !strings.Contains(view(a), "OPERATOR PENDING I") {
-		t.Fatalf("y i: mode %q", a.r.Mode.Name)
+	if a.r.CurrentMode().Name != "operator_pending_i" || !strings.Contains(view(a), "OPERATOR PENDING I") {
+		t.Fatalf("y i: mode %q", a.r.CurrentMode().Name)
 	}
 	keys(a, "esc")
 	keys(a, "\"", "a", "y", "i", "r")
@@ -118,7 +118,7 @@ func TestOperatorSortAndJQ(t *testing.T) {
 		t.Fatalf("s i c: %+v (%q)", a.sort, a.m.Status)
 	}
 	keys(a, "s", "s")
-	if !a.sort.reverse || nodeAt(a.r.Instances[a.r.Focus]).Field("name").Value != "gamma" && !strings.Contains(view(a), "3  4") {
+	if !a.sort.reverse || nodeAt(a.r.Instances[a.r.FocusID()]).Field("name").Value != "gamma" && !strings.Contains(view(a), "3  4") {
 		t.Fatalf("s s: %+v", a.sort)
 	}
 	keys(a, "0", "s", "i", "c")
@@ -126,8 +126,8 @@ func TestOperatorSortAndJQ(t *testing.T) {
 		t.Fatalf("s on #: %+v (%q)", a.sort, a.m.Status)
 	}
 	keys(a, "l", "l", "!", "i", "c")
-	if a.r.Focus != jqFieldID || a.queryText() != ".items[].name" || !a.searchJQ() {
-		t.Fatalf("! i c: focus %q query %q", a.r.Focus, a.queryText())
+	if a.r.FocusID() != jqFieldID || a.queryText() != ".items[].name" || !a.searchJQ() {
+		t.Fatalf("! i c: focus %q query %q", a.r.FocusID(), a.queryText())
 	}
 }
 
@@ -179,8 +179,8 @@ func TestOperatorOnTheStructure(t *testing.T) {
 		t.Fatalf("y k: %q", got)
 	}
 	keys(a, "!", "!")
-	if a.r.Focus != jqFieldID || a.queryText() != ".items[].name" {
-		t.Fatalf("! !: focus %q query %q", a.r.Focus, a.queryText())
+	if a.r.FocusID() != jqFieldID || a.queryText() != ".items[].name" {
+		t.Fatalf("! !: focus %q query %q", a.r.FocusID(), a.queryText())
 	}
 }
 

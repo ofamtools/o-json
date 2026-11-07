@@ -25,7 +25,7 @@ func (a *App) registerPrompt() {
 	r.Define("query").Pin("insert").
 		Verb("commit", func(r *ochazuke.Runtime, c ochazuke.Context, args ochazuke.Arguments) (any, error) {
 			q := a.ask
-			if q == nil || r.Focus != fieldID {
+			if q == nil || r.FocusID() != fieldID {
 				return nil, errors.New("no prompt is open")
 			}
 			text := string(a.in.Text)

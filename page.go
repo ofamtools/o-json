@@ -1043,7 +1043,7 @@ func (a *App) decorate() {
 func (a *App) highlight() {
 	var origLit string
 	newLit := map[string]bool{}
-	side := a.sideOf(a.r.Focus)
+	side := a.sideOf(a.drawnFocus()) // drawn every frame: the focus the page shows
 	if a.rs.in != nil {
 		side = "" // after a reshape step the origins are the step's output, not the original's shapes
 	}
@@ -1458,7 +1458,7 @@ func (a *App) registerRestructureVerbs() {
 			}
 			if side == "" {
 				side = "original"
-				if a.sideOf(r.Focus) == rsOrigID {
+				if a.sideOf(r.FocusID()) == rsOrigID {
 					side = "restructured"
 				}
 			}
@@ -1633,14 +1633,15 @@ func (a *App) sendKey() string {
 	return "shape.send"
 }
 
-// keyFor is the key a binding row on the focus gives a verb (run without
-// arguments), "" when none does.
-func (a *App) keyFor(verb string) string {
+// keyFor is the key a binding row on focus gives a verb (run without
+// arguments), "" when none does. A renderer passes the focus it draws
+// (drawnFocus), a handler the live FocusID.
+func (a *App) keyFor(focus, verb string) string {
 	key := a.r.CanonicalKey(verb)
 	if al, ok := a.r.ActionAlias(key); ok { // doc.open: viewer.open's row
 		key = a.r.CanonicalKey(al.Action)
 	}
-	for _, b := range a.r.ListBindings(a.r.Focus) {
+	for _, b := range a.r.ListBindings(focus) {
 		if b.Keys != "" && len(b.Request.Args) == 0 && a.r.CanonicalKey(b.Request.Key()) == key {
 			return b.Keys
 		}
@@ -1672,7 +1673,7 @@ func (a *App) sideOf(focus string) string {
 // refocus puts the focus back on a node after its rows were replaced,
 // when the focus was in the restructure tree.
 func (a *App) refocus(id string) {
-	if id == "" || a.sideOf(a.r.Focus) != rsTreeID && a.r.Instances[a.r.Focus] != nil {
+	if id == "" || a.sideOf(a.r.FocusID()) != rsTreeID && a.r.Instances[a.r.FocusID()] != nil {
 		return
 	}
 	if err := a.rs.tree.Select(id); err == nil {
@@ -1833,23 +1834,24 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 	a.highlight()
 	a.syncMarks()
 	preview := a.preview()
-	if preview != previewData && a.inData(r.Focus) {
+	if preview != previewData && a.inData(a.drawnFocus()) {
 		_ = a.rs.tree.Focus() // the preview went (restructure.preview)
 	}
 	if preview == previewData {
 		a.syncData()
 	}
-	a.syncDeclaredMode()
+	drawn := a.pageView()
+	a.syncDeclaredModeAt(drawn.Focus, drawn.Mode.Name)
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := r.PaneLayout(rsPageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.restructureCrumb(), width, "…"))
-	a.syncJQPanel()
+	a.syncJQPanel(a.drawnFocus())
 	ph := a.splitHeight(height - 1)
 	bh := max(0, height-1-ph)
 	if bh < 6 || width < 16 {
 		return ochazuke.Text(crumb)
 	}
-	side := a.sideOf(r.Focus)
+	side := a.sideOf(a.drawnFocus())
 	if side != "" {
 		a.rs.shown = side
 	}
@@ -1900,7 +1902,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 			return mapPanel(w, h)
 		}
 		cw, ch := ochazuke.PanelContentSize(w, h)
-		focused := a.data.list.Focused() || r.Focus == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
+		focused := a.data.list.Focused() || a.drawnFocus() == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
 		b := l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), w, h, focused)
 		if !focused {
 			b.Cursor = nil
@@ -1921,7 +1923,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		body, cursor = p.Text, p.Offset(0, 1)
 	case a.layout() == "single" || only != "":
 		shown := a.rs.shown
-		if side := a.sideOf(a.r.Focus); only != "" && side != "" {
+		if side := a.sideOf(a.drawnFocus()); only != "" && side != "" {
 			shown = side // ctrl+w o (pane.only): the focused side alone
 		}
 		if only != "" {
@@ -1986,7 +1988,8 @@ func (a *App) restructureCrumb() string {
 		return "Restructure  ·  no document"
 	}
 	parts := []string{"Restructure", a.Doc.Name}
-	if id := a.focusedNode(a.r.Focus); id != "" {
+	focus := a.drawnFocus()
+	if id := a.focusedNode(focus); id != "" {
 		e := a.current()
 		part := nodePaths(e.nodes, e.meta)[id]
 		switch from := e.meta[id].from; {
@@ -1998,7 +2001,7 @@ func (a *App) restructureCrumb() string {
 			part += " (new object)"
 		}
 		parts = append(parts, part)
-	} else if n, ok := a.rs.orig.Selected(); ok && a.sideOf(a.r.Focus) == rsOrigID {
+	} else if n, ok := a.rs.orig.Selected(); ok && a.sideOf(focus) == rsOrigID {
 		if s, _ := n.Data.(*Shape); s != nil {
 			parts = append(parts, s.Path)
 			if note := s.DuplicateNote(); note != "" {
@@ -2007,7 +2010,7 @@ func (a *App) restructureCrumb() string {
 		}
 	}
 	layout := a.layout() + " layout"
-	if key := a.keyFor("restructure.layout"); key != "" {
+	if key := a.keyFor(focus, "restructure.layout"); key != "" {
 		layout += fmt.Sprintf(" (%s: %s)", key, map[string]string{"split": "single", "single": "split"}[a.layout()])
 	}
 	return strings.Join(append(parts, layout), "  ·  ")

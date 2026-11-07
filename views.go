@@ -161,7 +161,13 @@ var dataViewOrder = []string{viewTable, objectFields, viewFlat, viewJSON}
 // each event (the jq runner's PendingCommand) and after a view change;
 // it sets no mode itself. modes.declared off drops the pins: every pane
 // declares normal.
-func (a *App) syncDeclaredMode() {
+func (a *App) syncDeclaredMode() { a.syncDeclaredModeAt(a.r.FocusID(), a.r.CurrentMode().Name) }
+
+// syncDeclaredModeAt is syncDeclaredMode judged at focus in mode: the live
+// interaction from a handler, the drawn one (PresentationAt) from a
+// renderer, so a page drawn under a modal reads the focus and mode it
+// opened over.
+func (a *App) syncDeclaredModeAt(focus, mode string) {
 	off := a.r.Settings().String(settingDeclaredModes) == "off"
 	pin := func(id, mode string) {
 		if off {
@@ -181,7 +187,7 @@ func (a *App) syncDeclaredMode() {
 	if a.data != nil {
 		pin(a.data.id, a.dataMode())
 	}
-	if a.editing && (!a.onEditPane() || a.r.Mode.Name == a.r.DeclaredMode(a.r.Focus) && a.r.Input(a.r.Focus) == nil) {
+	if a.editing && (!a.onEditPane(focus) || mode == a.r.DeclaredMode(focus) && a.r.Input(focus) == nil) {
 		// EDIT is per pane: leaving the pane leaves it, and so does the
 		// esc row back to the declared mode (mode.switch {mode: declared}).
 		a.editing = false
@@ -190,7 +196,7 @@ func (a *App) syncDeclaredMode() {
 	// list's visual end, the outline's input) set normal, not the
 	// declared mode; a frame in normal on a pane that declares another
 	// goes to it.
-	if a.r.Mode.Name == "normal" && len(a.r.Modals()) == 0 && a.r.Input(a.r.Focus) == nil && a.r.DeclaredMode(a.r.Focus) != "normal" {
+	if mode == "normal" && len(a.r.Modals()) == 0 && a.r.Input(focus) == nil && a.r.DeclaredMode(focus) != "normal" {
 		_ = a.r.SetMode(a.backMode())
 	}
 }
@@ -214,14 +220,14 @@ func (a *App) dataMode() string {
 
 // onEditPane reports the focus still on the pane EDIT was entered on (or
 // in what it opened there: the value editor, a rename, a modal).
-func (a *App) onEditPane() bool {
+func (a *App) onEditPane(focus string) bool {
 	switch {
-	case len(a.r.Modals()) > 0, a.vedit != nil, a.r.Focus == valueInputID, a.renaming(), a.r.Focus == jqFieldID:
+	case len(a.r.Modals()) > 0, a.vedit != nil, focus == valueInputID, a.renaming(focus), focus == jqFieldID:
 		return true
 	case a.editTree:
-		return a.structureFocused()
+		return a.structureFocused(focus)
 	}
-	return a.inData(a.r.Focus)
+	return a.inData(focus)
 }
 
 // backMode is the mode a lifted mode returns to: EDIT while it is on,

@@ -40,16 +40,16 @@ const wrapSource = `{"id":7,"name":"Ada","city":"London","zip":"N1","tags":["x",
 func TestBraceWrapsTheVisualSelection(t *testing.T) {
 	a := wrapDoc(t)
 	press(t, a, "v")
-	if a.r.Mode.Name != "visual-line" {
-		t.Fatalf("v: mode %q", a.r.Mode.Name)
+	if a.r.CurrentMode().Name != "visual-line" {
+		t.Fatalf("v: mode %q", a.r.CurrentMode().Name)
 	}
 	press(t, a, "j", "j", "j", "{")
 	placeholderSelected(t, a, "new-key")
 	Type(a.m, "person")
 	press(t, a, "enter")
 	wantOut(t, a, `{"person":{"id":7,"name":"Ada","city":"London","zip":"N1"},"tags":["x","y"]}`)
-	if a.r.Mode.Name != "shape" {
-		t.Fatalf("mode %q", a.r.Mode.Name)
+	if a.r.CurrentMode().Name != "shape" {
+		t.Fatalf("mode %q", a.r.CurrentMode().Name)
 	}
 }
 
@@ -58,8 +58,8 @@ func TestBraceEnterKeepsThePlaceholder(t *testing.T) {
 	a := wrapDoc(t)
 	press(t, a, "v", "j", "{", "enter")
 	wantOut(t, a, `{"new-key":{"id":7,"name":"Ada"},"city":"London","zip":"N1","tags":["x","y"]}`)
-	if a.r.Mode.Name != "shape" {
-		t.Fatalf("mode %q", a.r.Mode.Name)
+	if a.r.CurrentMode().Name != "shape" {
+		t.Fatalf("mode %q", a.r.CurrentMode().Name)
 	}
 }
 
@@ -67,8 +67,8 @@ func TestBraceEnterKeepsThePlaceholder(t *testing.T) {
 func TestVEndsTheSelection(t *testing.T) {
 	a := wrapDoc(t)
 	press(t, a, "v", "j", "v")
-	if a.r.Mode.Name != "shape" || a.rs.tree.List().Visual() {
-		t.Fatalf("mode %q visual %v", a.r.Mode.Name, a.rs.tree.List().Visual())
+	if a.r.CurrentMode().Name != "shape" || a.rs.tree.List().Visual() {
+		t.Fatalf("mode %q visual %v", a.r.CurrentMode().Name, a.rs.tree.List().Visual())
 	}
 }
 

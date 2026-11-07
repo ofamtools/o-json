@@ -24,9 +24,9 @@ func wrapped(t *testing.T) *App {
 // selected (select mode).
 func placeholderSelected(t *testing.T, a *App, text string) {
 	t.Helper()
-	in := a.r.Input(a.r.Focus)
+	in := a.r.Input(a.r.FocusID())
 	if in == nil || string(in.Text) != text {
-		t.Fatalf("focus %q, want the line holding %q", a.r.Focus, text)
+		t.Fatalf("focus %q, want the line holding %q", a.r.FocusID(), text)
 	}
 	if lo, hi, ok := in.SelectedText(); !ok || lo != 0 || hi != len(text) {
 		t.Fatalf("selected %d %d %v", lo, hi, ok)
@@ -44,8 +44,8 @@ func TestWrapUnderAValueThenType(t *testing.T) {
 	if got := entries(a.Mapping()); !slices.Equal(got, []string{".name>.name", ">.meta", ".version>.meta.version"}) {
 		t.Fatalf("mapping %v", got)
 	}
-	if a.r.Mode.Name != "split" {
-		t.Fatalf("mode %q", a.r.Mode.Name)
+	if a.r.CurrentMode().Name != "split" {
+		t.Fatalf("mode %q", a.r.CurrentMode().Name)
 	}
 	// The typed name undoes first, then the wrap, one step each.
 	press(t, a, "u")
@@ -145,8 +145,8 @@ func TestNewKeyBelowAndAbove(t *testing.T) {
 	if _, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "add-key", Args: ochazuke.Arguments{"where": "below", "key": "cli"}}); err != nil {
 		t.Fatal(err)
 	}
-	if a.r.Input(a.r.Focus) != nil || !slices.Contains(entries(a.Mapping()), ">.above.cli") {
-		t.Fatalf("add-key {key}: focus %q %v", a.r.Focus, entries(a.Mapping()))
+	if a.r.Input(a.r.FocusID()) != nil || !slices.Contains(entries(a.Mapping()), ">.above.cli") {
+		t.Fatalf("add-key {key}: focus %q %v", a.r.FocusID(), entries(a.Mapping()))
 	}
 	// One u takes the key away; the typed name of inner undoes next, then
 	// the key itself.
@@ -170,7 +170,7 @@ func TestArrayObjectRoundTrip(t *testing.T) {
 	// .items is an array whose item fans out: t on its item is not
 	// available (the key would hold many values), so t passes on.
 	selectIn(t, a, a.rs.tree, func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].item })
-	if a.r.Available(ochazuke.Request{Noun: "node", Verb: "object"}, a.r.Focus, a.r.Mode) {
+	if a.r.Available(ochazuke.Request{Noun: "node", Verb: "object"}, a.r.FocusID(), a.r.CurrentMode()) {
 		t.Fatal("to-object on .items[]")
 	}
 	check := func(want string) {
@@ -246,7 +246,7 @@ func TestOriginHighlight(t *testing.T) {
 		t.Fatalf("restructure marks %v", got)
 	}
 	// Rename it: the origin still marks.
-	if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "rename", Target: a.r.Focus, Args: ochazuke.Arguments{"key": "who"}}); err != nil {
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "rename", Target: a.r.FocusID(), Args: ochazuke.Arguments{"key": "who"}}); err != nil {
 		t.Fatal(err)
 	}
 	view(a)

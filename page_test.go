@@ -114,8 +114,8 @@ func TestSendShapeAcross(t *testing.T) {
 	if got := entries(a.Mapping()); !slices.Equal(got, want) {
 		t.Fatalf("mapping %v", got)
 	}
-	if a.sideOf(a.r.Focus) != rsOrigID {
-		t.Fatalf("focus %q", a.r.Focus)
+	if a.sideOf(a.r.FocusID()) != rsOrigID {
+		t.Fatalf("focus %q", a.r.FocusID())
 	}
 	if !strings.Contains(a.m.Info, "sent 5 node(s)") {
 		t.Fatalf("info %q", a.m.Info)
@@ -160,8 +160,8 @@ func TestIndentAndDedent(t *testing.T) {
 	a := openRestructure(t, 120, 30)
 	sendPaths(t, a, ".items[].owner", ".name", ".version")
 	press(t, a, "ctrl+a", "o")
-	if a.sideOf(a.r.Focus) != rsTreeID {
-		t.Fatalf("tab: focus %q", a.r.Focus)
+	if a.sideOf(a.r.FocusID()) != rsTreeID {
+		t.Fatalf("tab: focus %q", a.r.FocusID())
 	}
 	// email moves out of owner, just before it, then g > nests it back
 	// into owner (the object below), as its first key.
@@ -234,7 +234,7 @@ func TestDedentOutOfAnItemCollects(t *testing.T) {
 	// An item's key cannot move out of the root's item: < is not there
 	// for the item row itself.
 	selectIn(t, a, a.rs.tree, func(n ochazuke.TreeNode) bool { return a.rs.meta[n.ID].item && a.rs.meta[n.ID].from == ".items[]" })
-	if a.r.Available(ochazuke.Request{Noun: "node", Verb: "dedent"}, a.r.Focus, a.r.Mode) {
+	if a.r.Available(ochazuke.Request{Noun: "node", Verb: "dedent"}, a.r.FocusID(), a.r.CurrentMode()) {
 		t.Error("dedent available on an item")
 	}
 }
@@ -277,12 +277,12 @@ func TestRenameOpensSelected(t *testing.T) {
 	press(t, a, "ctrl+a", "o")
 	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
 	press(t, a, "r")
-	in := a.r.Input(a.r.Focus)
+	in := a.r.Input(a.r.FocusID())
 	if in == nil {
 		t.Fatal("r opened no line")
 	}
-	if lo, hi, ok := in.SelectedText(); !ok || lo != 0 || hi != len("name") || a.r.Mode.Name != "insert" {
-		t.Fatalf("selected %d %d %v mode %s", lo, hi, ok, a.r.Mode.Name)
+	if lo, hi, ok := in.SelectedText(); !ok || lo != 0 || hi != len("name") || a.r.CurrentMode().Name != "insert" {
+		t.Fatalf("selected %d %d %v mode %s", lo, hi, ok, a.r.CurrentMode().Name)
 	}
 	Type(a.m, "title")
 	press(t, a, "esc")
@@ -301,7 +301,7 @@ func TestRenameOpensSelected(t *testing.T) {
 		t.Fatal(err)
 	}
 	press(t, a, "r")
-	in = a.r.Input(a.r.Focus)
+	in = a.r.Input(a.r.FocusID())
 	if _, _, ok := in.SelectedText(); ok || in.Cursor != len("titles") {
 		t.Fatalf("rename.select off: selected %v cursor %d", ok, in.Cursor)
 	}
@@ -457,13 +457,13 @@ func TestSingleLayoutToggles(t *testing.T) {
 	}
 	press(t, a, "ctrl+a", "o")
 	frame = view(a)
-	if strings.Contains(frame, "Original") || !strings.Contains(frame, "Restructured  1 nodes") || a.sideOf(a.r.Focus) != rsTreeID {
+	if strings.Contains(frame, "Original") || !strings.Contains(frame, "Restructured  1 nodes") || a.sideOf(a.r.FocusID()) != rsTreeID {
 		t.Fatalf("single, restructured\n%s", frame)
 	}
 	t.Logf("single layout, restructured side:\n%s", frame)
 	press(t, a, "ctrl+a", "o")
-	if a.sideOf(a.r.Focus) != rsOrigID {
-		t.Fatalf("tab back: %q", a.r.Focus)
+	if a.sideOf(a.r.FocusID()) != rsOrigID {
+		t.Fatalf("tab back: %q", a.r.FocusID())
 	}
 	// split: tab moves between the panels instead.
 	if err := a.r.Settings().Set(settingLayout, "split"); err != nil {
@@ -474,8 +474,8 @@ func TestSingleLayoutToggles(t *testing.T) {
 		t.Fatalf("split\n%s", frame)
 	}
 	press(t, a, "ctrl+a", "o")
-	if a.sideOf(a.r.Focus) != rsTreeID {
-		t.Fatalf("split tab: %q", a.r.Focus)
+	if a.sideOf(a.r.FocusID()) != rsTreeID {
+		t.Fatalf("split tab: %q", a.r.FocusID())
 	}
 	t.Logf("split layout:\n%s", view(a))
 }
@@ -513,30 +513,30 @@ func TestOpenFocusesTheOriginal(t *testing.T) {
 				t.Fatal(err)
 			}
 			press(t, a, "M")
-			if first := a.rs.orig.Nodes()[0].ID; a.r.Focus != first {
-				t.Fatalf("first open: focus %q, want %q", a.r.Focus, first)
+			if first := a.rs.orig.Nodes()[0].ID; a.r.FocusID() != first {
+				t.Fatalf("first open: focus %q, want %q", a.r.FocusID(), first)
 			}
 			sendPaths(t, a, ".name")
 			press(t, a, "q", "T") // the viewer's original: the edited one holds .name alone
 			selectPath(t, a, ".items[].owner")
 			press(t, a, "M")
-			if a.r.Focus != "o:s:.items[].owner" {
-				t.Fatalf("focus %q", a.r.Focus)
+			if a.r.FocusID() != "o:s:.items[].owner" {
+				t.Fatalf("focus %q", a.r.FocusID())
 			}
 			if n, _ := a.rs.orig.Selected(); n.ID != "o:s:.items[].owner" {
 				t.Fatalf("selected %q", n.ID)
 			}
 			// Leaving from the restructured tree, M still opens on the original.
 			press(t, a, "ctrl+a", "o")
-			if a.sideOf(a.r.Focus) != rsTreeID {
-				t.Fatalf("tab: focus %q", a.r.Focus)
+			if a.sideOf(a.r.FocusID()) != rsTreeID {
+				t.Fatalf("tab: focus %q", a.r.FocusID())
 			}
 			press(t, a, "q")
 			selectPath(t, a, ".version")
 			press(t, a, "M")
 			frame := view(a)
-			if a.r.Focus != "o:s:.version" || !strings.Contains(frame, "Original") {
-				t.Fatalf("reopen: focus %q\n%s", a.r.Focus, frame)
+			if a.r.FocusID() != "o:s:.version" || !strings.Contains(frame, "Original") {
+				t.Fatalf("reopen: focus %q\n%s", a.r.FocusID(), frame)
 			}
 			if layout == "single" && strings.Contains(frame, "Restructured") {
 				t.Fatalf("single opens showing the original\n%s", frame)
@@ -555,27 +555,27 @@ func TestLayoutKeyFlips(t *testing.T) {
 		t.Fatalf("split crumb and hint\n%s", frame)
 	}
 	selectIn(t, a, a.rs.tree, a.fromPath(".name"))
-	focus := a.r.Focus
+	focus := a.r.FocusID()
 	press(t, a, "L")
 	frame = view(a)
-	if a.layout() != "single" || a.r.Focus != focus || !strings.Contains(frame, "Restructured  1 nodes") || strings.Contains(frame, "Original") {
-		t.Fatalf("L to single: layout %s focus %q\n%s", a.layout(), a.r.Focus, frame)
+	if a.layout() != "single" || a.r.FocusID() != focus || !strings.Contains(frame, "Restructured  1 nodes") || strings.Contains(frame, "Original") {
+		t.Fatalf("L to single: layout %s focus %q\n%s", a.layout(), a.r.FocusID(), frame)
 	}
 	if !strings.Contains(frame, "single layout (L: split)") {
 		t.Fatalf("single crumb\n%s", frame)
 	}
 	press(t, a, "ctrl+a", "o")
-	if a.sideOf(a.r.Focus) != rsOrigID {
-		t.Fatalf("single tab swaps: %q", a.r.Focus)
+	if a.sideOf(a.r.FocusID()) != rsOrigID {
+		t.Fatalf("single tab swaps: %q", a.r.FocusID())
 	}
-	focus = a.r.Focus
+	focus = a.r.FocusID()
 	press(t, a, "L")
-	if a.layout() != "split" || a.r.Focus != focus {
-		t.Fatalf("L to split: layout %s focus %q", a.layout(), a.r.Focus)
+	if a.layout() != "split" || a.r.FocusID() != focus {
+		t.Fatalf("L to split: layout %s focus %q", a.layout(), a.r.FocusID())
 	}
 	press(t, a, "ctrl+a", "o")
-	if a.sideOf(a.r.Focus) != rsTreeID {
-		t.Fatalf("split tab moves: %q", a.r.Focus)
+	if a.sideOf(a.r.FocusID()) != rsTreeID {
+		t.Fatalf("split tab moves: %q", a.r.FocusID())
 	}
 }
 
@@ -592,26 +592,26 @@ func TestPreviewYanksAndSetting(t *testing.T) {
 		}
 		press(t, a, "y", "m")
 		if got := yanked(t, a, ""); !strings.Contains(got, `"map"`) || !strings.Contains(got, `"from": ".name"`) {
-			t.Fatalf("y m on %s: %q", a.r.Focus, got)
+			t.Fatalf("y m on %s: %q", a.r.FocusID(), got)
 		}
 		press(t, a, "y", "j")
 		if p, err := a.plan(); err != nil || yanked(t, a, "") != p.JQ() {
-			t.Fatalf("y j on %s: %q (%v)", a.r.Focus, yanked(t, a, ""), err)
+			t.Fatalf("y j on %s: %q (%v)", a.r.FocusID(), yanked(t, a, ""), err)
 		}
 	}
 	press(t, a, "ctrl+w", "l")
-	if !a.inData(a.r.Focus) || !strings.Contains(view(a), "Object .") {
-		t.Fatalf("ctrl+w l: focus %q\n%s", a.r.Focus, view(a))
+	if !a.inData(a.r.FocusID()) || !strings.Contains(view(a), "Object .") {
+		t.Fatalf("ctrl+w l: focus %q\n%s", a.r.FocusID(), view(a))
 	}
 	if err := a.r.Settings().Set(settingPreview, previewOff); err != nil {
 		t.Fatal(err)
 	}
-	if frame := view(a); a.sideOf(a.r.Focus) != rsTreeID || strings.Contains(frame, "Object .") || strings.Contains(frame, "Mapping") {
-		t.Fatalf("off: focus %q\n%s", a.r.Focus, frame)
+	if frame := view(a); a.sideOf(a.r.FocusID()) != rsTreeID || strings.Contains(frame, "Object .") || strings.Contains(frame, "Mapping") {
+		t.Fatalf("off: focus %q\n%s", a.r.FocusID(), frame)
 	}
 	press(t, a, "ctrl+w", "l")
-	if a.sideOf(a.r.Focus) != rsTreeID {
-		t.Fatalf("off: ctrl+w l went to %q", a.r.Focus)
+	if a.sideOf(a.r.FocusID()) != rsTreeID {
+		t.Fatalf("off: ctrl+w l went to %q", a.r.FocusID())
 	}
 	if err := a.r.Settings().Set(settingPreview, previewMapping); err != nil {
 		t.Fatal(err)

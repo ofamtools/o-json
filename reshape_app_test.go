@@ -323,7 +323,7 @@ func TestFlattenMarksAcrossContexts(t *testing.T) {
 			for _, key := range keys {
 				press(t, a, key)
 			}
-			if hints := ochazuke.BindingHints(a.r, a.r.Focus); !strings.Contains(hints, "F flatten") {
+			if hints := ochazuke.BindingHints(a.r, a.r.FocusID()); !strings.Contains(hints, "F flatten") {
 				t.Fatalf("missing flatten hint: %s", hints)
 			}
 			press(t, a, "F")
@@ -376,8 +376,8 @@ func TestFlattenOriginalMarksReplacesAndUndoes(t *testing.T) {
 			if got := agreesWith(t, a, reshapeFile); !sameJSON(t, got, want) {
 				t.Fatalf("source flatten: %s", got)
 			}
-			if a.sideOf(a.r.Focus) != rsTreeID || len(a.Mapping().Then) != 1 {
-				t.Fatalf("not the new result: focus %s mapping %+v", a.r.Focus, a.Mapping())
+			if a.sideOf(a.r.FocusID()) != rsTreeID || len(a.Mapping().Then) != 1 {
+				t.Fatalf("not the new result: focus %s mapping %+v", a.r.FocusID(), a.Mapping())
 			}
 			press(t, a, "u")
 			if got := output(t, a); got != before || mappingKey(a.Mapping()) != mapping {
@@ -441,8 +441,8 @@ func TestFlattenSourceFocusOptOut(t *testing.T) {
 	})
 	press(t, a, "space")
 	press(t, a, "F")
-	if a.sideOf(a.r.Focus) != rsOrigID || len(a.Mapping().Then) != 1 {
-		t.Fatalf("focus %s, mapping %+v", a.r.Focus, a.Mapping())
+	if a.sideOf(a.r.FocusID()) != rsOrigID || len(a.Mapping().Then) != 1 {
+		t.Fatalf("focus %s, mapping %+v", a.r.FocusID(), a.Mapping())
 	}
 	if got := agreesWith(t, a, reshapeFile); !sameJSON(t, got, `[{"name":"Ann"},{"name":"Bo"},{"name":"Cy"},{"name":"Dee"}]`) {
 		t.Fatalf("flatten: %s", got)

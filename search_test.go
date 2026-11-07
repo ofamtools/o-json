@@ -29,8 +29,8 @@ func TestSearchLineResultsView(t *testing.T) {
 		t.Fatalf("tab: mode %q hits %d", a.r.BaseMode(), len(a.sr.hits))
 	}
 	press(t, a, "shift+tab", "enter")
-	if !a.inData(a.r.Focus) || a.r.BaseMode() != "search" {
-		t.Fatalf("enter: focus %q mode %q", a.r.Focus, a.r.BaseMode())
+	if !a.inData(a.r.FocusID()) || a.r.BaseMode() != "search" {
+		t.Fatalf("enter: focus %q mode %q", a.r.FocusID(), a.r.BaseMode())
 	}
 	press(t, a, "n")
 	if a.data.Selected() != 1 {

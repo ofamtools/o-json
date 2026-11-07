@@ -23,29 +23,46 @@ import (
 // stackWidth is the page width below which the panels stack.
 const stackWidth = 60
 
+// pageView is the interaction the current page is drawn in
+// (PresentationAt): under a modal, the focus and mode the outermost modal
+// opened over; else the live ones. Renderers read it; handlers read the
+// live FocusID and CurrentMode.
+func (a *App) pageView() ochazuke.Presentation {
+	id := a.r.Page
+	if id == "" {
+		id = pageID
+	}
+	return a.r.PresentationAt(id)
+}
+
+// drawnFocus is the focus the current page is drawn with (pageView).
+func (a *App) drawnFocus() string { return a.pageView().Focus }
+
 func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	a.decorate()
 	a.highlight()
 	a.syncMarks()
-	if !a.editedShown() && a.sideOf(r.Focus) == rsTreeID {
+	if !a.editedShown() && a.sideOf(a.drawnFocus()) == rsTreeID {
 		_ = a.tree.Focus() // the edited structure is not shown (structure.editable went off)
 	}
 	a.syncData()
-	a.syncDeclaredMode() // the pins of a view the event changed, before the badge draws
+	drawn := a.pageView()
+	a.syncDeclaredModeAt(drawn.Focus, drawn.Mode.Name) // the pins of a view the event changed, before the badge draws
 	s := ochazuke.NewStyles(*a.m.Appearance)
 	l := a.r.PaneLayout(pageID, ochazuke.Layout{Width: width, Height: height, Styles: s})
 	crumb := s.Muted.Render(ansi.Truncate(a.breadcrumb(), width, "…"))
-	a.syncJQPanel()
+	a.syncJQPanel(a.drawnFocus())
 	ph := a.splitHeight(height - 1)
 	bh := max(0, height-1-ph)
 	if bh < 3 || width < 8 {
 		return ochazuke.Text(crumb)
 	}
+	// Under a modal the page is drawn with the focus it opened over
+	// (PresentationAt), so the panel the modal came from keeps its border.
+	focus := a.drawnFocus()
 	// An empty tree (no document) holds the focus itself, not its list.
-	treeFocused := a.tree.List().Focused() || a.rs.tree.List().Focused() || r.Focus == treeID || r.Focus == rsTreeID
-	// Under a modal the page is drawn with the focus it opened over, so
-	// the panel the modal came from keeps its border.
-	dataFocused := a.data.list.Focused() || r.Focus == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
+	treeFocused := a.structureFocused(focus)
+	dataFocused := a.data.list.Focused() || focus == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
 	var left, right ochazuke.Block
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth
@@ -99,7 +116,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 		}
 		return cursor.WithText(crumb + "\n" + body)
 	}
-	left = l.PanelBlock(a.treeTitle(), inner, lw, lh, treeFocused || a.r.Focus == jqFieldID)
+	left = l.PanelBlock(a.treeTitle(), inner, lw, lh, treeFocused || focus == jqFieldID)
 	right = l.PanelBlock(a.dataTitle(), dataBody, rw, rh, dataFocused)
 	cursor := right.Offset(lw+1, 1)
 	if stacked {
@@ -134,7 +151,7 @@ func (a *App) syncData() {
 	if ve := a.vedit; ve != nil && ve.modal != nil && r.Instances[valueEditorID] == nil {
 		a.vedit = nil // the value editor was closed another way: nothing changed
 	}
-	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view != a.detail && r.Focus != valueInputID {
+	if a.vedit != nil && a.vedit.modal == nil && a.vedit.view != a.detail && a.drawnFocus() != valueInputID {
 		// The focus left the inline input (a click, a page): its text is
 		// the edit, as enter would make it.
 		if err := a.accept(); err != nil {
@@ -185,7 +202,7 @@ func (a *App) breadcrumb() string {
 		if a.sr.running {
 			parts = append(parts, "searching…")
 		}
-		if l := lineAt(a.r.Instances[a.r.Focus]); l != nil && l.node != nil {
+		if l := lineAt(a.r.Instances[a.drawnFocus()]); l != nil && l.node != nil {
 			parts = append(parts, "hit "+l.node.Path())
 		}
 		s = nil
@@ -367,7 +384,7 @@ func wrap(text string, width int) string {
 func (a *App) emptyHint() string {
 	lines := []string{"No document is open.", ""}
 	for _, v := range []struct{ verb, what string }{{"doc.open", "open a JSON file"}, {"doc.paste", "paste JSON from the clipboard"}, {"restructure.open", "build a structure from nothing"}} {
-		key := a.keyFor(v.verb)
+		key := a.keyFor(a.drawnFocus(), v.verb)
 		if key == "" {
 			key = ":" + strings.Replace(v.verb, ".", " ", 1)
 		}
@@ -381,7 +398,7 @@ func (a *App) emptyHint() string {
 func (a *App) emptyCrumb() string {
 	parts := []string{noFile}
 	for _, v := range []struct{ verb, what string }{{"viewer.open", "open a file"}, {"viewer.paste", "paste JSON"}, {"restructure.open", "restructure"}} {
-		if key := a.keyFor(v.verb); key != "" {
+		if key := a.keyFor(a.drawnFocus(), v.verb); key != "" {
 			parts = append(parts, key+" "+v.what)
 		}
 	}

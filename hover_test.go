@@ -223,7 +223,7 @@ func TestHoverEditsTheSubTableCell(t *testing.T) {
 	inlineEditor(t, a)
 	editHints := []string{"r/i edit", "y/d/c/s/! op", "o/O add", "K rename key", "p put"}
 	edits := []string{"value.edit", "value.delete", "value.add", "value.rename", "value.paste"}
-	hints := func() string { return ochazuke.BindingHints(a.r, a.r.Focus) }
+	hints := func() string { return ochazuke.BindingHints(a.r, a.r.FocusID()) }
 	onRow := hints()
 	press(t, a, "j") // the address line, on city
 	if !a.hoverIn() {
@@ -235,13 +235,13 @@ func TestHoverEditsTheSubTableCell(t *testing.T) {
 		}
 	}
 	for _, verb := range edits {
-		if !a.r.VerbShown(verb, a.r.Focus, a.r.Mode) {
+		if !a.r.VerbShown(verb, a.r.FocusID(), a.r.CurrentMode()) {
 			t.Errorf("%s is not available in a sub-table", verb)
 		}
 	}
 	press(t, a, "r")
-	if a.r.Focus != valueInputID || selected(a) != "Austin" {
-		t.Fatalf("r: focus %q selected %q", a.r.Focus, selected(a))
+	if a.r.FocusID() != valueInputID || selected(a) != "Austin" {
+		t.Fatalf("r: focus %q selected %q", a.r.FocusID(), selected(a))
 	}
 	frame := view(a)
 	row, input := line(frame, "Cy C"), line(frame, "city (string): Austin")
@@ -289,7 +289,7 @@ func TestHoverEditAddsAMissingCell(t *testing.T) {
 	}
 	valueDo(t, a, "edit", ochazuke.Arguments{"text": `[{"a": 1, "b": 2}, {"a": 3}]`})
 	press(t, a, "j", "j", "l", "l") // the second item's b
-	v, ok := a.valueOf(a.r.Instances[a.r.Focus])
+	v, ok := a.valueOf(a.r.Instances[a.r.FocusID()])
 	if !ok || v.node != nil || v.key != "b" {
 		t.Fatalf("the missing cell: %+v %v", v, ok)
 	}
@@ -438,7 +438,7 @@ func TestHoverRowKeysOnASubTableLine(t *testing.T) {
 		t.Fatalf("3| moved the row's column to %d", a.data.list.Column())
 	}
 	for _, key := range []string{"g c", "z >", "z p"} {
-		if strings.Contains(ochazuke.BindingHints(a.r, a.r.Focus), key+" ") {
+		if strings.Contains(ochazuke.BindingHints(a.r, a.r.FocusID()), key+" ") {
 			t.Errorf("%s offered in a sub-table", key)
 		}
 	}
@@ -449,11 +449,11 @@ func TestHoverRowKeysOnASubTableLine(t *testing.T) {
 	// The guard is the verbs' availability, not their rows': the palette
 	// and the help leave them out too, and the row's columns get them back.
 	for _, verb := range []string{"ochazuke.list.choose-column", "ochazuke.list.resize-column", "ochazuke.list.reset-columns", "ochazuke.list.toggle-pin-column"} {
-		if a.r.VerbShown(verb, a.r.Focus, a.r.Mode) {
+		if a.r.VerbShown(verb, a.r.FocusID(), a.r.CurrentMode()) {
 			t.Errorf("%s shown in a sub-table", verb)
 		}
 	}
-	if on := hoverAt(t, 120, 30, 6); !on.r.VerbShown("ochazuke.list.choose-column", on.r.Focus, on.r.Mode) {
+	if on := hoverAt(t, 120, 30, 6); !on.r.VerbShown("ochazuke.list.choose-column", on.r.FocusID(), on.r.CurrentMode()) {
 		t.Error("choose-column not shown on the row")
 	}
 	// ctrl+d walks half a screen of lines: the same as that many j.

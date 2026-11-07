@@ -228,7 +228,7 @@ func (a *App) setSearchType(steps int) error {
 	n := len(searchTypes)
 	a.sr.typ = searchTypes[((i+steps)%n+n)%n].name
 	a.refreshSearch()
-	if a.r.Focus == jqFieldID {
+	if a.r.FocusID() == jqFieldID {
 		return a.r.SetMode(a.lineMode())
 	}
 	return nil
@@ -300,9 +300,9 @@ func (a *App) stepHit(c ochazuke.Ctx, steps int) error {
 	if n == 0 {
 		return errors.New("no hits")
 	}
-	if a.overlay == overlayResults && a.shown == a.sr.view && (a.inData(a.r.Focus) || a.r.Focus == jqFieldID) {
+	if a.overlay == overlayResults && a.shown == a.sr.view && (a.inData(a.r.FocusID()) || a.r.FocusID() == jqFieldID) {
 		cur := a.data.Selected()
-		if a.r.Focus == jqFieldID {
+		if a.r.FocusID() == jqFieldID {
 			cur = a.sr.cur
 		}
 		a.sr.cur = ((cur+steps)%n + n) % n

@@ -347,8 +347,8 @@ func (a *App) queryDone(err error) ochazuke.Result {
 // focusQuery focuses the query line in insert, the cursor at the end,
 // remembering where the focus and the mode were for leaveQuery.
 func (a *App) focusQuery() error {
-	if a.r.Focus != jqFieldID {
-		a.q.from, a.q.fromMode = a.r.Focus, a.r.BaseMode()
+	if a.r.FocusID() != jqFieldID {
+		a.q.from, a.q.fromMode = a.r.FocusID(), a.r.BaseMode()
 	}
 	if err := a.r.SetFocus(jqFieldID); err != nil {
 		return err
@@ -373,7 +373,7 @@ func (a *App) leaveQuery() error {
 			return err
 		}
 	}
-	if m := a.q.fromMode; m != "" && m != "normal" && a.r.Modes[m] {
+	if m := a.q.fromMode; m != "" && m != "normal" && a.r.IsBaseMode(m) {
 		return a.r.SetMode(m)
 	}
 	return nil

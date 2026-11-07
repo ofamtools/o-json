@@ -8,8 +8,8 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/itchyny/gojq v0.12.19
-	ofam.dev/monogatari v0.4.1
-	ofam.dev/ochazuke v0.94.0
+	ofam.dev/monogatari v0.5.0
+	ofam.dev/ochazuke v0.95.0
 	ofam.dev/oden v0.2.0
 )
 

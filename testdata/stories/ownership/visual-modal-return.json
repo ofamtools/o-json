@@ -1,0 +1,15 @@
+{
+  "name": "o-json: a visual-line selection on the structure is drawn under a modal in the interaction the modal opened over (the structure panel's focused border, the selection, the cursor bar dimmed with modal-highlights keep), and closing the modal returns to the same row in visual-line",
+  "area": "ownership",
+  "width": 100,
+  "height": 28,
+  "fixture": "viewer",
+  "seed": {"doc": "nested.json"},
+  "values": {"modal-highlights": "keep"},
+  "script": ["j", "v", "j", ":", "esc"],
+  "expect": [
+    {"after": 3, "modal": "", "mode": "visual-line", "focus": "r:2", "highlighted": 1, "contains": ["┏━ Structure", "* └─ ▾ []", "*    ├─   id"]},
+    {"after": 4, "modal": "palette", "mode": "insert", "focus": "__palette/line", "highlighted": 0, "dimmed": 2, "contains": ["┏━ Structure", "* └─ ▾ []", "*    ├─   i"]},
+    {"modal": "", "mode": "visual-line", "focus": "r:2", "highlighted": 1, "contains": ["┏━ Structure", "* └─ ▾ []", "*    ├─   id"]}
+  ]
+}

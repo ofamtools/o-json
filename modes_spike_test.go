@@ -50,8 +50,8 @@ func TestTrialModePickerChoosesFuzzyViewAndSplit(t *testing.T) {
 		t.Fatal("g m did not open the mode picker")
 	}
 	press(t, a, "s", "o", "n", "enter")
-	if a.viewName != viewJSON || !a.inData(a.r.Focus) || a.r.BaseMode() != "json" {
-		t.Fatalf("fuzzy JSON choice: view %q focus %q mode %q", a.viewName, a.r.Focus, a.r.BaseMode())
+	if a.viewName != viewJSON || !a.inData(a.r.FocusID()) || a.r.BaseMode() != "json" {
+		t.Fatalf("fuzzy JSON choice: view %q focus %q mode %q", a.viewName, a.r.FocusID(), a.r.BaseMode())
 	}
 	press(t, a, "g", "m", "s", "p", "l", "enter")
 	if a.r.Page != rsPageID || a.r.BaseMode() != "split" {
@@ -64,29 +64,29 @@ func TestTrialPaneKeysAndSplitBadge(t *testing.T) {
 	tones := a.m.Appearance.AppTones.Rows()
 	shapeColour := fmt.Sprint(tones["mode.shape"])
 	press(t, a, "ctrl+a", "o")
-	if !a.inData(a.r.Focus) || a.r.BaseMode() != "table" {
-		t.Fatalf("other pane: focus %q mode %q", a.r.Focus, a.r.BaseMode())
+	if !a.inData(a.r.FocusID()) || a.r.BaseMode() != "table" {
+		t.Fatalf("other pane: focus %q mode %q", a.r.FocusID(), a.r.BaseMode())
 	}
 	if tableColour := fmt.Sprint(tones["mode.table"]); tableColour == shapeColour || a.m.Appearance.Accent != nil {
 		t.Fatalf("shape and table accents are both %q", tableColour)
 	}
 	press(t, a, "ctrl+w", "h")
-	if a.inData(a.r.Focus) || a.r.BaseMode() != "shape" {
-		t.Fatalf("left pane: focus %q mode %q", a.r.Focus, a.r.BaseMode())
+	if a.inData(a.r.FocusID()) || a.r.BaseMode() != "shape" {
+		t.Fatalf("left pane: focus %q mode %q", a.r.FocusID(), a.r.BaseMode())
 	}
 	press(t, a, "ctrl+w", "l")
-	if !a.inData(a.r.Focus) || a.r.BaseMode() != "table" {
-		t.Fatalf("right pane: focus %q mode %q", a.r.Focus, a.r.BaseMode())
+	if !a.inData(a.r.FocusID()) || a.r.BaseMode() != "table" {
+		t.Fatalf("right pane: focus %q mode %q", a.r.FocusID(), a.r.BaseMode())
 	}
 	press(t, a, "ctrl+w", "v")
 	view(a)
 	if a.r.Page != rsPageID || a.r.BaseMode() != "split" {
 		t.Fatalf("split: page %q mode %q", a.r.Page, a.r.BaseMode())
 	}
-	from := a.sideOf(a.r.Focus)
+	from := a.sideOf(a.r.FocusID())
 	press(t, a, "ctrl+a", "o")
-	if a.sideOf(a.r.Focus) == from || a.r.BaseMode() != "split" {
-		t.Fatalf("other side: focus %q mode %q", a.r.Focus, a.r.BaseMode())
+	if a.sideOf(a.r.FocusID()) == from || a.r.BaseMode() != "split" {
+		t.Fatalf("other side: focus %q mode %q", a.r.FocusID(), a.r.BaseMode())
 	}
 }
 
@@ -162,7 +162,7 @@ func TestTrialModePickerEntersEveryMode(t *testing.T) {
 			press(t, a, "enter")
 			view(a)
 			if got := a.r.BaseMode(); got != want[c.name] {
-				t.Fatalf("%s: mode %q hover %v focus %q col %d cell %v", c.name, got, a.hover.path, a.r.Focus, a.data.list.Column(), a.dataCell())
+				t.Fatalf("%s: mode %q hover %v focus %q col %d cell %v", c.name, got, a.hover.path, a.r.FocusID(), a.data.list.Column(), a.dataCell())
 			}
 		})
 	}

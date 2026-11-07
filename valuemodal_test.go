@@ -95,8 +95,8 @@ func TestValueModalEditsACell(t *testing.T) {
 	press(t, a, "l", "l") // name
 	before := view(a)
 	press(t, a, "r")
-	if a.r.TopModal() != valueEditorID || a.r.Focus != valueFieldID || a.r.Mode.Name != "insert" {
-		t.Fatalf("r: modal %q focus %q mode %q", a.r.TopModal(), a.r.Focus, a.r.Mode.Name)
+	if a.r.TopModal() != valueEditorID || a.r.FocusID() != valueFieldID || a.r.CurrentMode().Name != "insert" {
+		t.Fatalf("r: modal %q focus %q mode %q", a.r.TopModal(), a.r.FocusID(), a.r.CurrentMode().Name)
 	}
 	if sel := selected(a); sel != "beta" {
 		t.Fatalf("r did not select the text: %q", sel)
@@ -120,8 +120,8 @@ func TestValueModalEditsACell(t *testing.T) {
 	if got := field(t, a, ".items[1].name"); got != "42" {
 		t.Fatalf("set: %s", got)
 	}
-	if a.r.TopModal() != "" || a.r.Mode.Name != "table" || a.data.Selected() != 1 || a.data.list.Column() != 2 {
-		t.Fatalf("after enter: modal %q mode %q row %d column %d", a.r.TopModal(), a.r.Mode.Name, a.data.Selected(), a.data.list.Column())
+	if a.r.TopModal() != "" || a.r.CurrentMode().Name != "table" || a.data.Selected() != 1 || a.data.list.Column() != 2 {
+		t.Fatalf("after enter: modal %q mode %q row %d column %d", a.r.TopModal(), a.r.CurrentMode().Name, a.data.Selected(), a.data.list.Column())
 	}
 	if len(a.rs.patches) != 1 {
 		t.Fatalf("%d patches, want 1", len(a.rs.patches))
@@ -131,8 +131,8 @@ func TestValueModalEditsACell(t *testing.T) {
 	press(t, a, "r")
 	typeText(t, a, "gone")
 	press(t, a, "esc")
-	if a.r.TopModal() != valueEditorID || a.r.Mode.Name != "normal" || !strings.Contains(view(a), "value  gone") {
-		t.Fatalf("esc after typing: modal %q mode %q\n%s", a.r.TopModal(), a.r.Mode.Name, view(a))
+	if a.r.TopModal() != valueEditorID || a.r.CurrentMode().Name != "normal" || !strings.Contains(view(a), "value  gone") {
+		t.Fatalf("esc after typing: modal %q mode %q\n%s", a.r.TopModal(), a.r.CurrentMode().Name, view(a))
 	}
 	press(t, a, "q")
 	if got := field(t, a, ".items[1].name"); got != "42" || len(a.rs.patches) != 1 || a.r.TopModal() != "" {
@@ -201,8 +201,8 @@ func TestValueModalEditsASubTableCell(t *testing.T) {
 	}
 	before := view(a)
 	press(t, a, "r")
-	if a.r.Focus != valueFieldID || selected(a) != "Austin" {
-		t.Fatalf("r: focus %q selected %q", a.r.Focus, selected(a))
+	if a.r.FocusID() != valueFieldID || selected(a) != "Austin" {
+		t.Fatalf("r: focus %q selected %q", a.r.FocusID(), selected(a))
 	}
 	assertBehind(t, before, view(a), "[2].address.city")
 	typeText(t, a, "Lyon")
@@ -215,8 +215,8 @@ func TestValueModalEditsASubTableCell(t *testing.T) {
 	}
 	// K renames the line's key, o adds a key and value beside it.
 	press(t, a, "K")
-	if a.r.Focus != valueKeyID || selected(a) != "city" {
-		t.Fatalf("K: focus %q selected %q", a.r.Focus, selected(a))
+	if a.r.FocusID() != valueKeyID || selected(a) != "city" {
+		t.Fatalf("K: focus %q selected %q", a.r.FocusID(), selected(a))
 	}
 	press(t, a, "esc", "esc") // normal, then leave: the key unchanged is no edit
 	if !a.hoverIn() || a.r.TopModal() != "" {
@@ -236,8 +236,8 @@ func TestValueModalAddsAKeyAndValue(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	onData(t, a, ".", "name")
 	press(t, a, "o")
-	if a.r.Focus != valueKeyID || selected(a) != "new-key" {
-		t.Fatalf("o: focus %q selected %q", a.r.Focus, selected(a))
+	if a.r.FocusID() != valueKeyID || selected(a) != "new-key" {
+		t.Fatalf("o: focus %q selected %q", a.r.FocusID(), selected(a))
 	}
 	frame := view(a)
 	for _, want := range []string{". · add after name", "key    new-key", "value  null", "enter next"} {
@@ -252,12 +252,12 @@ func TestValueModalAddsAKeyAndValue(t *testing.T) {
 	press(t, a, "ctrl+u")
 	typeText(t, a, "nick")
 	press(t, a, "tab")
-	if a.r.Focus != valueFieldID || selected(a) != "null" {
-		t.Fatalf("tab: focus %q selected %q", a.r.Focus, selected(a))
+	if a.r.FocusID() != valueFieldID || selected(a) != "null" {
+		t.Fatalf("tab: focus %q selected %q", a.r.FocusID(), selected(a))
 	}
 	press(t, a, "shift+tab")
-	if a.r.Focus != valueKeyID || string(a.vedit.in.Text) != "nick" {
-		t.Fatalf("shift+tab: focus %q text %q", a.r.Focus, a.vedit.in.Text)
+	if a.r.FocusID() != valueKeyID || string(a.vedit.in.Text) != "nick" {
+		t.Fatalf("shift+tab: focus %q text %q", a.r.FocusID(), a.vedit.in.Text)
 	}
 	press(t, a, "enter")
 	typeText(t, a, "nj")
@@ -274,8 +274,8 @@ func TestValueModalAddsAKeyAndValue(t *testing.T) {
 	// O on an array row asks the value alone, before the row.
 	onData(t, a, ".items", ".items[1]")
 	press(t, a, "O")
-	if a.r.Focus != valueFieldID || !strings.Contains(view(a), ".items · add before [1]") {
-		t.Fatalf("O on an item: focus %q\n%s", a.r.Focus, view(a))
+	if a.r.FocusID() != valueFieldID || !strings.Contains(view(a), ".items · add before [1]") {
+		t.Fatalf("O on an item: focus %q\n%s", a.r.FocusID(), view(a))
 	}
 	typeText(t, a, `{"id": 9}`)
 	press(t, a, "enter")
@@ -292,8 +292,8 @@ func TestValueModalRenameNumbersATakenKey(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	onData(t, a, ".", "name")
 	press(t, a, "K")
-	if a.r.Focus != valueKeyID || selected(a) != "name" || !strings.Contains(view(a), ".name · rename key") {
-		t.Fatalf("K: focus %q selected %q\n%s", a.r.Focus, selected(a), view(a))
+	if a.r.FocusID() != valueKeyID || selected(a) != "name" || !strings.Contains(view(a), ".name · rename key") {
+		t.Fatalf("K: focus %q selected %q\n%s", a.r.FocusID(), selected(a), view(a))
 	}
 	typeText(t, a, "version")
 	if !strings.Contains(view(a), `· renames to the key "version-2"`) {
@@ -335,8 +335,8 @@ func TestValueModalEditsAContainerOnSeveralLines(t *testing.T) {
 		t.Fatal("enter left the several-line input")
 	}
 	press(t, a, "backspace", "esc")
-	if a.r.Mode.Name != "normal" || a.r.TopModal() != valueEditorID {
-		t.Fatalf("esc: mode %q modal %q", a.r.Mode.Name, a.r.TopModal())
+	if a.r.CurrentMode().Name != "normal" || a.r.TopModal() != valueEditorID {
+		t.Fatalf("esc: mode %q modal %q", a.r.CurrentMode().Name, a.r.TopModal())
 	}
 	press(t, a, "enter")
 	if got := field(t, a, ".items[0].owner"); got != `{"name":"ann","email":"ann@example.com"}` || len(a.rs.patches) != 0 {
@@ -388,13 +388,13 @@ func TestValueEditorInlineSetting(t *testing.T) {
 	inlineEditor(t, a)
 	onData(t, a, ".", "version")
 	press(t, a, "r")
-	if a.r.TopModal() != "" || a.r.Focus != valueInputID || !strings.Contains(view(a), "version (number): 2") {
-		t.Fatalf("inline: modal %q focus %q\n%s", a.r.TopModal(), a.r.Focus, view(a))
+	if a.r.TopModal() != "" || a.r.FocusID() != valueInputID || !strings.Contains(view(a), "version (number): 2") {
+		t.Fatalf("inline: modal %q focus %q\n%s", a.r.TopModal(), a.r.FocusID(), view(a))
 	}
 	typeText(t, a, "3")
 	press(t, a, "esc")
-	if a.r.Focus != valueInputID || a.r.Mode.Name != "normal" || field(t, a, ".version") != "2" {
-		t.Fatalf("inline esc: focus %q mode %q (normal mode, the text kept, nothing set)", a.r.Focus, a.r.Mode.Name)
+	if a.r.FocusID() != valueInputID || a.r.CurrentMode().Name != "normal" || field(t, a, ".version") != "2" {
+		t.Fatalf("inline esc: focus %q mode %q (normal mode, the text kept, nothing set)", a.r.FocusID(), a.r.CurrentMode().Name)
 	}
 	press(t, a, "esc")
 	if got := field(t, a, ".version"); got != "3" {

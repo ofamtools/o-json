@@ -109,11 +109,11 @@ type place struct {
 
 func (a *App) place() place {
 	p := place{original: a.original, row: max(0, a.data.Selected()), col: a.data.list.Column()}
-	anc := a.r.Ancestry(a.r.Focus)
+	anc := a.r.Ancestry(a.r.FocusID())
 	switch {
 	case slices.Contains(anc, dataID):
 		p.focus = dataID
-	case a.sideOf(a.r.Focus) == rsTreeID:
+	case a.sideOf(a.r.FocusID()) == rsTreeID:
 		p.focus = rsTreeID
 	case slices.Contains(anc, treeID):
 		p.focus = treeID
