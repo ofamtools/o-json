@@ -91,18 +91,18 @@ func TestOpenWithAPath(t *testing.T) {
 	}
 }
 
-// e without a path opens the path chooser directly (its one missing
+// e without a path opens the path picker directly (its one missing
 // argument is a path: ochazuke's forms.single-path); typing finds a file
 // beside the current one, and picking it opens the file.
 func TestOpenWithoutAPathOpensTheForm(t *testing.T) {
 	a := empty(t)
 	viewerDo(t, a, "open", ochazuke.Arguments{"path": sample})
-	finish(a, Press(a.m, "e")) // the folder's listing is the chooser's job
+	finish(a, Press(a.m, "e")) // the folder's listing is the picker's job
 	settle(a)
 	if a.r.TopModal() != "path-chooser" {
 		t.Fatalf("e: modal %q", a.r.TopModal())
 	}
-	// The field is a path: the chooser starts in the open file's folder
+	// The field is a path: the picker starts in the open file's folder
 	// and its recent source is o-json's recent list (read with the file,
 	// off the loop).
 	if p := a.r.Operations[a.r.CanonicalKey("viewer.open")].Parameters["path"]; p.Type != ochazuke.PathParameterType {
@@ -303,7 +303,7 @@ func TestBracketedPasteOpensBuffer(t *testing.T) {
 	}
 }
 
-// e, w and :w (one path parameter) open ochazuke's path chooser directly,
+// e, w and :w (one path parameter) open ochazuke's path picker directly,
 // not the args form first (ochazuke v0.46.0, forms.single-path).
 func TestPathVerbsOpenTheChooser(t *testing.T) {
 	for _, keys := range [][]string{{"e"}, {"w"}, {":", "w", "enter"}} {

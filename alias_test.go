@@ -55,7 +55,7 @@ func TestAliases(t *testing.T) {
 			t.Fatalf("%s with no path: %v modal %q", word, err, a.r.TopModal())
 		}
 	}
-	// :w! with no path opens the path chooser at once (ochazuke's
+	// :w! with no path opens the path picker at once (ochazuke's
 	// forms.single-path), keeping the preset force: picking the existing
 	// file replaces it without asking.
 	press(t, a, "<", "<")

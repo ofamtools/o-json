@@ -33,7 +33,7 @@
     {"quit": true}
   ],
   "notes": [
-    {"after": 1, "keys": "e", "note": "o-json with no file says how to open one; e opens the path chooser"},
+    {"after": 1, "keys": "e", "note": "o-json with no file says how to open one; e opens the path picker"},
     {"after": 3, "keys": "ctrl+o type \"orders\"", "note": "ctrl+o switches to the recent files; typing narrows them"},
     {"after": 5, "keys": "enter job viewer.open", "note": "enter opens it: one minified line becomes a structure tree; the root object shows its two keys"},
     {"after": 6, "keys": "j", "note": "j onto .data: the data pane shows the 25 orders as a table"},

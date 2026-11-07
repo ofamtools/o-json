@@ -46,7 +46,7 @@
     {"after": 26, "keys": "type \"zod\" tab type \"^3.23.8\" enter", "note": "type the key, tab to the value, type it, enter"},
     {"after": 29, "keys": "s i o", "note": "s i o sorts the object's keys (a value patch, one undo step)"},
     {"after": 31, "keys": "esc D", "note": "esc leaves EDIT; D shows the fields: react, react-dom, zod in order (the one-row view keeps its columns where they were)"},
-    {"after": 35, "keys": "w type \"package.edited.json\" enter job restructure.write", "note": "w writes the edited document to a new file next to the original (the path chooser starts in its folder); the original is never touched"},
+    {"after": 35, "keys": "w type \"package.edited.json\" enter job restructure.write", "note": "w writes the edited document to a new file next to the original (the path picker starts in its folder); the original is never touched"},
     {"after": 37, "keys": "i x", "note": "one more edit: i, x deletes react (the field under the cursor)"},
     {"after": 38, "keys": "q", "note": "q: an edit no write saved, so it asks"},
     {"after": 39, "keys": "n", "note": "n stays"},

@@ -7,7 +7,7 @@
   "height": 32,
   "values": {
     "modes.edit-gate": true,
-    "chooser.remember-source": false
+    "picker.remember-source": false
   },
   "setup": [
     "e",
@@ -21,29 +21,29 @@
     },
     "e",
     {
-      "job": "ochazuke.chooser.load"
+      "job": "ochazuke.picker.load"
     }
   ],
   "actions": [
     {
       "label": "Keep the current document",
-      "caption": "esc closes the chooser and keeps the open document. Use it when you decide against switching files.",
+      "caption": "esc closes the picker and keeps the open document. Use it when you decide against switching files.",
       "keys": [
         "esc"
       ],
-      "id": "ochazuke.chooser.cancel",
+      "id": "ochazuke.picker.cancel",
       "expect": {
         "mode": "shape"
       }
     },
     {
       "label": "Choose the previous file",
-      "caption": "ctrl+j moves down once; ctrl+k moves back up. Use it to correct a choice without closing the chooser.",
+      "caption": "ctrl+j moves down once; ctrl+k moves back up. Use it to correct a choice without closing the picker.",
       "keys": [
         "ctrl+j",
         "ctrl+k"
       ],
-      "id": "ochazuke.chooser.move {\"delta\":-1}",
+      "id": "ochazuke.picker.move {\"delta\":-1}",
       "expect": {
         "mode": "insert"
       }
@@ -54,7 +54,7 @@
       "keys": [
         "ctrl+j"
       ],
-      "id": "ochazuke.chooser.move {\"delta\":1}",
+      "id": "ochazuke.picker.move {\"delta\":1}",
       "expect": {
         "mode": "insert"
       }
@@ -65,7 +65,7 @@
       "keys": [
         "ctrl+o"
       ],
-      "id": "ochazuke.chooser.next-source",
+      "id": "ochazuke.picker.next-source",
       "expect": {
         "mode": "insert",
         "contains": [
@@ -82,10 +82,10 @@
         },
         "ctrl+l",
         {
-          "job": "ochazuke.chooser.load"
+          "job": "ochazuke.picker.load"
         }
       ],
-      "id": "ochazuke.chooser.open",
+      "id": "ochazuke.picker.into",
       "expect": {
         "mode": "insert",
         "contains": [
@@ -96,7 +96,7 @@
     },
     {
       "label": "Open the highlighted file",
-      "caption": "Type nested, then alt+enter picks that JSON file. The chooser closes and o-json shows its structure.",
+      "caption": "Type nested, then alt+enter picks that JSON file. The picker closes and o-json shows its structure.",
       "keys": [
         {
           "type": "nested"
@@ -106,7 +106,7 @@
           "job": "viewer.open"
         }
       ],
-      "id": "ochazuke.chooser.pick",
+      "id": "ochazuke.picker.pick",
       "expect": {
         "mode": "shape",
         "contains": [
@@ -117,11 +117,12 @@
     },
     {
       "label": "Choose the previous source",
-      "caption": "alt+o cycles backward through file sources. Use the typed-path source when you already know the filename.",
+      "caption": "alt+o cycles backward through the file sources: find, then typed. Use the typed-path source when you already know the filename.",
       "keys": [
+        "alt+o",
         "alt+o"
       ],
-      "id": "ochazuke.chooser.previous-source",
+      "id": "ochazuke.picker.previous-source",
       "expect": {
         "mode": "insert",
         "contains": [
@@ -138,14 +139,14 @@
         },
         "ctrl+l",
         {
-          "job": "ochazuke.chooser.load"
+          "job": "ochazuke.picker.load"
         },
         "alt+up",
         {
-          "job": "ochazuke.chooser.load"
+          "job": "ochazuke.picker.load"
         }
       ],
-      "id": "ochazuke.chooser.up",
+      "id": "ochazuke.picker.up",
       "expect": {
         "mode": "insert"
       }
@@ -200,7 +201,7 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; ctrl+o shows our recent sample files."
     },
     {
       "after": 7,

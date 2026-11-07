@@ -23,7 +23,7 @@ Sleep 2s
 Show
 Sleep 1s
 
-# The empty document names the keys that fill it. e opens the path chooser.
+# The empty document names the keys that fill it. e opens the path picker.
 Sleep 1.5s
 Type "e"
 Sleep 1.5s

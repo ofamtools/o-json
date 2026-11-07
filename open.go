@@ -309,7 +309,7 @@ func (a *App) stateDir() string {
 
 func (a *App) recentSize() int { return a.r.Settings().Int(settingRecent) }
 
-// LoadRecent reads the recent list for the path chooser; the viewer runs
+// LoadRecent reads the recent list for the path picker; the viewer runs
 // it before the loop starts.
 func (a *App) LoadRecent() { a.recent = readRecent(a.stateDir(), a.recentSize()) }
 
@@ -427,7 +427,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 		Verb("files", func(c ochazuke.Ctx) ochazuke.Result {
 			state, size, current := a.stateDir(), a.recentSize(), a.Path
 			return ochazuke.Pending(func(context.Context) (any, error) { return files(state, size, current), nil })
-		}, "The recent files (newest first), then the files in the current file's folder: a choices source for an actions.json row or the palette (viewer.open itself takes a path, through the path chooser)").Fetch().
+		}, "The recent files (newest first), then the files in the current file's folder: a choices source for an actions.json row or the palette (viewer.open itself takes a path, through the path picker)").Fetch().
 		Verb("recent", func(c ochazuke.Ctx) ochazuke.Result {
 			state, size := a.stateDir(), a.recentSize()
 			return ochazuke.Pending(func(context.Context) (any, error) { return readRecent(state, size), nil })
@@ -485,8 +485,8 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	})
 	path := ochazuke.Parameter{Type: ochazuke.PathParameterType, New: true, Required: true, Description: "the file to write, e.g. NAME.json"}
 	params("viewer.open", map[string]ochazuke.Parameter{"path": {Type: ochazuke.PathParameterType, Required: true,
-		Description: "the JSON file (- is stdin); the path chooser browses the open file's folder, the recent files and a typed path"}})
-	// The path chooser starts in the open file's folder and offers
+		Description: "the JSON file (- is stdin); the path picker browses the open file's folder, the recent files and a typed path"}})
+	// The path picker starts in the open file's folder and offers
 	// o-json's recent list (no I/O: the list read before the loop and
 	// after each read).
 	r.SetPathBase(func(ochazuke.PathPick) string {
@@ -546,7 +546,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 
 // docVerbs are the doc noun's verbs that are the viewer's document verbs
 // under the document's name: one operation each (AliasAction), so the
-// handler, the parameters (doc.open's path chooser), the confirm and the
+// handler, the parameters (doc.open's path picker), the confirm and the
 // history are the viewer verb's. doc.open {path} replaces the open
 // document the way viewer.open does, asking first (viewer.discard) when
 // the restructure has edits no write saved.

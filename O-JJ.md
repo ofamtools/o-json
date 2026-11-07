@@ -220,7 +220,7 @@ answer.
 | `i`, `esc` | `:help i` | Similar: `i` enters EDIT on the data pane; the value keys need it. |
 | `r` | `:help r` | Different: edits the whole value in the value editor. |
 | `x` | `:help x` | Different: deletes the value under the cursor. |
-| `g m` | n/a | o-jj's mode chooser; fuzzy by name. |
+| `g m` | n/a | o-jj's mode picker; fuzzy by name. |
 | `g r` | n/a (`:help gr` is virtual replace) | The document in `$EDITOR`, as `:!` would. |
 | `d{motion}`, `y{motion}`, `c{motion}` | `:help operator` | Similar: the motions are rows (`j`, `k`). |
 | `iw`, `aw`, `i"` | `:help text-objects` | Similar: JSON's things (`iv ak ip ao ic ...`). |
@@ -290,4 +290,4 @@ answer.
 - Still needs ochazuke: a lower-case badge tag (`SEARCH · substr`), and
   `Input.SelectText` keeping an insert-like mode.
 - `:mode` cannot be a bare alias while ochazuke owns the `mode` noun;
-  `:viewer mode` opens the chooser.
+  `:viewer mode` opens the picker.

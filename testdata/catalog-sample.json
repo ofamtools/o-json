@@ -3,12 +3,12 @@
   "name": "o-json",
   "version": "v0.4.6-0.20261030060112-c1125da27b28",
   "aliases": {
-    "__chooser-state": "ochazuke.__chooser-state",
+    "__picker-state": "ochazuke.__picker-state",
     "actions": "ochazuke.actions",
     "binding": "ochazuke.binding",
     "bindings": "ochazuke.bindings",
     "bindings-help": "ochazuke.bindings-help",
-    "chooser": "ochazuke.chooser",
+    "picker": "ochazuke.picker",
     "completion": "ochazuke.completion",
     "config": "ochazuke.config",
     "confirm": "ochazuke.confirm",
@@ -95,7 +95,7 @@
       ]
     },
     {
-      "name": "ochazuke.chooser",
+      "name": "ochazuke.picker",
       "pin": "insert",
       "verbs": [
         {
@@ -149,7 +149,7 @@
   ],
   "bindings": [
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "pattern": "printable",
       "request": {
         "verb": "insert",
@@ -161,7 +161,7 @@
       "hidden": true
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "pattern": "paste",
       "request": {
         "verb": "insert",
@@ -173,77 +173,77 @@
       "hidden": true
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "keys": "alt+enter",
       "request": {
         "verb": "pick",
-        "noun": "ochazuke.chooser"
+        "noun": "ochazuke.picker"
       }
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "keys": "alt+up",
       "request": {
         "verb": "up",
-        "noun": "ochazuke.chooser"
+        "noun": "ochazuke.picker"
       }
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "keys": "backspace",
       "request": {
         "verb": "up",
-        "noun": "ochazuke.chooser"
+        "noun": "ochazuke.picker"
       },
-      "when": "chooser-up-empty"
+      "when": "picker-up-empty"
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "keys": "ctrl+j",
       "request": {
         "verb": "move",
-        "noun": "ochazuke.chooser",
+        "noun": "ochazuke.picker",
         "args": {
           "delta": 1
         }
       }
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "keys": "ctrl+k",
       "request": {
         "verb": "move",
-        "noun": "ochazuke.chooser",
+        "noun": "ochazuke.picker",
         "args": {
           "delta": -1
         }
       }
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "keys": "ctrl+l",
       "request": {
         "verb": "open",
-        "noun": "ochazuke.chooser"
+        "noun": "ochazuke.picker"
       }
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "keys": "ctrl+n",
       "request": {
         "verb": "move",
-        "noun": "ochazuke.chooser",
+        "noun": "ochazuke.picker",
         "args": {
           "delta": 1
         }
       }
     },
     {
-      "noun": "ochazuke.chooser",
+      "noun": "ochazuke.picker",
       "keys": "ctrl+p",
       "request": {
         "verb": "move",
-        "noun": "ochazuke.chooser",
+        "noun": "ochazuke.picker",
         "args": {
           "delta": -1
         }

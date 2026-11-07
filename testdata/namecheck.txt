@@ -255,6 +255,7 @@ values.go	App.accept	case	"edit"	1
 values.go	App.accept	case	"key"	1
 values.go	App.accept	case	"rename"	1
 values.go	App.registerValueVerbs	compare	"array"	1
+values.go	App.registerValueVerbs	compare	"current"	2	rebuild-edit-mode enum value of the value editor (current, queue or previous), not the library parameter (ochazuke v0.96.0 added the picker.pick argument current)
 values.go	App.registerValueVerbs	cyclo	"-"	34
 values.go	App.resolveQueued	compare	"object"	1
 values.go	App.valueEditMode	case	"previous"	1

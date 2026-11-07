@@ -30,7 +30,7 @@
     {"quit": true}
   ],
   "notes": [
-    {"after": 3, "keys": ": type \"e\" enter", "note": "the Vim way in: :e opens the path chooser"},
+    {"after": 3, "keys": ": type \"e\" enter", "note": "the Vim way in: :e opens the path picker"},
     {"after": 6, "keys": "ctrl+o enter job viewer.open", "note": "ctrl+o to the recent files, enter opens the newest"},
     {"after": 8, "keys": "/ type \"refunded\"", "note": "/ opens the search line (SEARCH · SUBSTR); the hits show as you type"},
     {"after": 9, "keys": "enter", "note": "enter keeps the hits as the Results view and moves into it (SEARCH)"},

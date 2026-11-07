@@ -52,7 +52,7 @@ func (a *App) registerVerbs() {
 	}
 
 	r.Define("viewer").
-		Verb("mode", func(ochazuke.Ctx) ochazuke.Result { return done(a.openModePicker()) }, "Choose a mode by name (g m, :viewer mode); the chooser shows each mode's purpose and entry key").
+		Verb("mode", func(ochazuke.Ctx) ochazuke.Result { return done(a.openModePicker()) }, "Choose a mode by name (g m, :viewer mode); the picker shows each mode's purpose and entry key").
 		Verb("load", func(c ochazuke.Ctx) ochazuke.Result {
 			p := ochazuke.StringArg(c.Args, "path", a.Path)
 			if p == "" {

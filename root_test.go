@@ -205,7 +205,7 @@ func TestForceWrite(t *testing.T) {
 	cleared(t, a) // the page opens on the copy; build from nothing
 	sendPaths(t, a, ".name")
 	want := "{\n  \"name\": \"o-json sample\"\n}\n"
-	// W without a path opens the path chooser, as w does.
+	// W without a path opens the path picker, as w does.
 	press(t, a, "W")
 	if a.r.TopModal() != "path-chooser" {
 		t.Fatalf("W: modal %q", a.r.TopModal())

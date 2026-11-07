@@ -25,7 +25,7 @@ You can open a file, read stdin, or start with nothing and pick a file later. Us
 1. Open a file: `o json sample.json`.
 2. Or read stdin: `curl -s https://… | o json`. (`o json -` reads stdin too.)
 3. Or start empty: `o-json`. The top line reads `[no file]  ·  e open a file  ·  p paste JSON  ·  M restructure`, and the data pane says `No document is open.` with the same keys.
-4. Press `e` (or `: doc open`) to open a file. The path chooser has three sources: `browse` (the current folder), `recent` (files you opened before) and `typed` (type a path). `ctrl+o` switches source (`alt+o` goes back). Type to narrow the list (`tab` cycles how the text matches: substring, fuzzy or regex), then press `enter`.
+4. Press `e` (or `: doc open`) to open a file. The path picker has three sources: `browse` (the current folder), `recent` (files you opened before) and `typed` (type a path). `ctrl+o` switches source (`alt+o` goes back). Type to narrow the list (`tab` cycles how the text matches: substring, fuzzy or regex), then press `enter`.
 5. Or press `p` to paste JSON from the system clipboard. Pasting into the terminal works too: the pasted JSON becomes the document. (`p` pastes a document only in the empty document and the original view, after `T`. In the edited view, `p` puts things: chapters 5 and 6.)
 6. `R` reads the file again from disk, keeping your place: the same panel, path, row and column.
 
@@ -110,7 +110,7 @@ Value edits work in the data panel of the edited view, which is the default. (Af
 7. `K` renames the key in that one object. If the object already has the key you type, the editor says which name it will use instead (`id-2`), as `o` does.
 8. `y` copies the value under the cursor (it also goes to the system clipboard, unless `: settings set clipboard none`; then only `"+y` does), and `p` puts it over another value.
 9. `u` undoes and `ctrl+r` redoes, in the table and in the detail.
-10. To save, press `w`, type a new file name in the path chooser, and press `enter`. If the file already exists, `w` asks first. `W` replaces a file without asking. On the file you opened, `W` asks you to confirm once.
+10. To save, press `w`, type a new file name in the path picker, and press `enter`. If the file already exists, `w` asks first. `W` replaces a file without asking. On the file you opened, `W` asks you to confirm once.
 
 **What you'll see:** the breadcrumb gets `[+]` and counts your edits (`1 value edit`), and the structure's title reads `edited [+]`. After a write, the `[+]` goes away. `q` asks before quitting with unsaved edits; `Q` quits without asking.
 
@@ -244,7 +244,7 @@ The keys below are o-json's defaults; your own `bindings.json` may change them, 
 
 | Keys | Does |
 |---|---|
-| `e` | open a file (the path chooser) |
+| `e` | open a file (the path picker) |
 | `p` | paste JSON from the clipboard |
 | `R` | read the file again |
 

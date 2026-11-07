@@ -50,7 +50,7 @@ var cheatSheet = []sheetSection{
 		{"viewer/normal", "app.quit", map[string]any{"force": true}, "quit without asking"},
 	}},
 	{"Open (chapter 1)", []sheetLine{
-		{"viewer/normal", "viewer.open", nil, "open a file (the path chooser)"},
+		{"viewer/normal", "viewer.open", nil, "open a file (the path picker)"},
 		{"viewer/normal", "viewer.paste", nil, "paste JSON from the clipboard"},
 		{"viewer/normal", "viewer.load", nil, "read the file again"},
 	}},

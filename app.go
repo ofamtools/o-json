@@ -29,9 +29,9 @@ type App struct {
 	Path    string // the file being shown or read ("-" is stdin)
 	Loading string // the file being read off the loop, "" when idle
 	LoadErr error
-	// recent is the recent list the path chooser offers (viewer.open's
+	// recent is the recent list the path picker offers (viewer.open's
 	// recent source): read before the loop starts and after each read, on
-	// the read's goroutine, so the chooser does no I/O.
+	// the read's goroutine, so the picker does no I/O.
 	recent []string
 	// qc is the query line's path completion (querycomplete.go).
 	qc completion
@@ -234,6 +234,9 @@ func New() (*App, error) {
 		return nil, err
 	}
 	a.syncDeclaredMode()
+	if err := declarePickers(r); err != nil {
+		return nil, err
+	}
 	return a, nil
 }
 

@@ -34,7 +34,7 @@
     {"after": 15, "keys": "G", "note": "G to the end: the page object closes the file"},
     {"after": 19, "keys": "g g ctrl+w h", "note": "g g back to the top, ctrl+w h to the tree"},
     {"after": 20, "keys": "T", "note": "T: the original document, exactly as read (the edited view would write the restructured document)"},
-    {"after": 22, "keys": "w alt+o", "note": "w writes the shown document; the chooser opens on the recent files, alt+o steps back to browsing the file's folder"},
+    {"after": 22, "keys": "w alt+o", "note": "w writes the shown document; the picker opens on the recent files, alt+o steps back to browsing the file's folder"},
     {"after": 25, "keys": "type \"orders.pretty.json\" enter job viewer.write", "note": "type a new name, enter: written indented, a new file beside the source"},
     {"after": 26, "keys": "T", "note": "T back to the edited view: nothing was edited, so nothing asks on the way out"},
     {"after": 27, "keys": "q", "note": "q quits"}

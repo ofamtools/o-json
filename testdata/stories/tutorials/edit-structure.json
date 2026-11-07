@@ -7,7 +7,7 @@
   "height": 32,
   "values": {
     "modes.edit-gate": true,
-    "chooser.remember-source": false
+    "picker.remember-source": false
   },
   "setup": [
     "e",
@@ -213,7 +213,7 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; ctrl+o shows our recent sample files."
     },
     {
       "after": 7,

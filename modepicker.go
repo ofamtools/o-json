@@ -8,7 +8,7 @@ import (
 	"ofam.dev/ochazuke"
 )
 
-// modeChoices is the trial's mode catalog. The chooser keeps the key and
+// modeChoices is the trial's mode catalog. The picker keeps the key and
 // description alongside the mode so they can be found with one fuzzy query.
 var modeChoices = []struct {
 	name, purpose, enter string
@@ -44,23 +44,23 @@ func (a *App) openModePicker() error {
 	if current == "QUERY" {
 		current = "JQ"
 	}
-	rows := make([]ochazuke.ChooserRow, 0, len(modeChoices))
+	rows := make([]ochazuke.PickerRow, 0, len(modeChoices))
 	for _, choice := range modeChoices {
 		colour := trialModeAccents[strings.ToLower(choice.name)][1]
-		row := ochazuke.ChooserRow{
+		row := ochazuke.PickerRow{
 			ID: choice.name, Label: choice.name, Data: choice,
 			Cells: []string{choice.name, colour, choice.purpose, choice.enter},
 		}
 		if choice.name == current {
-			rows = append([]ochazuke.ChooserRow{row}, rows...)
+			rows = append([]ochazuke.PickerRow{row}, rows...)
 		} else {
 			rows = append(rows, row)
 		}
 	}
-	_, err := a.r.OpenChooser(ochazuke.ChooserSpec{
+	_, err := a.r.OpenPicker(ochazuke.PickerSpec{
 		Kind: modeChooser, Title: "Modes", Rows: rows,
-		Filter: func(q string, row ochazuke.ChooserRow) bool { return modeFuzzy(q, row.Label) },
-		Choose: func(row ochazuke.ChooserRow) ochazuke.Result { return a.gotoMode(row.ID) },
+		Filter: func(q string, row ochazuke.PickerRow) bool { return modeFuzzy(q, row.Label) },
+		Choose: func(row ochazuke.PickerRow) ochazuke.Result { return a.gotoMode(row.ID) },
 	})
 	return err
 }

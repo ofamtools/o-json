@@ -7,7 +7,7 @@
   "height": 32,
   "values": {
     "modes.edit-gate": true,
-    "chooser.remember-source": false
+    "picker.remember-source": false
   },
   "setup": [
     "e",
@@ -102,15 +102,16 @@
     },
     {
       "label": "Write a new formatted copy",
-      "caption": "w opens the output chooser; switch to the typed path, write original.pretty.json, and enter. Make a readable copy while preserving the source.",
+      "caption": "w opens the output picker; switch to the typed path, write original.pretty.json, and enter. Make a readable copy while preserving the source.",
       "keys": [
         "w",
+        "alt+o",
         "alt+o",
         {
           "type": "original.pretty.json"
         },
         {
-          "job": "ochazuke.chooser.load"
+          "job": "ochazuke.picker.load"
         },
         "enter",
         {
@@ -138,7 +139,7 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; ctrl+o shows our recent sample files."
     },
     {
       "after": 9,

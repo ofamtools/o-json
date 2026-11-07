@@ -10,7 +10,7 @@ import (
 )
 
 // The function picker: ctrl+f (in the query line, or in query mode on
-// the structure pane) opens a chooser of jq's builtins, each with its
+// the structure pane) opens a picker of jq's builtins, each with its
 // arity (gojq's builtins/0, so the list follows the engine). A function
 // is written at the anchor with an empty slot (□, an empty chip) per
 // argument, select(□), sub(□; □); in the line the first slot is selected,
@@ -32,28 +32,28 @@ func funcText(f jqFunc) string {
 // openFunctions opens the picker; the chosen function goes in at the
 // anchor (the line's select range, else its cursor or the slot there).
 func (a *App) openFunctions() error {
-	var rows []ochazuke.ChooserRow
+	var rows []ochazuke.PickerRow
 	for _, f := range jqBuiltins() {
 		args := ""
 		if f.Arity > 0 {
 			args = "(" + strings.TrimSuffix(strings.Repeat("f; ", f.Arity), "; ") + ")"
 		}
-		rows = append(rows, ochazuke.ChooserRow{ID: f.String(), Label: f.Name + args, Data: f, Cells: []string{f.Name + args, fmt.Sprintf("%d argument%s", f.Arity, plural(f.Arity))}})
+		rows = append(rows, ochazuke.PickerRow{ID: f.String(), Label: f.Name + args, Data: f, Cells: []string{f.Name + args, fmt.Sprintf("%d argument%s", f.Arity, plural(f.Arity))}})
 	}
 	if len(rows) == 0 {
 		return errors.New("no jq builtins")
 	}
-	_, err := a.r.OpenChooser(ochazuke.ChooserSpec{
+	_, err := a.r.OpenPicker(ochazuke.PickerSpec{
 		Kind: jqFuncChooser, Title: "jq function", Rows: rows,
 		// A name matches from its start or from a word inside it
 		// (down finds ascii_downcase), so sub is not behind gsub; case as
 		// search.case says (smart: IN finds IN and INDEX, in finds in too).
-		Filter: func(q string, row ochazuke.ChooserRow) bool {
+		Filter: func(q string, row ochazuke.PickerRow) bool {
 			q = strings.TrimSpace(q)
 			m := a.r.CaseFor(q)
 			return m.HasPrefix(row.Label, q) || m.Contains(row.Label, "_"+q)
 		},
-		Choose: func(row ochazuke.ChooserRow) ochazuke.Result {
+		Choose: func(row ochazuke.PickerRow) ochazuke.Result {
 			f, _ := row.Data.(jqFunc)
 			return a.queryDone(a.insertFunction(f))
 		},

@@ -60,7 +60,7 @@ type storySeed struct {
 	On   string   `json:"on"`
 	// Files are testdata documents the empty and viewer fixtures copy into the temp
 	// dir and records in the recent list, opening none: the path
-	// chooser's first choices, for a story that opens one (doc.open).
+	// picker's first choices, for a story that opens one (doc.open).
 	Files []string `json:"files"`
 	// Clipboard is fixture text for paste lessons; it never reads the system clipboard.
 	Clipboard string `json:"clipboard,omitempty"`
@@ -234,7 +234,7 @@ func buildEmpty(env monogatari.Env) (monogatari.Built, error) {
 }
 
 // stage copies testdata documents into the temp dir and records them in
-// the recent list (the first named newest), so the path chooser offers
+// the recent list (the first named newest), so the path picker offers
 // them; it opens none.
 func (s *storySession) stage(names []string) error {
 	state, size := s.a.stateDir(), s.a.recentSize()

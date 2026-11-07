@@ -7,7 +7,7 @@
   "height": 24,
   "values": {
     "modes.edit-gate": true,
-    "chooser.remember-source": false
+    "picker.remember-source": false
   },
   "setup": [
     "e",
@@ -573,11 +573,11 @@
     },
     {
       "label": "Choose another document",
-      "caption": "e opens the file chooser. Select another document while keeping the current one until a choice is made.",
+      "caption": "e opens the file picker. Select another document while keeping the current one until a choice is made.",
       "keys": [
         "e",
         {
-          "job": "ochazuke.chooser.load"
+          "job": "ochazuke.picker.load"
         }
       ],
       "id": "viewer.open",
@@ -698,7 +698,7 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file chooser; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; ctrl+o shows our recent sample files."
     },
     {
       "after": 8,

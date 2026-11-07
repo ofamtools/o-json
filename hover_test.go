@@ -426,7 +426,7 @@ func TestHoverChromeKeepsScalarDataPlain(t *testing.T) {
 
 // The row's other keys keep their meaning on a sub-table line: N| goes to
 // cell N, the half and page motions walk the drawn lines, and the list's
-// column chooser and resizing (which act on the row's columns) are not
+// column picker and resizing (which act on the row's columns) are not
 // offered there.
 func TestHoverRowKeysOnASubTableLine(t *testing.T) {
 	a := hoverAt(t, 120, 30, 6)
