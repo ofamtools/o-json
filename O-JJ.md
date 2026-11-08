@@ -196,9 +196,10 @@ answer.
 - `modes.edit-gate` `on`: off lets the value keys answer in TABLE and the structure's edit keys in SHAPE, as in o-json.
 - `search.type` `substring`: the type `/` opens in (`substring`, `fuzzy`, `regex`, `jq`).
 - `raw.editor` empty: the editor command line for `g r`.
-- `raw.pane` `auto`: a tuios window inside tuios, else the foreground; `foreground` always suspends.
+- `raw.pane` `auto`: a pane (`mtm pane open`) inside a daemon pane, else the foreground; `foreground` always suspends.
 - `raw.detach` (an nvim/vim `-c` mapping): `ctrl+a d` in the editor's pane focuses o-jj; empty passes nothing.
-- `raw.pane-grants` `read,write`: the editor window's tuios grants.
+- `raw.pane-grants` `read,write`: the editor pane's grants.
+- `raw.pane-command` `mtm`: the command word of RAW's pane calls (for example `mtm --server default`).
 
 ## Compared with Vim
 
@@ -259,9 +260,9 @@ answer.
   one undo step; an object whose kept keys changed order is one set at
   its path (there is no reorder patch). `R` in the data pane's VISUAL
   sends the selected rows as one array, mapped back item by item (a
-  different item count applies nothing). Inside tuios (`raw.pane auto`)
-  the editor runs in a new tuios window (`tuios new-window … --print-id
-  -- nvim -c <raw.detach> +L file`, grants `raw.pane-grants`); o-jj keeps
+  different item count applies nothing). Inside a daemon pane (`raw.pane auto`)
+  the editor runs in a new pane (`mtm pane open … --command '["nvim",
+  …]'`, the answer's `window_id`; nvim -c <raw.detach> +L file`, grants `raw.pane-grants`); o-jj keeps
   running, the breadcrumb says `RAW running`, `g r` focuses the window,
   the editor's `ctrl+a d` focuses o-jj's pane, and the window's end
   reads the file back. The window runs the editor under `sh`, which

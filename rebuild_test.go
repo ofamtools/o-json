@@ -88,7 +88,7 @@ func TestMain(m *testing.M) {
 	// tests (edit_test.go) and stories turn modes.edit-gate on.
 	editGateDefault = false
 	// RAW's tuios pane (raw.pane auto) must never open a real window
-	// from a test: the tests that drive it fake App.getenv and App.tuios.
+	// from a test: the tests that drive it fake App.getenv and App.mtm.
 	os.Unsetenv("TUIOS_ENV")
 	code := m.Run()
 	if code == 0 && offLoopTries.Load() > 0 && offLoopWindows.Load() == 0 {

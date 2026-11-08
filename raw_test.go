@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"slices"
@@ -131,7 +132,7 @@ func TestRawDiffAndSelection(t *testing.T) {
 	}
 }
 
-// Inside tuios (raw.pane auto) g r opens the editor in a tuios window
+// Inside a daemon pane (raw.pane auto) g r opens the editor in a pane
 // (no foreground), the breadcrumb says RAW running, g r again focuses the
 // window, and the window's end reads the file back as one undo step.
 func TestRawInTuiosPane(t *testing.T) {
@@ -145,17 +146,21 @@ func TestRawInTuiosPane(t *testing.T) {
 	var windowOpen atomic.Bool
 	windowOpen.Store(true)
 	var file string
-	a.tuios = func(args ...string) ([]byte, error) {
-		if args[0] == "get-window" { // the watch's goroutine: touch nothing else
+	a.mtm = func(args ...string) ([]byte, error) {
+		if args[1] == "show" { // the watch's goroutine: touch nothing else
 			if windowOpen.Load() {
 				return []byte("{}"), nil
 			}
 			return nil, errors.New("no window found")
 		}
 		calls = append(calls, args)
-		if args[0] == "new-window" {
-			file = args[len(args)-1]
-			return []byte("win-1\n"), nil
+		if args[1] == "open" {
+			var cmd []string
+			if err := json.Unmarshal([]byte(args[slices.Index(args, "--command")+1]), &cmd); err != nil {
+				t.Errorf("--command is not a JSON array: %v", err)
+			}
+			file = cmd[len(cmd)-1]
+			return []byte(`{"type":"window_created","window_id":"win-1"}`), nil
 		}
 		return nil, nil
 	}
@@ -168,11 +173,12 @@ func TestRawInTuiosPane(t *testing.T) {
 		t.Fatalf("pane: raw %+v calls %v", a.raw, calls)
 	}
 	nw := calls[0]
-	if !slices.Contains(nw, "--grants") || !slices.Contains(nw, "-c") || !strings.Contains(strings.Join(nw, " "), "focus-window', '-s', 'sess', 'me'") {
-		t.Fatalf("new-window argv %v", nw)
+	if i := slices.Index(nw, "--grants"); i < 0 || nw[i+1] != `["read","write"]` || !strings.Contains(strings.Join(nw, " "), `"-c"`) ||
+		!strings.Contains(strings.Join(nw, " "), "['mtm', 'pane', 'switch', '--session', 'sess', '--window', 'me']") {
+		t.Fatalf("pane open argv %v", nw)
 	}
 	rawKey(t, a) // g r again: re-attach
-	if last := calls[len(calls)-1]; last[0] != "focus-window" || last[len(last)-1] != "win-1" {
+	if last := calls[len(calls)-1]; last[1] != "switch" || last[len(last)-1] != "win-1" {
 		t.Fatalf("re-attach %v", last)
 	}
 	b, _ := os.ReadFile(file)
@@ -182,5 +188,23 @@ func TestRawInTuiosPane(t *testing.T) {
 	finish(a, next)
 	if a.raw != nil || len(a.rs.patches) != 1 || strings.Contains(view(a), "RAW running") {
 		t.Fatalf("closed: raw %+v patches %+v", a.raw, a.rs.patches)
+	}
+}
+
+// raw.pane-command is the command word of every pane call, and the
+// default detach command follows it.
+func TestRawPaneCommandSetting(t *testing.T) {
+	a := open(t, "testdata/sample.json", 110, 30)
+	if err := a.r.Settings().Set(settingRawCmd, "mtm --server demo"); err != nil {
+		t.Fatal(err)
+	}
+	if got := a.paneCommand(); !slices.Equal(got, []string{"mtm", "--server", "demo"}) {
+		t.Fatalf("paneCommand %v", got)
+	}
+	if err := a.r.Settings().Set(settingRawCmd, ""); err != nil {
+		t.Fatal(err)
+	}
+	if got := a.paneCommand(); !slices.Equal(got, []string{"mtm"}) {
+		t.Fatalf("empty paneCommand %v", got)
 	}
 }

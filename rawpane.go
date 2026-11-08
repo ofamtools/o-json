@@ -1,8 +1,8 @@
 package main
 
-// RAW in a tuios pane (Design D, raw.pane auto): inside tuios
+// RAW in a daemon pane (Design D, raw.pane auto): inside a pane
 // (TUIOS_ENV=1 with a session and a pane id) g r opens the editor in a
-// new tuios window instead of suspending o-json: the window runs the
+// new pane through mtm (pane.open) instead of suspending o-json: the pane runs the
 // editor on the temp file alone (its process, no shell; it closes when
 // the editor exits), with the grants raw.pane-grants names. o-json keeps
 // running and polls the window; when it is gone the file is read back as
@@ -13,10 +13,12 @@ package main
 // o-json's pane again (detach). raw.pane foreground, or no tuios, runs
 // the editor in the foreground as before.
 //
-// Every tuios call goes through App.tuios (a runner tests replace), and
-// the environment through App.getenv.
+// Every daemon call is an mtm verb (pane open, show, switch, close)
+// through App.mtm (a runner tests replace); the command word is the
+// raw.pane-command setting. The environment goes through App.getenv.
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -31,6 +33,7 @@ const (
 	settingRawPane   = "raw.pane"
 	settingRawDetach = "raw.detach"
 	settingRawGrants = "raw.pane-grants"
+	settingRawCmd    = "raw.pane-command"
 
 	rawPaneAuto       = "auto"
 	rawPaneForeground = "foreground"
@@ -39,14 +42,27 @@ const (
 	// window is still there.
 	rawPanePoll = 300 * time.Millisecond
 
-	rawDetachDefault = `nnoremap <silent> <C-a>d <Cmd>call system(['tuios', 'focus-window', '-s', '{session}', '{pane}'])<CR>`
+	// rawDetachDefault focuses o-json's pane again; {command} is
+	// raw.pane-command as Vim string items.
+	rawDetachDefault = `nnoremap <silent> <C-a>d <Cmd>call system([{command}, 'pane', 'switch', '--session', '{session}', '--window', '{pane}'])<CR>`
 )
 
-// tuiosRunner runs tuios with args and returns its standard output.
-type tuiosRunner func(args ...string) ([]byte, error)
+// mtmRunner runs mtm with args (the verb words after the command word) and
+// returns its standard output.
+type mtmRunner func(args ...string) ([]byte, error)
 
-func runTuios(args ...string) ([]byte, error) {
-	out, err := exec.Command("tuios", args...).Output()
+// paneCommand is raw.pane-command split into words (mtm by default).
+func (a *App) paneCommand() []string {
+	if w := strings.Fields(a.r.Settings().String(settingRawCmd)); len(w) > 0 {
+		return w
+	}
+	return []string{"mtm"}
+}
+
+// runMtm runs the command word(s) of raw.pane-command with args.
+func (a *App) runMtm(args ...string) ([]byte, error) {
+	w := a.paneCommand()
+	out, err := exec.Command(w[0], append(w[1:], args...)...).Output()
 	var ee *exec.ExitError
 	if errors.As(err, &ee) && len(ee.Stderr) > 0 {
 		err = errors.New(strings.TrimSpace(string(ee.Stderr)))
@@ -73,9 +89,10 @@ func (a *App) rawInPane() bool {
 // window and starts watching it.
 func (a *App) runRawPane(c ochazuke.Ctx, argv []string) ochazuke.Result {
 	session, pane, _ := a.tuiosHere()
-	args := []string{"new-window", "raw-" + appName(), "-s", session, "--print-id"}
-	if g := strings.TrimSpace(a.r.Settings().String(settingRawGrants)); g != "" {
-		args = append(args, "--grants", g)
+	args := []string{"pane", "open", "--session", session, "--name", "raw-" + appName()}
+	if g := rawGrants(a.r.Settings().String(settingRawGrants)); g != nil {
+		b, _ := json.Marshal(g)
+		args = append(args, "--grants", string(b))
 	}
 	// The window's process is the editor under sh, which leaves a marker
 	// file when the editor exits: a tuios window may outlive its process,
@@ -84,18 +101,27 @@ func (a *App) runRawPane(c ochazuke.Ctx, argv []string) ochazuke.Result {
 	os.Remove(done)
 	cmd := []string{"sh", "-c", `"$@"; s=$?; : > "$0"; exit $s`, done, argv[0]}
 	if d := strings.TrimSpace(a.r.Settings().String(settingRawDetach)); d != "" {
-		d = strings.NewReplacer("{session}", session, "{pane}", pane).Replace(d)
+		var items []string
+		for _, w := range a.paneCommand() {
+			items = append(items, "'"+strings.ReplaceAll(w, "'", "''")+"'")
+		}
+		d = strings.NewReplacer("{command}", strings.Join(items, ", "), "{session}", session, "{pane}", pane).Replace(d)
 		cmd = append(cmd, "-c", d)
 	}
 	cmd = append(cmd, argv[1:]...)
-	args = append(append(args, "--"), cmd...)
-	out, err := a.tuios(args...)
+	b, _ := json.Marshal(cmd)
+	args = append(args, "--command", string(b))
+	out, err := a.mtm(args...)
 	if err != nil {
-		return ochazuke.Failed(errors.New("raw: tuios new-window: " + err.Error()))
+		return ochazuke.Failed(errors.New("raw: mtm pane open: " + err.Error()))
 	}
-	id := strings.TrimSpace(string(out))
+	var opened struct {
+		WindowID string `json:"window_id"`
+	}
+	_ = json.Unmarshal(out, &opened)
+	id := opened.WindowID
 	if id == "" {
-		return ochazuke.Failed(errors.New("raw: tuios new-window printed no window id"))
+		return ochazuke.Failed(errors.New("raw: mtm pane open answered no window_id"))
 	}
 	a.raw.window = id
 	a.later = append(a.later, a.watchRawPane(session, id, done))
@@ -106,16 +132,16 @@ func (a *App) runRawPane(c ochazuke.Ctx, argv []string) ochazuke.Result {
 // watchRawPane waits for the editor's end: its marker file (then the
 // window is closed), or the window gone (closed by hand).
 func (a *App) watchRawPane(session, id, done string) tea.Cmd {
-	run := a.tuios
+	run := a.mtm
 	return func() tea.Msg {
 		for {
 			time.Sleep(rawPanePoll)
 			if _, err := os.Stat(done); err == nil {
 				os.Remove(done)
-				_, _ = run("close-window", id, "-s", session)
+				_, _ = run("pane", "close", "--session", session, "--window", id)
 				return rawPaneDone{window: id}
 			}
-			if _, err := run("get-window", id, "-s", session); err != nil {
+			if _, err := run("pane", "show", "--session", session, "--window", id); err != nil {
 				return rawPaneDone{window: id}
 			}
 		}
@@ -134,8 +160,8 @@ func (a *App) rawPaneClosed(msg rawPaneDone) {
 // attachRawPane is g r while the editor runs in a pane: focus it.
 func (a *App) attachRawPane(c ochazuke.Ctx) ochazuke.Result {
 	session, _, _ := a.tuiosHere()
-	if _, err := a.tuios("focus-window", "-s", session, a.raw.window); err != nil {
-		return ochazuke.Failed(errors.New("raw: tuios focus-window: " + err.Error()))
+	if _, err := a.mtm("pane", "switch", "--session", session, "--window", a.raw.window); err != nil {
+		return ochazuke.Failed(errors.New("raw: mtm pane switch: " + err.Error()))
 	}
 	c.Info("RAW re-attached")
 	return ochazuke.Done(nil)
@@ -150,23 +176,36 @@ func (a *App) takeLater() []tea.Cmd {
 }
 
 func (a *App) registerRawPane() error {
-	if a.tuios == nil {
-		a.tuios = runTuios
+	if a.mtm == nil {
+		a.mtm = a.runMtm
 	}
 	if a.getenv == nil {
 		a.getenv = os.Getenv
 	}
 	for _, s := range []ochazuke.Setting{
 		{Name: settingRawPane, Type: ochazuke.SettingString, Default: rawPaneAuto, Enum: []string{rawPaneAuto, rawPaneForeground},
-			Description: "Where g r (RAW) runs the editor: auto opens a tuios window when o-json runs in tuios (o-json keeps running; ctrl+a d in the editor comes back, g r goes to it), else the foreground; foreground always suspends o-json while the editor runs"},
+			Description: "Where g r (RAW) runs the editor: auto opens a pane (mtm pane open) when o-json runs in a daemon pane (o-json keeps running; ctrl+a d in the editor comes back, g r goes to it), else the foreground; foreground always suspends o-json while the editor runs"},
 		{Name: settingRawDetach, Type: ochazuke.SettingString, Default: rawDetachDefault,
-			Description: "An ex command passed with -c to the editor in a tuios pane ({session} and {pane} are o-json's): by default ctrl+a d focuses o-json again (nvim, vim); empty passes nothing"},
+			Description: "An ex command passed with -c to the editor in the RAW pane ({command} is raw.pane-command as Vim strings; {session} and {pane} are o-json's): by default ctrl+a d focuses o-json again (nvim, vim); empty passes nothing"},
 		{Name: settingRawGrants, Type: ochazuke.SettingString, Default: "read,write",
-			Description: "The tuios grants of RAW's editor window (new-window --grants); write lets ctrl+a d focus o-json"},
+			Description: "The grants of RAW's editor pane, comma separated (pane open grants); write lets ctrl+a d focus o-json"},
+		{Name: settingRawCmd, Type: ochazuke.SettingString, Default: "mtm",
+			Description: "The command word RAW's pane calls run through, split on spaces: mtm, or for example `mtm --server default` to reach another daemon server"},
 	} {
 		if err := declareOwn(a.r, s); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// rawGrants splits the comma separated raw.pane-grants setting.
+func rawGrants(s string) []string {
+	var out []string
+	for _, g := range strings.Split(s, ",") {
+		if g = strings.TrimSpace(g); g != "" {
+			out = append(out, g)
+		}
+	}
+	return out
 }

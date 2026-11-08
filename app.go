@@ -59,10 +59,10 @@ type App struct {
 	raw *rawSession
 	// sort is s ic: the data pane's table sorted (operate.go).
 	sort *tableSort
-	// tuios runs the tuios command and getenv reads the environment
+	// mtm runs the mtm command and getenv reads the environment
 	// (RAW's pane, rawpane.go); tests replace both. later is commands a
 	// verb leaves for the loop (takeLater).
-	tuios   tuiosRunner
+	mtm     mtmRunner
 	getenv  func(string) string
 	later   []tea.Cmd
 	overlay string

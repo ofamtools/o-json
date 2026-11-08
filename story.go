@@ -149,7 +149,7 @@ func newStorySession(env monogatari.Env) (s *storySession, err error) {
 	// Story keys never attach an editor to the owner's running tuios.
 	// The regular viewer discovers it lazily; stories use no live server.
 	a.getenv = func(string) string { return "" }
-	a.tuios = func(...string) ([]byte, error) { return nil, errors.New("story: no live tuios") }
+	a.mtm = func(...string) ([]byte, error) { return nil, errors.New("story: no live daemon") }
 	// A story with no state of its own still never reaches the user's
 	// state directory (the recent list).
 	if a.r.Config().StateDir == "" {
