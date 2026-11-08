@@ -17,7 +17,7 @@
     {"after": 6, "mode": "nested"},
     {"after": 10, "register": ".data[0].items[1].price"},
     {"after": 11, "mode": "table"},
-    {"after": 15, "contains": ["sorted by total ↑ (a view: the document keeps its order)", " 9  ORD-10…  pending  {1}       [1]    16"]},
+    {"after": 15, "contains": ["sorted by total ↑ (a view: the document keeps its order", " 9  ORD-10…  pending  {1}       [1]    16"]},
     {"after": 17, "contains": ["sorted by total ↓", " 8  ORD-10…  refund…  {2}       [3]    316"]},
     {"after": 20, "contains": ["Table .data  4/25", "row .data[19]"]},
     {"after": 22, "focus": "detail/rows/0", "contains": ["ORD-1020  paid    {2}       [3]    234    2026-10-07T08:00:00Z"]},

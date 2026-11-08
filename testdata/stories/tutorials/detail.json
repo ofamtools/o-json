@@ -68,15 +68,15 @@
     },
     {
       "label": "Copy the selected detail cell",
-      "caption": ":ochazuke.list yank --what cell and enter copies the current cell text. Keep a displayed value handy using a named command as well as the detail view’s y shortcut.",
+      "caption": ":ochazuke.collection yank --what cell and enter copies the current cell text. Keep a displayed value handy using a named command as well as the detail view’s y shortcut.",
       "keys": [
         ":",
         {
-          "type": "ochazuke.list yank --what cell"
+          "type": "ochazuke.collection yank --what cell"
         },
         "enter"
       ],
-      "id": "ochazuke.list.yank {\"what\":\"cell\"}",
+      "id": "ochazuke.collection.yank {\"what\":\"cell\"}",
       "expect": {
         "mode": "normal",
         "register": "ORD-1004"

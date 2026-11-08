@@ -325,7 +325,7 @@
         "l",
         "h"
       ],
-      "id": "ochazuke.list.column {\"delta\":-1}",
+      "id": "ochazuke.collection.column {\"delta\":-1}",
       "expect": {
         "mode": "table"
       }
@@ -336,7 +336,7 @@
       "keys": [
         "l"
       ],
-      "id": "ochazuke.list.column {\"delta\":1}",
+      "id": "ochazuke.collection.column {\"delta\":1}",
       "expect": {
         "mode": "table"
       }
@@ -347,7 +347,7 @@
       "keys": [
         "0"
       ],
-      "id": "ochazuke.list.column {\"to\":\"first\"}",
+      "id": "ochazuke.collection.column {\"to\":\"first\"}",
       "expect": {
         "mode": "table"
       }
@@ -358,7 +358,7 @@
       "keys": [
         "$"
       ],
-      "id": "ochazuke.list.column {\"to\":\"last\"}",
+      "id": "ochazuke.collection.column {\"to\":\"last\"}",
       "expect": {
         "mode": "table"
       }
@@ -370,7 +370,7 @@
         "z",
         "<"
       ],
-      "id": "ochazuke.list.resize-column {\"delta\":-1}",
+      "id": "ochazuke.collection.resize-column {\"delta\":-1}",
       "expect": {
         "mode": "table"
       }
@@ -382,7 +382,7 @@
         "z",
         ">"
       ],
-      "id": "ochazuke.list.resize-column {\"delta\":1}",
+      "id": "ochazuke.collection.resize-column {\"delta\":1}",
       "expect": {
         "mode": "table"
       }

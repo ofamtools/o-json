@@ -47,16 +47,12 @@ func appName() string {
 	return "o-json"
 }
 
-// Main runs one invocation. A first word that is an existing file (or -,
-// stdin) opens it in the viewer even when it shadows a command name; otherwise oden
-// resolves the command words, and anything it does not know (flags, -, a
-// path) reaches the viewer.
+// Main runs one invocation. A first word that names a command (catalog,
+// get, table, setup, ...) runs it, even when a file of that name is in the
+// directory: ./NAME opens the file. Otherwise a first word that is an
+// existing file (or -, stdin) opens it in the viewer, and anything oden does
+// not know (flags, a path) reaches the viewer.
 func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
-	if len(args) > 0 && (args[0] == "-" || isFile(args[0])) {
-		// "-" is stdin, a file word too: oden would resolve it as a
-		// command word and print the usage.
-		return runTUI(args, stdin, stdout, stderr)
-	}
 	app := oden.New(appName(), args, oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
 		oden.WithDefault(func(_ context.Context, args []string) error {
 			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !strings.ContainsAny(args[0], "./") {
@@ -72,6 +68,11 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	app.Add(viewCommand(stdin, stdout, stderr))
 	app.Add(storyCommands()...) // the tester's story command; none in a normal build
 	ocli.Mount(app, newShell(stdin, stdout, stderr))
+	if len(args) > 0 && (args[0] == "-" || isFile(args[0])) && !app.Catalog().Resolve(args[0]).Exact {
+		// "-" is stdin, a file word too: oden would resolve it as a
+		// command word and print the usage.
+		return runTUI(args, stdin, stdout, stderr)
+	}
 	// Mount's help note says every result is JSON, which is true of the doc
 	// noun only; structure, table and get print text.
 	app.HelpText = `Files:

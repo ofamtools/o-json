@@ -6,6 +6,6 @@
   "fixture": "empty",
   "script": ["j"],
   "expect": [
-    {"contains": ["╭━ Structure"], "lacks": ["╭─ Structure"]}
+    {"contains": ["┏━ Structure"], "lacks": ["┌─ Structure"]}
   ]
 }

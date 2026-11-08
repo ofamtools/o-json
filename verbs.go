@@ -92,9 +92,7 @@ func (a *App) registerVerbs() {
 			}
 			return done(a.reshow())
 		}, "Show the selected path's values as indented JSON instead of a table or fields (toggle)").
-		Verb("show", func(c ochazuke.Ctx) ochazuke.Result {
-			return done(a.cycleDataView(ochazuke.IntArg(c.Args, "steps", 1)))
-		}, "Cycle the data pane through table, fields, flat and JSON; remember the view per structure path").
+		Verb("show", a.showView, "Cycle the data pane through table, fields, flat and JSON; remember the view per structure path").
 		Verb("clear", func(ochazuke.Ctx) ochazuke.Result {
 			a.Query, a.Kind = "", ""
 			return done(a.refilter())
@@ -443,4 +441,14 @@ func setRepeatable(r *ochazuke.Runtime, keys ...string) {
 		op.Repeatable = true
 		r.Operations.Set(op)
 	}
+}
+
+// showView is viewer.show: it steps the data pane's view. show presents its
+// answer, so the step answers nothing: the data pane is where the new view
+// appears.
+func (a *App) showView(c ochazuke.Ctx) ochazuke.Result {
+	if err := a.cycleDataView(ochazuke.IntArg(c.Args, "steps", 1)); err != nil {
+		return ochazuke.Failed(err)
+	}
+	return ochazuke.Done(nil)
 }

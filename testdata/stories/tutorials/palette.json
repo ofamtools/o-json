@@ -53,10 +53,10 @@
     },
     {
       "label": "Complete a command name",
-      "caption": "Type viewer vie, then tab completes view. Completion saves typing and shows which verbs are available.",
+      "caption": "Type viewer sho, then tab completes show. Completion saves typing and shows which verbs are available.",
       "keys": [
         {
-          "type": "viewer vie"
+          "type": "viewer sho"
         },
         "tab"
       ],
@@ -64,7 +64,7 @@
       "expect": {
         "mode": "insert",
         "contains": [
-          ": viewer view"
+          ": viewer show"
         ]
       }
     },
@@ -112,10 +112,10 @@
     },
     {
       "label": "Return to an empty command line",
-      "caption": "Run viewer view, reopen, and recall it with up; down returns to the empty command line so you can type something new.",
+      "caption": "Run viewer show, reopen, and recall it with up; down returns to the empty command line so you can type something new.",
       "keys": [
         {
-          "type": "viewer view"
+          "type": "viewer show"
         },
         "enter",
         ":",
@@ -129,10 +129,10 @@
     },
     {
       "label": "Recall a command",
-      "caption": "Run viewer view once, reopen the palette, then up recalls it. Reuse a command without typing it again.",
+      "caption": "Run viewer show once, reopen the palette, then up recalls it. Reuse a command without typing it again.",
       "keys": [
         {
-          "type": "viewer view"
+          "type": "viewer show"
         },
         "enter",
         ":",
@@ -145,10 +145,10 @@
     },
     {
       "label": "Run a named command",
-      "caption": "Type viewer view, then enter runs it. The data view changes just as it does with its bound key.",
+      "caption": "Type viewer show, then enter runs it. The data view changes just as it does with its bound key.",
       "keys": [
         {
-          "type": "viewer view"
+          "type": "viewer show"
         },
         "enter"
       ],

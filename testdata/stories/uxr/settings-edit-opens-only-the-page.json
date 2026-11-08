@@ -5,7 +5,7 @@
   "height": 30,
   "fixture": "viewer",
   "seed": {"doc": "sample.json"},
-  "script": [":", {"type": "settings edit"}, "enter"],
+  "script": [":", {"type": "setting open"}, "enter"],
   "expect": [
     {"modal": "", "page": "__settings"}
   ]
