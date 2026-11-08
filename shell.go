@@ -88,10 +88,10 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 	}
 	results := map[string]string{"doc.structure": "shape", "doc.table": "{path, columns, rows}", "doc.get": "value", "doc.rows": "row lines"}
 	for key, p := range params {
-		op := r.Operations[r.CanonicalKey(key)]
+		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p
 		op.Result = results[key]
-		r.Operations[r.CanonicalKey(key)] = op
+		r.Operations.Set(op)
 	}
 	defineDocStore(r, stdin)
 	sh := ocli.New(r, "o-json", stdin, stdout, stderr)

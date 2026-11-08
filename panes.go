@@ -33,6 +33,13 @@ func (a *App) structureFocused(focus string) bool {
 	return a.tree.List().Focused() || a.rs.tree.List().Focused() || focus == treeID || focus == rsTreeID
 }
 
+// structureDrawn is structureFocused for a renderer: the structure pane as
+// the page is drawn (the lists' DrawnFocused), so a modal open over it keeps
+// the pane's focused border.
+func (a *App) structureDrawn(focus string) bool {
+	return a.tree.List().DrawnFocused() || a.rs.tree.List().DrawnFocused() || a.structureFocused(focus)
+}
+
 // onlyPane is viewer.only, kept as a verb over ochazuke's pane.only and
 // pane.restore (v0.61.0; the keys run those): pane is structure, data,
 // focused or none. With one pane already alone, it restores both.

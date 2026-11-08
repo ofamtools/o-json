@@ -338,12 +338,12 @@ func (a *App) applyRepeatScope() {
 	edit := a.r.Settings().String(settingRepeatScope) == "edit"
 	for _, key := range append([]string{"node.put"}, repeatEdits...) {
 		k := a.r.CanonicalKey(key)
-		op, ok := a.r.Operations[k]
+		op, ok := a.r.Operations.Find(ochazuke.Key(k))
 		if !ok {
 			panic("applyRepeatScope: no operation " + key)
 		}
 		op.Repeatable = key == "node.put" || edit
-		a.r.Operations[k] = op
+		a.r.Operations.Set(op)
 	}
 }
 
@@ -451,9 +451,9 @@ func (a *App) registerPutVerbs() {
 			}
 			return ochazuke.Done(nil)
 		}, "An edit key over a V selection that has nothing to act on (> < g > with no object to nest into or nothing to move out of): visual.at-edge end ends the selection, stay keeps it").When("restructure-selecting")
-	op := r.Operations[r.CanonicalKey("node.put")]
+	op := r.Operations.At(ochazuke.Key(r.CanonicalKey("node.put")))
 	op.Parameters = map[string]ochazuke.Parameter{"before": {Type: "boolean", Description: "put above (P): the previous sibling; on the root, its first child"}}
-	r.Operations[r.CanonicalKey("node.put")] = op
+	r.Operations.Set(op)
 	setHistory(r, ochazuke.HistoryChange, "node.yank", "node.put", "restructure.delete", "restructure.yank")
 	setHistory(r, ochazuke.HistoryAction, "restructure.at-edge")
 }

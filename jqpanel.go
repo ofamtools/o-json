@@ -322,9 +322,9 @@ func (a *App) registerJQPanel() {
 			return a.copyText(c, text, what)
 		}, "Copy the jq panel's selection, or all of it, into the registers (and the system clipboard, as the clipboard setting says)").When("jq-panel-open")
 	params := func(key string, p map[string]ochazuke.Parameter) {
-		op := r.Operations[r.CanonicalKey(key)]
+		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p
-		r.Operations[r.CanonicalKey(key)] = op
+		r.Operations.Set(op)
 	}
 	view := ochazuke.Parameter{Type: "string", Enum: []string{jqPanelProgram, jqPanelMapping}, Description: "jq (the program) or mapping"}
 	params("jq-panel.toggle", map[string]ochazuke.Parameter{"view": view})

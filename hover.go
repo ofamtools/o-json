@@ -672,13 +672,13 @@ func (a *App) registerHover() {
 	setParams(r, "rows.out", map[string]ochazuke.Parameter{"levels": {Type: "string", Enum: []string{"all", "one"}, Description: "all sub-tables (esc) or one level (backspace)"}})
 	setHistory(r, ochazuke.HistoryAction, "rows.out", "rows.show-nested")
 	key := r.CanonicalKey("rows.column")
-	op := r.Operations[key]
+	op := r.Operations.At(ochazuke.Key(key))
 	op.Parameters = map[string]ochazuke.Parameter{
 		"delta": {Type: "integer", Description: "cells to move, negative to the left (default 1)"},
 		"steps": {Type: "integer", Description: "repeat count (default 1)"},
 		"to":    {Type: "string", Enum: []string{"first", "last"}, Description: "the first or last cell instead of delta"},
 		"index": {Type: "integer", Description: "the cell number, 1 the first (a count: 3|), instead of delta"},
 	}
-	r.Operations[key] = op
+	r.Operations.Set(op)
 	setHistory(r, ochazuke.HistoryAction, "rows.column")
 }

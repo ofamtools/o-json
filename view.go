@@ -61,8 +61,8 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	// (PresentationAt), so the panel the modal came from keeps its border.
 	focus := a.drawnFocus()
 	// An empty tree (no document) holds the focus itself, not its list.
-	treeFocused := a.structureFocused(focus)
-	dataFocused := a.data.list.Focused() || focus == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
+	treeFocused := a.structureDrawn(focus)
+	dataFocused := a.data.list.DrawnFocused() || focus == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
 	var left, right ochazuke.Block
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth
@@ -223,7 +223,7 @@ func (a *App) breadcrumb() string {
 		if note := a.origin(s).DuplicateNote(); note != "" && !a.queryShowing() {
 			parts = append(parts, note)
 		}
-		if n := a.dataNode(); n != nil && a.data.list.Focused() {
+		if n := a.dataNode(); n != nil && a.data.list.DrawnFocused() {
 			parts = append(parts, "row "+n.Path())
 		}
 	}
@@ -384,7 +384,7 @@ func wrap(text string, width int) string {
 func (a *App) emptyHint() string {
 	lines := []string{"No document is open.", ""}
 	for _, v := range []struct{ verb, what string }{{"doc.open", "open a JSON file"}, {"doc.paste", "paste JSON from the clipboard"}, {"restructure.open", "build a structure from nothing"}} {
-		key := a.keyFor(a.drawnFocus(), v.verb)
+		key := a.keyForDrawn(v.verb)
 		if key == "" {
 			key = ":" + strings.Replace(v.verb, ".", " ", 1)
 		}
@@ -398,7 +398,7 @@ func (a *App) emptyHint() string {
 func (a *App) emptyCrumb() string {
 	parts := []string{noFile}
 	for _, v := range []struct{ verb, what string }{{"viewer.open", "open a file"}, {"viewer.paste", "paste JSON"}, {"restructure.open", "restructure"}} {
-		if key := a.keyFor(a.drawnFocus(), v.verb); key != "" {
+		if key := a.keyForDrawn(v.verb); key != "" {
 			parts = append(parts, key+" "+v.what)
 		}
 	}

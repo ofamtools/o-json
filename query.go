@@ -293,9 +293,9 @@ func (a *App) registerQuery() error {
 		}, "Wrap the query line's visual selection in brackets: [ ] (collect), { } (an object) or ( ) (group), and go on typing after it").When("query-selecting").
 		Verb("state", func(ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.queryState()) }, "The jq query, its results' count, the error and where it points").Fetch()
 	params := func(key string, p map[string]ochazuke.Parameter) {
-		op := r.Operations[r.CanonicalKey(key)]
+		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p
-		r.Operations[r.CanonicalKey(key)] = op
+		r.Operations.Set(op)
 	}
 	params("jq.set", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "the jq query; empty clears it"}})
 	params("jq.wrap", map[string]ochazuke.Parameter{"open": {Type: "string", Enum: []string{"[", "{", "("}, Description: "the opening bracket; its pair closes"}})

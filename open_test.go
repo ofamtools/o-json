@@ -105,7 +105,7 @@ func TestOpenWithoutAPathOpensTheForm(t *testing.T) {
 	// The field is a path: the picker starts in the open file's folder
 	// and its recent source is o-json's recent list (read with the file,
 	// off the loop).
-	if p := a.r.Operations[a.r.CanonicalKey("viewer.open")].Parameters["path"]; p.Type != ochazuke.PathParameterType {
+	if p := a.r.Operations.At(ochazuke.Key(a.r.CanonicalKey("viewer.open"))).Parameters["path"]; p.Type != ochazuke.PathParameterType {
 		t.Fatalf("path parameter %+v", p)
 	}
 	pick := ochazuke.PathPick{Name: "path"}

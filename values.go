@@ -598,9 +598,9 @@ func (a *App) registerValueVerbs() {
 		return a.vedit != nil && ev.Focus == valueInputID
 	})
 	params := func(key string, p map[string]ochazuke.Parameter) {
-		op := r.Operations[r.CanonicalKey(key)]
+		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p
-		r.Operations[r.CanonicalKey(key)] = op
+		r.Operations.Set(op)
 	}
 	done := func(err error) ochazuke.Result {
 		if err != nil {

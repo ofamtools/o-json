@@ -371,9 +371,9 @@ func (a *App) registerReshapeVerbs() {
 	r := a.r
 	r.Instance(marksID, ochazuke.Kind(marksID))
 	params := func(key string, p map[string]ochazuke.Parameter) {
-		op := r.Operations[r.CanonicalKey(key)]
+		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p
-		r.Operations[r.CanonicalKey(key)] = op
+		r.Operations.Set(op)
 	}
 	node := func(ev ochazuke.KeyEvent) string { return a.focusedNode(ev.Focus) }
 	r.DefineGuard("node-unmarked", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {

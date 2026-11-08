@@ -364,7 +364,7 @@ func (a *App) registerLineVerbs() {
 
 // setParams sets a verb's parameters (the palette's and the CLI's form).
 func setParams(r *ochazuke.Runtime, key string, p map[string]ochazuke.Parameter) {
-	op := r.Operations[r.CanonicalKey(key)]
+	op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 	op.Parameters = p
-	r.Operations[r.CanonicalKey(key)] = op
+	r.Operations.Set(op)
 }

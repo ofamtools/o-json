@@ -167,9 +167,9 @@ func (a *App) registerQueryFunctions() {
 		Verb("previous-slot", func(c ochazuke.Ctx) ochazuke.Result {
 			return a.queryDone(a.previousSlot())
 		}, "Select the query's previous empty argument slot (ctrl+p)").When("query-slot")
-	op := r.Operations[r.CanonicalKey("jq.function")]
+	op := r.Operations.At(ochazuke.Key(r.CanonicalKey("jq.function")))
 	op.Parameters = map[string]ochazuke.Parameter{"name": {Type: "string", Description: "a builtin, name or name/arity; omit to pick one"}}
-	r.Operations[r.CanonicalKey("jq.function")] = op
+	r.Operations.Set(op)
 	setHistory(r, ochazuke.HistoryChange, "jq.function")
 	setHistory(r, ochazuke.HistoryAction, "jq.next-slot", "jq.previous-slot")
 }

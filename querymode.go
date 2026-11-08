@@ -507,9 +507,9 @@ func (a *App) registerQueryMode() error {
 		Verb("undo", edit(func(c ochazuke.Ctx) error { return a.q.in.Undo(max(1, ochazuke.IntArg(c.Args, "steps", 1))) }), "Undo the query's last edit (u)").When("query-structure").
 		Verb("redo", edit(func(c ochazuke.Ctx) error { return a.q.in.Redo(max(1, ochazuke.IntArg(c.Args, "steps", 1)), -1) }), "Redo the query's edit undone (ctrl+r)").When("query-structure")
 	params := func(key string, p map[string]ochazuke.Parameter) {
-		op := r.Operations[r.CanonicalKey(key)]
+		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p
-		r.Operations[r.CanonicalKey(key)] = op
+		r.Operations.Set(op)
 	}
 	params("jq.mode", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"edit", "jq", "query"}, Description: "omit to switch; query is an alias of jq"}})
 	params("jq.path", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "a structure path; omit for the highlighted field"}})

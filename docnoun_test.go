@@ -32,8 +32,8 @@ func TestDocVerbsAreTheViewerVerbs(t *testing.T) {
 	a := empty(t)
 	for _, al := range docVerbs {
 		op, inv, ok := a.r.ResolveAction(al.Alias)
-		if !ok || !inv.Alias || a.r.CanonicalKey(op.Key()) != a.r.CanonicalKey(al.Action) {
-			t.Fatalf("%s: op %q alias %v ok %v", al.Alias, op.Key(), inv.Alias, ok)
+		if !ok || !inv.Alias || a.r.CanonicalKey(op.Key.Short()) != a.r.CanonicalKey(al.Action) {
+			t.Fatalf("%s: op %q alias %v ok %v", al.Alias, op.Key.Short(), inv.Alias, ok)
 		}
 	}
 	op, _, _ := a.r.ResolveAction("doc.open")

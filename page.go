@@ -1128,9 +1128,9 @@ func (a *App) registerRestructureVerbs() {
 	r.Define("restructure")
 	r.Define("node")
 	params := func(key string, p map[string]ochazuke.Parameter) {
-		op := r.Operations[r.CanonicalKey(key)]
+		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p
-		r.Operations[r.CanonicalKey(key)] = op
+		r.Operations.Set(op)
 	}
 	r.DefineGuard("node-indent", func(r *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		id := a.focusedNode(ev.Focus)
@@ -1637,11 +1637,26 @@ func (a *App) sendKey() string {
 // arguments), "" when none does. A renderer passes the focus it draws
 // (drawnFocus), a handler the live FocusID.
 func (a *App) keyFor(focus, verb string) string {
+	return a.keyIn(a.r.ListBindings(focus), verb)
+}
+
+// keyForDrawn is keyFor for a renderer: the key bound where the current
+// page is drawn (ListBindingsAt), so a modal open over the page does not
+// change the hints it draws.
+func (a *App) keyForDrawn(verb string) string {
+	id := a.r.Page
+	if id == "" {
+		id = pageID
+	}
+	return a.keyIn(a.r.ListBindingsAt(id), verb)
+}
+
+func (a *App) keyIn(rows []ochazuke.Binding, verb string) string {
 	key := a.r.CanonicalKey(verb)
 	if al, ok := a.r.ActionAlias(key); ok { // doc.open: viewer.open's row
 		key = a.r.CanonicalKey(al.Action)
 	}
-	for _, b := range a.r.ListBindings(focus) {
+	for _, b := range rows {
 		if b.Keys != "" && len(b.Request.Args) == 0 && a.r.CanonicalKey(b.Request.Key()) == key {
 			return b.Keys
 		}
@@ -1874,7 +1889,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 		default:
 			body = t.View(cw, ch)
 		}
-		return l.PanelBlock(title, ochazuke.Text(body), w, h, t.List().Focused())
+		return l.PanelBlock(title, ochazuke.Text(body), w, h, t.List().DrawnFocused())
 	}
 	mapPanel := func(w, h int) ochazuke.Block {
 		cw, ch := ochazuke.PanelContentSize(w, h)
@@ -1902,7 +1917,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 			return mapPanel(w, h)
 		}
 		cw, ch := ochazuke.PanelContentSize(w, h)
-		focused := a.data.list.Focused() || a.drawnFocus() == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
+		focused := a.data.list.DrawnFocused() || a.drawnFocus() == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
 		b := l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), w, h, focused)
 		if !focused {
 			b.Cursor = nil

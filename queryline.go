@@ -175,9 +175,9 @@ func (a *App) queryLines(s ochazuke.Styles, width int) (ochazuke.Block, int) {
 	avail := max(1, width-pw)
 	if len(in.Text) == 0 && !focused {
 		hint := "query"
-		if key := a.keyFor(a.drawnFocus(), "search.focus"); key != "" {
+		if key := a.keyForDrawn("search.focus"); key != "" {
 			hint = key + " to search"
-		} else if key := a.keyFor(a.drawnFocus(), "jq.focus"); key != "" {
+		} else if key := a.keyForDrawn("jq.focus"); key != "" {
 			hint = key + " to query"
 		}
 		return ochazuke.Text(s.Muted.Render(ansi.Truncate(prompt+hint, width, "…"))), 1

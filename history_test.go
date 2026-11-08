@@ -20,7 +20,7 @@ func TestEveryVerbDeclaresItsHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 	n := 0
-	for key, op := range a.r.Operations {
+	for key, op := range a.r.Operations.Entries() {
 		if op.Builtin {
 			continue
 		}
@@ -37,7 +37,7 @@ func TestEveryVerbDeclaresItsHistory(t *testing.T) {
 	if err := json.Unmarshal([]byte(run(t, "", "catalog")), &doc); err != nil {
 		t.Fatal(err)
 	}
-	ops := newShell(nil, io.Discard, io.Discard).Runtime.Operations
+	ops := &newShell(nil, io.Discard, io.Discard).Runtime.Operations
 	n = 0
 	for _, noun := range doc.Nouns {
 		for _, v := range noun.Verbs {
@@ -46,8 +46,8 @@ func TestEveryVerbDeclaresItsHistory(t *testing.T) {
 				continue
 			}
 			n++
-			if v.History == "" || ops[key].HistoryKind == "" || v.History != ops[key].HistoryKind {
-				t.Errorf("catalog verb %s: history %q, declared %q", key, v.History, ops[key].HistoryKind)
+			if v.History == "" || ops.At(ochazuke.Key(key)).HistoryKind == "" || v.History != ops.At(ochazuke.Key(key)).HistoryKind {
+				t.Errorf("catalog verb %s: history %q, declared %q", key, v.History, ops.At(ochazuke.Key(key)).HistoryKind)
 			}
 		}
 	}
@@ -65,11 +65,11 @@ func TestVerbHistoryKinds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ops := newShell(nil, io.Discard, io.Discard).Runtime.Operations
+	ops := &newShell(nil, io.Discard, io.Discard).Runtime.Operations
 	for key, want := range map[string]string{
 		"doc.structure": ochazuke.HistoryFetch, "doc.table": ochazuke.HistoryFetch, "doc.get": ochazuke.HistoryFetch, "doc.rows": ochazuke.HistoryFetch,
 	} {
-		if got := ops[key].HistoryKind; got != want {
+		if got := ops.At(ochazuke.Key(key)).HistoryKind; got != want {
 			t.Errorf("%s: %q, want %q", key, got, want)
 		}
 	}
@@ -78,7 +78,7 @@ func TestVerbHistoryKinds(t *testing.T) {
 		"shape.yank": ochazuke.HistoryChange, "item.yank": ochazuke.HistoryChange,
 		"rows.move": ochazuke.HistoryAction, "viewer.search": ochazuke.HistoryAction, "entry.open": ochazuke.HistoryAction, "query.commit": ochazuke.HistoryAction,
 	} {
-		if got := a.r.Operations[a.r.CanonicalKey(key)].HistoryKind; got != want {
+		if got := a.r.Operations.At(ochazuke.Key(a.r.CanonicalKey(key))).HistoryKind; got != want {
 			t.Errorf("%s: %q, want %q", key, got, want)
 		}
 	}
