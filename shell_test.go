@@ -116,7 +116,7 @@ func TestDocNounJSON(t *testing.T) {
 		Path    string        `json:"path"`
 		Columns []TableColumn `json:"columns"`
 	}
-	if err := json.Unmarshal([]byte(run(t, sampleText(t), "doc", "table", "-", ".items[].owner")), &tab); err != nil {
+	if err := json.Unmarshal([]byte(run(t, sampleText(t), "doc", "tabulate", "-", ".items[].owner")), &tab); err != nil {
 		t.Fatal(err)
 	}
 	if tab.Path != ".items[].owner" || len(tab.Columns) != 2 || !tab.Columns[1].Optional {
@@ -149,7 +149,7 @@ func TestCatalog(t *testing.T) {
 			}
 		}
 	}
-	if cat.Name != "o-json" || strings.Join(verbs, " ") != "archive create delete edit get list rows set structure table" {
+	if cat.Name != "o-json" || strings.Join(verbs, " ") != "archive create delete edit get list rows set structure tabulate" {
 		t.Fatalf("catalog %s %v", cat.Name, verbs)
 	}
 }

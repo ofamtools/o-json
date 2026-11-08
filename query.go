@@ -42,7 +42,7 @@ const (
 func declareQuerySettings(r *ochazuke.Runtime) error {
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingQueryLine, Type: ochazuke.SettingBoolean, Default: true,
-		Description: "The jq query line above the structure pane (/ focuses it) and the structure pane's query mode; off, / is the path search (viewer.search) and the data pane follows the tree alone",
+		Description: "The jq query line above the structure pane (/ focuses it) and the structure pane's query mode; off, / is the path search (viewer.filter) and the data pane follows the tree alone",
 	}, ochazuke.Setting{
 		Name: settingChipFocus, Type: ochazuke.SettingString, Default: "cursor", Enum: []string{"cursor", "line"},
 		Description: "The query line's field chips sit on a dim background; while the line is focused, cursor brightens the chip under the cursor, line brightens every chip",
@@ -251,7 +251,7 @@ func (a *App) registerQuery() error {
 	}
 	a.applyCompletePaths()
 	r.Settings().Observe(settingCompletePaths, func(string, any) { a.applyCompletePaths() })
-	// The query line is focused only by / (jq.focus): it is no focus stop
+	// The query line is focused only by / (jq.goto): it is no focus stop
 	// of the page's tab ring.
 	r.Instances[jqFieldID].Unfocusable = true
 	a.q.run = &jqRunner{a: a, Debounce: jqDebounce}
@@ -281,7 +281,7 @@ func (a *App) registerQuery() error {
 			}
 			return a.copyText(c, q, "the query")
 		}, "Copy the jq query into the registers (and the system clipboard, as the clipboard setting says)").When("query-line").
-		Verb("focus", func(c ochazuke.Ctx) ochazuke.Result {
+		Verb("goto", func(c ochazuke.Ctx) ochazuke.Result {
 			a.sr.typ = "jq"
 			return a.queryDone(a.focusQuery())
 		}, "Focus the jq query line, typing at its end (/); esc goes back where it came from, the query kept").When("query-line").
@@ -299,7 +299,7 @@ func (a *App) registerQuery() error {
 	}
 	params("jq.set", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "the jq query; empty clears it"}})
 	params("jq.wrap", map[string]ochazuke.Parameter{"open": {Type: "string", Enum: []string{"[", "{", "("}, Description: "the opening bracket; its pair closes"}})
-	setHistory(r, ochazuke.HistoryAction, "jq.set", "jq.clear", "jq.focus", "jq.leave", "jq.wrap")
+	setHistory(r, ochazuke.HistoryAction, "jq.set", "jq.clear", "jq.goto", "jq.leave", "jq.wrap")
 	setHistory(r, ochazuke.HistoryChange, "jq.yank")
 	return nil
 }
@@ -403,7 +403,7 @@ func (a *App) wrapSelection(open string) error {
 	return nil
 }
 
-// queryState is the query as jq.state answers it.
+// queryState is the query as the jq thing answers it (jq get).
 func (a *App) queryState() map[string]any {
 	out := map[string]any{"query": a.queryText(), "running": a.q.running}
 	if l := a.q.last; l != nil {

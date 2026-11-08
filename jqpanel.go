@@ -8,10 +8,10 @@ import (
 	"ofam.dev/ochazuke"
 )
 
-// The jq panel: the restructure's jq program (Plan.JQ, what restructure.jq
+// The jq panel: the restructure's jq program (Plan.JQ, what restructure.program
 // copies), or its mapping (the --mapping form, restructure.mapping), kept
 // current as the structure, the value edits and the reshape steps change.
-// g j (jq-panel.toggle) opens it, or focuses it when it is open; in it tab (jq-panel.view) switches
+// g j (jq-panel.toggle) opens it, or focuses it when it is open; in it tab (jq-panel.show) switches
 // between the program and the mapping, esc (jq-panel.leave) gives the
 // focus back and q (jq-panel.close) closes it. Setting jq.panel: split
 // draws it under the panes at a fixed height (jq.panel-height, so it
@@ -199,7 +199,7 @@ func (a *App) panelTitle(focus string) string {
 		title, other = "Mapping", "jq"
 	}
 	var hints []string
-	if k := a.keyFor(focus, "jq-panel.view"); k != "" {
+	if k := a.keyFor(focus, "jq-panel.show"); k != "" {
 		hints = append(hints, k+" "+other)
 	}
 	if k := a.keyFor(focus, "jq-panel.yank"); k != "" {
@@ -288,7 +288,7 @@ func (a *App) registerJQPanel() {
 			a.giveBack()
 			return ochazuke.Done(nil)
 		}, "Give the focus back to the pane it came from; the split panel stays, the modal closes").When("jq-panel-open").
-		Verb("view", func(c ochazuke.Ctx) ochazuke.Result {
+		Verb("show", func(c ochazuke.Ctx) ochazuke.Result {
 			v := ochazuke.StringArg(c.Args, "view", "")
 			if v == "" {
 				v = map[string]string{jqPanelProgram: jqPanelMapping, jqPanelMapping: jqPanelProgram}[a.jqp.view]
@@ -329,7 +329,7 @@ func (a *App) registerJQPanel() {
 	view := ochazuke.Parameter{Type: "string", Enum: []string{jqPanelProgram, jqPanelMapping}, Description: "jq (the program) or mapping"}
 	params("jq-panel.toggle", map[string]ochazuke.Parameter{"view": view})
 	params("jq-panel.open", map[string]ochazuke.Parameter{"view": view})
-	params("jq-panel.view", map[string]ochazuke.Parameter{"view": view})
-	setHistory(r, ochazuke.HistoryAction, "jq-panel.toggle", "jq-panel.open", "jq-panel.close", "jq-panel.leave", "jq-panel.view")
+	params("jq-panel.show", map[string]ochazuke.Parameter{"view": view})
+	setHistory(r, ochazuke.HistoryAction, "jq-panel.toggle", "jq-panel.open", "jq-panel.close", "jq-panel.leave", "jq-panel.show")
 	setHistory(r, ochazuke.HistoryChange, "jq-panel.yank")
 }

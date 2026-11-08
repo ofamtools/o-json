@@ -1,7 +1,7 @@
 package main
 
 // Window keys in Vim's form: ctrl+w h / l move to the pane on that side
-// and stop at the edge (viewer.pane). ctrl+w o is ochazuke's pane.only
+// and stop at the edge (viewer.focus-pane). ctrl+w o is ochazuke's pane.only
 // (v0.61.0, UX-RULES R3.16): the focused pane alone; ctrl+w o again or
 // ctrl+w = (pane.restore) brings the other back, and so does moving the
 // focus to the hidden pane. Each mode's own row carries the footer hint
@@ -66,7 +66,7 @@ func (a *App) onlyPane(c ochazuke.Ctx, pane string) error {
 	return a.r.ShowPaneOnly(page, keep)
 }
 
-// movePane is viewer.pane: to is left, right, up or down; at the edge it
+// movePane is viewer.focus-pane: to is left, right, up or down; at the edge it
 // stays. On the restructure page the original is on the left and the
 // restructured tree on the right, the preview (restructure.preview data)
 // under it: right and down go on to the preview, up and left come back.
@@ -135,10 +135,10 @@ func (a *App) registerPaneVerbs() {
 		Verb("restore", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.onlyPane(c, "none"))
 		}, "Show both panes again after ctrl+w o (ctrl+w =)").When("pane-only").
-		Verb("pane", func(c ochazuke.Ctx) ochazuke.Result {
+		Verb("focus-pane", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.movePane(ochazuke.StringArg(c.Args, "to", "right")))
 		}, "Move the focus to the pane on the left, right, above or below (ctrl+w h, ctrl+w l, ctrl+w k, ctrl+w j); at the edge it stays, as in Vim. On the restructure page the preview is right of and below the restructured tree")
 	setParams(r, "viewer.only", map[string]ochazuke.Parameter{"pane": {Type: "string", Enum: []string{paneStructure, paneData, "focused", "none"}, Description: "default focused"}})
-	setParams(r, "viewer.pane", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"left", "right", "up", "down"}, Description: "default right"}})
-	setHistory(r, ochazuke.HistoryAction, "viewer.only", "viewer.restore", "viewer.pane")
+	setParams(r, "viewer.focus-pane", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"left", "right", "up", "down"}, Description: "default right"}})
+	setHistory(r, ochazuke.HistoryAction, "viewer.only", "viewer.restore", "viewer.focus-pane")
 }

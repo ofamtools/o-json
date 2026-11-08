@@ -34,7 +34,7 @@
         "space",
         "j"
       ],
-      "id": "ochazuke.list.mark",
+      "id": "ochazuke.collection.mark",
       "expect": {
         "mode": "split",
         "contains": [

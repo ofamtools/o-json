@@ -213,7 +213,7 @@ func TestObjectFieldsAndScalars(t *testing.T) {
 
 func TestSearchAndTypeFilter(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
-	// With the query line off, / is the path search (viewer.search).
+	// With the query line off, / is the path search (viewer.filter).
 	if err := a.r.Settings().Set(settingQueryLine, false); err != nil {
 		t.Fatal(err)
 	}
@@ -401,14 +401,14 @@ func TestYankToNamedRegister(t *testing.T) {
 }
 
 // The tree and the table are read-only: space marks nothing in either,
-// and no hint offers list.mark.
+// and no hint offers collection.mark.
 func TestReadOnlyViewsTakeNoMarks(t *testing.T) {
 	a := openOriginal(t, sample, 120, 30)
 	selectPath(t, a, ".items")
 	for _, panel := range []string{"tree", "table"} {
 		Press(a.m, "space")
 		frame := view(a)
-		if marked := a.data.list.Marked(); len(marked) != 0 || strings.Contains(frame, "list.mark") {
+		if marked := a.data.list.Marked(); len(marked) != 0 || strings.Contains(frame, "collection.mark") {
 			t.Fatalf("%s: space marked %v\n%s", panel, marked, frame)
 		}
 		if marked := a.tree.List().Marked(); len(marked) != 0 {
@@ -595,7 +595,7 @@ func TestDotRepeatsTheLastChange(t *testing.T) {
 	}
 	selectPath(t, a, ".name")
 	press(t, a, "y", "y", "/")
-	for _, q := range []ochazuke.Request{{Noun: "input", Verb: "insert", Args: ochazuke.Arguments{"text": "o"}}, {Noun: "history", Verb: "repeat"}} {
+	for _, q := range []ochazuke.Request{{Noun: "input", Verb: "insert", Args: ochazuke.Arguments{"text": "o"}}, {Noun: "history-entry", Verb: "repeat"}} {
 		if _, err := a.r.Execute(q); err != nil {
 			t.Fatalf("%s: %v", q.Key(), err)
 		}

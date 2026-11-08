@@ -48,7 +48,7 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 		Verb("structure", func(c ochazuke.Ctx) ochazuke.Result {
 			return pending(c, func(d *Doc, _ string) (any, error) { return d.Shape, nil })
 		}, "the document's shape as a tree of {key, path, count, of, types, min_items, max_items, optional, children}; fields most common first, optional ones last").Quiet().Positional("file").Fetch().
-		Verb("table", func(c ochazuke.Ctx) ochazuke.Result {
+		Verb("tabulate", func(c ochazuke.Ctx) ochazuke.Result {
 			return pending(c, func(d *Doc, path string) (any, error) { return tableAt(d, path) })
 		}, "an array (or the values a [] path names) as {path, columns: [{name, count, optional, types, self}], rows}; columns most common first, optional ones last, rows as in the document").Quiet().Positional("file", "path").Fetch().
 		Verb("get", func(c ochazuke.Ctx) ochazuke.Result {
@@ -78,15 +78,15 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 				cols = rowColumns(t)
 				return tableRows(t), nil
 			}).Then(func(ochazuke.Ctx, any, error) { r.Define("item").Columns(cols...) })
-		}, "doc table's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc table column; --format table, markdown and toon print them as a table").Quiet().Positional("file", "path").Rows("item").Fetch()
+		}, "doc tabulate's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc tabulate column; --format table, markdown and toon print them as a table").Quiet().Positional("file", "path").Rows("item").Fetch()
 	file := ochazuke.Parameter{Type: "string", Required: true, Description: "the JSON file; - reads stdin"}
 	params := map[string]map[string]ochazuke.Parameter{
 		"doc.structure": {"file": file},
-		"doc.table":     {"file": file, "path": {Type: "string", Description: "the array: .items, or a [] path such as .items[].owner (default . , the root)"}},
+		"doc.tabulate":  {"file": file, "path": {Type: "string", Description: "the array: .items, or a [] path such as .items[].owner (default . , the root)"}},
 		"doc.rows":      {"file": file, "path": {Type: "string", Description: "the array: .items, or a [] path such as .items[].owner (default . , the root)"}},
 		"doc.get":       {"file": file, "path": {Type: "string", Required: true, Description: "jq-style path: . .key [\"odd key\"] [0] [-1] [] (every item)"}},
 	}
-	results := map[string]string{"doc.structure": "shape", "doc.table": "{path, columns, rows}", "doc.get": "value", "doc.rows": "row lines"}
+	results := map[string]string{"doc.structure": "shape", "doc.tabulate": "{path, columns, rows}", "doc.get": "value", "doc.rows": "row lines"}
 	for key, p := range params {
 		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p

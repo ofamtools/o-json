@@ -189,7 +189,7 @@ func TestPasteJSON(t *testing.T) {
 		t.Fatalf("invalid paste: status %q", a.m.Status)
 	}
 	// The job failed, as the status line says: never "done" beside it.
-	if jobs := a.r.Jobs(); len(jobs) == 0 || jobs[len(jobs)-1].Verb != "viewer.paste" || jobs[len(jobs)-1].State != "failed" {
+	if jobs := a.r.Jobs(); len(jobs) == 0 || jobs[len(jobs)-1].Verb != "viewer.paste" || jobs[len(jobs)-1].Status != "failed" {
 		t.Fatalf("invalid paste: jobs %+v", jobs)
 	}
 	a.Paste = func() (string, error) { return "", errors.New("no clipboard") }

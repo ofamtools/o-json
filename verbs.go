@@ -31,7 +31,7 @@ func (a *App) registerNouns() {
 	for _, noun := range []string{"viewer", "shape", "item", "field", "entry", "line", detailID} {
 		r.Define(noun)
 	}
-	r.Define("rows").Focusable()
+	r.Define("data-table").Focusable()
 }
 
 func (a *App) registerVerbs() {
@@ -52,7 +52,7 @@ func (a *App) registerVerbs() {
 	}
 
 	r.Define("viewer").
-		Verb("mode", func(ochazuke.Ctx) ochazuke.Result { return done(a.openModePicker()) }, "Choose a mode by name (g m, :viewer mode); the picker shows each mode's purpose and entry key").
+		Verb("pick-mode", func(ochazuke.Ctx) ochazuke.Result { return done(a.openModePicker()) }, "Choose a mode by name (g m, :viewer pick-mode); the picker shows each mode's purpose and entry key").
 		Verb("load", func(c ochazuke.Ctx) ochazuke.Result {
 			p := ochazuke.StringArg(c.Args, "path", a.Path)
 			if p == "" {
@@ -60,7 +60,7 @@ func (a *App) registerVerbs() {
 			}
 			return a.readAsking(p)
 		}, "Read the current file again off the loop and show it (R); with path, that file, as viewer.open does (- is stdin). With restructure edits no write saved, it asks first (viewer.discard)").When("viewer-file").
-		Verb("search", func(c ochazuke.Ctx) ochazuke.Result {
+		Verb("filter", func(c ochazuke.Ctx) ochazuke.Result {
 			if q, ok := c.Args["query"].(string); ok {
 				return done(a.search(q))
 			}
@@ -92,22 +92,21 @@ func (a *App) registerVerbs() {
 			}
 			return done(a.reshow())
 		}, "Show the selected path's values as indented JSON instead of a table or fields (toggle)").
-		Verb("view", func(c ochazuke.Ctx) ochazuke.Result {
+		Verb("show", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.cycleDataView(ochazuke.IntArg(c.Args, "steps", 1)))
 		}, "Cycle the data pane through table, fields, flat and JSON; remember the view per structure path").
 		Verb("clear", func(ochazuke.Ctx) ochazuke.Result {
 			a.Query, a.Kind = "", ""
 			return done(a.refilter())
-		}, "Clear the search and the type filter").When("viewer-original").
-		Verb("state", func(ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.state()) }, "The viewer's file, selected path, filters and row").Fetch()
+		}, "Clear the search and the type filter").When("viewer-original")
 	params("viewer.load", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the JSON file; - reads stdin"}})
-	params("viewer.search", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "omit to be asked in a prompt"}})
+	params("viewer.filter", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "omit to be asked in a prompt"}})
 	params("viewer.type", map[string]ochazuke.Parameter{"kind": {Type: "string", Enum: []string{"string", "number", "bool", "null", "object", "array", ""}, Description: "omit to step to the next type"}})
-	params("viewer.view", map[string]ochazuke.Parameter{"steps": {Type: "integer", Description: "Number of applicable views to step; negative steps backward"}})
+	params("viewer.show", map[string]ochazuke.Parameter{"steps": {Type: "integer", Description: "Number of applicable views to step; negative steps backward"}})
 	// load reads the file and shows it: a fetch, as the framework's reloads are.
 	setHistory(r, ochazuke.HistoryFetch, "viewer.load")
 	a.registerOpenVerbs(params)
-	setHistory(r, ochazuke.HistoryAction, "viewer.mode", "viewer.search", "viewer.next", "viewer.previous", "viewer.type", "viewer.raw", "viewer.view", "viewer.clear")
+	setHistory(r, ochazuke.HistoryAction, "viewer.pick-mode", "viewer.filter", "viewer.next", "viewer.previous", "viewer.type", "viewer.raw", "viewer.show", "viewer.clear")
 
 	r.Define("shape").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result {
@@ -127,9 +126,9 @@ func (a *App) registerVerbs() {
 			return a.copyText(c, strings.Join(paths, "\n"), strings.Join(paths, ", "))
 		}, "Copy the structure path (one per line over a V selection) into the registers (and the system clipboard, as the clipboard setting says); p / P on the restructured tree put those shapes there").Many()
 
-	// rows.move is the windowed tables' motion: the list holds only the
-	// rows on screen, so list.move would stop at the screen's edge.
-	r.Define("rows").
+	// data-table.move is the windowed tables' motion: the list holds only the
+	// rows on screen, so collection.move would stop at the screen's edge.
+	r.Define("data-table").
 		Verb("move", func(c ochazuke.Ctx) ochazuke.Result {
 			v := a.rowsOf(c.Instance)
 			if v == nil {
@@ -200,12 +199,12 @@ func (a *App) registerVerbs() {
 			}
 			return ochazuke.Done(v.sel)
 		}, "Move the selected row: down, up, half-down, half-up, page-down, page-up, top, bottom").Motion()
-	params("rows.move", map[string]ochazuke.Parameter{
+	params("data-table.move", map[string]ochazuke.Parameter{
 		"motion": {Type: "string", Required: true, Enum: []string{"down", "up", "half-down", "half-up", "page-down", "page-up", "top", "bottom"}},
 		"steps":  {Type: "integer", Description: "repeat count (default 1)"},
 		"line":   {Type: "integer", Description: "1-based row for top and bottom"},
 	})
-	setHistory(r, ochazuke.HistoryAction, "rows.move")
+	setHistory(r, ochazuke.HistoryAction, "data-table.move")
 
 	yankNode := func(c ochazuke.Ctx) ochazuke.Result {
 		n := nodeAt(c.Instance)

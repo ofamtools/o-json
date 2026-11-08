@@ -448,12 +448,12 @@ func TestHoverRowKeysOnASubTableLine(t *testing.T) {
 	}
 	// The guard is the verbs' availability, not their rows': the palette
 	// and the help leave them out too, and the row's columns get them back.
-	for _, verb := range []string{"ochazuke.list.choose-column", "ochazuke.list.resize-column", "ochazuke.list.reset-columns", "ochazuke.list.toggle-pin-column"} {
+	for _, verb := range []string{"ochazuke.collection.choose-column", "ochazuke.collection.resize-column", "ochazuke.collection.reset-columns", "ochazuke.collection.toggle-pin-column"} {
 		if a.r.VerbShown(verb, a.r.FocusID(), a.r.CurrentMode()) {
 			t.Errorf("%s shown in a sub-table", verb)
 		}
 	}
-	if on := hoverAt(t, 120, 30, 6); !on.r.VerbShown("ochazuke.list.choose-column", on.r.FocusID(), on.r.CurrentMode()) {
+	if on := hoverAt(t, 120, 30, 6); !on.r.VerbShown("ochazuke.collection.choose-column", on.r.FocusID(), on.r.CurrentMode()) {
 		t.Error("choose-column not shown on the row")
 	}
 	// ctrl+d walks half a screen of lines: the same as that many j.

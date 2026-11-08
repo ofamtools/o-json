@@ -30,7 +30,7 @@
     "verbs",
     "app",
     "doc",
-    "ochazuke.actions"
+    "ochazuke.user-operation"
    ]
   },
   {
@@ -45,7 +45,7 @@
   },
   {
    "contains": [
-    "ochazuke.actions"
+    "ochazuke.user-operation"
    ],
    "lacks": [
     "quit"

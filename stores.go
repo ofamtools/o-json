@@ -43,7 +43,7 @@ func singleton(r *ochazuke.Runtime, noun string, props []ochazuke.PropSpec, get 
 
 // collection declares a noun whose things are the rows list answers.
 func collection(r *ochazuke.Runtime, noun string, props []ochazuke.PropSpec, list func() []ochazuke.Thing) {
-	r.Define(noun).Props(props...).Store(ochazuke.Store{Kind: ochazuke.Collection, Facts: true,
+	r.Define(noun).Props(props...).Store(ochazuke.Store{Kind: ochazuke.KindCollection, Facts: true,
 		List: func(ochazuke.Ctx, ochazuke.ListQuery) ([]ochazuke.Thing, error) { return list(), nil },
 		Get: func(c ochazuke.Ctx, key string) (ochazuke.Thing, error) {
 			for _, t := range list() {
@@ -76,8 +76,26 @@ func (a *App) defineStores() {
 	}, func() ochazuke.Thing { return a.queryState() })
 	singleton(r, "viewer", []ochazuke.PropSpec{
 		fact("path", "", "The open file"), fact("opened", "boolean", "Whether a document is open"), fact("editing", "boolean", "Whether the viewer is in EDIT"),
+		fact("loading", "", "The file being read, when a read is in progress"), fact("query", "", "The path search filtering the structure"), fact("kind", "", "The value type filtering the structure"),
+		fact("is_raw", "boolean", "Whether the data pane shows the raw text"), fact("error", "", "Why the last read failed"), fact("shape", "", "The structure path shown in the data pane"),
+		fact("size", "integer", "The document's size in bytes"), fact("row", "integer", "The data pane's selected row"), fact("view", "", "The data pane's view of an editable document"),
+		fact("unsaved", "boolean", "Whether the restructure has edits no write saved"), fact("valueEdits", "integer", "How many value edits the restructure holds"), fact("orphaned", "integer", "How many value edits point at a path the document lacks"),
 	}, func() ochazuke.Thing {
-		return ochazuke.Thing{"path": a.Path, "opened": a.Doc != nil, "editing": a.editing}
+		t := ochazuke.Thing(a.state())
+		t["opened"], t["editing"] = a.Doc != nil, a.editing
+		t["is_raw"] = t["raw"] // a prop never shares a word with the viewer.raw verb
+		delete(t, "raw")
+		return t
+	})
+	singleton(r, "search", []ochazuke.PropSpec{
+		fact("search_type", "", "The search line's type: substring, fuzzy, regex or jq"), fact("text", "", "The search text"), fact("hits", "integer", "How many hits"),
+		fact("view", "", "The overlay shown"), fact("error", "", "Why the search failed"),
+	}, func() ochazuke.Thing {
+		out := ochazuke.Thing{"search_type": a.sr.typ, "text": a.queryText(), "hits": len(a.sr.hits), "view": a.overlay}
+		if a.sr.err != nil {
+			out["error"] = a.sr.err.Error()
+		}
+		return out
 	})
 	singleton(r, valueEditorID, []ochazuke.PropSpec{fact("opened", "boolean", "Whether the value editor is open")},
 		func() ochazuke.Thing { return ochazuke.Thing{"opened": a.vedit != nil && a.vedit.modal != nil} })
@@ -128,7 +146,7 @@ func (a *App) defineStores() {
 func defineDocStore(r *ochazuke.Runtime, stdin io.Reader) {
 	r.Define("doc").Props(
 		factKey("file", "The JSON file; - reads stdin"), factLabel("name", "The document's name"), fact("size", "integer", "Its size in bytes"),
-	).Store(ochazuke.Store{Kind: ochazuke.Collection, Facts: true, Remote: true,
+	).Store(ochazuke.Store{Kind: ochazuke.KindCollection, Facts: true, Remote: true,
 		Missing: map[string]string{"list": "a document is named by its file; there is no list of them"},
 		Get: func(c ochazuke.Ctx, file string) (ochazuke.Thing, error) {
 			v, err := c.Await(ochazuke.StoreCall{Store: "doc", Op: "get", Key: file}, func() ochazuke.Result {

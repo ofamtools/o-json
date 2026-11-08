@@ -430,7 +430,7 @@ func TestWriteRefusesTheSource(t *testing.T) {
 		t.Fatalf("no confirm (info %q, error %q)", a.m.Info, a.m.Status)
 	}
 	// While it asks nothing says it failed: no Error, the job not failed.
-	if jobs := a.r.Jobs(); a.m.Status != "" || len(jobs) == 0 || jobs[len(jobs)-1].State == "failed" {
+	if jobs := a.r.Jobs(); a.m.Status != "" || len(jobs) == 0 || jobs[len(jobs)-1].Status == "failed" {
 		t.Fatalf("asking reads as a failure: error %q jobs %+v", a.m.Status, jobs)
 	}
 	if got, _ := os.ReadFile(out); string(got) != "keep" {
@@ -548,7 +548,7 @@ func TestOpenFocusesTheOriginal(t *testing.T) {
 // L flips the layout and keeps the focused tree; the crumb names the
 // layout and the key, the footer hints it.
 func TestLayoutKeyFlips(t *testing.T) {
-	a := openRestructure(t, 120, 30)
+	a := openRestructure(t, 140, 30)
 	sendPaths(t, a, ".name")
 	frame := view(a)
 	if !strings.Contains(frame, "split layout (L: single)") || !strings.Contains(frame, "L layout") {

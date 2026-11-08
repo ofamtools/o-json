@@ -301,7 +301,7 @@
         },
         "enter"
       ],
-      "id": "ochazuke.list.choose-column",
+      "id": "ochazuke.collection.choose-column",
       "expect": {
         "mode": "table"
       }
@@ -313,7 +313,7 @@
         "3",
         "|"
       ],
-      "id": "ochazuke.list.column",
+      "id": "ochazuke.collection.column",
       "expect": {
         "mode": "table"
       }
@@ -395,7 +395,7 @@
         "p",
         "$"
       ],
-      "id": "ochazuke.list.toggle-pin-column",
+      "id": "ochazuke.collection.toggle-pin-column",
       "expect": {
         "mode": "table"
       }
@@ -407,7 +407,7 @@
         "v",
         "j"
       ],
-      "id": "ochazuke.list.visual",
+      "id": "ochazuke.collection.visual",
       "expect": {
         "mode": "visual-line"
       }
@@ -429,7 +429,7 @@
       "keys": [
         "/"
       ],
-      "id": "search.focus",
+      "id": "search.goto",
       "expect": {
         "mode": "search_·_substr"
       }
@@ -451,7 +451,7 @@
       "keys": [
         "G"
       ],
-      "id": "rows.move {\"motion\":\"bottom\"}",
+      "id": "data-table.move {\"motion\":\"bottom\"}",
       "expect": {
         "mode": "table"
       }
@@ -462,7 +462,7 @@
       "keys": [
         "j"
       ],
-      "id": "rows.move {\"motion\":\"down\"}",
+      "id": "data-table.move {\"motion\":\"down\"}",
       "expect": {
         "mode": "table"
       }
@@ -473,7 +473,7 @@
       "keys": [
         "ctrl+d"
       ],
-      "id": "rows.move {\"motion\":\"half-down\"}",
+      "id": "data-table.move {\"motion\":\"half-down\"}",
       "expect": {
         "mode": "table"
       }
@@ -485,7 +485,7 @@
         "G",
         "ctrl+u"
       ],
-      "id": "rows.move {\"motion\":\"half-up\"}",
+      "id": "data-table.move {\"motion\":\"half-up\"}",
       "expect": {
         "mode": "table"
       }
@@ -496,7 +496,7 @@
       "keys": [
         "ctrl+f"
       ],
-      "id": "rows.move {\"motion\":\"page-down\"}",
+      "id": "data-table.move {\"motion\":\"page-down\"}",
       "expect": {
         "mode": "table"
       }
@@ -508,7 +508,7 @@
         "G",
         "ctrl+b"
       ],
-      "id": "rows.move {\"motion\":\"page-up\"}",
+      "id": "data-table.move {\"motion\":\"page-up\"}",
       "expect": {
         "mode": "table"
       }
@@ -519,7 +519,7 @@
       "keys": [
         "home"
       ],
-      "id": "rows.move {\"motion\":\"top\"}",
+      "id": "data-table.move {\"motion\":\"top\"}",
       "expect": {
         "mode": "table"
       }
@@ -530,7 +530,7 @@
       "keys": [
         "k"
       ],
-      "id": "rows.move {\"motion\":\"up\"}",
+      "id": "data-table.move {\"motion\":\"up\"}",
       "expect": {
         "mode": "table"
       }

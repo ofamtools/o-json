@@ -607,7 +607,7 @@ var aliases = []ochazuke.ActionAlias{
 var modeAliases = []ochazuke.ActionAlias{
 	{Alias: "sort", Shadows: true, Action: "item.operate", Args: ochazuke.Arguments{"op": "s", "object": "column", "again": false}, Note: "sort the table by the cursor's column (vim :sort; s i c)"},
 	{Alias: "sort!", Action: "item.operate", Args: ochazuke.Arguments{"op": "s", "object": "column", "reverse": true}, Note: "sort the table by the cursor's column, descending (vim :sort!)"},
-	{Alias: "find", Action: "search.focus", Shadows: true, Note: "the search line (/)"},
+	{Alias: "find", Action: "search.goto", Shadows: true, Note: "the search line (/)"},
 }
 
 func (a *App) addAliases() error {

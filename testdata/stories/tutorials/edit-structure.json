@@ -82,7 +82,7 @@
         "g",
         "p"
       ],
-      "id": "marks.pick",
+      "id": "node-mark.pick",
       "expect": {
         "mode": "edit",
         "contains": [
@@ -97,7 +97,7 @@
         "space",
         "F"
       ],
-      "id": "marks.flatten",
+      "id": "node-mark.flatten",
       "expect": {
         "mode": "edit",
         "contains": [

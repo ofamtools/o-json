@@ -22,7 +22,7 @@ type question struct {
 
 func (a *App) registerPrompt() {
 	r := a.r
-	r.Define("query").Pin("insert").
+	r.Define("query-prompt").Pin("insert").
 		Verb("commit", func(r *ochazuke.Runtime, c ochazuke.Context, args ochazuke.Arguments) (any, error) {
 			q := a.ask
 			if q == nil || r.FocusID() != fieldID {
@@ -43,7 +43,7 @@ func (a *App) registerPrompt() {
 			return nil, r.Pop()
 		}, "Close the prompt without running the question")
 	// The prompt asks only for a search, so committing it is a view move.
-	setHistory(r, ochazuke.HistoryAction, "query.commit", "query.cancel")
+	setHistory(r, ochazuke.HistoryAction, "query-prompt.commit", "query-prompt.cancel")
 	a.in = ochazuke.NewInput(fieldID, "", false)
 	a.m.ModalViews[promptFrame] = ochazuke.ModalView{Title: "Prompt", Render: func(r *ochazuke.Runtime, body *ochazuke.Instance, w, h int) ochazuke.Block {
 		field := ochazuke.InputBlock(a.in, max(1, w), 1)
@@ -65,7 +65,7 @@ func (a *App) prompt(label, text string, commit func(string) error) error {
 	view.Title = label
 	a.m.ModalViews[promptFrame] = view
 	a.ask = &question{commit: commit}
-	if _, err := a.r.OpenModal(promptFrame, ochazuke.Payload{Prompt: label}, ochazuke.CloseWith(ochazuke.Request{Noun: "query", Verb: "cancel"}), ochazuke.WithInput(a.in, ochazuke.Kind("query"))); err != nil {
+	if _, err := a.r.OpenModal(promptFrame, ochazuke.Payload{Prompt: label}, ochazuke.CloseWith(ochazuke.Request{Noun: "query-prompt", Verb: "cancel"}), ochazuke.WithInput(a.in, ochazuke.Kind("query-prompt"))); err != nil {
 		a.ask = nil
 		return err
 	}

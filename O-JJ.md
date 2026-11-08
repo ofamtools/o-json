@@ -140,7 +140,7 @@ its trial colour (each mode's badge tone, `mode.<name>`, declared with ochazuke'
   `field/nested`, `line/flat`, `line/json`, `line/search`: data; elsewhere the focused
   pane, on the split the focused side). `ctrl+w o` again, `ctrl+w =`, or
   moving the focus to the hidden pane brings both back.
-- `g m` (`:viewer mode`) opens the fuzzy mode picker; every row enters
+- `g m` (`:viewer pick-mode`) opens the fuzzy mode picker; every row enters
   its mode (JQ opens the search line in its jq type, as the prototype
   does; RAW starts the editor).
 - RAW: `g r` writes the edited document (from the data pane: the row's
@@ -290,4 +290,4 @@ answer.
 - Still needs ochazuke: a lower-case badge tag (`SEARCH · substr`), and
   `Input.SelectText` keeping an insert-like mode.
 - `:mode` cannot be a bare alias while ochazuke owns the `mode` noun;
-  `:viewer mode` opens the picker.
+  `:viewer pick-mode` opens the picker.

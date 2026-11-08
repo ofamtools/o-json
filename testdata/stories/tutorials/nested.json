@@ -38,7 +38,7 @@
         "1",
         "|"
       ],
-      "id": "rows.column",
+      "id": "data-table.column",
       "expect": {
         "mode": "nested",
         "contains": [
@@ -53,7 +53,7 @@
         "l",
         "h"
       ],
-      "id": "rows.column {\"delta\":-1}",
+      "id": "data-table.column {\"delta\":-1}",
       "expect": {
         "mode": "nested",
         "contains": [
@@ -67,7 +67,7 @@
       "keys": [
         "l"
       ],
-      "id": "rows.column {\"delta\":1}",
+      "id": "data-table.column {\"delta\":1}",
       "expect": {
         "mode": "nested",
         "contains": [
@@ -82,7 +82,7 @@
         "l",
         "0"
       ],
-      "id": "rows.column {\"to\":\"first\"}",
+      "id": "data-table.column {\"to\":\"first\"}",
       "expect": {
         "mode": "nested",
         "contains": [
@@ -96,7 +96,7 @@
       "keys": [
         "$"
       ],
-      "id": "rows.column {\"to\":\"last\"}",
+      "id": "data-table.column {\"to\":\"last\"}",
       "expect": {
         "mode": "nested",
         "contains": [
@@ -110,7 +110,7 @@
       "keys": [
         "esc"
       ],
-      "id": "rows.out",
+      "id": "data-table.out",
       "expect": {
         "mode": "table",
         "contains": [
@@ -124,7 +124,7 @@
       "keys": [
         "-"
       ],
-      "id": "rows.out {\"levels\":\"one\"}",
+      "id": "data-table.out {\"levels\":\"one\"}",
       "expect": {
         "mode": "table",
         "contains": [
@@ -138,7 +138,7 @@
       "keys": [
         "D"
       ],
-      "id": "rows.show-nested",
+      "id": "data-table.show-nested",
       "expect": {
         "mode": "table",
         "contains": [

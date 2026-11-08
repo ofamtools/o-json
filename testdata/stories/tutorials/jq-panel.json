@@ -52,7 +52,7 @@
       "keys": [
         "tab"
       ],
-      "id": "jq-panel.view",
+      "id": "jq-panel.show",
       "expect": {
         "mode": "normal",
         "contains": [
@@ -78,7 +78,7 @@
       "keys": [
         "?"
       ],
-      "id": "ochazuke.bindings.help",
+      "id": "ochazuke.binding.help",
       "expect": {
         "mode": "normal"
       }
@@ -149,7 +149,7 @@
         "p",
         "."
       ],
-      "id": "ochazuke.history.repeat",
+      "id": "ochazuke.history-entry.repeat",
       "expect": {
         "mode": "edit",
         "register": "{\"o-json.nodes\":[{\"id\":\"r:1\",\"label\":\"name\",\"from\":\".name\"}]}\n",

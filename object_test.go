@@ -40,7 +40,7 @@ func TestObjectNestedCellOpensSubTable(t *testing.T) {
 	a := open(t, catalogDoc, 120, 24)
 	press(t, a, "ctrl+a", "o", "l", "l", "l", "l") // nouns
 	frame := view(a)
-	if !strings.Contains(frame, "ochazuke.actions") || !strings.Contains(line(frame, "verbs"), "name") {
+	if !strings.Contains(frame, "ochazuke.user-operation") || !strings.Contains(line(frame, "verbs"), "name") {
 		t.Fatalf("nouns did not open\n%s", frame)
 	}
 	press(t, a, "j", "l", "l")

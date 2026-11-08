@@ -17,16 +17,16 @@ import (
 // own marks are only drawn: syncMarks copies them onto the rows shown).
 // The pane's title counts them (marks.count).
 //
-// marks.pick keeps only the marked nodes, at their paths, with the
+// node-mark.pick keeps only the marked nodes, at their paths, with the
 // ancestors they need and what is under them: a tree edit, so the result
-// stays editable in the same tree. marks.flatten, node.key-by,
+// stays editable in the same tree. node-mark.flatten, node.key-by,
 // node.values and node.entries are reshape steps (reshape.go): the tree
 // so far closes into the mapping's steps, and the tree becomes the copy
 // of the step's output, editable as the document's copy is. Each is one
 // undo step; u brings the tree it closed back.
 
 const (
-	marksID = "marks"
+	marksID = "node-mark"
 
 	settingFlattenArrays = "flatten.arrays"
 	settingFlattenJoin   = "flatten.join"
@@ -346,11 +346,11 @@ func declareReshapeSettings(r *ochazuke.Runtime) error {
 		{Name: settingReshapeFocus, Type: ochazuke.SettingBoolean, Default: true,
 			Description: "A reshape focuses its result in the edited tree (the restructure page when the viewer is read-only); off keeps the source-side focus"},
 		{Name: settingFlattenArrays, Type: ochazuke.SettingString, Default: arraysJoin, Enum: []string{arraysJoin, arraysJSON, arraysRows},
-			Description: "How marks.flatten writes an array among the marked fields: join its items (flatten.join between them), its compact JSON, or one row per item with the other fields repeated (the export's rule, export.arrays)"},
+			Description: "How node-mark.flatten writes an array among the marked fields: join its items (flatten.join between them), its compact JSON, or one row per item with the other fields repeated (the export's rule, export.arrays)"},
 		{Name: settingFlattenJoin, Type: ochazuke.SettingString, Default: ";",
-			Description: "The separator between an array's items when marks.flatten joins them (flatten.arrays join)"},
+			Description: "The separator between an array's items when node-mark.flatten joins them (flatten.arrays join)"},
 		{Name: settingFlattenNames, Type: ochazuke.SettingString, Default: namesLeaf, Enum: []string{namesLeaf, namesPath},
-			Description: "The names marks.flatten gives the fields: leaf, the last key where no other field ends in it (city), else the dotted path; path, always the dotted path (address.city)"},
+			Description: "The names node-mark.flatten gives the fields: leaf, the last key where no other field ends in it (city), else the dotted path; path, always the dotted path (address.city)"},
 		{Name: settingKeyByKeep, Type: ochazuke.SettingBoolean, Default: true,
 			Description: "node.key-by keeps the field it files each item under inside the item; off takes it out"},
 		{Name: settingKeyByDup, Type: ochazuke.SettingString, Default: dupRename, Enum: []string{dupRename, dupLast, dupGroup},
@@ -455,12 +455,12 @@ func (a *App) registerReshapeVerbs() {
 		"names":  {Type: "string", Enum: []string{namesLeaf, namesPath}, Description: "leaf or path names (default flatten.names)"},
 	}
 	r.Define("node").
-		Verb("mark", setMarks(true), "Mark the node (any depth; space, again unmarks) for marks.flatten and marks.pick; marks survive collapsing, moves and undo").Many().When("node-unmarked").
+		Verb("mark", setMarks(true), "Mark the node (any depth; space, again unmarks) for node-mark.flatten and node-mark.pick; marks survive collapsing, moves and undo").Many().When("node-unmarked").
 		Verb("unmark", setMarks(false), "Unmark the node").Many().When("node-marked").
 		Verb("flatten", func(c ochazuke.Ctx) ochazuke.Result { return flatten(c, a.nodePathsOf(subjectIDs(c)), a.reshape) },
-			"Flatten the node (or a V selection) as marks.flatten flattens the marks: a flat array of objects, one per item of the nearest common array").Many().When("node-reshapable").
+			"Flatten the node (or a V selection) as node-mark.flatten flattens the marks: a flat array of objects, one per item of the nearest common array").Many().When("node-reshapable").
 		Verb("pick", func(c ochazuke.Ctx) ochazuke.Result { return pick(c, subjectIDs(c)) },
-			"Keep only the node (or a V selection) as marks.pick keeps the marks").Many().When("node-reshapable").
+			"Keep only the node (or a V selection) as node-mark.pick keeps the marks").Many().When("node-reshapable").
 		Verb("key-by", func(c ochazuke.Ctx) ochazuke.Result {
 			field := ochazuke.StringArg(c.Args, "field", "")
 			s := a.r.Settings()
@@ -508,7 +508,7 @@ func (a *App) registerReshapeVerbs() {
 			list := a.rs.orig.List()
 			marked := list.Marked()
 			if list.Visual() {
-				if _, err := r.Execute(ochazuke.Request{Noun: "ochazuke.list", Verb: "end-visual", Target: rsOrigID + "/list"}); err != nil {
+				if _, err := r.Execute(ochazuke.Request{Noun: "ochazuke.collection", Verb: "end-visual", Target: rsOrigID + "/list"}); err != nil {
 					return ochazuke.Failed(err)
 				}
 				if kept := list.Marked(); len(kept) > 0 {
@@ -524,7 +524,7 @@ func (a *App) registerReshapeVerbs() {
 			return flatten(c, paths, a.reshapeOriginal)
 		}, "Flatten the original tree's marked source fields into a new restructured result; u restores the previous edits").Many().When("shape-marked")
 	params("node.flatten", flattenParams)
-	params("marks.flatten", flattenParams)
+	params("node-mark.flatten", flattenParams)
 	params("shape.flatten", flattenParams)
 	params("node.key-by", map[string]ochazuke.Parameter{
 		"field":      {Type: "string", Required: true, Source: "node.key-fields", Description: "the field each item is filed under (a scalar field of the items)"},
@@ -532,6 +532,6 @@ func (a *App) registerReshapeVerbs() {
 		"duplicates": {Type: "string", Enum: []string{dupRename, dupLast, dupGroup}, Description: "items sharing a key: rename, last or group (default key-by.duplicates)"},
 		"missing":    {Type: "string", Description: "the key for items without the field (default key-by.missing)"},
 	})
-	setHistory(r, ochazuke.HistoryAction, "node.mark", "node.unmark", "marks.clear")
-	setHistory(r, ochazuke.HistoryChange, "node.flatten", "node.pick", "node.key-by", "node.values", "node.entries", "marks.flatten", "marks.pick", "shape.flatten")
+	setHistory(r, ochazuke.HistoryAction, "node.mark", "node.unmark", "node-mark.clear")
+	setHistory(r, ochazuke.HistoryChange, "node.flatten", "node.pick", "node.key-by", "node.values", "node.entries", "node-mark.flatten", "node-mark.pick", "shape.flatten")
 }

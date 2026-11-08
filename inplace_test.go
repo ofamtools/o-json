@@ -181,7 +181,7 @@ func TestToggleOriginalAndEdited(t *testing.T) {
 	if s := a.selectedShape(); s == nil || s.Path != ".meta.count" || !strings.Contains(frame, "Value .meta.count") {
 		t.Fatalf("original shows %v\n%s", s, frame)
 	}
-	if !a.available("viewer", "search") || a.available("restructure", "write") || !a.available("viewer", "write") {
+	if !a.available("viewer", "filter") || a.available("restructure", "write") || !a.available("viewer", "write") {
 		t.Fatal("the original view's keys")
 	}
 	press(t, a, "T")
@@ -189,7 +189,7 @@ func TestToggleOriginalAndEdited(t *testing.T) {
 	if a.original || a.sideOf(a.r.FocusID()) != rsTreeID || !strings.Contains(frame, "Value .count") || !strings.Contains(frame, "Structure · edited [+]") {
 		t.Fatalf("T again: focus %q\n%s", a.r.FocusID(), frame)
 	}
-	if a.available("viewer", "search") || !a.available("restructure", "write") {
+	if a.available("viewer", "filter") || !a.available("restructure", "write") {
 		t.Fatal("the edited view's keys")
 	}
 	// From the data pane T flips the data and leaves the focus there.

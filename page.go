@@ -101,7 +101,7 @@ type restructureState struct {
 	// patches are the value edits applied after the restructure
 	// (patch.go, values.go), part of the mapping.
 	patches []Patch
-	// stages are the reshape steps made so far (marks.flatten,
+	// stages are the reshape steps made so far (node-mark.flatten,
 	// node.key-by, ...), each holding the tree it closed; in is the
 	// current tree's input, the last step's output (nil: the document).
 	// Both are part of every undo step (reshape_app.go).
@@ -1500,7 +1500,7 @@ func (a *App) registerRestructureVerbs() {
 			"Replace an existing file with the restructured document (never the source)").Confirm("Replace {{path}} with the restructured document?").
 		Verb("overwrite-source", func(c ochazuke.Ctx) ochazuke.Result { return a.write(c, writeSource) },
 			"Replace the source document with the restructured one (as o-json restructure --out SOURCE --overwrite does); it always asks first").Confirm("Overwrite the source {{path}} with the restructured document?").
-		Verb("jq", func(c ochazuke.Ctx) ochazuke.Result {
+		Verb("program", func(c ochazuke.Ctx) ochazuke.Result {
 			program, what := "", "the jq program"
 			if f := ochazuke.StringArg(c.Args, "format", ""); f != "" {
 				text, err := a.exportJQText(f, ochazuke.StringArg(c.Args, "of", ""), ochazuke.StringArg(c.Args, "columns", ""))
@@ -1552,7 +1552,7 @@ func (a *App) registerRestructureVerbs() {
 		"force": {Type: "boolean", Description: "replace an existing file without asking; the source asks once (W)"}})
 	params("restructure.overwrite", map[string]ochazuke.Parameter{"path": path, "quit": quit})
 	params("restructure.overwrite-source", map[string]ochazuke.Parameter{"path": path, "quit": quit})
-	params("restructure.jq", map[string]ochazuke.Parameter{
+	params("restructure.program", map[string]ochazuke.Parameter{
 		"format":  {Type: "string", Enum: []string{"csv", "tsv"}, Description: "end in the export's @csv / @tsv step; omit for the restructure alone"},
 		"of":      {Type: "string", Description: "with format, the array's structure path; omit for the one under the cursor"},
 		"columns": {Type: "string", Description: "with format, the columns to keep, separated by commas"},
@@ -1567,7 +1567,7 @@ func (a *App) registerRestructureVerbs() {
 	params("restructure.layout", map[string]ochazuke.Parameter{"layout": {Type: "string", Enum: []string{"split", "single"}}})
 	setHistory(r, ochazuke.HistoryAction, "restructure.open", "restructure.close", "restructure.show")
 	setHistory(r, ochazuke.HistoryChange, "shape.send", "restructure.add", "restructure.clear", "restructure.undo", "restructure.redo",
-		"restructure.write", "restructure.overwrite", "restructure.overwrite-source", "restructure.jq", "restructure.export-map", "restructure.layout")
+		"restructure.write", "restructure.overwrite", "restructure.overwrite-source", "restructure.program", "restructure.export-map", "restructure.layout")
 }
 
 func (a *App) doneErr(err error) ochazuke.Result {

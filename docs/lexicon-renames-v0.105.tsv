@@ -1,0 +1,23 @@
+kind	old	new	note
+noun	json.rows	json.data-table	plural noun; the windowed data table
+noun	json.marks	json.node-mark	plural noun; node.mark is a verb so the noun is node-mark
+noun	json.query	json.query-prompt	query is an action of the framework (instance.query)
+operation	json.viewer.mode	json.viewer.pick-mode	mode is a noun
+operation	json.jq.mode	json.jq.switch {to}	mode is a noun
+operation	json.viewer.pane	json.viewer.focus-pane	pane is a noun
+operation	json.viewer.search	json.viewer.filter	search is a noun; the verb keeps the paths that match
+operation	json.viewer.view	json.viewer.show	view is show
+operation	json.jq-panel.view	json.jq-panel.show	view is show
+operation	json.jq.focus	json.jq.goto	focus is a noun
+operation	json.search.focus	json.search.goto	focus is a noun
+operation	json.restructure.jq	json.restructure.program	jq is a noun
+operation	json.doc.table	json.doc.tabulate	table is a noun
+operation	json.viewer.state	json.viewer.get	state verbs are the thing's props; the viewer thing has the state's fields (raw is is_raw)
+operation	json.jq.state	json.jq.get	same
+operation	json.search.state	json.search.get	new search thing; type is search_type
+prop	json.viewer raw	json.viewer is_raw	a prop and a verb never share a word
+binding-context	rows/MODE	data-table/MODE	
+binding-context	marks/MODE	node-mark/MODE	
+binding-context	query/MODE	query-prompt/MODE	
+binding	rows.move|column|out|show-nested	data-table.move|column|out|show-nested	
+binding	marks.flatten|pick	node-mark.flatten|pick	

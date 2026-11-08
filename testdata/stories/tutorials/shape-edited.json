@@ -183,7 +183,7 @@
         "z",
         "F"
       ],
-      "id": "ochazuke.list.fit-columns",
+      "id": "ochazuke.collection.fit-columns",
       "expect": {
         "mode": "shape"
       }
@@ -549,7 +549,7 @@
         "g",
         "m"
       ],
-      "id": "viewer.mode",
+      "id": "viewer.pick-mode",
       "expect": {
         "mode": "insert",
         "contains": [
@@ -597,7 +597,7 @@
         "ctrl+w",
         "h"
       ],
-      "id": "viewer.pane {\"to\":\"left\"}",
+      "id": "viewer.focus-pane {\"to\":\"left\"}",
       "expect": {
         "mode": "shape"
       }
@@ -609,7 +609,7 @@
         "ctrl+w",
         "l"
       ],
-      "id": "viewer.pane {\"to\":\"right\"}",
+      "id": "viewer.focus-pane {\"to\":\"right\"}",
       "expect": {
         "mode": "table"
       }
@@ -660,7 +660,7 @@
       "keys": [
         "D"
       ],
-      "id": "viewer.view",
+      "id": "viewer.show",
       "expect": {
         "mode": "shape",
         "contains": [
@@ -674,7 +674,7 @@
       "keys": [
         "shift+tab"
       ],
-      "id": "viewer.view {\"steps\":-1}",
+      "id": "viewer.show {\"steps\":-1}",
       "expect": {
         "mode": "shape",
         "contains": [

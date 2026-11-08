@@ -16,7 +16,7 @@ import (
 // row IDs are positions in the window (<list>/0, <list>/1, ...), so a
 // scroll replaces labels, not instances, and a frame costs a screen. The
 // view owns the selected row and the scroll offset over the whole source;
-// the motions are its verbs (rows.move), not list.move. The table is a
+// the motions are its verbs (data-table.move), not collection.move. The table is a
 // cell table (CellSelect): the list keeps the current column, and the
 // rows noun binds the column keys to the list's verbs (bindings.go).
 
@@ -41,7 +41,7 @@ type rowSource struct {
 // rowsView is a windowed table over a rowSource.
 type rowsView struct {
 	r      *ochazuke.Runtime
-	list   *ochazuke.List
+	list   *ochazuke.Collection
 	id     string
 	src    rowSource
 	sel    int // the selected row of the source, -1 for none
@@ -70,7 +70,7 @@ const defaultRowsHeight = 20
 const scrolloff = 2
 
 func newRowsView(r *ochazuke.Runtime, id, parent string) (*rowsView, error) {
-	list, err := r.AddList(id, nil, ochazuke.Parent(parent), ochazuke.NoSpill(), ochazuke.Kind("rows"), ochazuke.CellSelect())
+	list, err := r.AddList(id, nil, ochazuke.Parent(parent), ochazuke.NoSpill(), ochazuke.Kind("data-table"), ochazuke.CellSelect())
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (v *rowsView) Selected() int {
 }
 
 // pull takes a selection made through the list itself (list.select, a
-// list.move that reached it) into the view.
+// collection.move that reached it) into the view.
 func (v *rowsView) pull() {
 	item, ok := v.list.Selected()
 	if !ok || v.sel < 0 {

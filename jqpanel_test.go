@@ -71,13 +71,13 @@ func TestJQPanelSplitFollowsEditsAndYanks(t *testing.T) {
 	if a.jqp.open || a.r.Instances[jqPanelTextID] != nil {
 		t.Fatal("q left the panel")
 	}
-	// restructure jq {yank} copies the program.
-	if _, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "jq", Args: ochazuke.Arguments{"yank": true}}); err != nil {
+	// restructure program {yank} copies the program.
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "program", Args: ochazuke.Arguments{"yank": true}}); err != nil {
 		t.Fatal(err)
 	}
 	settle(a)
 	if y, _ := a.r.ReadYank(""); y.Text != before+"\n" {
-		t.Fatalf("restructure.jq copied %q", y.Text)
+		t.Fatalf("restructure.program copied %q", y.Text)
 	}
 }
 
@@ -173,7 +173,7 @@ func TestJQPanelKeysChangeNothing(t *testing.T) {
 	}
 }
 
-// : restructure jq and : restructure mapping open what they answer in
+// : restructure program and : restructure mapping open what they answer in
 // ochazuke's text view (TextResult): the program as it is, the mapping as
 // indented JSON; opening the view copies nothing (y there does), q closes the
 // view back on the tree, and palette.text-results plain shows neither.
@@ -184,17 +184,17 @@ func TestRestructureTextResultsOpenTheTextView(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	press(t, a, append([]string{":"}, append(strings.Split("restructure jq", ""), "enter")...)...)
+	press(t, a, append([]string{":"}, append(strings.Split("restructure program", ""), "enter")...)...)
 	settle(a)
 	view(a)
 	if a.r.TopModal() != ochazuke.TextViewID {
-		t.Fatalf(": restructure jq: modal %q\n%s", a.r.TopModal(), view(a))
+		t.Fatalf(": restructure program: modal %q\n%s", a.r.TopModal(), view(a))
 	}
 	if in := a.r.Input(a.r.FocusID()); in == nil || string(in.Text) != strings.TrimRight(p.JQ(), "\n") || !in.ReadOnly {
 		t.Fatalf("the text view does not hold the program read-only: %+v", in)
 	}
 	if y, _ := a.r.ReadYank(""); y.Text != "" {
-		t.Fatalf("opening restructure jq copied %q", y.Text)
+		t.Fatalf("opening restructure program copied %q", y.Text)
 	}
 	press(t, a, "q")
 	if a.r.TopModal() != "" || a.r.FocusID() != focus {
@@ -209,7 +209,7 @@ func TestRestructureTextResultsOpenTheTextView(t *testing.T) {
 	if err := a.r.Settings().Set(ochazuke.PaletteTextResultsSetting, "plain"); err != nil {
 		t.Fatal(err)
 	}
-	press(t, a, append([]string{":"}, append(strings.Split("restructure jq", ""), "enter")...)...)
+	press(t, a, append([]string{":"}, append(strings.Split("restructure program", ""), "enter")...)...)
 	settle(a)
 	if a.r.TopModal() == ochazuke.TextViewID {
 		t.Fatal("palette.text-results plain: the text view opened")

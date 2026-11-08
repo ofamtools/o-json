@@ -12,9 +12,9 @@ package main
 //	array of scalars  one line of the values, joined with " · "
 //	other arrays      a line per item: # and the value
 //
-// The sub-table's data lines are cursor stops: rows.move (j/k, counts)
+// The sub-table's data lines are cursor stops: data-table.move (j/k, counts)
 // walks from the parent row down into them and out the bottom to the next
-// row, and rows.column (h/l, bound ahead of the list's column verb while
+// row, and data-table.column (h/l, bound ahead of the list's column verb while
 // the cursor is in a sub-table) moves along one. A nested cell under the
 // cursor in a sub-table opens its own sub-table one step deeper, so only
 // the chain under the cursor is open; anything deeper shows as {N}
@@ -623,10 +623,10 @@ func (a *App) hoverView(w, h int) string {
 	return strings.Join(out, "\n")
 }
 
-// registerHover declares rows.column, the walk along a sub-table's line:
+// registerHover declares data-table.column, the walk along a sub-table's line:
 // available on the data pane while the cursor is in a sub-table, so its
 // keys (bound ahead of the list's column verb) pass on to that verb
-// elsewhere. The walk down and up is rows.move's.
+// elsewhere. The walk down and up is data-table.move's.
 func (a *App) registerHover() {
 	r := a.r
 	r.DefineGuard("rows-in-sub-table", func(_ *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
@@ -639,12 +639,12 @@ func (a *App) registerHover() {
 	r.DefineGuard("rows-on-row", func(_ *ochazuke.Runtime, ev ochazuke.KeyEvent) bool {
 		return !a.inData(ev.Focus) || !a.hoverIn()
 	})
-	for _, verb := range []string{"ochazuke.list.choose-column", "ochazuke.list.resize-column", "ochazuke.list.reset-columns", "ochazuke.list.toggle-pin-column"} {
+	for _, verb := range []string{"ochazuke.collection.choose-column", "ochazuke.collection.resize-column", "ochazuke.collection.reset-columns", "ochazuke.collection.toggle-pin-column"} {
 		if err := r.AddVerbAvailability(verb, "rows-on-row"); err != nil {
 			panic(err) // ochazuke's own verbs: a rename is a bug here
 		}
 	}
-	r.Define("rows").
+	r.Define("data-table").
 		Verb("column", func(c ochazuke.Ctx) ochazuke.Result {
 			steps := max(1, ochazuke.IntArg(c.Args, "steps", 1))
 			if err := a.hoverColumn(ochazuke.IntArg(c.Args, "delta", 1)*steps, ochazuke.StringArg(c.Args, "to", ""), ochazuke.IntArg(c.Args, "index", 0)); err != nil {
@@ -652,7 +652,7 @@ func (a *App) registerHover() {
 			}
 			return ochazuke.Done(a.hover.path[len(a.hover.path)-1].col)
 		}, "Move along the line of the data pane's sub-table under the cursor (table.nested hover): by delta cells, to the first or last, or to cell index").Motion().When("rows-in-sub-table")
-	r.Define("rows").
+	r.Define("data-table").
 		Verb("out", func(c ochazuke.Ctx) ochazuke.Result {
 			return ochazuke.Done(a.hoverOut(ochazuke.StringArg(c.Args, "levels", "all")))
 		}, "Leave the data pane's sub-tables (NESTED): levels all (esc) back to the table's row, one (backspace) one level up").Motion().When("rows-in-sub-table").
@@ -669,9 +669,9 @@ func (a *App) registerHover() {
 			c.Info("showing " + generalPath(p) + " · h goes back")
 			return ochazuke.Done(p)
 		}, "Show the sub-table's value under the cursor as the data pane's view (D in NESTED): the structure cursor moves to its path").When("rows-in-sub-table")
-	setParams(r, "rows.out", map[string]ochazuke.Parameter{"levels": {Type: "string", Enum: []string{"all", "one"}, Description: "all sub-tables (esc) or one level (backspace)"}})
-	setHistory(r, ochazuke.HistoryAction, "rows.out", "rows.show-nested")
-	key := r.CanonicalKey("rows.column")
+	setParams(r, "data-table.out", map[string]ochazuke.Parameter{"levels": {Type: "string", Enum: []string{"all", "one"}, Description: "all sub-tables (esc) or one level (backspace)"}})
+	setHistory(r, ochazuke.HistoryAction, "data-table.out", "data-table.show-nested")
+	key := r.CanonicalKey("data-table.column")
 	op := r.Operations.At(ochazuke.Key(key))
 	op.Parameters = map[string]ochazuke.Parameter{
 		"delta": {Type: "integer", Description: "cells to move, negative to the left (default 1)"},
@@ -680,5 +680,5 @@ func (a *App) registerHover() {
 		"index": {Type: "integer", Description: "the cell number, 1 the first (a count: 3|), instead of delta"},
 	}
 	r.Operations.Set(op)
-	setHistory(r, ochazuke.HistoryAction, "rows.column")
+	setHistory(r, ochazuke.HistoryAction, "data-table.column")
 }

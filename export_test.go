@@ -299,19 +299,19 @@ func TestExportJQAgreesWithGo(t *testing.T) {
 	a := open(t, sample, 120, 30)
 	onData(t, a, ".items", ".items[2]")
 	press(t, a, "d", "d")
-	v, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "jq", Args: ochazuke.Arguments{"format": "csv", "of": ".items", "yank": true}})
+	v, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "program", Args: ochazuke.Arguments{"format": "csv", "of": ".items", "yank": true}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	program, _ := v.(string)
 	if y, _ := a.r.ReadYank(""); y.Text != program {
-		t.Fatalf("restructure.jq answered %q, copied %q", program, y.Text)
+		t.Fatalf("restructure.program answered %q, copied %q", program, y.Text)
 	}
 	y := ochazuke.Yank{Text: program}
 	root, _ := a.shownRoot()
 	want, _ := exportBytes(root, &exportFormats[0], a.exportOptions(".items", nil))
 	if got := run(y.Text, sampleText(t)); !slices.EqualFunc(records(got, ','), records(string(want), ','), slices.Equal) {
-		t.Fatalf("restructure.jq {format: csv}\n%s\nwant\n%s\nprogram %s", got, want, y.Text)
+		t.Fatalf("restructure.program {format: csv}\n%s\nwant\n%s\nprogram %s", got, want, y.Text)
 	}
 	var b strings.Builder
 	spec := writeMap(t, mustJSON(t, a.Mapping()))

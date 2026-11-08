@@ -101,7 +101,7 @@
       "keys": [
         "m"
       ],
-      "id": "jq.mode",
+      "id": "jq.switch",
       "expect": {
         "mode": "shape"
       }
@@ -112,7 +112,7 @@
       "keys": [
         "esc"
       ],
-      "id": "jq.mode {\"to\":\"edit\"}",
+      "id": "jq.switch {\"to\":\"edit\"}",
       "expect": {
         "mode": "shape"
       }

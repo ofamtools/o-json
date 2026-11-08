@@ -446,7 +446,7 @@ func (a *App) registerQueryMode() error {
 		return func(c ochazuke.Ctx) ochazuke.Result { return a.queryDone(fn(c)) }
 	}
 	r.Define("jq").
-		Verb("mode", edit(func(c ochazuke.Ctx) error {
+		Verb("switch", edit(func(c ochazuke.Ctx) error {
 			to := ochazuke.StringArg(c.Args, "to", "")
 			if to == "" {
 				to = queryMode
@@ -511,10 +511,10 @@ func (a *App) registerQueryMode() error {
 		op.Parameters = p
 		r.Operations.Set(op)
 	}
-	params("jq.mode", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"edit", "jq", "query"}, Description: "omit to switch; query is an alias of jq"}})
+	params("jq.switch", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"edit", "jq", "query"}, Description: "omit to switch; query is an alias of jq"}})
 	params("jq.path", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "a structure path; omit for the highlighted field"}})
 	params("jq.open", map[string]ochazuke.Parameter{"bracket": {Type: "string", Enum: []string{"[", "{", "("}, Description: "the collection to open"}})
-	setHistory(r, ochazuke.HistoryAction, "jq.mode", "jq.close", "jq.anchor")
+	setHistory(r, ochazuke.HistoryAction, "jq.switch", "jq.close", "jq.anchor")
 	setHistory(r, ochazuke.HistoryChange, "jq.path", "jq.pipe", "jq.iterate", "jq.open", "jq.comma", "jq.erase", "jq.undo", "jq.redo")
 	return nil
 }

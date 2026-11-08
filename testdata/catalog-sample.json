@@ -4,9 +4,9 @@
   "version": "v0.4.6-0.20261030060112-c1125da27b28",
   "aliases": {
     "__picker-state": "ochazuke.__picker-state",
-    "actions": "ochazuke.actions",
+    "actions": "ochazuke.user-operation",
     "binding": "ochazuke.binding",
-    "bindings": "ochazuke.bindings",
+    "bindings": "ochazuke.binding",
     "bindings-help": "ochazuke.bindings-help",
     "picker": "ochazuke.picker",
     "completion": "ochazuke.completion",
@@ -44,7 +44,7 @@
       ]
     },
     {
-      "name": "ochazuke.actions",
+      "name": "ochazuke.user-operation",
       "verbs": [
         {
           "name": "aliases",
@@ -61,7 +61,7 @@
       ]
     },
     {
-      "name": "ochazuke.bindings",
+      "name": "ochazuke.binding",
       "verbs": [
         {
           "name": "check",

@@ -334,7 +334,7 @@ func TestPutKeysOnEveryNode(t *testing.T) {
 		press(t, a, "V")
 		inV := map[string]string{"d": "node.delete", "y": "node.yank", "p": "node.put", "d d": "", "y y": ""}
 		if k.name == "root" {
-			inV["d"], inV["y"] = "", "ochazuke.list.yank"
+			inV["d"], inV["y"] = "", "ochazuke.collection.yank"
 		}
 		expect(k.name+" in V", inV)
 		press(t, a, "esc")

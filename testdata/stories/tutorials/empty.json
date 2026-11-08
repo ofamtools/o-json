@@ -68,7 +68,7 @@
         },
         "enter"
       ],
-      "id": "viewer.search",
+      "id": "viewer.filter",
       "expect": {
         "mode": "shape"
       }

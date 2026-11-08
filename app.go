@@ -677,7 +677,7 @@ func nodeAt(inst *ochazuke.Instance) *Node {
 	return n
 }
 
-// state is the viewer's state as the viewer.state verb answers it.
+// state is the viewer's status as the viewer thing answers it (viewer get).
 func (a *App) state() map[string]any {
 	out := map[string]any{"path": a.Path, "loading": a.Loading, "query": a.Query, "kind": a.Kind, "raw": a.Raw}
 	if a.LoadErr != nil {

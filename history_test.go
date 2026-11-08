@@ -67,16 +67,16 @@ func TestVerbHistoryKinds(t *testing.T) {
 	}
 	ops := &newShell(nil, io.Discard, io.Discard).Runtime.Operations
 	for key, want := range map[string]string{
-		"doc.structure": ochazuke.HistoryFetch, "doc.table": ochazuke.HistoryFetch, "doc.get": ochazuke.HistoryFetch, "doc.rows": ochazuke.HistoryFetch,
+		"doc.structure": ochazuke.HistoryFetch, "doc.tabulate": ochazuke.HistoryFetch, "doc.get": ochazuke.HistoryFetch, "doc.rows": ochazuke.HistoryFetch,
 	} {
 		if got := ops.At(ochazuke.Key(key)).HistoryKind; got != want {
 			t.Errorf("%s: %q, want %q", key, got, want)
 		}
 	}
 	for key, want := range map[string]string{
-		"viewer.state": ochazuke.HistoryFetch, "viewer.load": ochazuke.HistoryFetch,
-		"shape.yank": ochazuke.HistoryChange, "item.yank": ochazuke.HistoryChange,
-		"rows.move": ochazuke.HistoryAction, "viewer.search": ochazuke.HistoryAction, "entry.open": ochazuke.HistoryAction, "query.commit": ochazuke.HistoryAction,
+		"viewer.load": ochazuke.HistoryFetch,
+		"shape.yank":  ochazuke.HistoryChange, "item.yank": ochazuke.HistoryChange,
+		"data-table.move": ochazuke.HistoryAction, "viewer.filter": ochazuke.HistoryAction, "entry.open": ochazuke.HistoryAction, "query-prompt.commit": ochazuke.HistoryAction,
 	} {
 		if got := a.r.Operations.At(ochazuke.Key(a.r.CanonicalKey(key))).HistoryKind; got != want {
 			t.Errorf("%s: %q, want %q", key, got, want)

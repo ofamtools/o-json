@@ -6,7 +6,7 @@
   "theme": "dark",
   "fixture": "viewer",
   "values": {
-    "list.cell-cursor": "underline"
+    "collection.cell-cursor": "underline"
   },
   "seed": {
     "doc": "sample.json"

@@ -8,7 +8,7 @@ import (
 
 func TestJSONSearchCoexistsWithTextFinder(t *testing.T) {
 	a := openQuery(t, sample)
-	for _, key := range []string{"search.focus", "search.next", "ochazuke.search.find", "ochazuke.search.next"} {
+	for _, key := range []string{"search.goto", "search.next", "ochazuke.search.find", "ochazuke.search.next"} {
 		if _, ok := a.r.Operation(key); !ok {
 			t.Fatalf("missing action %s", key)
 		}

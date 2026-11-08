@@ -337,7 +337,7 @@ func (a *App) registerSearch() error {
 	r.DefineGuard("search-hits", func(*ochazuke.Runtime, ochazuke.KeyEvent) bool { return len(a.sr.hits) > 0 })
 	// Keep the JSON search actions alongside the framework text finder.
 	r.DefineOwn("search").
-		Verb("focus", func(ochazuke.Ctx) ochazuke.Result { return done(a.focusSearch()) },
+		Verb("goto", func(ochazuke.Ctx) ochazuke.Result { return done(a.focusSearch()) },
 			"Open the search line (/) in the type search.type names; tab and shift+tab cycle substring, fuzzy, regex and jq").When("query-line").
 		Verb("type", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.setSearchType(ochazuke.IntArg(c.Args, "steps", 1)))
@@ -350,16 +350,9 @@ func (a *App) registerSearch() error {
 			"Clear the search or the jq query (esc): its view goes, the data pane shows the structure's view again").When("search-live").
 		Verb("next", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.stepHit(c, ochazuke.IntArg(c.Args, "steps", 1)))
-		}, "The next hit (n; N back): in the Results view the cursor moves, elsewhere the structure cursor jumps to it").Motion().When("search-hits").
-		Verb("state", func(ochazuke.Ctx) ochazuke.Result {
-			out := map[string]any{"type": a.sr.typ, "text": a.queryText(), "hits": len(a.sr.hits), "view": a.overlay}
-			if a.sr.err != nil {
-				out["error"] = a.sr.err.Error()
-			}
-			return ochazuke.Done(out)
-		}, "The search line's type, text, hit count and the overlay shown").Fetch()
+		}, "The next hit (n; N back): in the Results view the cursor moves, elsewhere the structure cursor jumps to it").Motion().When("search-hits")
 	setParams(r, "search.type", map[string]ochazuke.Parameter{"steps": {Type: "integer", Description: "types to step; negative goes back"}})
 	setParams(r, "search.next", map[string]ochazuke.Parameter{"steps": {Type: "integer", Description: "hits to step; negative goes back"}})
-	setHistory(r, ochazuke.HistoryAction, "search.focus", "search.type", "search.accept", "search.cancel", "search.clear", "search.next")
+	setHistory(r, ochazuke.HistoryAction, "search.goto", "search.type", "search.accept", "search.cancel", "search.clear", "search.next")
 	return nil
 }

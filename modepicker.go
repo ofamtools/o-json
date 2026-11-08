@@ -138,7 +138,7 @@ func (a *App) gotoMode(name string) ochazuke.Result {
 		if err := dataView(viewTable); err != nil {
 			return fail(err)
 		}
-		_, err := a.r.Execute(ochazuke.Request{Noun: "ochazuke.list", Verb: "visual", Target: a.r.FocusID()})
+		_, err := a.r.Execute(ochazuke.Request{Noun: "ochazuke.collection", Verb: "visual", Target: a.r.FocusID()})
 		return fail(err)
 	case "RAW":
 		if err := toViewer(); err != nil {

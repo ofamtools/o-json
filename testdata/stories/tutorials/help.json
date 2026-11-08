@@ -28,7 +28,7 @@
       "keys": [
         "S"
       ],
-      "id": "ochazuke.bindings-help.view",
+      "id": "ochazuke.bindings-help.show",
       "expect": {
         "mode": "normal",
         "contains": [
@@ -73,7 +73,7 @@
           "type": "yank"
         }
       ],
-      "id": "ochazuke.list.filter-open",
+      "id": "ochazuke.collection.filter-open",
       "expect": {
         "mode": "list_filter",
         "contains": [

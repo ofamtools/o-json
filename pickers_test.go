@@ -23,7 +23,7 @@ func TestDeclaredPickers(t *testing.T) {
 	}
 }
 
-// picker.open modes runs viewer.mode, the same picker g m opens.
+// picker.open modes runs viewer.pick-mode, the same picker g m opens.
 func TestModesPickerOpensByName(t *testing.T) {
 	a, e := New()
 	if e != nil {

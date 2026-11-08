@@ -10,7 +10,7 @@ func declarePickers(r *ochazuke.Runtime) error {
 	for _, d := range []ochazuke.PickerDef{
 		{Name: "doc", Noun: "doc", About: "The open document"},
 		{Name: "node", Noun: "node", About: "The nodes of the open document"},
-		{Name: "modes", Verb: "viewer.mode", About: "The mode names; pick one to go to it"},
+		{Name: "modes", Verb: "viewer.pick-mode", About: "The mode names; pick one to go to it"},
 	} {
 		if err := r.AddPicker(d); err != nil {
 			return err
