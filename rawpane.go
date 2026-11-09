@@ -1,7 +1,7 @@
 package main
 
 // RAW in a daemon pane (Design D, raw.pane auto): inside a pane
-// (TUIOS_ENV=1 with a session and a pane id) g r opens the editor in a
+// (MTM_ENV=1 or TUIOS_ENV=1 with a session and a pane id) g r opens the editor in a
 // new pane through mtm (pane.open) instead of suspending o-json: the pane runs the
 // editor on the temp file alone (its process, no shell; it closes when
 // the editor exits), with the grants raw.pane-grants names. o-json keeps
@@ -75,8 +75,8 @@ type rawPaneDone struct{ window string }
 
 // tuiosHere is the session and pane o-json runs in, when it runs in tuios.
 func (a *App) tuiosHere() (session, pane string, ok bool) {
-	session, pane = a.getenv("TUIOS_SESSION"), a.getenv("TUIOS_PANE_ID")
-	return session, pane, a.getenv("TUIOS_ENV") == "1" && session != "" && pane != ""
+	session, pane = paneEnv(a.getenv, "SESSION"), paneEnv(a.getenv, "PANE_ID")
+	return session, pane, paneEnv(a.getenv, "ENV") == "1" && session != "" && pane != ""
 }
 
 // rawInPane reports RAW opens a tuios window (raw.pane auto inside tuios).

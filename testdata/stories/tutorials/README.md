@@ -16,7 +16,7 @@ Watch from the o-json worktree in a terminal at least 150 columns by 44 rows:
 
 ```sh
 nice -n 15 make story-build GO_ENV='GOWORK=off GOFLAGS="-trimpath -p=2" GOMAXPROCS=3'
-env -u TUIOS_ENV -u TUIOS_SESSION -u TUIOS_PANE_ID \
+env -u MTM_ENV -u MTM_SESSION -u MTM_PANE_ID -u TUIOS_ENV -u TUIOS_SESSION -u TUIOS_PANE_ID \
   HOME=/tmp/ojj-tutorials/o-json/home \
   XDG_CONFIG_HOME=/tmp/ojj-tutorials/o-json/config \
   XDG_STATE_HOME=/tmp/ojj-tutorials/o-json/state \

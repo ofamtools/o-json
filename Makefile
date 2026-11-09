@@ -34,4 +34,4 @@ TUTORIAL_TMP ?= /tmp/html-tutorials/o-json
 .PHONY: tutorials-export
 tutorials-export: story-build
 	@mkdir -p "$(TUTORIAL_TMP)/home" "$(TUTORIAL_TMP)/config" "$(TUTORIAL_TMP)/state" "$(TUTORIAL_TMP)/data" "$(TUTORIAL_TMP)/tmp"
-	env -u TUIOS_ENV -u TUIOS_SESSION -u TUIOS_PANE_ID HOME="$(TUTORIAL_TMP)/home" XDG_CONFIG_HOME="$(TUTORIAL_TMP)/config" XDG_STATE_HOME="$(TUTORIAL_TMP)/state" XDG_DATA_HOME="$(TUTORIAL_TMP)/data" TMPDIR="$(TUTORIAL_TMP)/tmp" bin/o-json-story story export tutorials --out "$(OUT)" --format json
+	env -u MTM_ENV -u MTM_SESSION -u MTM_PANE_ID -u TUIOS_ENV -u TUIOS_SESSION -u TUIOS_PANE_ID HOME="$(TUTORIAL_TMP)/home" XDG_CONFIG_HOME="$(TUTORIAL_TMP)/config" XDG_STATE_HOME="$(TUTORIAL_TMP)/state" XDG_DATA_HOME="$(TUTORIAL_TMP)/data" TMPDIR="$(TUTORIAL_TMP)/tmp" bin/o-json-story story export tutorials --out "$(OUT)" --format json
