@@ -231,7 +231,7 @@ func TestRestructureAPastedBuffer(t *testing.T) {
 	}
 	press(t, a, "esc")
 	if a.r.TopModal() != "" {
-		press(t, a, "esc")
+		press(t, a, "q")
 	}
 	buf := filepath.Join(dir, "buffer.json")
 	viewerDo(t, a, "write", ochazuke.Arguments{"path": buf})

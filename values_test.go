@@ -603,7 +603,7 @@ func TestValueEditsInTheDetail(t *testing.T) {
 	}
 	agrees(t, a)
 	// The original's detail is read-only, as its data pane is.
-	press(t, a, "esc", "T")
+	press(t, a, "q", "T")
 	onData(t, a, ".items", ".items[0]")
 	press(t, a, "enter")
 	if a.available("value", "edit") {

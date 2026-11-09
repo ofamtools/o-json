@@ -99,7 +99,7 @@ func TestPageUnderModalDrawsItsOwnFocus(t *testing.T) {
 	if a.pageView().Live {
 		t.Fatal("the page under a modal reads as the live interaction")
 	}
-	press(t, a, "esc")
+	press(t, a, "esc", "q")
 	if a.r.TopModal() != "" || a.r.FocusID() != data || a.r.CurrentMode().Name != mode {
 		t.Fatalf("esc: modal %q focus %q mode %q, want none, %q, %q", a.r.TopModal(), a.r.FocusID(), a.r.CurrentMode().Name, data, mode)
 	}

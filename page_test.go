@@ -396,7 +396,7 @@ func TestWriteRefusesTheSource(t *testing.T) {
 	}
 	press(t, a, "esc")
 	if a.r.TopModal() != "" {
-		press(t, a, "esc")
+		press(t, a, "q")
 	}
 	write := func(path string) error {
 		_, err := a.r.Execute(ochazuke.Request{Noun: "restructure", Verb: "write", Args: ochazuke.Arguments{"path": path}})

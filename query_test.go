@@ -561,7 +561,7 @@ func TestSearchesUseSmartCase(t *testing.T) {
 		for _, row := range c.Matches() {
 			out = append(out, row.ID)
 		}
-		press(t, a, "esc")
+		press(t, a, "esc", "q")
 		press(t, a, "esc")
 		return out
 	}

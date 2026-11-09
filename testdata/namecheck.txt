@@ -309,3 +309,5 @@ views.go	viewApplies	case	"fields"	1
 views.go	viewApplies	case	"flat"	1
 views.go	viewApplies	case	"json"	1
 views.go	viewApplies	case	"table"	1
+hover.go	App.hoverColumn	compare	"first"	1
+page.go	edit.place	case	"first"	1

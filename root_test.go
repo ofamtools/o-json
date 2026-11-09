@@ -212,7 +212,7 @@ func TestForceWrite(t *testing.T) {
 	}
 	press(t, a, "esc")
 	if a.r.TopModal() != "" {
-		press(t, a, "esc")
+		press(t, a, "q")
 	}
 	force := func(path string) {
 		t.Helper()

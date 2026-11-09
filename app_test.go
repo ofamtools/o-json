@@ -394,9 +394,9 @@ func TestYankToNamedRegister(t *testing.T) {
 	if y, _ := a.r.ReadYank(""); !strings.Contains(y.Text, `"name": "beta"`) {
 		t.Fatalf("y on row 2 stored %q", y.Text)
 	}
-	press(t, a, "enter", "esc")
+	press(t, a, "enter", "q")
 	if a.r.TopModal() != "" {
-		t.Fatal("esc closes the detail")
+		t.Fatal("q closes the detail")
 	}
 }
 
@@ -555,7 +555,7 @@ func TestDotRepeatsAYankAtTheFocus(t *testing.T) {
 	}
 	key("enter", "y", "y", "j", ".")
 	yanked("detail", "beta")
-	key("esc", "ctrl+a", "o")
+	key("q", "ctrl+a", "o")
 	selectPath(t, a, ".meta")
 	key("ctrl+a", "o", "y", "y", "j", ".")
 	yanked("fields", "4")
