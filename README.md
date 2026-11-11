@@ -287,7 +287,10 @@ restores the original file and bytes before releasing the lock.
 | `doc archive`, `doc restore` | Hide or restore registry records. They do not move source files. |
 | `doc delete` | Archive a live record first by default. Deleting an archived record asks before moving its file to the system Trash. macOS uses Finder, Linux uses `gio trash`; an unavailable Trash is an error, never permanent removal. |
 | `doc history`, `doc yank`, `doc annotate`, `doc relate` | Read history, yank a label/key/reference/JSON, add a persistent note, or relate either end. `ochazuke.history-entry.undo` undoes supported record changes. |
-| `doc open` | Open this file in o-json's viewer, not the OS application. The viewer retains `doc open -` for stdin, without creating a file record. A mounted host opens and selects a file in the declared JSON page. |
+| `doc open [SOURCE]` | Open a document in o-json's viewer, not the OS application. SOURCE is a JSON file, `-` for standard input, or a path that names no file yet, which opens as a new, named, unsaved document (nothing is written until a write; `:w` writes it to that name). With no source it opens an empty unnamed document. It refuses no source. From the command line it runs the viewer (`doc launch`); `o-json FILE`, `o-json -` and `o-json view` run this verb. A mounted host opens and selects the file in the declared JSON page (`json.doc open ~/x.json`); a new path shows as a row marked `missing`. `--id ID` opens a document o-json knows. |
+| `doc query FILE QUERY` | Run a jq query (gojq) and answer its results as one array: `o-json query` as a verb. The query is the rest of the line. |
+| `doc remap FILE MAPPING [--as document\|jq\|mapping] [--out NEW [--overwrite]]` | Restructure by a mapping file: `o-json restructure` as a verb (`restructure` is a noun, the viewer's page). Answers the new document, its jq program or the complete mapping, or writes it to `out`. |
+| `doc export FILE [--mapping M] [--of PATH] [--as csv\|tsv\|jsonl\|md] [--columns A,B] [--arrays join\|json\|rows] [--join SEP] [--nulls empty\|null] [--jq] [--out NEW [--overwrite]]` | One array as csv, tsv, jsonl or a markdown table: `o-json export` as a verb. Answers the text, or writes it to `out`. |
 | `doc reveal`, `doc yank-path`, `doc open-with` | Use the library's typed file actions. `paths.free-verbs=false` turns them off. |
 | `doc edit-pane` | Ask the configured host to open a pane with `raw.editor`, `$VISUAL`, `$EDITOR`, or `nvim` and the source file as an argv argument. |
 | `doc send-pane --pane P` | Paste JSON into a typed host pane without submitting it. |
@@ -301,12 +304,26 @@ host, all forwarding to the same document handlers with typed parameters.
 An explicit `doc open PATH` or `doc open file=PATH` supplies the document
 subject even when the host's current row belongs to another noun.
 `doc.get FILE PATH` still reads JSON, while `doc.get --id ID` reads the record.
+A record read refuses no name: a path that names no file yet, or a registered
+file that is gone, answers with `missing: true` and no content. Nothing is
+registered for a new path until `doc set content=JSON` writes it.
+
+Every file a `doc` verb takes is a typed path parameter (`file`, `mapping`,
+`out`, `to`), so a form opens the path chooser and a host knows it is a file.
+A source is a name and a reader (`ReadFrom`; `-` is the reader standard input,
+named `stdin`), and `remap` and `export` write through one writer (`writeOut`:
+a new file, or the answer). That is the shape a shared input-source and
+output-sink parameter takes over; `!COMMAND` sources, registers and `> FILE`
+are not built here.
 JSON-address paths on nodes, shapes and values remain strings, not filesystem
 paths. Live rows and jq/search/restructure state declare read-only facts; they
 cannot archive or duplicate a fictitious persisted source.
 
 Compared with Vim: `:edit` (`:help :edit`) corresponds to `doc.open`, including
-the unsaved-edit question. `:file` (`:help :file`) only renames a Vim buffer;
+the unsaved-edit question, a name that is not a file yet (Vim's "[New]" buffer:
+same, and `:w` writes it) and no name (`:enew`, `:help :enew`: same).
+`vim -` (`:help --`) reads the text from standard input into an unnamed buffer:
+similar, the document here is named `stdin` and reads again. `:file` (`:help :file`) only renames a Vim buffer;
 `doc rename` deliberately renames the file on disk. `:saveas` (`:help :saveas`)
 is similar to a duplicate with a chosen file, but does not select the copy.
 
@@ -335,9 +352,11 @@ The file is read off the event loop (`viewer.open`, and `viewer.load` reads it a
 
 The viewer holds one document, like a vim buffer.
 
-- **No file:** `o-json` with no file (and stdin a terminal) opens an empty document; the breadcrumb reads `[no file]` and names the keys that fill it, and the data pane says `No document is open.` and lists them with their verbs (`e` `doc.open`, `p` `doc.paste`, `M` `restructure.open`; keys from the bindings, so a rebound key shows as bound). Nothing opens by itself: the picker waits for `e`. The setting `empty.hint` (default `true`) turns the data pane's list off. The command line forms that read a file (`structure`, `table`, `get`, `doc VERB FILE`, ...) still say a file is required. `: viewer new` empties the viewer from inside; when the structure has edits no write or export-map saved, it asks first (`viewer.discard`, and `u` brings the edits back).
+- **No file:** `o-json` with no file (and stdin a terminal) opens an empty document; the breadcrumb reads `[no file]` and names the keys that fill it, and the data pane says `No document is open.` and lists them with their verbs (`e` `viewer.open`, `p` `doc.paste`, `M` `restructure.open`; keys from the bindings, so a rebound key shows as bound). Nothing opens by itself: the picker waits for `e`. The setting `empty.hint` (default `true`) turns the data pane's list off. The command line forms that read a file (`structure`, `table`, `get`, `doc VERB FILE`, ...) still say a file is required. `: viewer new` empties the viewer from inside; when the structure has edits no write or export-map saved, it asks first (`viewer.discard`, and `u` brings the edits back).
 - **Open:** `e` (`viewer.open {path}`, a path parameter) opens ochazuke's path picker directly (its one missing argument is a path; ochazuke's `forms.single-path`): `browse` starts in the open file's folder (the working directory for a document of no file), `recent` lists the recently opened files, newest first, and `typed` completes a path as you type; `ctrl+o` cycles the sources (`alt+o` back; ochazuke v0.59 moved them off `tab`, which now cycles the match mode: substring, fuzzy, regex). The write verbs' paths (`w`, `viewer.export`, `restructure.write`) are path parameters that may name a new file. `R` (`viewer.load`) reads the current file again. With edits no write saved, `e` and `R` ask once first (`viewer.discard {path}`); the new document starts as a copy of its shape, and `u` brings the dropped edits back.
-- **The `doc` noun:** `doc.open {path}` is a registered document action that resolves the file or stable identity and delegates to `viewer.open`, including its unsaved-edit check. `doc.show` is the shared record form. `viewer.get` reads transient `{path, opened, size, unsaved}` state. `doc.reload`, `doc.paste` and `doc.write` retain their viewer aliases. `doc.new` creates a real JSON file; use `viewer.new` for an empty unsaved buffer. File lifecycle actions are available in the viewer and CLI from the same declarations.
+- **A new document:** `o-json NEW.json` (or `: doc open NEW.json`), a path that names no file yet, opens an empty document named for it: the breadcrumb reads `NEW.json [new]`, `viewer get` answers `source` and `is_new`, and nothing is written. What is pasted or built is that document, and `:w` (`viewer.save` with no path) writes it to its name, after which it is that file. The `w` key still asks for the path, its picker starting in the new document's folder. `: doc open` with no source empties the viewer (as `viewer new`). `e` and `R` do not make new documents: a file that is not there is a plain error and the document shown stays.
+- **Standard input:** `o-json -` (or a pipe with no file word) reads the document from standard input, named `stdin`; it is read once and kept, so `R` and `: doc open -` show it again. A standard input that holds nothing is the empty document.
+- **The `doc` noun:** `doc.open {path}` is the registered entry point: it takes a source (above) or a stable identity and shows it in this viewer, after the unsaved-edit check. `doc.show` is the shared record form. `viewer.get` reads transient `{path, opened, size, unsaved}` state. `doc.reload`, `doc.paste` and `doc.write` retain their viewer aliases. `doc.new` creates a real JSON file; use `viewer.new` for an empty unsaved buffer. File lifecycle actions are available in the viewer and CLI from the same declarations.
 - **Recent files:** every file opened is recorded, newest first, in `~/.local/state/o-json/recent.json` (`$XDG_STATE_HOME` if set). The setting `recent.size` (default 10; 0 keeps none) is how many; a file that is gone is left out. `: viewer recent` lists them.
 - **Paste:** `p` (`viewer.paste`) parses the system clipboard (pbpaste, wl-paste, xclip or xsel) into the buffer, a document of no file. Invalid JSON is an error naming its line and column, and the buffer stays as it was. `viewer.paste {text}` pastes the text given (the palette, a script). With edits no write saved, `p` asks once first (`viewer.discard {paste}`).
 - **Ex words:** the palette (`:`) and the CLI take vim's words as o-json aliases: `w` (`viewer.save`: what `w` writes where the focus is, the restructured document in the edited view or on the restructure page, else the shown document; with no path the form asks), `w!` (`{force: true}`: an existing file is replaced without asking; the source still only through `W`'s confirm), `wq` and `x` (`{quit: true}`: write, then quit; over an existing file the quit follows the confirmed write), `e` (`viewer.open`), `q` (`app.quit`, asking with edits pending) and `q!` (`{force: true}`). A user's `actions.json` may add more.
