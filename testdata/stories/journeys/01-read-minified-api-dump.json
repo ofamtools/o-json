@@ -14,7 +14,7 @@
   ],
   "expect": [
     {"after": 1, "focus": "path-chooser/query", "contains": ["No document is open.", "Run viewer.open", "choose path"]},
-    {"after": 4, "contains": ["on disk · recent", "/jobs/orders.min."]},
+    {"after": 4, "contains": ["browse [recent]", "/jobs/orders.min."]},
     {"after": 6, "mode": "shape", "contains": ["Structure · unchanged", "Object .", "data  page", "[25]  {2}", "string|null?"]},
     {"after": 7, "contains": ["Table .data  1/25", "ORD-10", "shipped"]},
     {"after": 9, "mode": "table"},

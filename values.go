@@ -644,14 +644,14 @@ func (a *App) registerValueVerbs() {
 				sel = b
 			}
 			return done(a.openInput(&valueEdit{what: "edit", at: v}, editText(v.node), sel))
-		}, "Edit the value: the value editor over the table (value.editor modal: its path, the old value, a badge with the type the text reads as; enter sets, esc cancels) or an input on the row (inline: enter or esc sets), its text selected (select; omitted, the rename.select setting decides) so typing replaces it. The text is the new value: a number, true, false, null, an object or array in JSON, \"…\" for a string that would read as another type, else the text as a string. With text, set it at once. A cell the row lacks is added").When("value-editable").FocusBound().
+		}, "Edit the value: the value editor over the table (value.editor modal: its path, the old value, a badge with the type the text reads as; enter sets, esc cancels) or an input on the row (inline: enter or esc sets), its text selected (select; omitted, the rename.select setting decides) so typing replaces it. The text is the new value: a number, true, false, null, an object or array in JSON, \"…\" for a string that would read as another type, else the text as a string. With text, set it at once. A cell the row lacks is added").When("value-editable").
 		Verb("delete", func(c ochazuke.Ctx) ochazuke.Result {
 			v, err := target(c)
 			if err != nil {
 				return ochazuke.Failed(err)
 			}
 			return done(a.onValue(v, func(v valueAt) error { return a.addPatch(Patch{Op: opDelete, Path: v.path()}) }))
-		}, "Delete the field or item from its object or array (one value, a value patch)").When("value-in-container").FocusBound().
+		}, "Delete the field or item from its object or array (one value, a value patch)").When("value-in-container").
 		Verb("add", func(c ochazuke.Ctx) ochazuke.Result {
 			v, err := target(c)
 			if err != nil {
@@ -686,7 +686,7 @@ func (a *App) registerValueVerbs() {
 				return done(a.openInput(&valueEdit{what: "add", at: v, key: key, insert: true, above: before}, "null", true))
 			}
 			return done(a.openInput(&valueEdit{what: "key", at: v, insert: true, above: before}, a.freeValueKey(v.parent), true))
-		}, "Add a value after this one (o), or before it with before (O): in an array an item, in an object a key (its name first, a placeholder selected: typing names it), then its value (null selected). With key and text, at once").When("value-addable").FocusBound().
+		}, "Add a value after this one (o), or before it with before (O): in an array an item, in an object a key (its name first, a placeholder selected: typing names it), then its value (null selected). With key and text, at once").When("value-addable").
 		Verb("rename", func(c ochazuke.Ctx) ochazuke.Result {
 			v, err := target(c)
 			if err != nil {
@@ -696,7 +696,7 @@ func (a *App) registerValueVerbs() {
 				return done(a.onValue(v, func(v valueAt) error { return a.renameValue(v, key) }))
 			}
 			return done(a.openInput(&valueEdit{what: "rename", at: v}, v.key, a.r.RenameSelect()))
-		}, "Rename this key in this one object (the structure's keys stay): the value editor (or the inline input), the key selected; with key, at once").When("value-renamable").FocusBound().
+		}, "Rename this key in this one object (the structure's keys stay): the value editor (or the inline input), the key selected; with key, at once").When("value-renamable").
 		Verb("paste", func(c ochazuke.Ctx) ochazuke.Result {
 			v, err := target(c)
 			if err != nil {
@@ -712,9 +712,9 @@ func (a *App) registerValueVerbs() {
 				return ochazuke.Failed(err)
 			}
 			return done(a.onValue(v, func(v valueAt) error { return a.setValue(v, raw) }))
-		}, "Put the register's value (\"a p from a) over this one: a value yanked with y keeps its type, other text reads as typed text does").When("value-editable").FocusBound().
+		}, "Put the register's value (\"a p from a) over this one: a value yanked with y keeps its type, other text reads as typed text does").When("value-editable").
 		Verb("yank", func(c ochazuke.Ctx) ochazuke.Result { return a.yankValue(c) },
-			"Copy the value (a table row's cell under the cursor, or the row on #) into the registers, its type kept for p, and the system clipboard").When("value-yankable").FocusBound().
+			"Copy the value (a table row's cell under the cursor, or the row on #) into the registers, its type kept for p, and the system clipboard").When("value-yankable").
 		Verb("patches", func(c ochazuke.Ctx) ochazuke.Result {
 			list := a.patchList()
 			c.Info(a.patchSummary())

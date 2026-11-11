@@ -72,7 +72,7 @@
       "expect": {
         "mode": "insert",
         "contains": [
-          "on disk · recent"
+          "browse [recent]"
         ]
       }
     },

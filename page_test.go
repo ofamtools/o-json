@@ -622,11 +622,7 @@ func TestPreviewYanksAndSetting(t *testing.T) {
 }
 
 // w writes what is shown: the restructured document on the edited view,
-// the document itself on the original. The restructure row is guarded on
-// the row (restructure-writable), not only by its verb's availability: a
-// verb that asks for its path would otherwise answer the key on the
-// original view too (ochazuke v0.124 asks for a missing subject even
-// where the verb is not available), and write the wrong document.
+// the document itself on the original.
 func TestWKeyWritesTheShownDocument(t *testing.T) {
 	for _, c := range []struct {
 		original bool
