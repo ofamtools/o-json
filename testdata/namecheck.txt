@@ -13,7 +13,7 @@ commands.go	textCommands	case	"json"	2
 commands.go	textCommands	case	"text"	2
 commands.go	textCommands	compare	"json"	2
 commands.go	textCommands	compare	"text"	1
-commands.go	textCommands	cyclo	"-"	44
+commands.go	textCommands	cyclo	"-"	39
 detail.go	App.openDetail	compare	"detail"	1
 edit.go	App.renaming	compare	"ochazuke.outline-line"	1
 export.go	exportJQ	case	"json"	1

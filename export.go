@@ -767,6 +767,57 @@ func (a *App) registerOpenIn(params func(string, map[string]ochazuke.Parameter))
 // --- the command line ---
 
 // exportCommand is o-json export.
+// exportRequest is one export as the command line and doc.export ask for
+// it: the mapping file that restructures first ("" for none), the format
+// (else Out's extension, else csv), the options, and whether the jq
+// program that makes it is wanted instead.
+type exportRequest struct {
+	Map, Format, Out string
+	JQ               bool
+	Options          ExportOptions
+}
+
+// writeTo writes the export of doc.
+func (q exportRequest) writeTo(w io.Writer, doc *Doc) error {
+	f, err := exportFormatOf(q.Format, q.Out)
+	if err != nil {
+		return err
+	}
+	root, program := doc.Root, ""
+	if q.Map != "" {
+		m, err := readMappingFile(q.Map)
+		if err != nil {
+			return err
+		}
+		plan, err := NewDocPlan(m, doc.Root, doc.Shape)
+		if err != nil {
+			return err
+		}
+		root, program = plan.Apply(doc.Root), strings.TrimSuffix(plan.JQ(), "\n")
+	}
+	if !q.JQ {
+		data, err := exportBytes(root, f, q.Options)
+		if err != nil {
+			return err
+		}
+		_, err = w.Write(data)
+		return err
+	}
+	x, err := Export(root, q.Options)
+	if err != nil {
+		return err
+	}
+	tail, err := exportJQ(x, f)
+	if err != nil {
+		return err
+	}
+	if program != "" {
+		tail = "(" + program + ") | " + tail
+	}
+	_, err = io.WriteString(w, tail+"\n")
+	return err
+}
+
 func exportCommand(stdin io.Reader, stdout, stderr io.Writer) oden.Command {
 	return oden.Command{
 		Name: "export", Summary: "write one array of the document (restructured by --map) as csv, tsv, jsonl or a markdown table",
@@ -800,53 +851,16 @@ extension, else csv. --jq prints a jq program (for jq -r) that makes the same cs
 			if *overwrite && *out == "" {
 				return errors.New("--overwrite needs --out (the file to replace)")
 			}
-			f, err := exportFormatOf(*format, *out)
-			if err != nil {
+			q := exportRequest{Map: *spec, Format: *format, JQ: *asJQ, Out: *out,
+				Options: ExportOptions{Of: *of, Columns: splitColumns(*columns), Arrays: *arrays, Join: *join, Null: *null}}
+			if _, err := exportFormatOf(q.Format, q.Out); err != nil {
 				return err
 			}
 			doc, _, err := readArgs(words, stdin, 0)
 			if err != nil {
 				return err
 			}
-			root, program := doc.Root, ""
-			if *spec != "" {
-				data, err := os.ReadFile(*spec)
-				if err != nil {
-					return err
-				}
-				m, err := ReadMapping(data)
-				if err != nil {
-					return err
-				}
-				plan, err := NewDocPlan(m, doc.Root, doc.Shape)
-				if err != nil {
-					return err
-				}
-				root, program = plan.Apply(doc.Root), strings.TrimSuffix(plan.JQ(), "\n")
-			}
-			opts := ExportOptions{Of: *of, Columns: splitColumns(*columns), Arrays: *arrays, Join: *join, Null: *null}
-			var data []byte
-			if *asJQ {
-				x, err := Export(root, opts)
-				if err != nil {
-					return err
-				}
-				tail, err := exportJQ(x, f)
-				if err != nil {
-					return err
-				}
-				if program != "" {
-					tail = "(" + program + ") | " + tail
-				}
-				data = []byte(tail + "\n")
-			} else if data, err = exportBytes(root, f, opts); err != nil {
-				return err
-			}
-			if *out != "" {
-				return writeNew(*out, data, *overwrite)
-			}
-			_, err = stdout.Write(data)
-			return err
+			return writeOut(q.Out, *overwrite, stdout, func(w io.Writer) error { return q.writeTo(w, doc) })
 		},
 	}
 }

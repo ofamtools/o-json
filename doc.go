@@ -142,10 +142,13 @@ func posError(data []byte, off int64, msg string) *ParseError {
 	return &ParseError{Line: line, Col: col, Msg: msg}
 }
 
+// emptyInput is the parse error of a source that holds nothing.
+const emptyInput = "empty input"
+
 // Build parses data into a tree, preserving key order.
 func Build(data []byte) (*Node, error) {
 	if len(bytes.TrimSpace(data)) == 0 {
-		return nil, &ParseError{Line: 1, Col: 1, Msg: "empty input"}
+		return nil, &ParseError{Line: 1, Col: 1, Msg: emptyInput}
 	}
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.UseNumber()

@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"ofam.dev/oden"
@@ -185,11 +184,7 @@ file; an existing file (the source among them) is replaced only with --overwrite
 				case *overwrite && *out == "":
 					return errors.New("--overwrite needs --out (the file to replace)")
 				}
-				specData, err := os.ReadFile(*spec)
-				if err != nil {
-					return err
-				}
-				m, err := ReadMapping(specData)
+				m, err := readMappingFile(*spec)
 				if err != nil {
 					return err
 				}
@@ -197,21 +192,10 @@ file; an existing file (the source among them) is replaced only with --overwrite
 				if err != nil {
 					return err
 				}
-				as := "document"
-				if *asJQ {
-					as = "jq"
-				} else if *asMapping {
-					as = "mapping"
-				}
-				data, err := restructureOutput(doc, m, as)
-				if err != nil {
+				return writeOut(*out, *overwrite, stdout, func(w io.Writer) error {
+					_, err := restructureTo(w, doc, m, restructureAs(*asJQ, *asMapping))
 					return err
-				}
-				if *out != "" {
-					return writeNew(*out, data, *overwrite)
-				}
-				_, err = stdout.Write(data)
-				return err
+				})
 			},
 		},
 	}
@@ -233,6 +217,18 @@ func parseFlags(fs *flag.FlagSet, args []string) ([]string, error) {
 		return nil, &oden.ExitError{Code: 2}
 	}
 	return words, nil
+}
+
+// restructureAs names what a restructure prints: the document, its jq
+// program or the complete mapping.
+func restructureAs(jq, mapping bool) string {
+	switch {
+	case jq:
+		return "jq"
+	case mapping:
+		return "mapping"
+	}
+	return "document"
 }
 
 // readArgs reads the document the words name and returns the words after

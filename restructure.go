@@ -817,29 +817,48 @@ func formatEntry(e MapEntry, str func(string) string) string {
 	return "{" + strings.Join(fields, ", ") + "}"
 }
 
-// restructureOutput is what the restructure command prints or writes.
-func restructureOutput(doc *Doc, m *Mapping, as string) ([]byte, error) {
+// restructureOutput is what the restructure command prints or writes, and
+// whether that text is JSON (the document, the mapping) or not (the jq
+// program).
+func restructureOutput(doc *Doc, m *Mapping, as string) (data []byte, isJSON bool, err error) {
 	src := doc.Root
 	plan, err := NewDocPlan(m, doc.Root, doc.Shape)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	switch as {
 	case "jq":
-		return []byte(plan.JQ()), nil
+		return []byte(plan.JQ()), false, nil
 	case "mapping":
-		return FormatMapping(plan.Complete())
+		data, err := FormatMapping(plan.Complete())
+		return data, true, err
 	}
-	return []byte(Pretty(plan.Apply(src)) + "\n"), nil
+	return []byte(Pretty(plan.Apply(src)) + "\n"), true, nil
+}
+
+// restructureTo writes what restructuring doc by m answers: the new
+// document, its jq program (as "jq") or the complete mapping ("mapping").
+// It reports whether what it wrote is JSON.
+func restructureTo(w io.Writer, doc *Doc, m *Mapping, as string) (isJSON bool, err error) {
+	data, isJSON, err := restructureOutput(doc, m, as)
+	if err != nil {
+		return false, err
+	}
+	_, err = w.Write(data)
+	return isJSON, err
 }
 
 // writeNew writes data to path. An existing file (the source among them)
 // is replaced only with overwrite, and always atomically.
 func writeNew(path string, data []byte, overwrite bool) error {
-	err := writeAtomic(path, overwrite, func(w io.Writer) error {
+	return existsHint(path, writeAtomic(path, overwrite, func(w io.Writer) error {
 		_, err := w.Write(data)
 		return err
-	})
+	}))
+}
+
+// existsHint says how a write that found its file there replaces it.
+func existsHint(path string, err error) error {
 	if errors.Is(err, os.ErrExist) {
 		return fmt.Errorf("%s exists; --overwrite replaces it: %w", path, err)
 	}
