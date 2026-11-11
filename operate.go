@@ -51,15 +51,15 @@ type operand struct {
 
 // operatorPairs is which objects each operator takes, per pane ("data",
 // "structure"); a motion counts as the object "motion".
-var operatorPairs = map[string]map[string][]string{
-	"data": {
+var operatorPairs = map[paneID]map[string][]string{
+	paneData: {
 		"y": {"value", "key", "path", "object", "array", "row", "column", "table", "motion"},
 		"d": {"value", "key", "object", "array", "row", "column", "table", "motion"},
 		"c": {"value", "key", "row"},
 		"s": {"column", "object", "array", "table"},
 		"!": {"value", "path", "object", "array", "row", "column", "table"},
 	},
-	"structure": {
+	paneStructure: {
 		"y": {"value", "key", "path", "subtree"},
 		"d": {"subtree", "key"},
 		"c": {"key"},
@@ -78,7 +78,7 @@ var arrayIndex = regexp.MustCompile(`\[[0-9]+\]`)
 func generalPath(p string) string { return arrayIndex.ReplaceAllString(p, "[]") }
 
 // operate is the one handler of the operate verbs.
-func (a *App) operate(c ochazuke.Ctx, pane string) ochazuke.Result {
+func (a *App) operate(c ochazuke.Ctx, pane paneID) ochazuke.Result {
 	op := ochazuke.StringArg(c.Args, "op", "")
 	object := ochazuke.StringArg(c.Args, "object", "")
 	if l, ok := objectLetters[object]; ok {
@@ -95,13 +95,13 @@ func (a *App) operate(c ochazuke.Ctx, pane string) ochazuke.Result {
 	if !slices.Contains(pairs, object) {
 		return ochazuke.Failed(fmt.Errorf("%s: no %s here", op, objectName(object)))
 	}
-	if (op == "d" || op == "c") && pane == "data" && a.editGated() {
+	if (op == "d" || op == "c") && pane == paneData && a.editGated() {
 		c.Info(needsEditNote(op))
 		return ochazuke.Done(nil)
 	}
 	var o operand
 	var err error
-	if pane == "data" {
+	if pane == paneData {
 		o, err = a.dataOperand(c, object, inner)
 	} else {
 		o, err = a.structureOperand(c, object, inner)
@@ -113,12 +113,12 @@ func (a *App) operate(c ochazuke.Ctx, pane string) ochazuke.Result {
 	case "y":
 		return a.operateYank(c, object, o)
 	case "d":
-		if pane == "structure" {
+		if pane == paneStructure {
 			return a.forward(c, "node", "delete")
 		}
 		return a.operateDelete(c, object, o)
 	case "c":
-		if pane == "structure" {
+		if pane == paneStructure {
 			return a.forward(c, "node", "rename")
 		}
 		if object == "key" {
@@ -617,10 +617,10 @@ func (a *App) registerOperate() {
 	r := a.r
 	desc := "Operate on a JSON text object or a motion (Vim's operators): op y yank, d delete, c change, s sort, ! jq; object v value, k key, p path, o object, a array, r row, c column, t table, s subtree (inner, or around with inner false), or motion down/up with steps rows; the register from \" a"
 	for _, noun := range []string{"item", "field"} {
-		r.Define(noun).Verb("operate", func(c ochazuke.Ctx) ochazuke.Result { return a.operate(c, "data") }, desc)
+		r.Define(noun).Verb("operate", func(c ochazuke.Ctx) ochazuke.Result { return a.operate(c, paneData) }, desc)
 	}
 	for _, noun := range []string{"node", "shape"} {
-		r.Define(noun).Verb("operate", func(c ochazuke.Ctx) ochazuke.Result { return a.operate(c, "structure") }, desc)
+		r.Define(noun).Verb("operate", func(c ochazuke.Ctx) ochazuke.Result { return a.operate(c, paneStructure) }, desc)
 	}
 	params := map[string]ochazuke.Parameter{
 		"op":       {Type: "string", Required: true, Enum: []string{"y", "d", "c", "s", "!"}, Description: "the operator"},

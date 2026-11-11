@@ -16,12 +16,16 @@ import (
 // (commands.go) print the same answers as text.
 
 // newShell is the NOUN VERB shell over a runtime holding the doc noun.
-func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
+func newShell(stdin io.Reader, stdout, stderr io.Writer, dataDir ...string) *ocli.Shell {
 	r := ochazuke.NewRuntime()
+	if len(dataDir) > 0 && dataDir[0] != "" {
+		r.Config().StateDir = dataDir[0]
+	}
 	// The settings the viewer reads, so settings list|set know them.
 	if err := declareSettings(r); err != nil {
 		panic(err)
 	}
+	var documents *documentStore
 	// Each verb reads the file as pending work: reading and parsing a
 	// document is I/O, which an application verb keeps off the loop. (Key
 	// order is not the reason: the shell keeps an immediate result's keys
@@ -52,6 +56,9 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 			return pending(c, func(d *Doc, path string) (any, error) { return tableAt(d, path) })
 		}, "an array (or the values a [] path names) as {path, columns: [{name, count, optional, types, self}], rows}; columns most common first, optional ones last, rows as in the document").Quiet().Positional("file", "path").Fetch().
 		Verb("get", func(c ochazuke.Ctx) ochazuke.Result {
+			if id := ochazuke.StringArg(c.Args, "id", ""); id != "" {
+				return ochazuke.Pending(func(context.Context) (any, error) { return documents.get(c, id) })
+			}
 			return pending(c, func(d *Doc, path string) (any, error) {
 				values, fanned, err := Select(d.Root, path)
 				switch {
@@ -79,12 +86,12 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 				return tableRows(t), nil
 			}).Then(func(ochazuke.Ctx, any, error) { r.Define("item").Columns(cols...) })
 		}, "doc tabulate's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc tabulate column; --format table, markdown and toon print them as a table").Quiet().Positional("file", "path").Rows("item").Fetch()
-	file := ochazuke.Parameter{Type: "string", Required: true, Description: "the JSON file; - reads stdin"}
+	file := ochazuke.Parameter{Type: ochazuke.PropPath, Path: "file", Required: true, Description: "the JSON file; - reads stdin"}
 	params := map[string]map[string]ochazuke.Parameter{
 		"doc.structure": {"file": file},
 		"doc.tabulate":  {"file": file, "path": {Type: "string", Description: "the array: .items, or a [] path such as .items[].owner (default . , the root)"}},
 		"doc.rows":      {"file": file, "path": {Type: "string", Description: "the array: .items, or a [] path such as .items[].owner (default . , the root)"}},
-		"doc.get":       {"file": file, "path": {Type: "string", Required: true, Description: "jq-style path: . .key [\"odd key\"] [0] [-1] [] (every item)"}},
+		"doc.get":       {"file": {Type: ochazuke.PropPath, Path: "file", Description: "the JSON file; - reads stdin"}, "id": documentSubject(), "path": {Type: "string", Description: "jq-style path: . .key [\"odd key\"] [0] [-1] [] (every item); omit id to read JSON instead of the document record"}},
 	}
 	results := map[string]string{"doc.structure": "shape", "doc.tabulate": "{path, columns, rows}", "doc.get": "value", "doc.rows": "row lines"}
 	for key, p := range params {
@@ -93,8 +100,33 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer) *ocli.Shell {
 		op.Result = results[key]
 		r.Operations.Set(op)
 	}
-	defineDocStore(r, stdin)
+	documents = registerDocuments(r, nil, nil)
+	registerDocumentActions(r, documents, nil)
+	r.Define("doc").Verb("documents", func(c ochazuke.Ctx) ochazuke.Result {
+		return ochazuke.Pending(func(context.Context) (any, error) {
+			things, err := documents.list(c, ochazuke.ListQuery{})
+			if err != nil {
+				return nil, err
+			}
+			rows := make(ochazuke.Lines, 0, len(things))
+			for _, t := range things {
+				rows = append(rows, ocli.Row{Noun: "doc", ID: t["id"].(string), Label: t["name"].(string), Data: t})
+			}
+			return rows, nil
+		})
+	}, "Registered and recent JSON documents, as metadata rows for the host viewer").Rows("doc").Fetch()
+	declareDocumentPage(r)
+	r.DefineListFacts(ochazuke.ListFacts{Noun: "item", Rename: map[string]string{"data": "row-data"}, ListParams: map[string]ochazuke.Parameter{"file": file, "path": {Type: "string"}}, List: func(c ochazuke.Ctx) ochazuke.Result {
+		return pending(c, func(d *Doc, path string) (any, error) {
+			table, err := tableAt(d, path)
+			if err != nil {
+				return nil, err
+			}
+			return tableRows(table), nil
+		})
+	}})
 	sh := ocli.New(r, "o-json", stdin, stdout, stderr)
+	sh.Prepare = func(context.Context) error { r.EnsureHistory(); return nil }
 	sh.Usage = ocli.DefaultUsage("o-json")
 	return sh
 }

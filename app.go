@@ -18,17 +18,18 @@ import (
 const (
 	pageID   = "viewer"
 	treeID   = "structure"
-	dataID   = "data"
+	dataID   = string(paneData)
 	detailID = "detail"
 	rowsID   = "detail/rows"
 )
 
 // App is the viewer's state.
 type App struct {
-	Doc     *Doc
-	Path    string // the file being shown or read ("-" is stdin)
-	Loading string // the file being read off the loop, "" when idle
-	LoadErr error
+	Doc       *Doc
+	Path      string // the file being shown or read ("-" is stdin)
+	documents *documentStore
+	Loading   string // the file being read off the loop, "" when idle
+	LoadErr   error
 	// recent is the recent list the path picker offers (viewer.open's
 	// recent source): read before the loop starts and after each read, on
 	// the read's goroutine, so the picker does no I/O.
@@ -247,6 +248,9 @@ func (a *App) Load(path string) error {
 	if err != nil {
 		return err
 	}
+	if err := a.rememberDocument(path); err != nil {
+		return err
+	}
 	return a.setDoc(path, doc)
 }
 
@@ -254,6 +258,7 @@ func (a *App) Load(path string) error {
 // root selected.
 func (a *App) setDoc(path string, doc *Doc) error {
 	a.Doc, a.Path, a.Loading, a.LoadErr = doc, path, "", nil
+	a.r.Instances[pageID].Data = map[string]any{"document": path}
 	a.shown = nil
 	a.viewByPath = make(map[string]string)
 	a.folds = make(map[string]map[string]bool)

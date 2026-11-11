@@ -39,6 +39,8 @@ import (
 // (restructure.layout) flips the setting; the page opens on the
 // original either way (focusOriginal).
 
+type previewMode string
+
 const (
 	rsPageID = "restructure"
 	rsOrigID = "restructure/original"
@@ -54,11 +56,11 @@ const (
 	// restructured tree: data (the restructured document's data at the
 	// selected node, in the data pane's views), mapping (the mapping's
 	// text) or off (the trees take the height).
-	settingPreview = "restructure.preview"
-	previewData    = "data"
-	previewMapping = "mapping"
-	previewOff     = "off"
-	settingNewKey  = "restructure.new-key"
+	settingPreview             = "restructure.preview"
+	previewData    previewMode = "data"
+	previewMapping previewMode = "mapping"
+	previewOff     previewMode = "off"
+	settingNewKey              = "restructure.new-key"
 	// toneOrigin marks, on one tree, where the other tree's selected node
 	// comes from or went to: the built-in queued tone, the scheme's accent
 	// as the foreground (a background tone waits for the library).
@@ -127,7 +129,7 @@ func declareSettings(r *ochazuke.Runtime) error {
 		Name: settingLayout, Type: ochazuke.SettingString, Default: "split", Enum: []string{"split", "single"},
 		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, ctrl+a o swaps them",
 	}, ochazuke.Setting{
-		Name: settingPreview, Type: ochazuke.SettingString, Default: previewData, Enum: []string{previewData, previewMapping, previewOff},
+		Name: settingPreview, Type: ochazuke.SettingString, Default: string(previewData), Enum: []string{string(previewData), string(previewMapping), string(previewOff)},
 		Description: "Under the restructured tree on the restructure page: data previews the restructured document at the selected node in the data pane's views (D, tab; ctrl+w l or ctrl+w j focuses it), mapping shows the mapping's text, off shows the trees alone",
 	}, ochazuke.Setting{
 		Name: settingNewKey, Type: ochazuke.SettingString, Default: "new-key",
@@ -1917,7 +1919,7 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 			return mapPanel(w, h)
 		}
 		cw, ch := ochazuke.PanelContentSize(w, h)
-		focused := a.data.list.DrawnFocused() || a.drawnFocus() == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
+		focused := a.data.list.DrawnFocused() || paneID(a.drawnFocus()) == paneData || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
 		b := l.PanelBlock(a.dataTitle(), a.dataBlock(cw, ch), w, h, focused)
 		if !focused {
 			b.Cursor = nil
@@ -1931,9 +1933,9 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 	mh = bh - th
 	var body string
 	var cursor ochazuke.Block // the preview's cursor (an inline value edit), placed on the page
-	only := a.r.PaneOnly(rsPageID)
+	only := paneID(a.r.PaneOnly(rsPageID))
 	switch {
-	case only != "" && only == dataID && preview == previewData:
+	case only != "" && only == paneData && preview == previewData:
 		p := previewPanel(width, bh)
 		body, cursor = p.Text, p.Offset(0, 1)
 	case a.layout() == "single" || only != "":
@@ -1979,8 +1981,8 @@ func (a *App) renderRestructure(r *ochazuke.Runtime, width, height int) ochazuke
 }
 
 // preview is the restructure.preview setting.
-func (a *App) preview() string {
-	switch v := a.r.Settings().String(settingPreview); v {
+func (a *App) preview() previewMode {
+	switch v := previewMode(a.r.Settings().String(settingPreview)); v {
 	case previewMapping, previewOff:
 		return v
 	}

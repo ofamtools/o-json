@@ -13,9 +13,13 @@ import (
 	"ofam.dev/ochazuke"
 )
 
+// paneID is a viewer pane selector, not a runtime noun or parameter name.
+// Convert to string only when declaring or addressing a framework instance.
+type paneID string
+
 const (
-	paneStructure = "structure"
-	paneData      = "data"
+	paneStructure paneID = "structure"
+	paneData      paneID = "data"
 )
 
 // focusStructure focuses the structure pane the viewer shows: the edited
@@ -43,7 +47,7 @@ func (a *App) structureDrawn(focus string) bool {
 // onlyPane is viewer.only, kept as a verb over ochazuke's pane.only and
 // pane.restore (v0.61.0; the keys run those): pane is structure, data,
 // focused or none. With one pane already alone, it restores both.
-func (a *App) onlyPane(c ochazuke.Ctx, pane string) error {
+func (a *App) onlyPane(c ochazuke.Ctx, pane paneID) error {
 	page := a.r.Page
 	if a.r.PaneOnly(page) != "" || pane == "none" {
 		c.Info("both panes shown")
@@ -130,7 +134,7 @@ func (a *App) registerPaneVerbs() {
 	}
 	r.Define("viewer").
 		Verb("only", func(c ochazuke.Ctx) ochazuke.Result {
-			return done(a.onlyPane(c, ochazuke.StringArg(c.Args, "pane", "focused")))
+			return done(a.onlyPane(c, paneID(ochazuke.StringArg(c.Args, "pane", "focused"))))
 		}, "Show only one pane (ctrl+w o): structure, data or the focused one, as the mode's row says; again, or with pane none, both come back").
 		Verb("restore", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.onlyPane(c, "none"))
@@ -138,7 +142,7 @@ func (a *App) registerPaneVerbs() {
 		Verb("focus-pane", func(c ochazuke.Ctx) ochazuke.Result {
 			return done(a.movePane(ochazuke.StringArg(c.Args, "to", "right")))
 		}, "Move the focus to the pane on the left, right, above or below (ctrl+w h, ctrl+w l, ctrl+w k, ctrl+w j); at the edge it stays, as in Vim. On the restructure page the preview is right of and below the restructured tree")
-	setParams(r, "viewer.only", map[string]ochazuke.Parameter{"pane": {Type: "string", Enum: []string{paneStructure, paneData, "focused", "none"}, Description: "default focused"}})
+	setParams(r, "viewer.only", map[string]ochazuke.Parameter{"pane": {Type: "string", Enum: []string{string(paneStructure), string(paneData), "focused", "none"}, Description: "default focused"}})
 	setParams(r, "viewer.focus-pane", map[string]ochazuke.Parameter{"to": {Type: "string", Enum: []string{"left", "right", "up", "down"}, Description: "default right"}})
 	setHistory(r, ochazuke.HistoryAction, "viewer.only", "viewer.restore", "viewer.focus-pane")
 }

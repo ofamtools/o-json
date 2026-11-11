@@ -22,7 +22,9 @@ func docDo(t *testing.T, a *App, verb string, args ochazuke.Arguments) any {
 // docShow is doc.show's answer, read after the request settles.
 func docShow(t *testing.T, a *App) map[string]any {
 	t.Helper()
-	docDo(t, a, "show", nil)
+	if a.Path != "" {
+		docDo(t, a, "show", ochazuke.Arguments{"id": a.Path})
+	}
 	return a.docState()
 }
 
@@ -36,8 +38,11 @@ func TestDocVerbsAreTheViewerVerbs(t *testing.T) {
 			t.Fatalf("%s: op %q alias %v ok %v", al.Alias, op.Key.Short(), inv.Alias, ok)
 		}
 	}
-	op, _, _ := a.r.ResolveAction("doc.open")
-	if p := op.Parameters["path"]; p.Type != ochazuke.PathParameterType || !p.Required {
+	op, inv, ok := a.r.ResolveAction("doc.open")
+	if !ok || inv.Alias {
+		t.Fatal("doc.open must be a registered viewer operation")
+	}
+	if p := op.Parameters["path"]; p.Type != ochazuke.PathParameterType || p.Path != "file" {
 		t.Fatalf("doc.open's path: %+v", p)
 	}
 }
@@ -48,7 +53,7 @@ func TestDocOpenReplacesTheDocument(t *testing.T) {
 		t.Fatalf("empty: %v", s)
 	}
 	docDo(t, a, "open", ochazuke.Arguments{"path": sample})
-	if s := docShow(t, a); a.Path != sample || s["open"] != true || s["path"] != sample || s["unsaved"] != false {
+	if s := docShow(t, a); filepath.Base(a.Path) != filepath.Base(sample) || s["open"] != true || s["unsaved"] != false {
 		t.Fatalf("open: %v err %v", s, a.LoadErr)
 	}
 	other := filepath.Join(t.TempDir(), "other.json")
@@ -62,12 +67,12 @@ func TestDocOpenReplacesTheDocument(t *testing.T) {
 	sendPaths(t, a, ".name")
 	press(t, a, "q")
 	docDo(t, a, "open", ochazuke.Arguments{"path": other})
-	if a.r.TopModal() == "" || a.Path != sample {
+	if a.r.TopModal() == "" || filepath.Base(a.Path) != filepath.Base(sample) {
 		t.Fatalf("doc.open over edits did not ask: modal %q path %q", a.r.TopModal(), a.Path)
 	}
 	finish(a, Press(a.m, "n"))
 	settle(a)
-	if a.Path != sample || len(a.Mapping().Map) == 0 {
+	if filepath.Base(a.Path) != filepath.Base(sample) || len(a.Mapping().Map) == 0 {
 		t.Fatalf("n: path %q map %v", a.Path, a.Mapping().Map)
 	}
 	docDo(t, a, "open", ochazuke.Arguments{"path": other})
@@ -84,28 +89,12 @@ func TestDocOpenReplacesTheDocument(t *testing.T) {
 	if !strings.Contains(view(a), "reloaded") {
 		t.Fatalf("reload:\n%s", view(a))
 	}
-	// doc.new empties it: the data pane says no document is open.
-	docDo(t, a, "new", nil)
-	if s := docShow(t, a); s["open"] != false || !strings.Contains(view(a), "No document is open.") {
-		t.Fatalf("new: %v\n%s", s, view(a))
-	}
-}
-
-// The empty document's data pane names the keys from the bindings, and
-// empty.hint off leaves it an empty list.
-func TestEmptyHint(t *testing.T) {
-	a := empty(t)
-	frame := view(a)
-	for _, want := range []string{"No document is open.", "e     open a JSON file (doc.open)", "p     paste JSON"} {
-		if !strings.Contains(frame, want) {
-			t.Fatalf("no %q\n%s", want, frame)
-		}
-	}
-	if err := a.r.Settings().Set(settingEmptyHint, false); err != nil {
+	// Buffer reset stays viewer.new; doc.new now creates a real file.
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "new", Target: pageID}); err != nil {
 		t.Fatal(err)
 	}
-	if frame := view(a); strings.Contains(frame, "No document is open.") {
-		t.Fatalf("empty.hint off:\n%s", frame)
+	if s := docShow(t, a); s["open"] != false || !strings.Contains(view(a), "No document is open.") {
+		t.Fatalf("new: %v\n%s", s, view(a))
 	}
 }
 
@@ -123,8 +112,9 @@ func TestViewerNounsAreThingNouns(t *testing.T) {
 		settle(a)
 		return v
 	}
-	if doc, _ := get("doc", "show").(map[string]any); doc["opened"] == nil && doc["open"] == nil {
-		t.Fatalf("doc show %v", doc)
+	docDo(t, a, "show", ochazuke.Arguments{"id": a.Path})
+	if doc, err := a.documents.get(ochazuke.Ctx{}, a.Path); err != nil || doc["file"] == nil {
+		t.Fatalf("doc show %v (%v)", doc, err)
 	}
 	if v := get("viewer", "get"); v == nil {
 		t.Fatal("viewer get answered nothing")

@@ -975,3 +975,32 @@ move-up	action	seed	ochazuke v0.110
 referrer	noun	seed	ochazuke v0.110
 related	noun	seed	ochazuke v0.110
 related-section	noun	seed	ochazuke v0.110
+act	action	yes	focused actions, ochazuke v0.122
+add-project	action	yes	relate a document to a host project
+columns	action	yes	ochazuke index columns
+documents	action	yes	document metadata row source
+edit-pane	action	yes	open the document in an editor pane
+form-item	noun	yes	ochazuke list form field
+form-read-only	noun	yes	ochazuke read-only form field
+group-fold	action	yes	fold a collection group
+item-add	action	yes	ochazuke list field rows
+item-delete	action	yes	ochazuke list field rows
+item-edit	action	yes	ochazuke list field rows
+item-first	action	yes	ochazuke list field rows
+item-last	action	yes	ochazuke list field rows
+item-move-down	action	yes	ochazuke list field rows
+item-move-up	action	yes	ochazuke list field rows
+item-next	action	yes	ochazuke list field rows
+item-previous	action	yes	ochazuke list field rows
+item-yank	action	yes	ochazuke list field rows
+next-scope	action	yes	ochazuke picker scopes
+noun-browser	noun	yes	ochazuke nouns page
+open-with	action	yes	typed path opener
+opener	noun	yes	ochazuke opener table
+previous-scope	action	yes	ochazuke picker scopes
+relate	action	yes	relate two typed noun references
+relation-kind	noun	yes	ochazuke relation rules
+send-note	action	yes	send JSON to a host note
+send-pane	action	yes	send JSON to a host pane
+show-archived	action	yes	ochazuke archived-row filter
+unrelate	action	yes	remove a relation

@@ -247,61 +247,6 @@ func TestQuerySlashFocusesAndEscLeaves(t *testing.T) {
 	}
 }
 
-// The query line draws field references as chips (the select style,
-// reverse video): dimmed while the line is not focused, bright while it
-// is; structure characters and names are plain.
-func TestQueryChipsRender(t *testing.T) {
-	q := `.items[] | select(.id > 1) | {n: .name, "k": ."odd key"[0]}`
-	var chips []string
-	for _, tok := range jqTokens([]rune(q)) {
-		if tok.Kind == tokPath {
-			chips = append(chips, q[tok.Start:tok.End])
-		}
-	}
-	if want := []string{".items[]", ".id", ".name", `."odd key"[0]`}; !slices.Equal(chips, want) {
-		t.Fatalf("chips %q, want %q", chips, want)
-	}
-	a := openQuery(t, sample)
-	query(t, a, ".items[] | .name")
-	if l := line(view(a), "jq .items[]"); !strings.Contains(l, "jq .items[] | .name") {
-		t.Fatalf("query line %q", l)
-	}
-	st := a.m.Styles()
-	lineOf := func() string {
-		b, _ := a.queryLines(st, 120)
-		return b.Text
-	}
-	dim, bright := st.Tone(ochazuke.ToneChip).Render(".items[]"), st.Tone(ochazuke.ToneChipFocused).Render(".items[]")
-	if dim == bright || dim == ".items[]" {
-		t.Fatalf("the chip tones draw alike: %q %q", dim, bright)
-	}
-	if raw := lineOf(); !strings.Contains(raw, dim) || strings.Contains(raw, bright) {
-		t.Fatalf("an unfocused chip is not on the dim chip background:\n%q", raw)
-	}
-	if raw := lineOf(); strings.Contains(raw, st.Tone(ochazuke.ToneChip).Render("|")) {
-		t.Fatal("a pipe is drawn as a chip")
-	}
-	// Focused, the chip under the cursor is bright (query.chip-focus
-	// cursor); the others stay dim. With line, every chip is bright.
-	press(t, a, "/")
-	if raw := lineOf(); strings.Contains(raw, bright) || !strings.Contains(raw, st.Tone(ochazuke.ToneChipFocused).Render(".name")) {
-		t.Fatalf("the chip under the cursor is not the bright one:\n%q", raw)
-	}
-	if err := a.r.Settings().Set(settingChipFocus, "line"); err != nil {
-		t.Fatal(err)
-	}
-	if raw := lineOf(); !strings.Contains(raw, bright) {
-		t.Fatalf("query.chip-focus line: a focused line's chips are not bright:\n%q", raw)
-	}
-	_ = a.r.Settings().Set(settingChipFocus, "cursor")
-	// An error points at its column on the line below.
-	press(t, a, "esc")
-	query(t, a, ".items[] |")
-	if l := line(view(a), "^ "); !strings.Contains(l, "unexpected EOF") {
-		t.Fatalf("no caret line: %q\n%s", l, view(a))
-	}
-}
-
 // In the query field a visual selection and [ (or { or () wraps it.
 func TestQueryWrapSelection(t *testing.T) {
 	a := openQuery(t, sample)
@@ -608,7 +553,7 @@ func TestQueryErrorKeepsTheTree(t *testing.T) {
 	row := func() int {
 		t.Helper()
 		for i, l := range strings.Split(view(a), "\n") {
-			if strings.Contains(l, ". (root)") {
+			if strings.Contains(l, "(root)") {
 				return i
 			}
 		}

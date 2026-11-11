@@ -62,7 +62,7 @@ func (a *App) render(r *ochazuke.Runtime, width, height int) ochazuke.Block {
 	focus := a.drawnFocus()
 	// An empty tree (no document) holds the focus itself, not its list.
 	treeFocused := a.structureDrawn(focus)
-	dataFocused := a.data.list.DrawnFocused() || focus == dataID || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
+	dataFocused := a.data.list.DrawnFocused() || paneID(focus) == paneData || a.vedit != nil && (a.vedit.view == nil || a.vedit.view == a.data)
 	var left, right ochazuke.Block
 	var lw, lh, rw, rh int
 	stacked := width < stackWidth

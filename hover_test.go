@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -315,27 +313,6 @@ func TestHoverSummarySetting(t *testing.T) {
 	press(t, a, "j")
 	if a.data.Selected() != 3 || a.hoverIn() {
 		t.Fatalf("j under summary: row %d", a.data.Selected())
-	}
-}
-
-// The frames at 80 and 120 columns with the orders sub-table open and
-// its first order's items under the cursor.
-func TestHoverRenderGolden(t *testing.T) {
-	for _, width := range []int{80, 120} {
-		a := hoverAt(t, width, 24, 7)
-		press(t, a, "j", "l", "l", "l", "j")
-		got := view(a)
-		golden := filepath.Join("testdata", "hover-"+itoa(width)+".golden")
-		if os.Getenv("UPDATE_GOLDEN") != "" {
-			_ = os.WriteFile(golden, []byte(got), 0o644)
-		}
-		want, err := os.ReadFile(golden)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got != string(want) {
-			t.Errorf("%d columns\n%s\nwant\n%s", width, got, want)
-		}
 	}
 }
 

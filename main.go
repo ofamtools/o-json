@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -53,25 +54,40 @@ func appName() string {
 // existing file (or -, stdin) opens it in the viewer, and anything oden does
 // not know (flags, a path) reaches the viewer.
 func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
+	dataDir := ""
+	if len(args) > 0 && args[0] == "--data" {
+		if len(args) < 2 {
+			return fmt.Errorf("--data requires a state directory")
+		}
+		dataDir, args = args[1], args[2:]
+	}
+	tuiArgs := func(args []string) []string {
+		if dataDir != "" {
+			return append([]string{"--data", dataDir}, args...)
+		}
+		return args
+	}
 	app := oden.New(appName(), args, oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
 		oden.WithDefault(func(_ context.Context, args []string) error {
 			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !strings.ContainsAny(args[0], "./") {
 				return oden.ErrNotFound
 			}
-			return runTUI(args, stdin, stdout, stderr)
+			return runTUI(tuiArgs(args), stdin, stdout, stderr)
 		}))
 	// o-json's own commands are added before Mount: oden gives a name to
 	// the first command that claims it, so view stays the viewer and not
 	// the framework's short name for ochazuke.view (v0.50.0).
 	app.Add(textCommands(stdin, stdout, stderr)...)
 	app.Add(exportCommand(stdin, stdout, stderr))
-	app.Add(viewCommand(stdin, stdout, stderr))
+	app.Add(viewCommand(stdin, stdout, stderr, dataDir))
 	app.Add(storyCommands()...) // the tester's story command; none in a normal build
-	ocli.Mount(app, newShell(stdin, stdout, stderr))
+	shell := newShell(stdin, stdout, stderr, dataDir)
+	ocli.Mount(app, shell)
+	defer shell.Runtime.Config().Flush()
 	if len(args) > 0 && (args[0] == "-" || isFile(args[0])) && !app.Catalog().Resolve(args[0]).Exact {
 		// "-" is stdin, a file word too: oden would resolve it as a
 		// command word and print the usage.
-		return runTUI(args, stdin, stdout, stderr)
+		return runTUI(tuiArgs(args), stdin, stdout, stderr)
 	}
 	// Mount's help note says every result is JSON, which is true of the doc
 	// noun only; structure, table and get print text.

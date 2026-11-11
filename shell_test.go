@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -149,8 +150,13 @@ func TestCatalog(t *testing.T) {
 			}
 		}
 	}
-	if cat.Name != "o-json" || strings.Join(verbs, " ") != "archive create delete edit get list rows set structure tabulate" {
-		t.Fatalf("catalog %s %v", cat.Name, verbs)
+	if cat.Name != "o-json" {
+		t.Fatalf("catalog name %s", cat.Name)
+	}
+	for _, want := range []string{"get", "rows", "structure", "tabulate", "create", "list", "show", "set", "edit", "delete", "archive", "restore", "duplicate", "annotate", "history", "relate", "open", "open-with", "reveal", "yank-path", "move", "rename", "send-note", "send-pane", "add-project", "edit-pane"} {
+		if !slices.Contains(verbs, want) {
+			t.Errorf("catalog lacks doc.%s: %v", want, verbs)
+		}
 	}
 }
 
@@ -186,13 +192,11 @@ func TestDocRowsFormats(t *testing.T) {
 	}
 }
 
-// doc is a thing noun named by its file: its own get (the value at a path)
-// stays, and the standard list is unavailable, there being no list of
-// documents.
+// The document registry is listable; the original FILE PATH JSON read stays.
 func TestDocIsAThingNoun(t *testing.T) {
-	var out, errOut bytes.Buffer
-	if err := Main([]string{"doc", "list"}, strings.NewReader(""), &out, &errOut); err == nil {
-		t.Fatal("doc list answered")
+	var out, stderr bytes.Buffer
+	if err := Main([]string{"doc", "list"}, strings.NewReader(""), &out, &stderr); err != nil || !strings.Contains(out.String(), `"items"`) {
+		t.Fatalf("doc list: %s (%v; %s)", out.String(), err, stderr.String())
 	}
 	if got := run(t, "", "doc", "get", sample, "."); got == "" {
 		t.Fatal("doc get FILE PATH answered nothing")

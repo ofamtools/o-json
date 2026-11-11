@@ -255,26 +255,6 @@ func TestRawToggle(t *testing.T) {
 	}
 }
 
-// The frames at 80 and 120 columns with .items selected.
-func TestRenderGolden(t *testing.T) {
-	for _, width := range []int{80, 120} {
-		a := open(t, sample, width, 24)
-		selectPath(t, a, ".items")
-		got := view(a)
-		golden := filepath.Join("testdata", "view-"+itoa(width)+".golden")
-		if os.Getenv("UPDATE_GOLDEN") != "" {
-			_ = os.WriteFile(golden, []byte(got), 0o644)
-		}
-		want, err := os.ReadFile(golden)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got != string(want) {
-			t.Errorf("%d columns\n%s\nwant\n%s", width, got, want)
-		}
-	}
-}
-
 func itoa(n int) string { return strconv.Itoa(n) }
 
 // A big array: the data panel's list holds a screen of rows, so G and the

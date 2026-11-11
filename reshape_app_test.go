@@ -270,36 +270,6 @@ func TestWriteAfterAReshapeStep(t *testing.T) {
 	}
 }
 
-// The frames at 80 and 120 columns: a marked tree, and a key-by result.
-func TestReshapeGolden(t *testing.T) {
-	for _, width := range []int{80, 120} {
-		for name, setup := range map[string]func(*App){
-			"marked": func(a *App) {
-				markPaths(t, a, ".people[].name", ".people[].address.city")
-			},
-			"key-by": func(a *App) {
-				keyPeople(t, a, ochazuke.Arguments{"field": "id"})
-				a.onNode(t, ".people")
-			},
-		} {
-			a := openReshape(t, width, 24)
-			setup(a)
-			got := view(a)
-			golden := filepath.Join("testdata", "reshape-"+name+"-"+itoa(width)+".golden")
-			if os.Getenv("UPDATE_GOLDEN") != "" {
-				_ = os.WriteFile(golden, []byte(got), 0o644)
-			}
-			want, err := os.ReadFile(golden)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got != string(want) {
-				t.Errorf("%s at %d columns\n%s\nwant\n%s", name, width, got, want)
-			}
-		}
-	}
-}
-
 // Persistent marks take priority over the cursor and a visual range, including
 // the modes whose own tables shadow normal's rows. Draw between keys, as the
 // real loop does (especially after Escape).

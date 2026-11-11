@@ -245,9 +245,9 @@ o-csv is a full-screen program and ochazuke has no way to hand the terminal to a
 
 ## For a host: the doc noun and the catalog
 
-`o json doc structure|table|get FILE [PATH]` gives the same answers as JSON through ochazuke's `cli.Shell`, and `o json catalog` describes the noun, so `o nabe extension register json` can mount it. A value keeps the document's key order.
+`o json doc structure|tabulate|get FILE [PATH]` gives the same answers as JSON through ochazuke's `cli.Shell`, and `o json catalog` describes the nouns and the host's JSON viewer page. A value keeps the document's key order.
 
-`o json doc rows FILE [PATH]` is `doc table`'s rows for a host and for the formats: JSON Lines `{noun: "item", id: PATH, data: ITEM, cells}`, the item in document order and one cell per table column. `--format table|markdown|toon` prints them as a table under `doc table`'s columns (an optional column's title ends in `?`, numbers are right-aligned, and on a narrow terminal the optional columns drop first):
+`o json doc rows FILE [PATH]` is `doc tabulate`'s rows for a host and for the formats: JSON Lines `{noun: "item", id: PATH, data: ITEM, cells}`, the item in document order and one cell per table column. `--format table|markdown|toon` prints them as a table under `doc tabulate`'s columns (an optional column's title ends in `?`, numbers are right-aligned, and on a narrow terminal the optional columns drop first):
 
 ```
 $ o json doc rows testdata/sample.json '.items[].owner' --format table
@@ -258,7 +258,47 @@ cy    null
 dee
 ```
 
-`doc get` of an array of objects prints under `--format` too (its fields as columns). `doc structure` and `doc table` answer one object, so `--format` other than json prints their JSON with a note on stderr.
+`doc get` of an array of objects prints under `--format` too (its fields as columns). `doc structure` and `doc tabulate` answer one object, so `--format` other than json prints their JSON with a note on stderr.
+
+### Document files and actions
+
+The CLI and viewer use the same document and note stores. Files opened in the
+viewer or addressed by a file path enter the registry with a stable `id`.
+`file` is a typed file path and human selector, `name` is its editable label,
+`modified` is a time, and `archived` hides the record without moving the file.
+The registry, annotations and relations live in `documents.json` beside
+`recent.json`; a leading `--data DIR` selects another state directory.
+
+| Action | Effect |
+|---|---|
+| `doc list`, `doc show --id ID` | List registered/recent files; show the record. At the UI, show opens the generated form and its related/history sections. |
+| `doc new file=FILE content=JSON` | Create a real new JSON file. `viewer.new` still clears the unsaved buffer. |
+| `doc edit`, `doc set` | Edit declared props. Explicit content changes validate JSON and write the source atomically. Viewer value and structure edits still change only the in-memory mapping until an explicit write. |
+| `doc move ID NEWFILE`, `doc rename ID NAME` | Move or rename on disk without replacing a destination; keep the document ID, notes and relations. |
+| `doc duplicate --id ID` | Create a separate JSON file with the same content. Without a new file prop it chooses `.copy-N.json`. `dup` is the framework alias. |
+| `doc archive`, `doc restore` | Hide or restore registry records. They do not move source files. |
+| `doc delete` | Archive a live record first by default. Deleting an archived record asks before moving its file to the system Trash. macOS uses Finder, Linux uses `gio trash`; an unavailable Trash is an error, never permanent removal. |
+| `doc history`, `doc yank`, `doc annotate`, `doc relate` | Read history, yank a label/key/reference/JSON, add a persistent note, or relate either end. `ochazuke.history-entry.undo` undoes supported record changes. |
+| `doc open` | Open this file in o-json's viewer, not the OS application. A mounted host opens and selects it in the declared JSON page. |
+| `doc reveal`, `doc yank-path`, `doc open-with` | Use the library's typed file actions. `paths.free-verbs=false` turns them off. |
+| `doc edit-pane` | Ask the configured host to open a pane with `raw.editor`, `$VISUAL`, `$EDITOR`, or `nvim` and the source file as an argv argument. |
+| `doc send-pane --pane P` | Paste JSON into a typed host pane without submitting it. |
+| `doc send-note [--note N] [--project P]` | Append JSON to a typed host note, or create a note about this document. |
+| `doc add-project --project P` | Create a project/document relation through the host. |
+
+Pane, host-note and project actions need `OCHAZUKE_HOST`; they never contact a
+daemon directly or guess an installed host. Their catalog declarations generate
+`pane.receive-json-doc`, `note.receive-json-doc` and `project.add-json-doc` in a
+host, all forwarding to the same document handlers with typed parameters.
+`doc.get FILE PATH` still reads JSON, while `doc.get --id ID` reads the record.
+JSON-address paths on nodes, shapes and values remain strings, not filesystem
+paths. Live rows and jq/search/restructure state declare read-only facts; they
+cannot archive or duplicate a fictitious persisted source.
+
+Compared with Vim: `:edit` (`:help :edit`) corresponds to `doc.open`, including
+the unsaved-edit question. `:file` (`:help :file`) only renames a Vim buffer;
+`doc rename` deliberately renames the file on disk. `:saveas` (`:help :saveas`)
+is similar to a duplicate with a chosen file, but does not select the copy.
 
 ## The viewer
 
@@ -287,7 +327,7 @@ The viewer holds one document, like a vim buffer.
 
 - **No file:** `o-json` with no file (and stdin a terminal) opens an empty document; the breadcrumb reads `[no file]` and names the keys that fill it, and the data pane says `No document is open.` and lists them with their verbs (`e` `doc.open`, `p` `doc.paste`, `M` `restructure.open`; keys from the bindings, so a rebound key shows as bound). Nothing opens by itself: the picker waits for `e`. The setting `empty.hint` (default `true`) turns the data pane's list off. The command line forms that read a file (`structure`, `table`, `get`, `doc VERB FILE`, ...) still say a file is required. `: viewer new` empties the viewer from inside; when the structure has edits no write or export-map saved, it asks first (`viewer.discard`, and `u` brings the edits back).
 - **Open:** `e` (`viewer.open {path}`, a path parameter) opens ochazuke's path picker directly (its one missing argument is a path; ochazuke's `forms.single-path`): `browse` starts in the open file's folder (the working directory for a document of no file), `recent` lists the recently opened files, newest first, and `typed` completes a path as you type; `ctrl+o` cycles the sources (`alt+o` back; ochazuke v0.59 moved them off `tab`, which now cycles the match mode: substring, fuzzy, regex). The write verbs' paths (`w`, `viewer.export`, `restructure.write`) are path parameters that may name a new file. `R` (`viewer.load`) reads the current file again. With edits no write saved, `e` and `R` ask once first (`viewer.discard {path}`); the new document starts as a copy of its shape, and `u` brings the dropped edits back.
-- **The `doc` noun (the open document):** the viewer holds the open document's file as its state (`doc.show` answers `{path, open, name, size, unsaved}`; `path` is empty for none or a document of no file). `doc.open {path}` opens a file into the running viewer, replacing the current document; it is `viewer.open` under the document's name, one operation, so its path is a path parameter (the palette and a key open ochazuke's path picker), and with edits no write saved it asks first (`viewer.discard`; `u` brings them back). `doc.reload`, `doc.new`, `doc.paste` and `doc.write` are `viewer.load`, `viewer.new`, `viewer.paste` and `viewer.write` the same way. The command line's `o json doc VERB FILE` is a separate runtime that reads a FILE per call; these verbs are the running viewer's (palette, bindings, a host driving it).
+- **The `doc` noun:** `doc.open {path}` is a registered document action that resolves the file or stable identity and delegates to `viewer.open`, including its unsaved-edit check. `doc.show` is the shared record form. `viewer.get` reads transient `{path, opened, size, unsaved}` state. `doc.reload`, `doc.paste` and `doc.write` retain their viewer aliases. `doc.new` creates a real JSON file; use `viewer.new` for an empty unsaved buffer. File lifecycle actions are available in the viewer and CLI from the same declarations.
 - **Recent files:** every file opened is recorded, newest first, in `~/.local/state/o-json/recent.json` (`$XDG_STATE_HOME` if set). The setting `recent.size` (default 10; 0 keeps none) is how many; a file that is gone is left out. `: viewer recent` lists them.
 - **Paste:** `p` (`viewer.paste`) parses the system clipboard (pbpaste, wl-paste, xclip or xsel) into the buffer, a document of no file. Invalid JSON is an error naming its line and column, and the buffer stays as it was. `viewer.paste {text}` pastes the text given (the palette, a script). With edits no write saved, `p` asks once first (`viewer.discard {paste}`).
 - **Ex words:** the palette (`:`) and the CLI take vim's words as o-json aliases: `w` (`viewer.save`: what `w` writes where the focus is, the restructured document in the edited view or on the restructure page, else the shown document; with no path the form asks), `w!` (`{force: true}`: an existing file is replaced without asking; the source still only through `W`'s confirm), `wq` and `x` (`{quit: true}`: write, then quit; over an existing file the quit follows the confirmed write), `e` (`viewer.open`), `q` (`app.quit`, asking with edits pending) and `q!` (`{force: true}`). A user's `actions.json` may add more.
@@ -480,7 +520,7 @@ go run . --smoke testdata/sample.json
 go run . catalog >/dev/null
 ```
 
-The tests cover structure inference on mixed and optional data, column order, a 50 MB document (100,000 items; 10,000 under `-race`), the viewer through its keys, the empty document, open, paste, new and the recent list, frames at 80 and 120 columns (`testdata/view-*.golden`, `UPDATE_GOLDEN=1` rewrites them), the windowed table at 100,000 rows, and `ValidateBindings`. `TestStories` (`-tags monogatari` only) plays the stories in `testdata/stories/<area>/<name>.json` through [monogatari](https://github.com/ofamtools/monogatari)'s `host.Test` against the real viewer: a script of keys and expectations, the story's `fixture` the starting state (`nest`, the default: the restructure page on nest.json with .a .x .y .z sent and .y selected; `viewer`: a fresh viewer; `empty`: no document), its `seed` the document (`{"doc": "nested.json"}`, any `testdata/*.json`; for `nest` also `send` and `on`) and its `values` o-json's settings. The document is copied to a temp dir, so a write lands there.
+The tests cover structure inference on mixed and optional data, column order, a 50 MB document (100,000 items; 10,000 under `-race`), the viewer through its keys, file lifecycle and stable identities, source-write safety, the empty buffer, open, paste, recent files, windowed tables and `ValidateBindings`. Consumer-visible cursor and viewport checks remain; full-screen layout snapshots and incidental ANSI/wording checks were removed rather than re-pinned for library wrapping changes. `TestStories` (`-tags monogatari` only) plays `testdata/stories/<area>/<name>.json` through monogatari's `host.Test` against the real viewer. Its fixtures copy documents into temporary directories.
 
 ### The story tester
 

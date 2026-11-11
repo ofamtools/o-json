@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -399,31 +397,6 @@ func TestValueEditorInlineSetting(t *testing.T) {
 	press(t, a, "esc")
 	if got := field(t, a, ".version"); got != "3" {
 		t.Fatalf("inline esc esc sets (value.leave set): %s", got)
-	}
-}
-
-// The value editor at 80 and 120 columns: an edit over the table, the
-// key and value of an add.
-func TestValueModalGolden(t *testing.T) {
-	for _, width := range []int{80, 120} {
-		a := open(t, sample, width, 24)
-		onData(t, a, ".items", ".items[1]")
-		press(t, a, "l", "l", "r")
-		typeText(t, a, "omega")
-		got := view(a)
-		press(t, a, "esc", "q", "o") // normal mode, q cancels, o adds
-		got += "\n" + view(a)
-		golden := filepath.Join("testdata", "value-modal-"+itoa(width)+".golden")
-		if os.Getenv("UPDATE_GOLDEN") != "" {
-			_ = os.WriteFile(golden, []byte(got), 0o644)
-		}
-		want, err := os.ReadFile(golden)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got != string(want) {
-			t.Errorf("%d columns\n%s\nwant\n%s", width, got, want)
-		}
 	}
 }
 

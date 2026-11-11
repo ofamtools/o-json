@@ -51,10 +51,10 @@ func TestEveryVerbDeclaresItsHistory(t *testing.T) {
 			}
 		}
 	}
-	// structure, table, get and rows, and the doc thing noun's other core
-	// verbs (create, set, delete, archive, edit, list: unavailable).
-	if n != 10 {
-		t.Fatalf("the catalog has %d o-json verbs, want the doc noun's 10", n)
+	// Every application verb, including generated writable document and note
+	// verbs, is checked above; the registry may grow without repinning a count.
+	if n == 0 {
+		t.Fatal("the catalog has no o-json verbs")
 	}
 }
 

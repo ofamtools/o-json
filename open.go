@@ -66,6 +66,9 @@ func (a *App) read(p string) ochazuke.Result {
 	var recent []string // written on the read's goroutine, read in Then
 	return ochazuke.Pending(func(context.Context) (any, error) {
 		doc, err := ReadDoc(p, stdin)
+		if err == nil {
+			err = a.rememberDocument(p)
+		}
 		if err == nil && p != "-" {
 			// A recent list that cannot be written never fails the read.
 			_ = recordRecent(state, p, size)
@@ -101,7 +104,7 @@ func (a *App) read(p string) ochazuke.Result {
 // focused pane, the side shown, each structure tree's selected path, the
 // data pane's row and column.
 type place struct {
-	focus        string // treeID, rsTreeID, dataID or ""
+	focus        paneID // treeID, rsTreeID, paneData or ""
 	original     bool
 	orig, edited string
 	row, col     int
@@ -112,7 +115,7 @@ func (a *App) place() place {
 	anc := a.r.Ancestry(a.r.FocusID())
 	switch {
 	case slices.Contains(anc, dataID):
-		p.focus = dataID
+		p.focus = paneData
 	case a.sideOf(a.r.FocusID()) == rsTreeID:
 		p.focus = rsTreeID
 	case slices.Contains(anc, treeID):
@@ -149,7 +152,7 @@ func (a *App) restore(p place) error {
 		return err
 	}
 	switch p.focus {
-	case dataID:
+	case paneData:
 		return a.data.list.Focus()
 	case rsTreeID:
 		if a.editedShown() {
@@ -254,6 +257,7 @@ func (a *App) paste(text string) error {
 // back to its document node alone (one undo step on the restructure page).
 func (a *App) reset() error {
 	a.Doc, a.Path, a.Loading, a.LoadErr = nil, "", "", nil
+	a.r.Instances[pageID].Data = map[string]any{"document": ""}
 	a.Query, a.Kind = "", ""
 	a.shown, a.tab, a.fields, a.lines, a.scalar = nil, nil, nil, nil, nil
 	if page := a.r.PageOf(pageID); page != nil {
@@ -544,29 +548,19 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	a.registerDocVerbs()
 }
 
-// docVerbs are the doc noun's verbs that are the viewer's document verbs
-// under the document's name: one operation each (AliasAction), so the
-// handler, the parameters (doc.open's path picker), the confirm and the
-// history are the viewer verb's. doc.open {path} replaces the open
-// document the way viewer.open does, asking first (viewer.discard) when
-// the restructure has edits no write saved.
+// docVerbs retain buffer-specific aliases; file lifecycle verbs are registered
+// by the shared declaration rather than aliases of singleton viewer state.
 var docVerbs = []ochazuke.ActionAlias{
-	{Alias: "doc.open", Action: "viewer.open"},
 	{Alias: "doc.reload", Action: "viewer.load"},
-	{Alias: "doc.new", Action: "viewer.new"},
 	{Alias: "doc.paste", Action: "viewer.paste"},
 	{Alias: "doc.write", Action: "viewer.write"},
 }
 
-// registerDocVerbs defines the doc noun, the open document: its file is
-// App.Path ("" for none, or a document of no file), doc.show reads it, and
-// docVerbs name the viewer's document verbs on it. The command line's doc
-// noun (shell.go) is another runtime's: it reads a FILE per call.
+// registerDocVerbs retains the viewer-specific buffer actions. Files use the
+// shared record declaration installed after the viewer's commands.
 func (a *App) registerDocVerbs() {
 	r := a.r
-	r.Define("doc").
-		Verb("show", func(ochazuke.Ctx) ochazuke.Result { return ochazuke.Done(a.docState()) },
-			"The open document: its file (path, empty for none or a document of no file, such as a pasted one), its name, whether one is open, its size, a read in progress and whether the restructure has edits no write saved").Fetch()
+	r.Define("doc")
 	for _, al := range docVerbs {
 		if err := r.AddActionAlias(al); err != nil {
 			panic(err) // o-json's own rows: a bad one is a bug
@@ -574,7 +568,7 @@ func (a *App) registerDocVerbs() {
 	}
 }
 
-// docState is doc.show's answer.
+// docState is the viewer's in-memory buffer state, not the persisted doc record.
 func (a *App) docState() map[string]any {
 	out := map[string]any{"path": a.Path, "open": a.Doc != nil, "unsaved": a.unsaved()}
 	if a.Doc != nil {
@@ -647,6 +641,7 @@ func (a *App) writeDoc(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 		func(path string) {
 			if a.Doc == doc && a.Path == "" {
 				a.Path, doc.Name = path, path
+				a.r.Instances[pageID].Data = map[string]any{"document": path}
 				if page := a.r.PageOf(pageID); page != nil {
 					page.Title = path
 				}

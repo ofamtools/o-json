@@ -329,7 +329,7 @@ func TestDeleteAndUndo(t *testing.T) {
 // page's mapping, and writing it out runs the same.
 func TestLiveMappingIsWhatRestructureRuns(t *testing.T) {
 	a := openRestructure(t, 120, 40)
-	if err := a.r.Settings().Set(settingPreview, previewMapping); err != nil {
+	if err := a.r.Settings().Set(settingPreview, string(previewMapping)); err != nil {
 		t.Fatal(err)
 	}
 	sendPaths(t, a, ".items[].owner", ".name")
@@ -603,7 +603,7 @@ func TestPreviewYanksAndSetting(t *testing.T) {
 	if !a.inData(a.r.FocusID()) || !strings.Contains(view(a), "Object .") {
 		t.Fatalf("ctrl+w l: focus %q\n%s", a.r.FocusID(), view(a))
 	}
-	if err := a.r.Settings().Set(settingPreview, previewOff); err != nil {
+	if err := a.r.Settings().Set(settingPreview, string(previewOff)); err != nil {
 		t.Fatal(err)
 	}
 	if frame := view(a); a.sideOf(a.r.FocusID()) != rsTreeID || strings.Contains(frame, "Object .") || strings.Contains(frame, "Mapping") {
@@ -613,7 +613,7 @@ func TestPreviewYanksAndSetting(t *testing.T) {
 	if a.sideOf(a.r.FocusID()) != rsTreeID {
 		t.Fatalf("off: ctrl+w l went to %q", a.r.FocusID())
 	}
-	if err := a.r.Settings().Set(settingPreview, previewMapping); err != nil {
+	if err := a.r.Settings().Set(settingPreview, string(previewMapping)); err != nil {
 		t.Fatal(err)
 	}
 	if frame := view(a); !strings.Contains(frame, "Mapping") || !strings.Contains(frame, `"from": ".name"`) {

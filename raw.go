@@ -41,10 +41,10 @@ type rawSession struct {
 	window  string // the tuios window the editor runs in (rawpane.go)
 }
 
-// rawEditor is the editor's command line (raw.editor, $VISUAL, $EDITOR,
-// nvim).
-func (a *App) rawEditor() []string {
-	for _, cmd := range []string{a.r.Settings().String(settingRawEditor), os.Getenv("VISUAL"), os.Getenv("EDITOR"), "nvim"} {
+// editorCommand is the shared editor preference for temporary RAW buffers
+// and explicit source-file editor panes.
+func editorCommand(r *ochazuke.Runtime) []string {
+	for _, cmd := range []string{r.Settings().String(settingRawEditor), os.Getenv("VISUAL"), os.Getenv("EDITOR"), "nvim"} {
 		if f := strings.Fields(cmd); len(f) > 0 {
 			return f
 		}
@@ -138,7 +138,7 @@ func (a *App) startRaw(c ochazuke.Ctx) ochazuke.Result {
 
 // runRaw runs the editor on the session's file, at line when it is set.
 func (a *App) runRaw(c ochazuke.Ctx, line int) ochazuke.Result {
-	argv := a.rawEditor()
+	argv := editorCommand(a.r)
 	if len(argv) == 0 {
 		return ochazuke.Failed(errors.New("raw: no editor (raw.editor, $VISUAL, $EDITOR)"))
 	}

@@ -1,24 +1,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"strconv"
 
 	"ofam.dev/ochazuke"
 )
 
-// The nouns of o-json that held a verb named like a core verb (doc get,
-// jq set, marks list, node and value delete, value and viewer edit,
-// value-editor set, restructure delete) are thing nouns: each has a facts
-// store over the state it already answers with, so get (and list, where
-// there are many) read it, and create, set, delete, archive and edit are on
-// the noun, unavailable as a system fact. The verbs the tool registers under
-// a core name stay and win over the generated ones.
+// Viewer facts describe transient query, structure and edit state. Their
+// existing commands own mutations; document files and annotations use the
+// shared writable declarations in document_store.go.
 
 // fact is a read-only prop.
 func fact(name, typ, desc string) ochazuke.PropSpec {
+	if typ == "" {
+		typ = "string"
+	}
 	return ochazuke.PropSpec{Name: name, ReadOnly: true, Parameter: ochazuke.Parameter{Type: typ, Description: desc}}
 }
 
@@ -37,6 +34,9 @@ func factLabel(name, desc string) ochazuke.PropSpec {
 
 // singleton declares a noun whose one thing is the state get answers.
 func singleton(r *ochazuke.Runtime, noun string, props []ochazuke.PropSpec, get func() ochazuke.Thing) {
+	for i := range props {
+		props[i].ReadOnly = true
+	}
 	r.Define(noun).Props(props...).Store(ochazuke.Store{Kind: ochazuke.Singleton, Facts: true,
 		Get: func(ochazuke.Ctx, string) (ochazuke.Thing, error) { return get(), nil }})
 }
@@ -59,24 +59,17 @@ func collection(r *ochazuke.Runtime, noun string, props []ochazuke.PropSpec, lis
 // once every verb is registered.
 func (a *App) defineStores() {
 	r := a.r
-	singleton(r, "doc", []ochazuke.PropSpec{
-		fact("path", "", "The open file (empty for none, or a document of no file)"), fact("opened", "boolean", "Whether a document is open"),
-		fact("unsaved", "boolean", "Whether the restructure has edits no write saved"), fact("name", "", "The document's name"),
-		fact("size", "integer", "Its size in bytes"), fact("loading", "", "The file being read, when a read is in progress"), fact("error", "", "Why the last read failed"),
-	}, func() ochazuke.Thing {
-		t := ochazuke.Thing(a.docState())
-		t["opened"] = t["open"]
-		delete(t, "open")
-		return t
-	})
 	singleton(r, "jq", []ochazuke.PropSpec{
-		fact("query", "", "The jq query"), fact("running", "boolean", "Whether a run is in progress"), fact("error", "", "Why the query failed"),
+		factLabel("query", "The jq query"), fact("running", "boolean", "Whether a run is in progress"), fact("error", "", "Why the query failed"),
 		fact("position", "integer", "Where the error points"), fact("results", "integer", "How many results the query has"),
 		fact("paths", "object", "The paths its results come from"), fact("sorted", "boolean", "Whether the results were sorted"), fact("cut", "boolean", "Whether the results were cut"),
 	}, func() ochazuke.Thing { return a.queryState() })
+	viewerPath := fileProp("path", "The open file")
+	viewerPath.Role = ochazuke.RoleLabel
 	singleton(r, "viewer", []ochazuke.PropSpec{
-		fact("path", "", "The open file"), fact("opened", "boolean", "Whether a document is open"), fact("editing", "boolean", "Whether the viewer is in EDIT"),
-		fact("loading", "", "The file being read, when a read is in progress"), fact("query", "", "The path search filtering the structure"), fact("kind", "", "The value type filtering the structure"),
+		viewerPath, fact("opened", "boolean", "Whether a document is open"), fact("editing", "boolean", "Whether the viewer is in EDIT"),
+		{Name: "document", ReadOnly: true, Association: true, Parameter: ochazuke.Parameter{Type: "string", Noun: "doc", Description: "The current document file"}},
+		fileProp("loading", "The file being read, when a read is in progress"), fact("query", "", "The path search filtering the structure"), fact("kind", "", "The value type filtering the structure"),
 		fact("is_raw", "boolean", "Whether the data pane shows the raw text"), fact("error", "", "Why the last read failed"), fact("shape", "", "The structure path shown in the data pane"),
 		fact("size", "integer", "The document's size in bytes"), fact("row", "integer", "The data pane's selected row"), fact("view", "", "The data pane's view of an editable document"),
 		fact("unsaved", "boolean", "Whether the restructure has edits no write saved"), fact("valueEdits", "integer", "How many value edits the restructure holds"), fact("orphaned", "integer", "How many value edits point at a path the document lacks"),
@@ -88,7 +81,7 @@ func (a *App) defineStores() {
 		return t
 	})
 	singleton(r, "search", []ochazuke.PropSpec{
-		fact("search_type", "", "The search line's type: substring, fuzzy, regex or jq"), fact("text", "", "The search text"), fact("hits", "integer", "How many hits"),
+		fact("search_type", "", "The search line's type: substring, fuzzy, regex or jq"), factLabel("text", "The search text"), fact("hits", "integer", "How many hits"),
 		fact("view", "", "The overlay shown"), fact("error", "", "Why the search failed"),
 	}, func() ochazuke.Thing {
 		out := ochazuke.Thing{"search_type": a.sr.typ, "text": a.queryText(), "hits": len(a.sr.hits), "view": a.overlay}
@@ -97,13 +90,16 @@ func (a *App) defineStores() {
 		}
 		return out
 	})
-	singleton(r, valueEditorID, []ochazuke.PropSpec{fact("opened", "boolean", "Whether the value editor is open")},
-		func() ochazuke.Thing { return ochazuke.Thing{"opened": a.vedit != nil && a.vedit.modal != nil} })
+	singleton(r, valueEditorID, []ochazuke.PropSpec{factLabel("name", "The editor's name"), fact("opened", "boolean", "Whether the value editor is open")},
+		func() ochazuke.Thing {
+			return ochazuke.Thing{"name": "Value editor", "opened": a.vedit != nil && a.vedit.modal != nil}
+		})
 	singleton(r, "restructure", []ochazuke.PropSpec{
+		factLabel("name", "The restructure page's name"),
 		fact("nodes", "integer", "How many nodes the restructured tree shows"), fact("marked", "integer", "How many are marked"),
 		fact("edits", "integer", "How many value edits the restructure holds"),
 	}, func() ochazuke.Thing {
-		return ochazuke.Thing{"nodes": len(a.rs.tree.Nodes()), "marked": len(a.markedIDs()), "edits": len(a.rs.patches)}
+		return ochazuke.Thing{"name": "Restructure", "nodes": len(a.rs.tree.Nodes()), "marked": len(a.markedIDs()), "edits": len(a.rs.patches)}
 	})
 	nodeProps := []ochazuke.PropSpec{factKey("id", "The node's id"), factLabel("label", "The node's key, or its place in an array"), fact("path", "", "Its path in the restructured document")}
 	collection(r, "node", nodeProps, func() []ochazuke.Thing {
@@ -138,29 +134,15 @@ func (a *App) defineStores() {
 		}
 		return out
 	})
-}
-
-// defineDocStore makes the command line's doc noun a thing noun: a document
-// is named by its file, so get reads one (its name and size) and there is
-// no list. doc get FILE PATH, the value at a path, stays.
-func defineDocStore(r *ochazuke.Runtime, stdin io.Reader) {
-	r.Define("doc").Props(
-		factKey("file", "The JSON file; - reads stdin"), factLabel("name", "The document's name"), fact("size", "integer", "Its size in bytes"),
-	).Store(ochazuke.Store{Kind: ochazuke.KindCollection, Facts: true, Remote: true,
-		Missing: map[string]string{"list": "a document is named by its file; there is no list of them"},
-		Get: func(c ochazuke.Ctx, file string) (ochazuke.Thing, error) {
-			v, err := c.Await(ochazuke.StoreCall{Store: "doc", Op: "get", Key: file}, func() ochazuke.Result {
-				return ochazuke.Pending(func(ctx context.Context) (any, error) {
-					d, err := ReadDoc(file, stdin)
-					if err != nil {
-						return nil, err
-					}
-					return ochazuke.Thing{"file": file, "name": d.Name, "size": d.Size}, nil
-				})
-			}, 0)
-			if err != nil {
-				return nil, err
-			}
-			return v.(ochazuke.Thing), nil
-		}})
+	for _, noun := range []string{"shape", "item", "field", "entry", "line"} {
+		r.Define(noun).Props(factKey("id", "The live row's identity"), factLabel("label", "The row's displayed label"), fact("row-data", "object", "The live row's JSON data; these rows are a window into the current document")).
+			Store(ochazuke.Store{Kind: ochazuke.Instances, Facts: true, Get: func(_ ochazuke.Ctx, key string) (ochazuke.Thing, error) {
+				inst := r.Instances[key]
+				if inst == nil {
+					return nil, fmt.Errorf("no live row %q", key)
+				}
+				return ochazuke.Thing{"id": key, "label": inst.Label, "row-data": inst.Data}, nil
+			}})
+	}
+	registerDocumentsForViewer(a)
 }

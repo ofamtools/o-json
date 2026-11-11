@@ -15,12 +15,15 @@ import (
 )
 
 // viewCommand is o-json view: the two-panel viewer.
-func viewCommand(stdin io.Reader, stdout, stderr io.Writer) oden.Command {
+func viewCommand(stdin io.Reader, stdout, stderr io.Writer, dataDir string) oden.Command {
 	return oden.Command{
 		Name: "view", Summary: "open the viewer: the structure tree on the left, the selected path's data on the right",
 		Usage: "[--smoke] [--width N] [--height N] [FILE|-]", Source: appName(),
 		Details: "o-json FILE opens it too; with no file (and stdin a terminal) the viewer opens an empty document. Keys: ? in the viewer lists them; README.md has the table.",
 		Run: func(_ context.Context, args []string) error {
+			if dataDir != "" {
+				args = append([]string{"--data", dataDir}, args...)
+			}
 			return runTUI(args, stdin, stdout, stderr)
 		},
 	}
@@ -33,6 +36,7 @@ func runTUI(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	smoke := flags.Bool("smoke", false, "render one frame to stdout and exit")
 	width := flags.Int("width", 80, "--smoke frame width")
 	height := flags.Int("height", 24, "--smoke frame height")
+	dataDir := flags.String("data", "", "document registry and history state directory")
 	words, err := parseFlags(flags, args)
 	if err != nil {
 		return err
@@ -53,6 +57,9 @@ func runTUI(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		return err
 	}
 	a.Stdin = stdin
+	if *dataDir != "" {
+		a.r.Config().StateDir = *dataDir
+	}
 	if *smoke {
 		if path != "" {
 			if err := a.Load(path); err != nil {
