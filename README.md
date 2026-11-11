@@ -295,6 +295,8 @@ Pane, host-note and project actions need `OCHAZUKE_HOST`; they never contact a
 daemon directly or guess an installed host. Their catalog declarations generate
 `pane.receive-json-doc`, `note.receive-json-doc` and `project.add-json-doc` in a
 host, all forwarding to the same document handlers with typed parameters.
+An explicit `doc open PATH` or `doc open file=PATH` supplies the document
+subject even when the host's current row belongs to another noun.
 `doc.get FILE PATH` still reads JSON, while `doc.get --id ID` reads the record.
 JSON-address paths on nodes, shapes and values remain strings, not filesystem
 paths. Live rows and jq/search/restructure state declare read-only facts; they

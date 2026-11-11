@@ -47,11 +47,15 @@ func registerDocumentActions(r *ochazuke.Runtime, d *documentStore, open func(st
 		}
 		// Resolve identities off the loop, then keep the viewer's unsaved-edit
 		// checks on the loop or launch the standalone viewer from the CLI.
-		return ochazuke.Pending(func(context.Context) (any, error) { return d.get(c, key) }).Then(func(c ochazuke.Ctx, v any, err error) {
+		var file string
+		return ochazuke.Pending(func(context.Context) (any, error) {
+			var err error
+			file, err = d.filePath(key)
+			return nil, err
+		}).Then(func(c ochazuke.Ctx, _ any, err error) {
 			if err != nil {
 				return
 			}
-			file := v.(ochazuke.Thing)["file"]
 			var request ochazuke.Request
 			if open != nil {
 				request = ochazuke.Request{Noun: "viewer", Verb: "open", Target: pageID, Args: ochazuke.Arguments{"path": file}}
@@ -63,7 +67,7 @@ func registerDocumentActions(r *ochazuke.Runtime, d *documentStore, open func(st
 			}
 		})
 	}, "Open the document in the JSON viewer (not the system opener)").Positional("path").OpensPage("documents").Foreground().Fetch()
-	documentParams(r, "doc.open", map[string]ochazuke.Parameter{"id": documentSubject(), "path": {Type: "path", Path: "file", Description: "JSON file to open"}, "file": {Type: "path", Path: "file", Description: "JSON source file"}})
+	documentParams(r, "doc.open", map[string]ochazuke.Parameter{"id": documentSubject(), "path": {Type: "path", Path: "file", Covers: true, Description: "JSON file to open"}, "file": {Type: "path", Path: "file", Covers: true, Description: "JSON source file"}})
 	if open == nil {
 		r.Define("doc").Verb("launch", func(c ochazuke.Ctx) ochazuke.Result {
 			exe, err := os.Executable()

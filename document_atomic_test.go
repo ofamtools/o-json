@@ -309,3 +309,37 @@ func TestDocumentViewerOpenPreservesStdin(t *testing.T) {
 		t.Fatalf("stdin became a fake file record: %v %v", rows, err)
 	}
 }
+
+func TestDocumentNativeOpenPathCoversRequiredSubject(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "native.json")
+	if err := os.WriteFile(file, []byte(`{"native":true}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, argument := range []string{"path", "file", "id"} {
+		t.Run(argument, func(t *testing.T) {
+			a := empty(t)
+			// No document subject is focused. Either explicit file input
+			// supplies it instead of asking for an unrelated record ID.
+			command := "doc open " + fmt.Sprintf("%q", file)
+			if argument == "file" {
+				command = "doc open file=" + fmt.Sprintf("%q", file)
+			} else if argument == "id" {
+				doc, err := a.documents.get(ochazuke.Ctx{}, file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				command = "doc open id=" + fmt.Sprintf("%q", doc["id"])
+			}
+			press(t, a, ":")
+			finish(a, Type(a.m, command))
+			finish(a, Press(a.m, "enter"))
+			settle(a)
+			if a.Doc == nil || a.Path != file || a.r.TopModal() != "" {
+				t.Fatalf("native %s opened an args form instead of the document: path %q modal %q status %q", argument, a.Path, a.r.TopModal(), a.m.Status)
+			}
+			if got := Compact(a.Doc.Root, 0); got != `{"native":true}` {
+				t.Fatalf("wrong native document: %s", got)
+			}
+		})
+	}
+}

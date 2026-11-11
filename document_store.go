@@ -114,6 +114,22 @@ func remoteDocumentStore(noun string, store ochazuke.Store, after ...func(ochazu
 	return store
 }
 
+// Opening needs only the identity's file, not a second full source read or an
+// intermediate record result for the UI to present over the native viewer.
+func (d *documentStore) filePath(key string) (string, error) {
+	file, err := filepath.Abs(key)
+	if err != nil {
+		return "", err
+	}
+	err = d.state.transaction(false, func(s *documentRecords) error {
+		if t := s.document(key, file); t != nil {
+			file = t["file"].(string)
+		}
+		return nil
+	})
+	return file, err
+}
+
 func (d *documentStore) get(_ ochazuke.Ctx, key string) (out ochazuke.Thing, err error) {
 	err = d.state.transaction(true, func(s *documentRecords) error {
 		out, err = d.getLocked(s, key)
