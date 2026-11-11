@@ -268,6 +268,9 @@ viewer or addressed by a file path enter the registry with a stable `id`.
 `modified` is a time, and `archived` hides the record without moving the file.
 The registry, annotations and relations live in `documents.json` beside
 `recent.json`; a leading `--data DIR` selects another state directory.
+The host's JSON page uses the framework's store-backed index over that same
+document declaration. Its selected-record JSON detail is hydrated separately;
+there is no second document-listing action or row-source adapter.
 
 New files are published without replacing another writer's destination;
 duplicates retry occupied copy names. File moves, content changes and identity

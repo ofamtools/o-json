@@ -978,7 +978,6 @@ related-section	noun	seed	ochazuke v0.110
 act	action	yes	focused actions, ochazuke v0.122
 add-project	action	yes	relate a document to a host project
 columns	action	yes	ochazuke index columns
-documents	action	yes	document metadata row source
 edit-pane	action	yes	open the document in an editor pane
 form-item	noun	yes	ochazuke list form field
 form-read-only	noun	yes	ochazuke read-only form field

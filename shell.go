@@ -102,19 +102,6 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer, dataDir ...string) *ocl
 	}
 	documents = registerDocuments(r, nil, nil)
 	registerDocumentActions(r, documents, nil)
-	r.Define("doc").Verb("documents", func(c ochazuke.Ctx) ochazuke.Result {
-		return ochazuke.Pending(func(context.Context) (any, error) {
-			things, err := documents.list(c, ochazuke.ListQuery{})
-			if err != nil {
-				return nil, err
-			}
-			rows := make(ochazuke.Lines, 0, len(things))
-			for _, t := range things {
-				rows = append(rows, ocli.Row{Noun: "doc", ID: t["id"].(string), Label: t["name"].(string), Data: t})
-			}
-			return rows, nil
-		})
-	}, "Registered and recent JSON documents, as metadata rows for the host viewer").Rows("doc").Fetch()
 	declareDocumentPage(r)
 	r.DefineListFacts(ochazuke.ListFacts{Noun: "item", Rename: map[string]string{"data": "row-data"}, ListParams: map[string]ochazuke.Parameter{"file": file, "path": {Type: "string"}}, List: func(c ochazuke.Ctx) ochazuke.Result {
 		return pending(c, func(d *Doc, path string) (any, error) {

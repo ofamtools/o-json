@@ -179,7 +179,7 @@ func sessionEnv() string {
 func declareDocumentPage(r *ochazuke.Runtime) {
 	if err := ocli.DeclarePage(r, ocli.CatalogPage{
 		ID: "documents", Title: "JSON", Layout: ocli.LayoutSplit,
-		Lists: []ocli.CatalogList{{ID: "documents/list", Noun: "doc", Title: "Documents", Source: "doc.documents"}},
+		Lists: []ocli.CatalogList{{ID: "documents/list", Noun: "doc", Title: "Documents", Kind: ocli.ListKindIndex}},
 		Detail: &ocli.CatalogDetail{Sections: []ocli.CatalogDetailSection{
 			{Kind: "fields", Fields: []ocli.CatalogDetailField{{Label: "File", Field: "file", Format: "path"}, {Label: "Modified", Field: "modified", Format: "time"}}},
 			{Kind: "json", Field: "content", Parse: true},
