@@ -91,7 +91,18 @@ func TestMain(m *testing.M) {
 	// from a test: the tests that drive it fake App.getenv and App.mtm.
 	os.Unsetenv("MTM_ENV")
 	os.Unsetenv("TUIOS_ENV")
+	// No test reads or writes the user's state, config or data: the whole
+	// binary runs under a temp home (a test that needs its own sets one).
+	home, err := os.MkdirTemp("", "o-json-test-home-*")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "FAIL:", err)
+		os.Exit(1)
+	}
+	for name, dir := range map[string]string{"HOME": "", "XDG_CONFIG_HOME": "config", "XDG_STATE_HOME": "state", "XDG_DATA_HOME": "data", "XDG_CACHE_HOME": "cache"} {
+		os.Setenv(name, filepath.Join(home, dir))
+	}
 	code := m.Run()
+	os.RemoveAll(home)
 	if code == 0 && offLoopTries.Load() > 0 && offLoopWindows.Load() == 0 {
 		fmt.Fprintf(os.Stderr, "FAIL: %d inRebuildWindow calls, none ran the rebuild off the loop (rebuildOnLoop %v)\n", offLoopTries.Load(), rebuildOnLoop)
 		code = 1
