@@ -18,7 +18,7 @@ func registerDocumentsForViewer(a *App) {
 			}
 		}
 	})
-	registerDocumentActions(a.r, a.documents, a.readAsking)
+	registerDocumentActions(a.r, a.documents, a.openSource)
 }
 
 func (a *App) rememberDocument(path string) error {

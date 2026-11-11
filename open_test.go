@@ -57,14 +57,16 @@ func TestNoFileStartsEmpty(t *testing.T) {
 
 // With no file and a stdin that is not a terminal (a test's reader), the
 // viewer reads stdin, as before; only a terminal gives the empty document
-// (TestNoFileStartsEmpty is that frame).
+// (TestNoFileStartsEmpty is that frame). A stdin that holds nothing is no
+// error either: the empty unnamed document (doc.open never refuses).
 func TestNoFileReadsStdinWhenItIsNotATerminal(t *testing.T) {
 	var out strings.Builder
-	// A reader that is not a terminal reads stdin; an empty one is an
-	// error naming stdin, not "a file is required".
-	err := runTUI([]string{"--smoke"}, strings.NewReader(""), &out, &out)
-	if err == nil || strings.Contains(err.Error(), "required") {
-		t.Fatalf("smoke from empty stdin: %v", err)
+	if err := runTUI([]string{"--smoke"}, strings.NewReader(`{"piped":[1,2]}`), &out, &out); err != nil || !strings.Contains(out.String(), "stdin") || !strings.Contains(out.String(), "piped") {
+		t.Fatalf("smoke from stdin: %v\n%s", err, out.String())
+	}
+	out.Reset()
+	if err := runTUI([]string{"--smoke"}, strings.NewReader(""), &out, &out); err != nil || !strings.Contains(out.String(), noFile) {
+		t.Fatalf("smoke from empty stdin: %v\n%s", err, out.String())
 	}
 }
 

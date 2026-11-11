@@ -37,46 +37,56 @@ func registerDocumentActions(r *ochazuke.Runtime, d *documentStore, open func(st
 		}
 		return ""
 	}
+	// launch runs the standalone viewer on a source from the command line,
+	// where no viewer is running: the child reads the source itself (its
+	// standard input is this process's).
+	launch := func(source string) ochazuke.Result {
+		exe, err := os.Executable()
+		if err != nil {
+			return ochazuke.Failed(err)
+		}
+		return ochazuke.Foreground(exec.Command(exe, viewerArgs(d.state.dir(), source)...))
+	}
+	cli := open == nil
+	if cli {
+		open = launch
+	}
 	r.Define("doc").Verb("open", func(c ochazuke.Ctx) ochazuke.Result {
-		if path := ochazuke.StringArg(c.Args, "path", ""); open != nil && path != "" {
-			return open(path)
+		source := ochazuke.StringArg(c.Args, "path", ochazuke.StringArg(c.Args, "file", ""))
+		id := ochazuke.StringArg(c.Args, "id", "")
+		if source != "" || id == "" {
+			// A source as given: a file, - (standard input), a path that
+			// names no file yet, or nothing at all. None is refused.
+			return open(source)
 		}
-		key := subject(c)
-		if key == "" {
-			return ochazuke.Failed(c.Need("path", "choose a JSON file or document"))
-		}
-		// Resolve identities off the loop, then keep the viewer's unsaved-edit
-		// checks on the loop or launch the standalone viewer from the CLI.
+		// Resolve an identity off the loop, then open its file as a source.
 		var file string
 		return ochazuke.Pending(func(context.Context) (any, error) {
 			var err error
-			file, err = d.filePath(key)
+			file, err = d.filePath(id)
 			return nil, err
 		}).Then(func(c ochazuke.Ctx, _ any, err error) {
 			if err != nil {
 				return
 			}
-			var request ochazuke.Request
-			if open != nil {
-				request = ochazuke.Request{Noun: "viewer", Verb: "open", Target: pageID, Args: ochazuke.Arguments{"path": file}}
-			} else {
-				request = ochazuke.Request{Noun: "doc", Verb: "launch", Args: ochazuke.Arguments{"file": file}}
-			}
-			if _, err := c.Runtime.Execute(request); err != nil {
+			if _, err := c.Runtime.Execute(ochazuke.Request{Noun: "doc", Verb: "open", Args: ochazuke.Arguments{"path": file}}); err != nil {
 				c.Error(err.Error())
 			}
 		})
-	}, "Open the document in the JSON viewer (not the system opener)").Positional("path").OpensPage("documents").Foreground().Fetch()
-	documentParams(r, "doc.open", map[string]ochazuke.Parameter{"id": documentSubject(), "path": {Type: "path", Path: "file", Covers: true, Description: "JSON file to open"}, "file": {Type: "path", Path: "file", Covers: true, Description: "JSON source file"}})
-	if open == nil {
-		r.Define("doc").Verb("launch", func(c ochazuke.Ctx) ochazuke.Result {
-			exe, err := os.Executable()
-			if err != nil {
-				return ochazuke.Failed(err)
-			}
-			return ochazuke.Foreground(exec.Command(exe, "--data", d.state.dir(), "view", ochazuke.StringArg(c.Args, "file", "")))
-		}, "Run the standalone JSON viewer in the foreground").Foreground().Fetch()
-		documentParams(r, "doc.launch", map[string]ochazuke.Parameter{"file": {Type: "path", Path: "file", Required: true}})
+	}, "Open a document in the JSON viewer (not the system opener): a JSON file, - for standard input, a path that names no file yet (a new, named, unsaved document), or with no source an empty unnamed document").Positional("path").OpensPage("documents").Foreground().Fetch()
+	sourceFile := ochazuke.Parameter{Type: ochazuke.PropPath, Path: "file", New: true, Covers: true}
+	described := func(p ochazuke.Parameter, text string) ochazuke.Parameter { p.Description = text; return p }
+	// The identity is a choice, never a target the palette must ask for
+	// (Focus): with nothing given, doc.open opens an empty document.
+	known := documentSubject()
+	known.Focus, known.Description = false, "a document o-json knows, by identity, instead of a source"
+	documentParams(r, "doc.open", map[string]ochazuke.Parameter{"id": known,
+		"path": described(sourceFile, "the source: a JSON file, - for standard input, or a path that names no file yet (a new document of that name); omit for an empty unnamed document"),
+		"file": described(sourceFile, "the source, by the name the other doc verbs give their file")})
+	if cli {
+		r.Define("doc").Verb("launch", func(c ochazuke.Ctx) ochazuke.Result { return launch(ochazuke.StringArg(c.Args, "file", "")) },
+			"Run the standalone JSON viewer in the foreground on a source (what doc.open does from the command line)").Positional("file").Foreground().Fetch()
+		documentParams(r, "doc.launch", map[string]ochazuke.Parameter{"file": described(sourceFile, "the source: a JSON file, - for standard input, a new path, or none for an empty document")})
 	}
 	r.Define("doc").Verb("move", func(c ochazuke.Ctx) ochazuke.Result {
 		value, err := r.Execute(ochazuke.Request{Noun: "doc", Verb: "set", Args: ochazuke.Arguments{"id": subject(c), "props": map[string]any{"file": ochazuke.StringArg(c.Args, "to", "")}}})
@@ -167,6 +177,16 @@ func registerDocumentActions(r *ochazuke.Runtime, d *documentStore, open func(st
 		panic(err)
 	}
 	setHistory(r, ochazuke.HistoryChange, "doc.move", "doc.rename", "doc.edit-pane", "doc.send-pane", "doc.send-note", "doc.add-project")
+}
+
+// viewerArgs is the standalone viewer's command line for a source: a file,
+// - (standard input), a path that names no file yet, or "" for none.
+func viewerArgs(state, source string) []string {
+	args := []string{"--data", state, "view"}
+	if source != "" {
+		args = append(args, source)
+	}
+	return args
 }
 
 func sessionEnv() string {

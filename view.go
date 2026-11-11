@@ -383,7 +383,7 @@ func wrap(text string, width int) string {
 // is named by its action, which the palette runs).
 func (a *App) emptyHint() string {
 	lines := []string{"No document is open.", ""}
-	for _, v := range []struct{ verb, what string }{{"doc.open", "open a JSON file"}, {"doc.paste", "paste JSON from the clipboard"}, {"restructure.open", "build a structure from nothing"}} {
+	for _, v := range []struct{ verb, what string }{{"viewer.open", "open a JSON file"}, {"doc.paste", "paste JSON from the clipboard"}, {"restructure.open", "build a structure from nothing"}} {
 		key := a.keyForDrawn(v.verb)
 		if key == "" {
 			key = ":" + strings.Replace(v.verb, ".", " ", 1)
@@ -397,6 +397,9 @@ func (a *App) emptyHint() string {
 // keys that fill it, from the bindings (a verb with no key is left out).
 func (a *App) emptyCrumb() string {
 	parts := []string{noFile}
+	if a.newName != "" {
+		parts[0] = a.newName + " [new]"
+	}
 	for _, v := range []struct{ verb, what string }{{"viewer.open", "open a file"}, {"viewer.paste", "paste JSON"}, {"restructure.open", "restructure"}} {
 		if key := a.keyForDrawn(v.verb); key != "" {
 			parts = append(parts, key+" "+v.what)

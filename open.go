@@ -53,8 +53,13 @@ const (
 )
 
 // read reads a file ("-" is stdin) off the loop and shows it; a file is
-// recorded in the recent list on the same goroutine, after it parsed.
-func (a *App) read(p string) ochazuke.Result {
+// recorded in the recent list on the same goroutine, after it parsed. A
+// source that holds no document is a failure: the document shown stays.
+func (a *App) read(p string) ochazuke.Result { return a.readSource(p, false) }
+
+// readSource is read; with fresh, a source that holds no document yet
+// (unwritten) is no failure: it opens as a new document (doc.open).
+func (a *App) readSource(p string, fresh bool) ochazuke.Result {
 	stdin := a.Stdin
 	var at *place // the open file read again: where the viewer is
 	if a.Doc != nil && p == a.Path && p != "-" && a.r.Settings().Bool(settingReloadPlace) {
@@ -64,8 +69,16 @@ func (a *App) read(p string) ochazuke.Result {
 	a.Loading, a.LoadErr = p, nil
 	state, size := a.stateDir(), a.recentSize()
 	var recent []string // written on the read's goroutine, read in Then
+	// The read answers nothing: the viewer showing the document is the
+	// answer, and a data answer would be presented over it (the palette's
+	// text view). What it read reaches Then through read.
+	var read any // *Doc, or a newDocument
 	return ochazuke.Pending(func(context.Context) (any, error) {
 		doc, err := ReadDoc(p, stdin)
+		if fresh && unwritten(err) {
+			read = newDocument(p)
+			return nil, nil
+		}
 		if err == nil {
 			err = a.rememberDocument(p)
 		}
@@ -74,10 +87,12 @@ func (a *App) read(p string) ochazuke.Result {
 			_ = recordRecent(state, p, size)
 			recent = readRecent(state, size)
 		}
-		return doc, err
+		read = doc
+		return nil, err
 	}).
 		Replacing("load").
-		Then(func(c ochazuke.Ctx, v any, err error) {
+		Then(func(c ochazuke.Ctx, _ any, err error) {
+			v := read
 			if err != nil {
 				// The job's failure is the one report: the status line's
 				// Error (cleared by the next key) and the ticker. The
@@ -87,6 +102,14 @@ func (a *App) read(p string) ochazuke.Result {
 			}
 			if recent != nil {
 				a.recent = recent
+			}
+			if n, ok := v.(newDocument); ok {
+				if err := a.startNew(n.name()); err != nil {
+					c.Error(err.Error())
+					return
+				}
+				c.Info(n.says())
+				return
 			}
 			if err := a.setDoc(p, v.(*Doc)); err != nil {
 				c.Error(err.Error())
@@ -166,6 +189,82 @@ func (a *App) restore(p place) error {
 	return nil
 }
 
+// newDocument is a source that holds no document yet (unwritten), as the
+// viewer opens it: a path is a new, named, unsaved document; standard
+// input that held nothing is an empty unnamed one.
+type newDocument string
+
+func (n newDocument) name() string {
+	if n == "-" {
+		return ""
+	}
+	return string(n)
+}
+
+func (n newDocument) says() string {
+	if n.name() == "" {
+		return "standard input held no document: an empty one"
+	}
+	return n.name() + " is new: nothing is written until a write"
+}
+
+// startNew empties the viewer for a new document called name ("" for an
+// unnamed one). Nothing is written: the name is where a write with no path
+// goes, and what the title, the breadcrumb and viewer.get show.
+func (a *App) startNew(name string) error {
+	if err := a.reset(); err != nil {
+		return err
+	}
+	a.newName = name
+	if page := a.r.PageOf(pageID); page != nil && name != "" {
+		page.Title = name
+	}
+	return nil
+}
+
+// bufferName names a document of no file: the path it was opened for when
+// that named no file yet, else "[no file]".
+func (a *App) bufferName() string {
+	if a.newName != "" {
+		return a.newName
+	}
+	return noFile
+}
+
+// source is where the shown document came from, as it was opened: the
+// path, "stdin", the name of a new document, or "" for none.
+func (a *App) source() string {
+	if a.Doc != nil && a.Doc.Name != noFile {
+		return a.Doc.Name
+	}
+	return a.newName
+}
+
+// writePath is the path a write names, or with none the new document's.
+func (a *App) writePath(c ochazuke.Ctx) string {
+	if p := ochazuke.StringArg(c.Args, "path", ""); strings.TrimSpace(p) != "" {
+		return p
+	}
+	return a.newName
+}
+
+// openDocument shows the document a source names, as doc.open takes it: a
+// file, - (standard input), a path that names no file yet (a new, named,
+// unsaved document), or "" (an empty unnamed one). No source is refused.
+// It first asks (viewer.discard) when the restructure has edits no write
+// saved.
+func (a *App) openSource(p string) ochazuke.Result {
+	switch {
+	case a.unsaved() && p != "":
+		return a.askDiscard(ochazuke.Arguments{"path": p, "fresh": true})
+	case a.unsaved():
+		return a.discardFirst("")
+	case p == "":
+		return a.doneState(a.reset())
+	}
+	return a.readSource(p, true)
+}
+
 // readAsking reads a file as read does, first asking (viewer.discard)
 // when the restructure has edits no write saved.
 func (a *App) readAsking(p string) ochazuke.Result {
@@ -207,6 +306,7 @@ func (a *App) pasteDoc(c ochazuke.Ctx) ochazuke.Result {
 	}
 	// Read and parse off the loop, so text that is not JSON fails the
 	// job (the ticker says failed, the status line why), never "done".
+	var doc *Doc
 	return ochazuke.Pending(func(context.Context) (any, error) {
 		text, err := read()
 		if err != nil {
@@ -216,13 +316,15 @@ func (a *App) pasteDoc(c ochazuke.Ctx) ochazuke.Result {
 		if err != nil {
 			return nil, fmt.Errorf("paste: %w", err)
 		}
-		return &Doc{Name: noFile, Size: len(text), Root: root, Shape: Infer(root)}, nil
+		doc = &Doc{Name: noFile, Size: len(text), Root: root, Shape: Infer(root)}
+		return nil, nil // the viewer showing it is the answer (as read)
 	}).
-		Then(func(c ochazuke.Ctx, v any, err error) {
+		Then(func(c ochazuke.Ctx, _ any, err error) {
 			if err != nil {
 				return // the job's failure reports it
 			}
-			if err := a.setDoc("", v.(*Doc)); err != nil {
+			doc.Name = a.bufferName()
+			if err := a.setDoc("", doc); err != nil {
 				c.Error("paste: " + err.Error())
 				return
 			}
@@ -250,13 +352,13 @@ func (a *App) paste(text string) error {
 	if err != nil {
 		return err
 	}
-	return a.setDoc("", &Doc{Name: noFile, Size: len(text), Root: root, Shape: Infer(root)})
+	return a.setDoc("", &Doc{Name: a.bufferName(), Size: len(text), Root: root, Shape: Infer(root)})
 }
 
 // reset empties the viewer: no document, no filters, and a restructure
 // back to its document node alone (one undo step on the restructure page).
 func (a *App) reset() error {
-	a.Doc, a.Path, a.Loading, a.LoadErr = nil, "", "", nil
+	a.Doc, a.Path, a.Loading, a.LoadErr, a.newName = nil, "", "", nil, ""
 	a.r.Instances[pageID].Data = map[string]any{"document": ""}
 	a.Query, a.Kind = "", ""
 	a.shown, a.tab, a.fields, a.lines, a.scalar = nil, nil, nil, nil, nil
@@ -447,7 +549,7 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 				return a.pasteDoc(c)
 			}
 			if p := strings.TrimSpace(ochazuke.StringArg(c.Args, "path", "")); p != "" {
-				return a.read(p)
+				return a.readSource(p, c.Args["fresh"] == true)
 			}
 			return a.doneState(a.reset())
 		}, "Drop the edits (structure and values) and read path (viewer.open and R ask with it), paste the clipboard or text (paste: viewer.paste asks with it), or without either start an empty document (viewer.new); u brings the edits back. It always asks first").
@@ -494,16 +596,20 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	// o-json's recent list (no I/O: the list read before the loop and
 	// after each read).
 	r.SetPathBase(func(ochazuke.PathPick) string {
-		if a.Path == "" || a.Path == "-" {
-			return ""
+		switch {
+		case a.Path != "" && a.Path != "-":
+			return filepath.Dir(a.Path)
+		case a.newName != "":
+			return filepath.Dir(a.newName) // a new document's folder
 		}
-		return filepath.Dir(a.Path)
+		return ""
 	})
 	r.SetRecentPaths(func(ochazuke.PathPick) []string { return slices.Clone(a.recent) })
 	params("viewer.discard", map[string]ochazuke.Parameter{
 		"path":  {Type: "string", Description: "the file to read once the edits are dropped (- is stdin); omit for an empty document"},
 		"paste": {Type: "boolean", Description: "paste the clipboard (or text) once the edits are dropped, as viewer.paste does"},
 		"text":  {Type: "string", Description: "with paste, the JSON to paste instead of the clipboard"},
+		"fresh": {Type: "boolean", Plumbing: true, Description: "with path, a path that names no file yet opens as a new document (doc.open asks with it)"},
 	})
 	params("viewer.paste", map[string]ochazuke.Parameter{"text": {Type: "string", Description: "the JSON; omit to read the system clipboard"}})
 	r.Define("node").
@@ -533,7 +639,11 @@ func (a *App) registerOpenVerbs(params func(string, map[string]ochazuke.Paramete
 	quit := ochazuke.Parameter{Type: "boolean", Description: "quit once written (:wq); the before-quit check still asks about edits the write did not save"}
 	params("viewer.write", map[string]ochazuke.Parameter{"path": path, "quit": quit})
 	params("viewer.overwrite", map[string]ochazuke.Parameter{"path": path, "quit": quit})
-	params("viewer.save", map[string]ochazuke.Parameter{"path": path, "quit": quit,
+	// save's path is asked for only when the document has no name to go by
+	// (writeFileAsk's Need): :w on a new document writes it to its name.
+	named := path
+	named.Required, named.Description = false, "the file to write, e.g. NAME.json; omit for a new document's own name"
+	params("viewer.save", map[string]ochazuke.Parameter{"path": named, "quit": quit,
 		"force": {Type: "boolean", Description: "replace an existing file without asking (:w!)"}})
 	setHistory(r, ochazuke.HistoryFetch, "viewer.open")
 	setHistory(r, ochazuke.HistoryChange, "viewer.new", "viewer.discard", "viewer.paste", "viewer.write", "viewer.overwrite", "viewer.save")
@@ -573,6 +683,9 @@ func (a *App) docState() map[string]any {
 	out := map[string]any{"path": a.Path, "open": a.Doc != nil, "unsaved": a.unsaved()}
 	if a.Doc != nil {
 		out["name"], out["size"] = a.Doc.Name, a.Doc.Size
+	}
+	if a.newName != "" {
+		out["name"], out["new"] = a.newName, true
 	}
 	if a.Loading != "" {
 		out["loading"] = a.Loading
@@ -628,7 +741,7 @@ func (a *App) writeDoc(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 		return ochazuke.Failed(errors.New("no document to write: e opens a file, p pastes JSON"))
 	}
 	doc := a.Doc
-	path := ochazuke.StringArg(c.Args, "path", "")
+	path := a.writePath(c)
 	data, isJSON, err := a.encodeFor(path, doc.Root)
 	if err != nil {
 		return ochazuke.Failed(err)
@@ -637,16 +750,20 @@ func (a *App) writeDoc(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 		// An export names no document: a document of no file stays one.
 		return a.writeFile(c, path, data, mode, "the export", "viewer.overwrite", nil)
 	}
-	return a.writeFile(c, path, data, mode, "the document", "viewer.overwrite",
-		func(path string) {
-			if a.Doc == doc && a.Path == "" {
-				a.Path, doc.Name = path, path
-				a.r.Instances[pageID].Data = map[string]any{"document": path}
-				if page := a.r.PageOf(pageID); page != nil {
-					page.Title = path
-				}
-			}
-		})
+	return a.writeFile(c, path, data, mode, "the document", "viewer.overwrite", func(path string) { a.named(doc, path) })
+}
+
+// named makes doc, a document of no file, the file it was just written
+// to: a pasted one, or a new one written to its name.
+func (a *App) named(doc *Doc, path string) {
+	if a.Doc != doc || a.Path != "" {
+		return
+	}
+	a.Path, doc.Name, a.newName = path, path, ""
+	a.r.Instances[pageID].Data = map[string]any{"document": path}
+	if page := a.r.PageOf(pageID); page != nil {
+		page.Title = path
+	}
 }
 
 // pasteKeys adds the pasted lines as keys below the focused node of the

@@ -7,11 +7,15 @@
 //	o-json query [--compact] FILE|- QUERY       (jq, through gojq)
 //	o-json restructure FILE|- --map SPEC.json [--jq | --mapping] [--out PATH [--overwrite]]
 //	o-json export FILE|- [--map SPEC.json] [--of PATH] [--format F] [--jq] [--out PATH [--overwrite]]
-//	o-json doc structure|table|get FILE [PATH]   (JSON, for a host)
+//	o-json doc open [FILE|-]                     (the viewer, as a verb: what o-json FILE runs)
+//	o-json doc structure|tabulate|get|rows|query FILE [PATH|QUERY]   (JSON, for a host)
+//	o-json doc remap FILE MAPPING [--out PATH]   (restructure, as a verb)
+//	o-json doc export FILE [--out PATH]          (export, as a verb)
 //	o-json catalog
 //
 // Every command reads a file, or stdin as - (or when stdin is not a
-// terminal and no file is named).
+// terminal and no file is named). The viewer refuses no source: a path
+// that names no file yet is a new document of that name.
 package main
 
 import (
@@ -52,7 +56,8 @@ func appName() string {
 // get, table, setup, ...) runs it, even when a file of that name is in the
 // directory: ./NAME opens the file. Otherwise a first word that is an
 // existing file (or -, stdin) opens it in the viewer, and anything oden does
-// not know (flags, a path) reaches the viewer.
+// not know (flags, a path, a path that names no file yet) reaches the
+// viewer, which runs doc.open on it (openFromCommandLine).
 func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	dataDir := ""
 	if len(args) > 0 && args[0] == "--data" {
@@ -69,7 +74,7 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	app := oden.New(appName(), args, oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
 		oden.WithDefault(func(_ context.Context, args []string) error {
-			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !strings.ContainsAny(args[0], "./") {
+			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !pathWord(args[0]) {
 				return oden.ErrNotFound
 			}
 			return runTUI(tuiArgs(args), stdin, stdout, stderr)

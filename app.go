@@ -25,8 +25,12 @@ const (
 
 // App is the viewer's state.
 type App struct {
-	Doc       *Doc
-	Path      string // the file being shown or read ("-" is stdin)
+	Doc  *Doc
+	Path string // the file being shown or read ("-" is stdin)
+	// newName is the path a new document was opened for: one that named
+	// no file yet (doc.open PATH). The document has no file (Path is "")
+	// until a write, which goes there when it names no path.
+	newName   string
 	documents *documentStore
 	Loading   string // the file being read off the loop, "" when idle
 	LoadErr   error
@@ -254,10 +258,23 @@ func (a *App) Load(path string) error {
 	return a.setDoc(path, doc)
 }
 
+// LoadSource is Load as doc.open reads a source: one that holds no
+// document yet (unwritten) opens as a new document and is no error.
+func (a *App) LoadSource(path string) error {
+	err := a.Load(path)
+	if unwritten(err) {
+		return a.startNew(newDocument(path).name())
+	}
+	return err
+}
+
 // setDoc shows a parsed document: the structure tree from its shapes, the
 // root selected.
 func (a *App) setDoc(path string, doc *Doc) error {
 	a.Doc, a.Path, a.Loading, a.LoadErr = doc, path, "", nil
+	if path != "" {
+		a.newName = "" // a document of a file; a pasted one keeps the new name
+	}
 	a.r.Instances[pageID].Data = map[string]any{"document": path}
 	a.shown = nil
 	a.viewByPath = make(map[string]string)
@@ -684,7 +701,7 @@ func nodeAt(inst *ochazuke.Instance) *Node {
 
 // state is the viewer's status as the viewer thing answers it (viewer get).
 func (a *App) state() map[string]any {
-	out := map[string]any{"path": a.Path, "loading": a.Loading, "query": a.Query, "kind": a.Kind, "raw": a.Raw}
+	out := map[string]any{"path": a.Path, "source": a.source(), "is_new": a.newName != "", "loading": a.Loading, "query": a.Query, "kind": a.Kind, "raw": a.Raw}
 	if a.LoadErr != nil {
 		out["error"] = a.LoadErr.Error()
 	}

@@ -68,6 +68,8 @@ func (a *App) defineStores() {
 	viewerPath.Role = ochazuke.RoleLabel
 	singleton(r, "viewer", []ochazuke.PropSpec{
 		viewerPath, fact("opened", "boolean", "Whether a document is open"), fact("editing", "boolean", "Whether the viewer is in EDIT"),
+		fact("source", "", "Where the document came from, as it was opened: its path, stdin, or the name of a new document"),
+		fact("is_new", "boolean", "Whether the document was opened for a path that named no file yet (nothing is written until a write)"),
 		{Name: "document", ReadOnly: true, Association: true, Parameter: ochazuke.Parameter{Type: "string", Noun: "doc", Description: "The current document file"}},
 		fileProp("loading", "The file being read, when a read is in progress"), fact("query", "", "The path search filtering the structure"), fact("kind", "", "The value type filtering the structure"),
 		fact("is_raw", "boolean", "Whether the data pane shows the raw text"), fact("error", "", "Why the last read failed"), fact("shape", "", "The structure path shown in the data pane"),

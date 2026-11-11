@@ -1753,7 +1753,7 @@ const (
 
 // write writes the restructured document as mode says.
 func (a *App) write(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
-	path := ochazuke.StringArg(c.Args, "path", "")
+	path := a.writePath(c)
 	p, err := a.plan()
 	if err != nil {
 		return ochazuke.Failed(err)
@@ -1775,6 +1775,11 @@ func (a *App) write(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 		return ochazuke.Failed(err)
 	}
 	what, done := "the restructured document", func(string) { a.markSaved() }
+	if doc := a.Doc; a.newName != "" && path == a.newName && !a.unsaved() {
+		// A new document with nothing restructured, written to its name:
+		// what is written is the document, which is that file from now on.
+		done = func(path string) { a.markSaved(); a.named(doc, path) }
+	}
 	if !isJSON {
 		// An export is not the document: the edits stay unsaved.
 		what, done = "the export of the restructured document", nil
@@ -1798,7 +1803,7 @@ func (a *App) writeFileAsk(c ochazuke.Ctx, path string, data []byte, mode writeM
 		askArgs = ochazuke.Arguments{}
 	}
 	if strings.TrimSpace(path) == "" {
-		return ochazuke.Failed(errors.New("path is required"))
+		return ochazuke.Failed(c.Need("path", "name the file to write"))
 	}
 	if a.isSource(path) && mode != writeSource {
 		return ochazuke.Failed(fmt.Errorf("%s is the source; W (restructure.write {force: true}) overwrites it after a confirm", path))

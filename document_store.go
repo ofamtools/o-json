@@ -35,6 +35,7 @@ func documentProps() []ochazuke.PropSpec {
 		{Name: "name", Role: ochazuke.RoleLabel, Parameter: ochazuke.Parameter{Type: "string", Description: "File name; changing it explicitly renames the file in its folder"}},
 		{Name: "content", Multiline: true, Parameter: ochazuke.Parameter{Type: "string", Description: "JSON text; an explicit change writes the source atomically"}},
 		{Name: "archived", Role: ochazuke.RoleArchive, Default: false, Parameter: ochazuke.Parameter{Type: "boolean", Description: "Hide this document from the registry without moving its file"}},
+		fact("missing", "boolean", "Whether the file is not there: a new document not written yet, or a file that is gone"),
 		fact("size", "integer", "Source size in bytes"),
 		fact("modified", ochazuke.PropTime, "Source modification time"),
 	}
@@ -155,6 +156,16 @@ func (d *documentStore) getLocked(s *documentRecords, key string) (ochazuke.Thin
 	if err != nil {
 		return nil, err
 	}
+	if fresh && out["missing"] == true {
+		// A path that names no file yet is a new, unsaved document: it
+		// answers by its path and is registered once it is written. A
+		// word that is no path (pathWord) is an identity nothing has.
+		if !pathWord(key) {
+			return nil, fmt.Errorf("no document %s (a new file is named by a path: ./%s)", key, key)
+		}
+		out["id"], out["name"], out["archived"] = abs, filepath.Base(abs), false
+		return out, nil
+	}
 	if fresh {
 		metadata, err := s.rememberFile(abs, "")
 		if err != nil {
@@ -208,6 +219,13 @@ func (d *documentStore) rememberFile(path string) (out ochazuke.Thing, err error
 func (d *documentStore) read(t ochazuke.Thing) (ochazuke.Thing, error) {
 	file := fmt.Sprint(t["file"])
 	data, err := os.ReadFile(file)
+	if errors.Is(err, os.ErrNotExist) {
+		// Not written yet, or gone: the record still answers, as list
+		// marks it, with nothing in it. A read never refuses a name.
+		t["content"], t["size"], t["missing"] = "", 0, true
+		delete(t, "modified")
+		return t, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -216,6 +234,7 @@ func (d *documentStore) read(t ochazuke.Thing) (ochazuke.Thing, error) {
 		return nil, err
 	}
 	t["content"], t["size"], t["modified"] = string(data), len(data), info.ModTime().UTC().Format(time.RFC3339)
+	delete(t, "missing")
 	return t, nil
 }
 func (d *documentStore) list(c ochazuke.Ctx, _ ochazuke.ListQuery) ([]ochazuke.Thing, error) {
@@ -312,6 +331,7 @@ func documentMetadata(t ochazuke.Thing) ochazuke.Thing {
 	delete(out, "size")
 	delete(out, "modified")
 	delete(out, "previous_file")
+	delete(out, "missing")
 	return out
 }
 func (d *documentStore) patch(_ ochazuke.Ctx, key string, changes ochazuke.Thing) (out ochazuke.Thing, err error) {
@@ -322,6 +342,7 @@ func (d *documentStore) patch(_ ochazuke.Ctx, key string, changes ochazuke.Thing
 		}
 		old := t["file"].(string)
 		target := old
+		fresh := s.document("", old) == nil // a new document: no record until its content is written
 		if v, ok := changes["file"].(string); ok && v != "" {
 			target, err = filepath.Abs(v)
 			if err != nil {
@@ -336,6 +357,9 @@ func (d *documentStore) patch(_ ochazuke.Ctx, key string, changes ochazuke.Thing
 		}
 		text, contentChanged := changes["content"].(string)
 		contentChanged = contentChanged && text != t["content"]
+		if fresh && !contentChanged {
+			return fmt.Errorf("%s is not written yet: set its content to write it", old)
+		}
 		var data []byte
 		if contentChanged {
 			data = []byte(text)
@@ -353,15 +377,7 @@ func (d *documentStore) patch(_ ochazuke.Ctx, key string, changes ochazuke.Thing
 			s.rollback = func() error { return d.move(target, old) }
 		}
 		if contentChanged {
-			if err := writeNew(target, data, true); err != nil {
-				return err
-			}
-			original, moved := t["content"].(string), s.rollback
-			s.rollback = func() error {
-				err := writeNew(target, []byte(original), true)
-				if moved != nil {
-					err = errors.Join(err, moved())
-				}
+			if err := s.writeContent(t, target, data, fresh); err != nil {
 				return err
 			}
 		}
@@ -378,13 +394,50 @@ func (d *documentStore) patch(_ ochazuke.Ctx, key string, changes ochazuke.Thing
 	})
 	return out, err
 }
+
+// writeContent writes a document's new content to target inside a
+// transaction: the rollback puts the old content (and the old place) back.
+// A fresh document, one that named no file yet, is registered by the
+// write, and its rollback removes the file that was not there before.
+func (s *documentRecords) writeContent(t ochazuke.Thing, target string, data []byte, fresh bool) error {
+	if err := writeNew(target, data, true); err != nil {
+		return err
+	}
+	original, moved := t["content"].(string), s.rollback
+	s.rollback = func() error {
+		if fresh {
+			return os.Remove(target)
+		}
+		err := writeNew(target, []byte(original), true)
+		if moved != nil {
+			err = errors.Join(err, moved())
+		}
+		return err
+	}
+	if !fresh {
+		return nil
+	}
+	metadata, err := s.rememberFile(target, "")
+	if err != nil {
+		return err
+	}
+	t["id"] = metadata["id"]
+	return nil
+}
+
 func (d *documentStore) delete(c ochazuke.Ctx, key string) error {
 	t, err := d.get(c, key)
 	if err != nil {
 		return err
 	}
-	if err := d.trash(context.Background(), t["file"].(string)); err != nil {
-		return err
+	switch {
+	case t["missing"] != true:
+		if err := d.trash(context.Background(), t["file"].(string)); err != nil {
+			return err
+		}
+	case t["id"] == t["file"]: // a new path: no file and no record
+		return fmt.Errorf("%s is not written yet: there is nothing to delete", t["file"])
 	}
+	// A registered file that is gone leaves only its record to remove.
 	return d.state.transaction(true, func(s *documentRecords) error { delete(s.Docs, t["id"].(string)); s.changed = true; return nil })
 }

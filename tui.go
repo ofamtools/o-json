@@ -29,6 +29,17 @@ func viewCommand(stdin io.Reader, stdout, stderr io.Writer, dataDir string) oden
 	}
 }
 
+// openFromCommandLine runs doc.open for the viewer's file word (none: an
+// empty unnamed document).
+func openFromCommandLine(a *App, words []string) error {
+	req := ochazuke.Request{Noun: "doc", Verb: "open", Target: pageID, Args: ochazuke.Arguments{}}
+	if len(words) > 0 {
+		req.Args["path"] = words[0]
+	}
+	_, err := a.r.Execute(req)
+	return err
+}
+
 // runTUI parses the viewer's flags and runs it (or renders one frame).
 func runTUI(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	flags := flag.NewFlagSet("o-json view", flag.ContinueOnError)
@@ -56,13 +67,13 @@ func runTUI(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	a.Stdin = stdin
+	a.Stdin = keepInput(stdin) // read once, kept: the stdin document reads again
 	if *dataDir != "" {
 		a.r.Config().StateDir = *dataDir
 	}
 	if *smoke {
 		if path != "" {
-			if err := a.Load(path); err != nil {
+			if err := a.LoadSource(path); err != nil {
 				return err
 			}
 		}
@@ -82,10 +93,14 @@ func runTUI(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 		defer tty.Close()
 		opts = append(opts, tea.WithInput(tty))
 	}
+	// The command line's file word is doc.open's source: o-json FILE, - and
+	// no word at all are that verb, as the palette and a host run it.
+	args = nil
 	if path != "" {
-		if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: "open", Target: pageID, Args: ochazuke.Arguments{"path": path}}); err != nil {
-			return err
-		}
+		args = []string{path}
+	}
+	if err := openFromCommandLine(a, args); err != nil {
+		return err
 	}
 	_, err = tea.NewProgram(a.m, opts...).Run()
 	return err
