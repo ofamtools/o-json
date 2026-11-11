@@ -269,6 +269,11 @@ viewer or addressed by a file path enter the registry with a stable `id`.
 The registry, annotations and relations live in `documents.json` beside
 `recent.json`; a leading `--data DIR` selects another state directory.
 
+New files are published without replacing another writer's destination;
+duplicates retry occupied copy names. File moves, content changes and identity
+updates share the registry's cross-process transaction. A failed metadata commit
+restores the original file and bytes before releasing the lock.
+
 | Action | Effect |
 |---|---|
 | `doc list`, `doc show --id ID` | List registered/recent files; show the record. At the UI, show opens the generated form and its related/history sections. |
@@ -279,7 +284,7 @@ The registry, annotations and relations live in `documents.json` beside
 | `doc archive`, `doc restore` | Hide or restore registry records. They do not move source files. |
 | `doc delete` | Archive a live record first by default. Deleting an archived record asks before moving its file to the system Trash. macOS uses Finder, Linux uses `gio trash`; an unavailable Trash is an error, never permanent removal. |
 | `doc history`, `doc yank`, `doc annotate`, `doc relate` | Read history, yank a label/key/reference/JSON, add a persistent note, or relate either end. `ochazuke.history-entry.undo` undoes supported record changes. |
-| `doc open` | Open this file in o-json's viewer, not the OS application. A mounted host opens and selects it in the declared JSON page. |
+| `doc open` | Open this file in o-json's viewer, not the OS application. The viewer retains `doc open -` for stdin, without creating a file record. A mounted host opens and selects a file in the declared JSON page. |
 | `doc reveal`, `doc yank-path`, `doc open-with` | Use the library's typed file actions. `paths.free-verbs=false` turns them off. |
 | `doc edit-pane` | Ask the configured host to open a pane with `raw.editor`, `$VISUAL`, `$EDITOR`, or `nvim` and the source file as an argv argument. |
 | `doc send-pane --pane P` | Paste JSON into a typed host pane without submitting it. |

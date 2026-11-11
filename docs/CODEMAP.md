@@ -12,12 +12,13 @@ map; this file records the document lifecycle shared by its entry points.
 | `stores.go` | Read-only facts for transient state and the rendered row window. JSON addresses remain strings, not file paths. |
 | `document_store.go` | Shared typed document and annotation declarations, remote store calls, source validation and real file create/copy/move/rename/content/trash mutations. |
 | `document_move.go` | No-replace disk moves, including exclusive copy and sync across filesystems. |
-| `document_state.go` | Metadata, notes and relations in `documents.json`, atomic writes under an advisory file lock; in-memory state with disabled test configuration. |
+| `document_state.go` | Metadata, notes and relations in `documents.json`; filesystem transitions and identity updates commit under one advisory file lock, with rollback before unlocking on failure. In-memory state with disabled test configuration. |
 | `document_viewer.go` | Viewer adoption, import of a successfully parsed file, and current-file updates after a disk move. |
 | `document_actions.go` | Registered native viewer open, filesystem actions, typed host pane/note/project calls, reciprocal actions and JSON catalog page. |
 | `document_trash.go` | System Trash command selection and injectable command runner. |
 | `document_actions_test.go` | File lifecycle, stable identity, persistence, source-safety and Trash-runner behavior. |
-| `restructure.go` | Existing `writeNew`/`writeAtomic` source-write safeguards, reused by explicit lifecycle content writes. |
+| `document_atomic_test.go` | Exclusive publication, contending creates/duplicates, move/import identity serialization, commit-failure rollback and native stdin compatibility. |
+| `restructure.go` | Shared synced atomic writer: replace explicit writes by rename, publish new files by exclusive hard link. |
 | `raw.go` | Existing editor preference order, reused by document editor-pane actions. |
 | `cheatsheet_test.go`, `scripts/cheatsheet.sh` | Repository-owned generated key reference in `docs/GUIDE.md`. |
 

@@ -12,7 +12,10 @@ import (
 // the source. An error never falls back to replacing a destination.
 func moveDocumentFile(from, to string, link func(string, string) error) error {
 	if err := link(from, to); err == nil {
-		return os.Remove(from)
+		if err := os.Remove(from); err != nil {
+			return errors.Join(err, os.Remove(to))
+		}
+		return nil
 	} else if !errors.Is(err, syscall.EXDEV) {
 		return err
 	}
@@ -37,5 +40,8 @@ func moveDocumentFile(from, to string, link func(string, string) error) error {
 	if err := errors.Join(copyErr, closeErr); err != nil {
 		return errors.Join(err, os.Remove(to))
 	}
-	return os.Remove(from)
+	if err := os.Remove(from); err != nil {
+		return errors.Join(err, os.Remove(to))
+	}
+	return nil
 }

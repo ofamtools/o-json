@@ -17,22 +17,28 @@ import (
 // source files. Every transaction reloads under a process-shared advisory lock.
 // Tests with configuration disabled keep their state entirely in memory.
 type documentState struct {
-	dir    func() string
-	mu     sync.Mutex
-	memory documentRecords
+	dir     func() string
+	mu      sync.Mutex
+	memory  documentRecords
+	persist func(string, []byte) error
 }
 
 type documentRecords struct {
 	Docs      map[string]ochazuke.Thing `json:"docs"`
 	Notes     map[string]ochazuke.Thing `json:"notes"`
 	Relations []ochazuke.Relation       `json:"relations"`
+	changed   bool
+	rollback  func() error
 }
 
-func (s *documentState) transaction(write bool, fn func(*documentRecords) error) error {
+func (s *documentState) transaction(write bool, fn func(*documentRecords) error) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	state := &s.memory
 	dir := s.dir()
+	if dir == "" && write {
+		state = &documentRecords{Docs: maps.Clone(s.memory.Docs), Notes: maps.Clone(s.memory.Notes), Relations: slices.Clone(s.memory.Relations)}
+	}
 	if dir != "" {
 		if err := os.MkdirAll(dir, 0700); err != nil {
 			return err
@@ -57,6 +63,11 @@ func (s *documentState) transaction(write bool, fn func(*documentRecords) error)
 			}
 		}
 	}
+	defer func() {
+		if err != nil && state.rollback != nil {
+			err = errors.Join(err, state.rollback())
+		}
+	}()
 	if state.Docs == nil {
 		state.Docs = map[string]ochazuke.Thing{}
 	}
@@ -66,14 +77,23 @@ func (s *documentState) transaction(write bool, fn func(*documentRecords) error)
 	if err := fn(state); err != nil {
 		return err
 	}
-	if write && dir != "" {
-		data, err := json.MarshalIndent(state, "", "  ")
-		if err != nil {
-			return err
-		}
-		return writeNew(filepath.Join(dir, "documents.json"), append(data, '\n'), true)
+	if !write || !state.changed {
+		return nil
 	}
-	return nil
+	if dir == "" {
+		state.changed, state.rollback = false, nil
+		s.memory = *state
+		return nil
+	}
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return err
+	}
+	path, data := filepath.Join(dir, "documents.json"), append(data, '\n')
+	if s.persist != nil {
+		return s.persist(path, data)
+	}
+	return writeNew(path, data, true)
 }
 
 func (s *documentState) Relations(q ochazuke.RelationQuery) ([]ochazuke.Relation, error) {
@@ -97,12 +117,14 @@ func (s *documentState) Put(x ochazuke.Relation) error {
 		} else {
 			state.Relations[i] = x
 		}
+		state.changed = true
 		return nil
 	})
 }
 func (s *documentState) Remove(x ochazuke.Relation) error {
 	return s.transaction(true, func(state *documentRecords) error {
 		state.Relations = slices.DeleteFunc(state.Relations, func(old ochazuke.Relation) bool { return old.ID() == x.ID() })
+		state.changed = true
 		return nil
 	})
 }
@@ -119,10 +141,10 @@ func (t documentNotes) Get(key string) (out ochazuke.Thing, found bool, err erro
 	return
 }
 func (t documentNotes) Put(key string, value ochazuke.Thing) error {
-	return t.state.transaction(true, func(s *documentRecords) error { s.Notes[key] = value; return nil })
+	return t.state.transaction(true, func(s *documentRecords) error { s.Notes[key] = value; s.changed = true; return nil })
 }
 func (t documentNotes) Delete(key string) error {
-	return t.state.transaction(true, func(s *documentRecords) error { delete(s.Notes, key); return nil })
+	return t.state.transaction(true, func(s *documentRecords) error { delete(s.Notes, key); s.changed = true; return nil })
 }
 func (t documentNotes) Version() (string, error) { return "", nil }
 func (t documentNotes) Query(q ochazuke.DocQuery) (out ochazuke.ListPage, err error) {

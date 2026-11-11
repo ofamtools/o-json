@@ -836,25 +836,25 @@ func restructureOutput(doc *Doc, m *Mapping, as string) ([]byte, error) {
 // writeNew writes data to path. An existing file (the source among them)
 // is replaced only with overwrite, and always atomically.
 func writeNew(path string, data []byte, overwrite bool) error {
-	if _, err := os.Stat(path); err == nil && !overwrite {
-		return fmt.Errorf("%s exists; --overwrite replaces it", path)
-	}
-	return writeAtomic(path, func(w io.Writer) error {
+	err := writeAtomic(path, overwrite, func(w io.Writer) error {
 		_, err := w.Write(data)
 		return err
 	})
+	if errors.Is(err, os.ErrExist) {
+		return fmt.Errorf("%s exists; --overwrite replaces it: %w", path, err)
+	}
+	return err
 }
 
-// writeAtomic replaces path with what write produces without ever leaving
-// it half written: the bytes go to a temporary file beside it (same
-// directory, so the rename stays on one file system), which gets the
-// original's mode (0644 for a new file), is synced and closed, then
-// renamed over path. On any error the temporary file is removed and path
-// is untouched. (From o-csv.)
-func writeAtomic(path string, write func(io.Writer) error) (err error) {
+// writeAtomic publishes a complete, synced temporary file beside path.
+// Replacement uses rename; a new file uses a hard link so another writer's
+// destination is never overwritten. (Adapted from o-csv.)
+func writeAtomic(path string, overwrite bool, write func(io.Writer) error) (err error) {
 	mode := os.FileMode(0o644)
-	if info, statErr := os.Stat(path); statErr == nil {
-		mode = info.Mode().Perm()
+	if overwrite {
+		if info, statErr := os.Stat(path); statErr == nil {
+			mode = info.Mode().Perm()
+		}
 	}
 	f, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
@@ -864,6 +864,8 @@ func writeAtomic(path string, write func(io.Writer) error) (err error) {
 	defer func() {
 		if err != nil {
 			f.Close()
+		}
+		if !overwrite || err != nil {
 			os.Remove(tmp)
 		}
 	}()
@@ -879,5 +881,8 @@ func writeAtomic(path string, write func(io.Writer) error) (err error) {
 	if err = f.Close(); err != nil {
 		return err
 	}
-	return os.Rename(tmp, path)
+	if overwrite {
+		return os.Rename(tmp, path)
+	}
+	return os.Link(tmp, path)
 }

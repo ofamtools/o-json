@@ -19,6 +19,7 @@ type documentStore struct {
 	state   *documentState
 	current func() string
 	trash   func(context.Context, string) error
+	move    func(string, string) error
 }
 
 func fileProp(name, description string) ochazuke.PropSpec {
@@ -42,7 +43,7 @@ func documentProps() []ochazuke.PropSpec {
 // Both runtime entry points use this declaration and the same persisted state.
 func registerDocuments(r *ochazuke.Runtime, current func() string, moved func(string, string)) *documentStore {
 	state := &documentState{dir: func() string { return r.Config().StateDirectory() }}
-	d := &documentStore{state: state, current: current, trash: trashDocument}
+	d := &documentStore{state: state, current: current, trash: trashDocument, move: func(from, to string) error { return moveDocumentFile(from, to, os.Link) }}
 	r.SetRelationStore(state)
 	r.Define("doc").Props(documentProps()...).Store(remoteDocumentStore("doc", ochazuke.Store{
 		Kind: ochazuke.KindCollection, Get: d.get, List: d.list, Create: d.create, Patch: d.patch, Delete: d.delete,
@@ -113,7 +114,15 @@ func remoteDocumentStore(noun string, store ochazuke.Store, after ...func(ochazu
 	return store
 }
 
-func (d *documentStore) get(_ ochazuke.Ctx, key string) (ochazuke.Thing, error) {
+func (d *documentStore) get(_ ochazuke.Ctx, key string) (out ochazuke.Thing, err error) {
+	err = d.state.transaction(true, func(s *documentRecords) error {
+		out, err = d.getLocked(s, key)
+		return err
+	})
+	return out, err
+}
+
+func (d *documentStore) getLocked(s *documentRecords, key string) (ochazuke.Thing, error) {
 	if key == "" || key == "-" {
 		return nil, fmt.Errorf("a document file or identity is required")
 	}
@@ -121,23 +130,7 @@ func (d *documentStore) get(_ ochazuke.Ctx, key string) (ochazuke.Thing, error) 
 	if err != nil {
 		return nil, err
 	}
-	var out ochazuke.Thing
-	err = d.state.transaction(false, func(s *documentRecords) error {
-		if t, ok := s.Docs[key]; ok {
-			out = maps.Clone(t)
-			return nil
-		}
-		for _, t := range s.Docs {
-			if t["file"] == abs {
-				out = maps.Clone(t)
-				return nil
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
+	out := s.document(key, abs)
 	fresh := out == nil
 	if fresh {
 		out = ochazuke.Thing{"file": abs}
@@ -147,51 +140,52 @@ func (d *documentStore) get(_ ochazuke.Ctx, key string) (ochazuke.Thing, error) 
 		return nil, err
 	}
 	if fresh {
-		var metadata ochazuke.Thing
-		metadata, err = d.rememberFile(abs)
-		if err == nil {
-			maps.Copy(out, metadata)
+		metadata, err := s.rememberFile(abs, "")
+		if err != nil {
+			return nil, err
 		}
+		maps.Copy(out, metadata)
 	}
-	return out, err
+	return out, nil
 }
 
-// rememberFile imports metadata without reading source content. A list of
-// recently parsed files must not parse every document again.
-func (d *documentStore) rememberFile(path string) (ochazuke.Thing, error) {
+func (s *documentRecords) document(key, abs string) ochazuke.Thing {
+	if t, ok := s.Docs[key]; ok {
+		return maps.Clone(t)
+	}
+	for _, t := range s.Docs {
+		if t["file"] == abs {
+			return maps.Clone(t)
+		}
+	}
+	return nil
+}
+
+func (s *documentRecords) rememberFile(abs, id string) (ochazuke.Thing, error) {
+	if out := s.document("", abs); out != nil {
+		return out, nil
+	}
+	if id == "" {
+		var identity [12]byte
+		if _, err := rand.Read(identity[:]); err != nil {
+			return nil, err
+		}
+		id = fmt.Sprintf("j%x", identity)
+	}
+	out := ochazuke.Thing{"id": id, "file": abs, "name": filepath.Base(abs), "archived": false}
+	s.Docs[id], s.changed = maps.Clone(out), true
+	return out, nil
+}
+
+// Metadata imports do not parse every recent document's content.
+func (d *documentStore) rememberFile(path string) (out ochazuke.Thing, err error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
 	}
-	var out ochazuke.Thing
-	find := func(s *documentRecords) error {
-		for _, t := range s.Docs {
-			if t["file"] == abs {
-				out = maps.Clone(t)
-				break
-			}
-		}
-		return nil
-	}
-	if err := d.state.transaction(false, find); err != nil {
-		return nil, err
-	}
-	if out != nil {
-		return out, nil
-	}
 	err = d.state.transaction(true, func(s *documentRecords) error {
-		_ = find(s)
-		if out != nil {
-			return nil
-		}
-		var identity [12]byte
-		if _, err := rand.Read(identity[:]); err != nil {
-			return err
-		}
-		id := fmt.Sprintf("j%x", identity)
-		out = ochazuke.Thing{"id": id, "file": abs, "name": filepath.Base(abs), "archived": false}
-		s.Docs[id] = maps.Clone(out)
-		return nil
+		out, err = s.rememberFile(abs, "")
+		return err
 	})
 	return out, err
 }
@@ -244,51 +238,55 @@ func (d *documentStore) create(c ochazuke.Ctx, values ochazuke.Thing) (ochazuke.
 	if err != nil {
 		return nil, err
 	}
-	if from := ochazuke.StringArg(c.Args, "from", ""); from != "" {
-		if _, err := os.Lstat(file); err == nil {
-			ext := filepath.Ext(file)
-			stem := strings.TrimSuffix(file, ext)
-			for i := 1; ; i++ {
-				file = fmt.Sprintf("%s.copy-%d%s", stem, i, ext)
-				if _, err := os.Lstat(file); errors.Is(err, os.ErrNotExist) {
-					break
-				} else if err != nil {
-					return nil, err
-				}
-			}
-		}
-	}
+	duplicate := ochazuke.StringArg(c.Args, "from", "") != ""
 	content, ok := values["content"].(string)
 	if !ok || content == "" {
 		content = "{}\n"
 	}
-	if _, err := Build([]byte(content)); err != nil {
+	data := []byte(content)
+	if _, err := Build(data); err != nil {
 		return nil, err
 	}
-	if err := writeNew(file, []byte(content), false); err != nil {
-		return nil, err
-	}
-	t, err := d.get(c, file)
-	if err != nil {
-		return nil, err
-	}
+	var t ochazuke.Thing
 	err = d.state.transaction(true, func(s *documentRecords) error {
-		id := t["id"].(string)
-		if requested, _ := values["id"].(string); requested != "" && requested != id {
-			if _, exists := s.Docs[requested]; exists {
-				return fmt.Errorf("document identity %s already exists", requested)
+		requested, _ := values["id"].(string)
+		if _, exists := s.Docs[requested]; exists {
+			return fmt.Errorf("document identity %s already exists", requested)
+		}
+		base := file
+		for i := 0; ; i++ {
+			if i > 0 {
+				ext := filepath.Ext(base)
+				file = fmt.Sprintf("%s.copy-%d%s", strings.TrimSuffix(base, ext), i, ext)
 			}
-			delete(s.Docs, id)
-			id = requested
-			t["id"] = id
+			var err error
+			if s.document("", file) != nil {
+				err = fmt.Errorf("%s already belongs to a document: %w", file, os.ErrExist)
+			} else {
+				err = writeNew(file, data, false)
+			}
+			if duplicate && errors.Is(err, os.ErrExist) {
+				continue
+			}
+			if err != nil {
+				return err
+			}
+			break
+		}
+		s.rollback = func() error { return os.Remove(file) }
+		var err error
+		t, err = s.rememberFile(file, requested)
+		if err != nil {
+			return err
 		}
 		for _, key := range []string{"created", "updated", "archived"} {
 			if v, ok := values[key]; ok {
 				t[key] = v
 			}
 		}
-		s.Docs[id] = documentMetadata(t)
-		return nil
+		s.Docs[t["id"].(string)] = documentMetadata(t)
+		t, err = d.read(t)
+		return err
 	})
 	return t, err
 }
@@ -300,57 +298,69 @@ func documentMetadata(t ochazuke.Thing) ochazuke.Thing {
 	delete(out, "previous_file")
 	return out
 }
-func (d *documentStore) patch(c ochazuke.Ctx, key string, changes ochazuke.Thing) (ochazuke.Thing, error) {
-	t, err := d.get(c, key)
-	if err != nil {
-		return nil, err
-	}
-	old := t["file"].(string)
-	target := old
-	if v, ok := changes["file"].(string); ok && v != "" {
-		target, err = filepath.Abs(v)
+func (d *documentStore) patch(_ ochazuke.Ctx, key string, changes ochazuke.Thing) (out ochazuke.Thing, err error) {
+	err = d.state.transaction(true, func(s *documentRecords) error {
+		t, err := d.getLocked(s, key)
 		if err != nil {
-			return nil, err
+			return err
 		}
-	}
-	if name, ok := changes["name"].(string); ok && name != t["name"] {
-		if name == "" || filepath.Base(name) != name || name == "." || name == ".." {
-			return nil, fmt.Errorf("name must be a file name, not a path")
+		old := t["file"].(string)
+		target := old
+		if v, ok := changes["file"].(string); ok && v != "" {
+			target, err = filepath.Abs(v)
+			if err != nil {
+				return err
+			}
 		}
-		target = filepath.Join(filepath.Dir(target), name)
-	}
-	if text, ok := changes["content"].(string); ok {
-		if _, err := Build([]byte(text)); err != nil {
-			return nil, err
+		if name, ok := changes["name"].(string); ok && name != t["name"] {
+			if name == "" || filepath.Base(name) != name || name == "." || name == ".." {
+				return fmt.Errorf("name must be a file name, not a path")
+			}
+			target = filepath.Join(filepath.Dir(target), name)
 		}
-	}
-	if target != old {
-		if _, err := os.Lstat(target); err == nil {
-			return nil, fmt.Errorf("destination already exists: %s", target)
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return nil, err
+		text, contentChanged := changes["content"].(string)
+		contentChanged = contentChanged && text != t["content"]
+		var data []byte
+		if contentChanged {
+			data = []byte(text)
+			if _, err := Build(data); err != nil {
+				return err
+			}
 		}
-		if err := moveDocumentFile(old, target, os.Link); err != nil {
-			return nil, err
+		if target != old {
+			if other := s.document("", target); other != nil {
+				return fmt.Errorf("destination already belongs to a document: %s", target)
+			}
+			if err := d.move(old, target); err != nil {
+				return err
+			}
+			s.rollback = func() error { return d.move(target, old) }
 		}
-	}
-	if text, ok := changes["content"].(string); ok && text != t["content"] {
-		if err := writeNew(target, []byte(text), true); err != nil {
-			return nil, err
+		if contentChanged {
+			if err := writeNew(target, data, true); err != nil {
+				return err
+			}
+			original, moved := t["content"].(string), s.rollback
+			s.rollback = func() error {
+				err := writeNew(target, []byte(original), true)
+				if moved != nil {
+					err = errors.Join(err, moved())
+				}
+				return err
+			}
 		}
-	}
-	for k, v := range changes {
-		t[k] = v
-	}
-	t["file"], t["name"] = target, filepath.Base(target)
-	err = d.state.transaction(true, func(s *documentRecords) error { s.Docs[t["id"].(string)] = documentMetadata(t); return nil })
-	if err != nil {
-		return nil, err
-	}
-	if target != old {
-		t["previous_file"] = old
-	}
-	return d.read(t)
+		for k, v := range changes {
+			t[k] = v
+		}
+		t["file"], t["name"] = target, filepath.Base(target)
+		s.Docs[t["id"].(string)], s.changed = documentMetadata(t), true
+		if target != old {
+			t["previous_file"] = old
+		}
+		out, err = d.read(t)
+		return err
+	})
+	return out, err
 }
 func (d *documentStore) delete(c ochazuke.Ctx, key string) error {
 	t, err := d.get(c, key)
@@ -360,5 +370,5 @@ func (d *documentStore) delete(c ochazuke.Ctx, key string) error {
 	if err := d.trash(context.Background(), t["file"].(string)); err != nil {
 		return err
 	}
-	return d.state.transaction(true, func(s *documentRecords) error { delete(s.Docs, t["id"].(string)); return nil })
+	return d.state.transaction(true, func(s *documentRecords) error { delete(s.Docs, t["id"].(string)); s.changed = true; return nil })
 }
