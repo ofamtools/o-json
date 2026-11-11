@@ -13,7 +13,8 @@
       "key": "e",
       "note": "Start o-json with no file. Press e to choose the tutorial document."
     },
-    "ctrl+o",
+    "alt+s",
+    {"job": "ochazuke.picker.load"},
     {
       "type": "tutorial-selection"
     },
@@ -226,7 +227,7 @@
   },
   "notes": [
     {
-      "after": 28,
+      "after": 29,
       "note": "Reset point: first and last are selected in the right structure. Each lesson starts here again."
     }
   ]

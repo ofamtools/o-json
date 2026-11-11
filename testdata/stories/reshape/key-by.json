@@ -1,8 +1,9 @@
 {
   "name": "o-json: g k on an array of objects asks for the field (only its scalar fields: name, id) and keys the items by it; a shared key is renamed (p1-2), the item without it goes under _missing; u undoes it",
   "area": "reshape",
+  "values": {"modes.edit-gate": false},
   "width": 120,
-  "height": 30,
+  "height": 60,
   "fixture": "viewer",
   "seed": {
     "doc": "reshape.json"
@@ -13,7 +14,7 @@
     "g",
     "k",
     "space",
-    "j",
+    "down",
     "enter",
     "enter",
     "u"
@@ -23,8 +24,8 @@
       "after": 6,
       "contains": [
         "Choose field",
-        "\u2502 name ",
-        "\u2502 id "
+        "   name ",
+        "   id "
       ]
     },
     {

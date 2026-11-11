@@ -11,7 +11,8 @@
   },
   "setup": [
     "e",
-    "ctrl+o",
+    "alt+s",
+    {"job": "ochazuke.picker.load"},
     {
       "type": "sample"
     },
@@ -27,11 +28,12 @@
   "actions": [
     {
       "label": "Keep the current document",
-      "caption": "esc closes the picker and keeps the open document. Use it when you decide against switching files.",
+      "caption": "esc leaves the picker's search line for normal mode and q closes it, keeping the open document. Use it when you decide against switching files.",
       "keys": [
-        "esc"
+        "esc",
+        "q"
       ],
-      "id": "ochazuke.picker.cancel",
+      "id": "ochazuke.modal.close",
       "expect": {
         "mode": "shape"
       }
@@ -61,15 +63,16 @@
     },
     {
       "label": "Show recent files",
-      "caption": "ctrl+o switches from browsing folders to recent files. Use it to reopen a document without remembering its path.",
+      "caption": "alt+s steps from browsing folders to the recent files (S does in the picker's normal mode). Use it to reopen a document without remembering its path.",
       "keys": [
-        "ctrl+o"
+        "alt+s",
+        {"job": "ochazuke.picker.load"}
       ],
-      "id": "ochazuke.picker.next-source",
+      "id": "ochazuke.picker.next-scope",
       "expect": {
         "mode": "insert",
         "contains": [
-          "[recent]"
+          "on disk · recent"
         ]
       }
     },
@@ -116,21 +119,6 @@
       }
     },
     {
-      "label": "Choose the previous source",
-      "caption": "alt+o cycles backward through the file sources: find, then typed. Use the typed-path source when you already know the filename.",
-      "keys": [
-        "alt+o",
-        "alt+o"
-      ],
-      "id": "ochazuke.picker.previous-source",
-      "expect": {
-        "mode": "insert",
-        "contains": [
-          "[typed]"
-        ]
-      }
-    },
-    {
       "label": "Browse the parent folder",
       "caption": "Type jobs and press ctrl+l to enter it; alt+up returns to the sample folder. Use it to recover your place while browsing.",
       "keys": [
@@ -153,8 +141,10 @@
     },
     {
       "label": "Match a partial filename",
-      "caption": "Type smpl, then shift+tab chooses substring matching and tab returns to fuzzy. Find sample.json even when you remember only some letters.",
+      "caption": "Among the recent files (alt+s), type smpl, then shift+tab chooses substring matching and tab returns to fuzzy. Find sample.json even when you remember only some letters.",
       "keys": [
+        "alt+s",
+        {"job": "ochazuke.picker.load"},
         {
           "type": "smpl"
         },
@@ -172,8 +162,10 @@
     },
     {
       "label": "Match with a different search style",
-      "caption": "Type sample, then shift+tab cycles filename matching backward. Choose the style that fits the text you remember.",
+      "caption": "Among the recent files (alt+s), type sample, then shift+tab cycles filename matching backward. Choose the style that fits the text you remember.",
       "keys": [
+        "alt+s",
+        {"job": "ochazuke.picker.load"},
         {
           "type": "sample"
         },
@@ -201,10 +193,10 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file picker; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; alt+s steps to our recent sample files."
     },
     {
-      "after": 7,
+      "after": 8,
       "note": "Reset point: every action begins here again; earlier actions never change this starting state."
     }
   ],

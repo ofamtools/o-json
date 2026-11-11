@@ -11,7 +11,8 @@
   },
   "setup": [
     "e",
-    "ctrl+o",
+    "alt+s",
+    {"job": "ochazuke.picker.load"},
     {
       "type": "sample"
     },
@@ -72,10 +73,10 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file picker; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; alt+s steps to our recent sample files."
     },
     {
-      "after": 11,
+      "after": 12,
       "note": "Reset point: every action begins here again; earlier actions never change this starting state."
     }
   ],

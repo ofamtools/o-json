@@ -8,8 +8,7 @@
   "area": "journeys",
   "script": [
     "T", "t", "t", "esc", "g", "g", "7", "j", "y", "p", "k", "k",
-    "enter", "enter", "ctrl+w", "l", "$", "tab", "ctrl+w", "h", "T", "g", "m", "esc",
-    "q"
+    "enter", "enter", "ctrl+w", "l", "$", "tab", "ctrl+w", "h", "T", "g", "m", "esc", "q", "q"
   ],
   "expect": [
     {"after": 1, "mode": "shape", "contains": ["Structure · original", "email?    string|null  21/25", "coupon?      string        6/25", "price  number       51/51"]},
@@ -24,7 +23,7 @@
     {"after": 18, "mode": "flat", "contains": [".data[ 2].customer.name = \"Finn Abe\"", ".data[ 3].customer.email = null"], "lacks": [".data[ 2].customer.email"]},
     {"after": 21, "mode": "shape", "contains": ["Structure · unchanged"]},
     {"after": 23, "focus": "mode-picker/query", "contains": ["Modes", "SHAPE", "read and walk the structure", "FLAT"]},
-    {"after": 24, "mode": "shape", "lacks": ["read and walk the structure"]},
+    {"after": 25, "mode": "shape", "lacks": ["read and walk the structure"]},
     {"quit": true}
   ],
   "notes": [
@@ -40,7 +39,7 @@
     {"after": 18, "keys": "tab", "note": "tab to FLAT: here the difference shows: order 2 has no email at all, order 3 has email null"},
     {"after": 21, "keys": "ctrl+w h T", "note": "back to the tree; T returns to the edited structure"},
     {"after": 23, "keys": "g m", "note": "g m: the mode picker lists every mode and the key that reaches it"},
-    {"after": 24, "keys": "esc", "note": "esc closes it"},
-    {"after": 25, "keys": "q", "note": "q quits"}
+    {"after": 25, "keys": "esc q", "note": "esc leaves its search line for normal mode, q closes it"},
+    {"after": 26, "keys": "q", "note": "q quits"}
   ]
 }

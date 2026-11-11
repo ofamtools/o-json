@@ -11,7 +11,8 @@
   },
   "setup": [
     "e",
-    "ctrl+o",
+    "alt+s",
+    {"job": "ochazuke.picker.load"},
     {
       "type": "sample"
     },
@@ -24,15 +25,15 @@
   "actions": [
     {
       "label": "Cancel a command",
-      "caption": "Type viewer, then esc clears the command; esc again closes the empty palette. Cancel an unfinished command without changing the document.",
+      "caption": "Type viewer, then esc leaves the command line for normal mode and q closes the palette. Cancel an unfinished command without changing the document.",
       "keys": [
         {
           "type": "viewer"
         },
         "esc",
-        "esc"
+        "q"
       ],
-      "id": "ochazuke.palette.cancel",
+      "id": "ochazuke.palette.close q",
       "expect": {
         "mode": "shape"
       }
@@ -100,9 +101,10 @@
     },
     {
       "label": "Open the command palette",
-      "caption": "esc closes the current palette; ctrl+space opens a fresh one. Use this alternative to : when reaching for named commands.",
+      "caption": "esc then q closes the current palette; ctrl+space opens a fresh one. Use this alternative to : when reaching for named commands.",
       "keys": [
         "esc",
+        "q",
         "ctrl+space"
       ],
       "id": "ochazuke.palette.open",
@@ -173,10 +175,10 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file picker; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; alt+s steps to our recent sample files."
     },
     {
-      "after": 6,
+      "after": 7,
       "note": "Reset point: every action begins here again; earlier actions never change this starting state."
     }
   ],

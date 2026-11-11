@@ -11,7 +11,8 @@
   },
   "setup": [
     "e",
-    "ctrl+o",
+    "alt+s",
+    {"job": "ochazuke.picker.load"},
     {
       "type": "sample"
     },
@@ -41,9 +42,9 @@
     },
     {
       "label": "Keep working on the edited document",
-      "caption": "esc closes the quit confirmation and keeps the edited view. Return to your work when you still need to inspect or export it.",
+      "caption": "n closes the quit confirmation and keeps the edited view (q does too). Return to your work when you still need to inspect or export it.",
       "keys": [
-        "esc"
+        "n"
       ],
       "expect": {
         "quit": false,
@@ -66,10 +67,10 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file picker; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; alt+s steps to our recent sample files."
     },
     {
-      "after": 11,
+      "after": 12,
       "note": "Reset point: every action begins here again; earlier actions never change this starting state."
     }
   ]

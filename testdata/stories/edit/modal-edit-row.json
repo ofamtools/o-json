@@ -1,6 +1,7 @@
 {
   "name": "o-json: r on a table cell opens the value editor over the table (its path, the old value, the type as typed); enter sets it and the cursor stays on the cell; esc goes to normal mode, the text kept, and q cancels",
   "area": "edit",
+  "values": {"modes.edit-gate": false},
   "width": 120,
   "height": 30,
   "fixture": "viewer",

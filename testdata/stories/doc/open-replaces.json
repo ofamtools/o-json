@@ -5,7 +5,7 @@
   "height": 18,
   "fixture": "viewer",
   "seed": {"doc": "nest.json", "files": ["sample.json"]},
-  "script": [":", "v", "i", "e", "w", "e", "r", "space", "o", "p", "e", "n", "enter", "ctrl+o", "enter", {"job": "viewer.open", "state": "done"}],
+  "script": [":", "v", "i", "e", "w", "e", "r", "space", "o", "p", "e", "n", "enter", "alt+s", {"job": "ochazuke.picker.load"}, "enter", {"job": "viewer.open", "state": "done"}],
   "expect": [
     {"after": 1, "contains": ["nest.json"]},
     {"contains": ["sample.json", "o-json sample"], "lacks": ["nest.json"]}

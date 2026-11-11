@@ -11,7 +11,8 @@
   },
   "setup": [
     "e",
-    "ctrl+o",
+    "alt+s",
+    {"job": "ochazuke.picker.load"},
     {
       "type": "tutorial-reshape"
     },
@@ -174,8 +175,6 @@
       "caption": "w opens an output path; type reshaped.json and enter. Export the title-only document while keeping the input intact.",
       "keys": [
         "w",
-        "alt+o",
-        "alt+o",
         {
           "type": "reshaped.json"
         },
@@ -203,8 +202,6 @@
       "caption": "First write reshaped.json, rename title to heading, then W writes to that same output path. Refresh an export after a change without overwriting the source.",
       "keys": [
         "w",
-        "alt+o",
-        "alt+o",
         {
           "type": "reshaped.json"
         },
@@ -221,8 +218,6 @@
         },
         "esc",
         "W",
-        "alt+o",
-        "alt+o",
         {
           "type": "reshaped.json"
         },
@@ -284,10 +279,10 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file picker; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; alt+s steps to our recent sample files."
     },
     {
-      "after": 16,
+      "after": 17,
       "note": "Reset point: every action begins here again; earlier actions never change this starting state."
     }
   ],

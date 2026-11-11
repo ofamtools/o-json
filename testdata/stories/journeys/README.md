@@ -4,15 +4,15 @@ One story per common JSON job (`~/hub/test-archive/2026-10-30/o-json-jobs/what-p
 
 | Journey | Job | Opens with | Keys it walks | Events |
 |---|---|---|---|---|
-| `01-read-minified-api-dump` | 1 read a minified API dump | `e`, `ctrl+o` recent, typed name | `j` `ctrl+w l` `ctrl+d` `G` `g g` `tab` (FLAT, JSON) `z c` `z M` `z R` `%` `3 j y y` `ctrl+w o` `ctrl+w =` `ctrl+w h` `q` | 37 |
-| `02-understand-the-shape` | 2 understand the shape | `o-json orders.min.json` (viewer fixture) | `T` (counts, `email?`) `t` `t` `esc` `g g 7 j` `y p` `enter` (fold) `ctrl+w l $` `tab` (missing vs null) `T` `g m` `esc` `q` | 25 |
-| `03-find-a-key-or-value-anywhere` | 3 find a key or value | `:e`, recent | `/refunded` `enter` `n n N` `y p` `enter` `esc` `/cpn` `tab` (fuzzy) `enter` `j y y` `G` `esc` `q` | 28 |
+| `01-read-minified-api-dump` | 1 read a minified API dump | `e`, `alt+s` recent, typed name | `j` `ctrl+w l` `ctrl+d` `G` `g g` `tab` (FLAT, JSON) `z c` `z M` `z R` `%` `3 j y y` `ctrl+w o` `ctrl+w =` `ctrl+w h` `q` | 38 |
+| `02-understand-the-shape` | 2 understand the shape | `o-json orders.min.json` (viewer fixture) | `T` (counts, `email?`) `t` `t` `esc` `g g 7 j` `y p` `enter` (fold) `ctrl+w l $` `tab` (missing vs null) `T` `g m` `esc q` `q` | 26 |
+| `03-find-a-key-or-value-anywhere` | 3 find a key or value | `: viewer open`, `alt+s` recent | `/refunded` `enter` `n n N` `y p` `enter` `esc` `/cpn` `tab` (fuzzy) `enter` `j y y` `G` `esc` `q` | 29 |
 | `04-copy-the-path-to-a-value` | 4 copy a path | viewer fixture | `y p` `y a p` `"a y i p` `l j` (NESTED) `l y p` `esc` `! i p` (jq) `enter` `esc` `tab 5 j y p` `y v` `q` | 37 |
 | `05-filter-and-extract-with-jq` | 5 filter or extract with jq | bracketed paste (a copied response) | `/ shift+tab` (jq) `select(...)` `enter` `/` `\| {id, total, who}` `enter` `l l y` `j y` `ctrl+w o` `ctrl+w =` `esc` `! i c` `enter` `esc` `q` | 30 |
 | `06-table-sort-and-export` | 6 table: read, sort, export | viewer fixture | `4 l j` (items) `j $ y p` `esc` `s i c` `s s` `j j j` `0 enter` (detail) `q` `w orders-by-total.csv` `:sort` (clears on `#`) `q` | 31 |
 | `07-edit-a-config-file` | 7 edit a config file | viewer fixture (`package.json`) | `x` (refused) `i` `r` `ctrl+u` `1.5.0` `u` `ctrl+r` `esc` `8 j` `i o zod tab ^3.23.8` `s i o` `D` `w package.edited.json` `i x` `q` (asks) `n` `Q` | 41 |
-| `08-find-where-a-file-is-broken` | 8 find where a file is broken | `e`, recent: the broken file fails | the error's line and column, paste the excerpt (same error), paste it fixed, `4 l` `tab` `6 j y p` `tab` `T` `/price` `esc q` | 26 |
-| `13-reindent-a-minified-file` | 13 re-indent (minify and sort keys are gaps) | `e`, recent | `tab tab tab` (JSON) `j z c` `z R` `G` `g g` `T` `w alt+o orders.pretty.json` `T` `q` | 27 |
+| `08-find-where-a-file-is-broken` | 8 find where a file is broken | `e`, recent: the broken file fails | the error's line and column, paste the excerpt (same error), paste it fixed, `4 l` `tab` `6 j y p` `tab` `T` `/price` `esc q` | 28 |
+| `13-reindent-a-minified-file` | 13 re-indent (minify and sort keys are gaps) | `e`, recent | `tab tab tab` (JSON) `j z c` `z R` `G` `g g` `T` `w orders.pretty.json` `T` `q` | 28 |
 | `14-count-and-group-with-jq` | 14 count and group (jq) | viewer fixture | `/ shift+tab` `[... select(.coupon)] \| length` `group_by(.status)` `sort_by(-.orders)` revenue per status `j l l y` `ctrl+w o` `ctrl+w =` `esc` `q` | 30 |
 
 Jobs 9 (diff), 10 (YAML/TOML), 11 (JSON Lines), 12 (large files) and 15 (schema) have no journey: o-json cannot do them yet.

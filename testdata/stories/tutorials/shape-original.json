@@ -11,7 +11,8 @@
   },
   "setup": [
     "e",
-    "ctrl+o",
+    "alt+s",
+    {"job": "ochazuke.picker.load"},
     {
       "type": "sample"
     },
@@ -102,11 +103,9 @@
     },
     {
       "label": "Write a new formatted copy",
-      "caption": "w opens the output picker; switch to the typed path, write original.pretty.json, and enter. Make a readable copy while preserving the source.",
+      "caption": "w opens the output picker in the file's folder; type original.pretty.json, which it offers as a new file, and enter. Make a readable copy while preserving the source.",
       "keys": [
         "w",
-        "alt+o",
-        "alt+o",
         {
           "type": "original.pretty.json"
         },
@@ -139,10 +138,10 @@
   "notes": [
     {
       "after": 0,
-      "note": "e opens the file picker; ctrl+o shows our recent sample files."
+      "note": "e opens the file picker; alt+s steps to our recent sample files."
     },
     {
-      "after": 9,
+      "after": 10,
       "note": "Reset point: every action begins here again; earlier actions never change this starting state."
     }
   ],

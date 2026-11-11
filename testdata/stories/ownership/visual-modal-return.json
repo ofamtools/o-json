@@ -6,7 +6,7 @@
   "fixture": "viewer",
   "seed": {"doc": "nested.json"},
   "values": {"modal-highlights": "keep"},
-  "script": ["j", "v", "j", ":", "esc"],
+  "script": ["j", "v", "j", ":", "esc", "q"],
   "expect": [
     {"after": 3, "modal": "", "mode": "visual-line", "focus": "r:2", "highlighted": 1, "contains": ["┏━ Structure", "* └─ ▾ []", "*    ├─   id"]},
     {"after": 4, "modal": "palette", "mode": "insert", "focus": "__palette/line", "highlighted": 0, "dimmed": 2, "contains": ["┏━ Structure", "* └─ ▾ []", "*    ├─   i"]},
