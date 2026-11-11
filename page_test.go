@@ -620,3 +620,33 @@ func TestPreviewYanksAndSetting(t *testing.T) {
 		t.Fatalf("mapping\n%s", frame)
 	}
 }
+
+// w writes what is shown: the restructured document on the edited view,
+// the document itself on the original. The restructure row is guarded on
+// the row (restructure-writable), not only by its verb's availability: a
+// verb that asks for its path would otherwise answer the key on the
+// original view too (ochazuke v0.124 asks for a missing subject even
+// where the verb is not available), and write the wrong document.
+func TestWKeyWritesTheShownDocument(t *testing.T) {
+	for _, c := range []struct {
+		original bool
+		want     string
+	}{{false, "Run restructure.write"}, {true, "Run viewer.write"}} {
+		a := open(t, sample, 120, 30)
+		if c.original {
+			press(t, a, "T")
+		}
+		finish(a, Press(a.m, "w"))
+		settle(a)
+		if frame := view(a); a.r.TopModal() == "" || !strings.Contains(frame, c.want) {
+			t.Fatalf("w with the original shown %v: modal %q, want %q\n%s", c.original, a.r.TopModal(), c.want, frame)
+		}
+	}
+	// W forces the restructured write and has no meaning on the original.
+	a := openOriginal(t, sample, 120, 30)
+	finish(a, Press(a.m, "W"))
+	settle(a)
+	if a.r.TopModal() != "" {
+		t.Fatalf("W on the original asked for a path: modal %q\n%s", a.r.TopModal(), view(a))
+	}
+}

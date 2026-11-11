@@ -125,6 +125,9 @@ func declareSettings(r *ochazuke.Runtime) error {
 	if err := declareToneSettings(r); err != nil {
 		return err
 	}
+	if err := declareOpenerRows(r); err != nil {
+		return err
+	}
 	return declareOwn(r, ochazuke.Setting{
 		Name: settingLayout, Type: ochazuke.SettingString, Default: "split", Enum: []string{"split", "single"},
 		Description: "The restructure page: split shows the original beside the restructured tree; single shows one, ctrl+a o swaps them",

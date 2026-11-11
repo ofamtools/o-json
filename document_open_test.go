@@ -218,7 +218,7 @@ func TestDocOpenFromThePalette(t *testing.T) {
 	}{
 		{"doc open " + other, func() bool { return a.Path == other }},
 		{"doc open -", func() bool { return a.Doc != nil && a.Doc.Name == stdinName }},
-		{"e " + other, func() bool { return a.Path == other }},
+		{"viewer open " + other, func() bool { return a.Path == other }},
 		{"viewer load", func() bool { return a.Path == other }},
 		{"doc open", func() bool { return a.Doc == nil && a.Path == "" }},
 	} {
@@ -229,6 +229,21 @@ func TestDocOpenFromThePalette(t *testing.T) {
 		if !c.ok() || a.r.TopModal() != "" || a.m.Status != "" {
 			t.Fatalf(":%s: path %q modal %q status %q\n%s", c.line, a.Path, a.r.TopModal(), a.m.Status, view(a))
 		}
+	}
+	// :e PATH is the framework's Open line (ochazuke v0.123): it says what
+	// enter would do, o-json's opener row, and enter does it.
+	press(t, a, ":")
+	finish(a, Type(a.m, "e "+other))
+	finish(a, Press(a.m, "enter"))
+	settle(a)
+	if a.r.TopModal() != ochazuke.OpenModalID || !strings.Contains(view(a), "doc.open "+other[:20]) {
+		t.Fatalf(":e did not open the Open line on doc.open: modal %q\n%s", a.r.TopModal(), view(a))
+	}
+	finish(a, Press(a.m, "enter"))
+	finish(a, a.r.PendingCommands())
+	settle(a)
+	if a.Path != other || a.r.TopModal() != "" {
+		t.Fatalf("the Open line did not open the file here: path %q modal %q status %q\n%s", a.Path, a.r.TopModal(), a.m.Status, view(a))
 	}
 }
 
@@ -286,5 +301,32 @@ func TestDocumentRecordOfANewPath(t *testing.T) {
 	}
 	if rows, _ := d.list(ochazuke.Ctx{}, ochazuke.ListQuery{}); len(rows) != 0 {
 		t.Fatalf("delete kept the record: %v", rows)
+	}
+}
+
+// A typed path's leading ~ is the home folder: a palette, a host and the
+// Open line hand a path over as typed, with no shell to expand it.
+func TestDocSourceExpandsHome(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	file := filepath.Join(home, "x.json")
+	if err := os.WriteFile(file, []byte(`{"home":true}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	a := empty(t)
+	docDo(t, a, "open", ochazuke.Arguments{"path": "~/x.json"})
+	if a.Doc == nil || a.Path != file {
+		t.Fatalf("doc open ~/x.json: path %q err %v status %q", a.Path, a.LoadErr, a.m.Status)
+	}
+	docDo(t, a, "open", ochazuke.Arguments{"target": "~/new.json"}) // as the Open line hands it over
+	if a.Doc != nil || a.newName != filepath.Join(home, "new.json") {
+		t.Fatalf("a new path under ~: new %q path %q", a.newName, a.Path)
+	}
+	doc, err := persistentDocumentStore(t.TempDir()).get(ochazuke.Ctx{}, "~/x.json")
+	if err != nil || doc["file"] != file {
+		t.Fatalf("doc get --id ~/x.json: %v %v", doc, err)
+	}
+	if got := expandHome("~other/x.json"); got != "~other/x.json" {
+		t.Fatalf("another user's home is left as typed: %q", got)
 	}
 }

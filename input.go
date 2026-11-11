@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -149,6 +150,23 @@ func splitFile(words []string, stdin io.Reader) (file string, rest []string, err
 	}
 	return "", nil, errors.New("a file is required (- reads stdin)")
 }
+
+// expandHome is a path with a leading ~ as the home folder: a palette, a
+// host or the Open line hands a typed path over as it was typed, with no
+// shell to expand it.
+func expandHome(path string) string {
+	if path != "~" && !strings.HasPrefix(path, "~/") {
+		return path
+	}
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return path
+	}
+	return filepath.Join(home, strings.TrimPrefix(path, "~"))
+}
+
+// absPath is a typed path as an absolute one (expandHome first).
+func absPath(path string) (string, error) { return filepath.Abs(expandHome(path)) }
 
 // pathWord reports a word that reads as a path and not as a name (a
 // command word, a document identity): it holds a dot or a slash. ./NAME

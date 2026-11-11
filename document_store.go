@@ -118,7 +118,7 @@ func remoteDocumentStore(noun string, store ochazuke.Store, after ...func(ochazu
 // Opening needs only the identity's file, not a second full source read or an
 // intermediate record result for the UI to present over the native viewer.
 func (d *documentStore) filePath(key string) (string, error) {
-	file, err := filepath.Abs(key)
+	file, err := absPath(key)
 	if err != nil {
 		return "", err
 	}
@@ -143,7 +143,7 @@ func (d *documentStore) getLocked(s *documentRecords, key string) (ochazuke.Thin
 	if key == "" || key == "-" {
 		return nil, fmt.Errorf("a document file or identity is required")
 	}
-	abs, err := filepath.Abs(key)
+	abs, err := absPath(key)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (s *documentRecords) rememberFile(abs, id string) (ochazuke.Thing, error) {
 
 // Metadata imports do not parse every recent document's content.
 func (d *documentStore) rememberFile(path string) (out ochazuke.Thing, err error) {
-	abs, err := filepath.Abs(path)
+	abs, err := absPath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (d *documentStore) create(c ochazuke.Ctx, values ochazuke.Thing) (ochazuke.
 	if file == "" {
 		return nil, &ochazuke.MissingParameterError{Param: "file", Reason: "choose a new JSON file"}
 	}
-	file, err := filepath.Abs(file)
+	file, err := absPath(file)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func (d *documentStore) patch(_ ochazuke.Ctx, key string, changes ochazuke.Thing
 		target := old
 		fresh := s.document("", old) == nil // a new document: no record until its content is written
 		if v, ok := changes["file"].(string); ok && v != "" {
-			target, err = filepath.Abs(v)
+			target, err = absPath(v)
 			if err != nil {
 				return err
 			}

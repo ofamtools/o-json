@@ -696,6 +696,25 @@ func (a *App) docState() map[string]any {
 	return out
 }
 
+// openerRows are o-json's default rows of ochazuke's opener table
+// (open.openers; a user's value replaces them): what the Open line (g o,
+// :e, :e PATH; the framework owns the word e since ochazuke v0.123) does
+// with a JSON file or with text written as a path is doc.open, this viewer,
+// not the system's application. Links and noun:id text keep the
+// framework's rows.
+const openerRows = `[{"ext":"json","action":"viewer","to":"doc.open"},{"prefix":"~","action":"viewer","to":"doc.open"},{"prefix":"/","action":"viewer","to":"doc.open"},{"prefix":"./","action":"viewer","to":"doc.open"},{"prefix":"../","action":"viewer","to":"doc.open"}]`
+
+// declareOpenerRows makes openerRows the default of open.openers.
+func declareOpenerRows(r *ochazuke.Runtime) error {
+	for _, s := range r.Settings().Declared() {
+		if s.Name == ochazuke.OpenOpenersSetting {
+			s.Default = openerRows
+			return r.DeclareSetting(s)
+		}
+	}
+	return fmt.Errorf("ochazuke has no %s setting", ochazuke.OpenOpenersSetting)
+}
+
 // aliases are o-json's alias rows, vim's ex words: bare names that run a
 // verb with preset arguments from the palette, the CLI and the API. A
 // user's actions.json may add more; aliases.shadow decides a clash.
@@ -704,7 +723,6 @@ var aliases = []ochazuke.ActionAlias{
 	{Alias: "w!", Action: "viewer.save", Args: ochazuke.Arguments{"force": true}, Note: "write, replacing an existing file (vim :w!)"},
 	{Alias: "wq", Action: "viewer.save", Args: ochazuke.Arguments{"quit": true}, Note: "write, then quit (vim :wq)"},
 	{Alias: "x", Action: "viewer.save", Args: ochazuke.Arguments{"quit": true}, Note: "write, then quit (vim :x)"},
-	{Alias: "e", Action: "viewer.open", Note: "open a file (vim :e)"},
 	{Alias: "q", Action: "app.quit", Note: "quit; asks with edits no write saved (vim :q)"},
 	{Alias: "q!", Action: "app.quit", Args: ochazuke.Arguments{"force": true}, Note: "quit without writing (vim :q!)"},
 }

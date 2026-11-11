@@ -10,6 +10,9 @@ import (
 
 // selected is the inline input's select range as text ("" for none).
 func selected(a *App) string {
+	if a.vedit == nil || a.vedit.in == nil {
+		return "" // no input opened: the caller's check reports it
+	}
 	start, end, ok := a.vedit.in.SelectedText()
 	if !ok {
 		return ""

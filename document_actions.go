@@ -52,7 +52,10 @@ func registerDocumentActions(r *ochazuke.Runtime, d *documentStore, open func(st
 		open = launch
 	}
 	r.Define("doc").Verb("open", func(c ochazuke.Ctx) ochazuke.Result {
-		source := ochazuke.StringArg(c.Args, "path", ochazuke.StringArg(c.Args, "file", ""))
+		// The source by any of its names: path (the word), file (as the
+		// other doc verbs say it) or target (as the Open line's opener
+		// rows hand a viewer its text).
+		source := expandHome(ochazuke.StringArg(c.Args, "path", ochazuke.StringArg(c.Args, "file", ochazuke.StringArg(c.Args, "target", ""))))
 		id := ochazuke.StringArg(c.Args, "id", "")
 		if source != "" || id == "" {
 			// A source as given: a file, - (standard input), a path that
@@ -76,13 +79,17 @@ func registerDocumentActions(r *ochazuke.Runtime, d *documentStore, open func(st
 	}, "Open a document in the JSON viewer (not the system opener): a JSON file, - for standard input, a path that names no file yet (a new, named, unsaved document), or with no source an empty unnamed document").Positional("path").OpensPage("documents").Foreground().Fetch()
 	sourceFile := ochazuke.Parameter{Type: ochazuke.PropPath, Path: "file", New: true, Covers: true}
 	described := func(p ochazuke.Parameter, text string) ochazuke.Parameter { p.Description = text; return p }
-	// The identity is a choice, never a target the palette must ask for
-	// (Focus): with nothing given, doc.open opens an empty document.
+	plumbing := func(p ochazuke.Parameter) ochazuke.Parameter { p.Plumbing = true; return p }
+	// The identity is a choice, never a subject the framework must ask
+	// for: it is not filled from the focus, and like a source it covers
+	// the verb alone (Covers, which keeps an optional parameter out of
+	// subject.ask). With nothing given, doc.open opens an empty document.
 	known := documentSubject()
-	known.Focus, known.Description = false, "a document o-json knows, by identity, instead of a source"
+	known.Focus, known.Covers, known.Description = false, true, "a document o-json knows, by identity, instead of a source"
 	documentParams(r, "doc.open", map[string]ochazuke.Parameter{"id": known,
-		"path": described(sourceFile, "the source: a JSON file, - for standard input, or a path that names no file yet (a new document of that name); omit for an empty unnamed document"),
-		"file": described(sourceFile, "the source, by the name the other doc verbs give their file")})
+		"path":   described(sourceFile, "the source: a JSON file, - for standard input, or a path that names no file yet (a new document of that name); omit for an empty unnamed document"),
+		"file":   described(sourceFile, "the source, by the name the other doc verbs give their file"),
+		"target": plumbing(described(sourceFile, "the source, as the Open line's opener rows hand it over (open.openers: action viewer, to doc.open)"))})
 	if cli {
 		r.Define("doc").Verb("launch", func(c ochazuke.Ctx) ochazuke.Result { return launch(ochazuke.StringArg(c.Args, "file", "")) },
 			"Run the standalone JSON viewer in the foreground on a source (what doc.open does from the command line)").Positional("file").Foreground().Fetch()

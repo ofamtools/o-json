@@ -118,12 +118,32 @@ func TestAliases(t *testing.T) {
 	if err := do(a, "q!", nil); err != nil || !a.r.Quit {
 		t.Fatalf("q! did not quit: %v", err)
 	}
-	// e opens a file.
+	// e is the framework's word since ochazuke v0.123: the Open line. Its
+	// opener rows are o-json's (open.openers), so a JSON file or text
+	// written as a path opens in this viewer through doc.open, a new path
+	// as a new document; a link keeps the framework's row.
 	a = open(t, sample, 120, 30)
-	if err := do(a, "e", ochazuke.Arguments{"path": "testdata/duplicate-keys.json"}); err != nil {
-		t.Fatal(err)
+	if alias, found := a.r.ActionAlias("e"); !found || alias.Action != a.r.CanonicalKey("ochazuke.opener.show") {
+		t.Fatalf("e: %+v (found %v)", alias, found)
 	}
-	if a.Path != "testdata/duplicate-keys.json" {
-		t.Fatalf("e opened %q", a.Path)
+	fresh := filepath.Join(dir, "fresh")
+	for text, want := range map[string]string{"testdata/duplicate-keys.json": "doc.open", "./testdata/sample.json": "doc.open", fresh: "doc.open", "https://example.com/x.json": ""} {
+		_, action, err := a.r.ResolveOpen(text)
+		if got := strings.TrimSuffix(action.Noun+"."+action.Verb, "."); err != nil || got != want && !(want == "" && action.Kind == ochazuke.OpenActionOS) {
+			t.Fatalf("the Open line on %s: %+v (%v)", text, action, err)
+		}
+	}
+	for text, ok := range map[string]func() bool{
+		"testdata/duplicate-keys.json": func() bool { return a.Path == "testdata/duplicate-keys.json" },
+		fresh:                          func() bool { return a.Doc == nil && a.newName == fresh },
+	} {
+		if _, err := a.r.Execute(ochazuke.Request{Noun: "ochazuke.opener", Verb: "run", Args: ochazuke.Arguments{"text": text}}); err != nil {
+			t.Fatal(err)
+		}
+		finish(a, a.r.PendingCommands())
+		settle(a)
+		if !ok() {
+			t.Fatalf("opening %s: path %q new %q status %q", text, a.Path, a.newName, a.m.Status)
+		}
 	}
 }
