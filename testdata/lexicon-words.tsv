@@ -7,6 +7,7 @@ about-page	noun	seed
 about-row	noun	seed	
 about-state	noun	seed	
 accept	action	seed	
+act	action	yes	act on the focused thing: pick one of its verbs (focus.act)
 action	noun	seed	
 action-item	noun	seed	
 actions	noun	seed	plural
@@ -15,7 +16,6 @@ activeRegister	prop	seed
 activity	prop	seed	
 add	action	seed	
 add-base	action	seed	
-add-key	action	yes	lx8c-c
 added	prop	seed	
 added_on	prop	seed	
 address	prop	seed	
@@ -30,7 +30,6 @@ ahead	prop	seed
 ai	namespace	seed	
 aliases	prop	seed	
 all	action	seed	
-anchor	action	yes	lx8c-c
 annotate	action	seed	
 answer	action+noun+prop	seed	
 app	noun	seed	
@@ -42,14 +41,12 @@ archive	action	seed
 archived	prop	seed	
 archived-at	prop	seed	
 args	action+prop	seed	
-array	action	yes	lx8c-c
 ask	action	seed	
 ask-back	action	seed	
 asked_at	prop	seed	
 associate	action	seed	
 association	noun	seed	
 at	prop	seed	
-at-edge	action	yes	lx8c-c
 attach	action	seed	
 auth-status	prop	seed	
 author	prop	seed	
@@ -67,7 +64,6 @@ bind-key	action	seed
 binding	noun	seed	
 bindings	noun+prop	seed	
 bindings-help	noun	seed	
-bracket	action	yes	lx8c-c
 branch	noun+prop	seed	
 brief	prop	seed	
 builtin	prop	seed	
@@ -100,13 +96,13 @@ chip-toggle	action	seed
 choices	relation	seed	
 choose	action	seed	
 choose-column	action	seed	
+columns	action	seed	
 choose-move	action	seed	
 choose-pane	action	seed	
 choose-status	action	seed	
 clear	action	seed	
 clear-props	action	seed	
 clip	noun	seed	
-clipboard	noun	yes	lx8c-c
 close	action	seed	
 close-all	action	seed	
 cmd	noun	seed	
@@ -115,7 +111,6 @@ collapse	action	seed
 collection	noun	seed	
 color	prop	seed	
 column	action	seed	
-comma	action	yes	lx8c-c
 command	noun+prop	seed	
 command_id	prop	seed	
 command_name	prop	seed	
@@ -172,7 +167,6 @@ daemon	noun	seed
 daily	noun	seed	
 dark	prop	seed	
 data	prop	seed	
-data-table	noun	yes	lx8c-c
 date	prop	seed	
 days	prop	seed	
 decide	action	seed	
@@ -180,7 +174,6 @@ decision-note	action	seed
 decisions	action	seed	
 decorations	prop	seed	
 decrease	action	seed	
-dedent	action	yes	lx8c-c
 default	action+prop	seed	
 defaults	prop	seed	
 define	action	seed	
@@ -212,7 +205,6 @@ directory-path	noun	seed
 dirs	noun	seed	plural
 disable	action	seed	
 disabled	prop	seed	
-discard	action	yes	lx8c-c
 disconnect	action	seed	
 discover	action	seed	
 disk	prop	seed	
@@ -227,13 +219,13 @@ docs-viewer	noun	seed
 done	action	seed	
 done-hide	action	seed	
 done-show	action	seed	
+show-archived	action	seed	
 done-today	prop	seed	
 done-toggle	action	seed	
 done_when	prop	seed	
 downloading	filter	seed	
 draft	noun	seed	
 drive	prop	seed	
-drop	action	yes	lx8c-c
 due-today	prop	seed	
 duplicate	action	seed	
 easy	prop	seed	
@@ -242,7 +234,6 @@ edge	action+noun	seed
 edit	action	seed	
 edit-condition	action	seed	
 edit-directory	action	seed	
-edit-leave	action	yes	lx8c-c
 edit-stdin	action	seed	
 editor	noun	seed	
 effective_project	prop	seed	
@@ -260,8 +251,6 @@ endpoint	noun	seed
 endpoints	prop	seed	
 ensure	action	seed	
 enter	action	seed	
-entries	action	yes	lx8c-c
-entry	noun	yes	lx8c-c
 enum	prop	seed	
 env	prop	seed	
 erase	action	seed	
@@ -278,8 +267,6 @@ exit_code	prop	seed
 exited	prop	seed	
 expand	action	seed	
 export	action	seed	
-export-map	action	yes	lx8c-c
-export-overwrite	action	yes	lx8c-c
 exported	prop	seed	
 extension	noun	seed	
 extra	prop	seed	
@@ -321,10 +308,10 @@ find	action	seed
 find-line	noun	seed	
 finish	action	seed	
 finished	prop	seed	
+first	action	seed	
 fit-column	action	seed	
 fit-columns	action	seed	
 flags	prop	seed	
-flatten	action	yes	lx8c-c
 flush-lingering	action	seed	
 focus	action+noun+prop	seed	singular
 focus-pane	action	seed	
@@ -341,12 +328,13 @@ form-chip	noun	lx4
 form-chips	noun	seed	
 form-choice	noun	seed	
 form-field	noun	seed	
+form-item	noun	yes	pp-library
 form-option	noun	seed	
+form-read-only	noun	yes	pp-library
 form-suggest	noun	seed	
 form-text	noun	seed	
 format	prop	seed	
 from	prop	seed	
-function	action	yes	lx8c-c
 get	action	seed	
 gh	namespace	seed	
 git	namespace	seed	
@@ -357,6 +345,7 @@ goto	action	seed
 grid	noun	seed	
 group	action+prop	seed	
 group-clear	action	seed	
+group-fold	action	yes	fold or unfold a collection group
 grow	action	seed	
 guard	noun	seed	
 harness	noun+prop	seed	
@@ -366,6 +355,7 @@ head	prop	seed
 help	action	seed	
 helptext	prop	seed	
 hidden	prop	seed	
+hide	action	seed	
 hint	action+prop	seed	
 hints	action	seed	
 hints-cancel	action	seed	
@@ -386,7 +376,7 @@ import	action	seed
 in	action	seed	
 increase	action	seed	
 indent	action	seed	
-index	prop	seed	
+index	noun+prop	seed	
 info	prop	seed	
 init	action	seed	
 input	noun	seed	
@@ -404,20 +394,21 @@ into	action+prop	seed
 inventory	namespace+noun	seed	
 invert	action	seed	
 invert-condition	action	seed	
-item	noun	yes	lx8c-c
-iterate	action	yes	lx8c-c
+item-add	action	yes	pp-library: list field rows (record_list.go)
+item-delete	action	yes	pp-library: list field rows (record_list.go)
+item-edit	action	yes	pp-library: list field rows (record_list.go)
+item-first	action	yes	pp-library: list field rows (record_list.go)
+item-last	action	yes	pp-library: list field rows (record_list.go)
+item-move-down	action	yes	pp-library: list field rows (record_list.go)
+item-move-up	action	yes	pp-library: list field rows (record_list.go)
+item-next	action	yes	pp-library: list field rows (record_list.go)
+item-previous	action	yes	pp-library: list field rows (record_list.go)
+item-yank	action	yes	pp-library: list field rows (record_list.go)
 job	noun+prop	seed	
 jobs	prop	seed	
-jq	noun	yes	lx8c-c
-jq-input	noun	yes	lx8c-c
-jq-panel	noun	yes	lx8c-c
-jq-panel-text	noun	yes	lx8c-c
 json	namespace+prop	seed	
 json-node	noun	seed	
-jump	action	yes	lx8c-c
 key	noun+prop	seed	
-key-by	action	yes	lx8c-c
-key-fields	action	yes	lx8c-c
 keys	action+prop	seed	
 kill	action	seed	
 killBlocked	action	seed	
@@ -428,6 +419,7 @@ label	prop	seed
 lane	namespace+noun	seed	
 lane_count	prop	seed	
 lanes	relation	seed	
+last	action	seed	
 last-done	prop	seed	
 last-error	prop	seed	
 last-outcome	prop	seed	
@@ -438,7 +430,6 @@ leave	action	seed
 leeches	prop	seed	
 lib	noun	seed	
 limit	action	seed	
-line	noun	yes	lx8c-c
 link	action	seed	
 link-copy	action	seed	
 link-open	action	seed	
@@ -458,7 +449,6 @@ main	prop	seed
 make-project	action	seed	
 make-task	action	seed	
 many	prop	seed	
-mapping	action	yes	lx8c-c
 mark	action	seed	
 markdown	noun	seed	
 markdown-edit	noun	seed	
@@ -493,12 +483,13 @@ moot	action	seed
 more	prop	seed	
 motion	prop	seed	
 move	action	seed	
+move-down	action	seed	
+move-up	action	seed	
 moved	prop	seed	
 msg	prop	seed	
 multiply	action	seed	
 name	prop	seed	
 names	action+prop	seed	
-needs-edit	action	yes	lx8c-c
 new	action	seed	
 next	action	seed	
 next-block	action	seed	
@@ -509,10 +500,8 @@ next-missing	action	seed
 next-row	action	seed	
 next-run	prop	seed	
 next-same	action	seed	
-next-slot	action	yes	lx8c-c
+next-scope	action	seed	
 next-source	action	seed	
-node	noun	yes	lx8c-c
-node-mark	noun	yes	lx8c-c
 normal	action	seed	
 note	action+noun+prop	seed	
 note-body	noun	seed	
@@ -523,29 +512,27 @@ notify	prop	seed
 notify-due	action	seed	
 notify-status	prop	seed	
 noun	action+noun+prop	seed	
+noun-browser	noun	seed	
 nouns	noun+prop	seed	
-object	action	yes	lx8c-c
 observed_at	prop	seed	
-obtain	action	yes	lx8c-c
 ochazuke	namespace	seed	
 off	prop	seed	
 old_path	prop	seed	
 on	prop	seed	
 oncall	filter	seed	
-one-way	action	yes	lx8c-c
 only	action	seed	
 open	action	seed	
 open-all	action	seed	
 open-files	action	seed	
-open-in	action	yes	lx8c-c
 open-json	action	seed	
 open-notes	action	seed	
 open-result-json	action	seed	
 open-transcript	action	seed	
+open-with	action	seed	
 open_notes	prop	seed	
 open_tasks	prop	seed	
+opener	noun	yes	the opener table (open.openers) and the OS opener
 opensPage	prop	seed	
-operate	action	yes	lx8c-c
 operation	noun	lx4	
 operations	noun	seed	plural
 operator	action	seed	
@@ -566,8 +553,6 @@ outline-row	noun	seed
 outline-task	noun	seed	
 output	prop	seed	
 overview	prop	seed	
-overwrite	action	yes	lx8c-c
-overwrite-source	action	yes	lx8c-c
 owner	prop	seed	
 owners	prop	seed	
 page	action+noun+prop	seed	
@@ -591,7 +576,6 @@ parents	prop	seed
 park	action	seed	
 pass_set	prop	seed	
 paste	action	seed	
-patches	action	yes	lx8c-c
 path	action+prop	seed	
 pattern	prop	seed	
 pause	action	seed	
@@ -602,7 +586,6 @@ pending	prop	seed
 permission-mode	prop	seed	
 persistArgs	prop	seed	
 pick	action	seed	
-pick-mode	action	yes	lx8c-c
 pick-task	action	seed	
 pick-verb	prop	seed	
 picker	noun	seed	
@@ -610,7 +593,6 @@ pid	prop	seed
 pin	action	seed	
 pin-column	action	seed	
 pinned	prop	seed	
-pipe	action	yes	lx8c-c
 place	action	seed	
 places	relation	seed	
 places-path	prop	seed	
@@ -633,7 +615,7 @@ previous-class	action	seed
 previous-kind	action	seed	
 previous-link	action	seed	
 previous-same	action	seed	
-previous-slot	action	yes	lx8c-c
+previous-scope	action	seed	
 previous-source	action	seed	
 privacy	prop	seed	
 private	prop	seed	
@@ -658,7 +640,6 @@ push	action	seed
 put	action	seed	
 qbt	namespace	seed	
 query	action	seed	
-query-prompt	noun	yes	lx8c-c
 question	noun	seed	
 questions	namespace	seed	
 quick-note	noun	seed	
@@ -667,8 +648,6 @@ quit	action+prop	seed
 quota	noun	seed	
 quote-line	action	seed	
 ratio	prop	seed	
-raw	action	yes	lx8c-c
-raw-edit	action	yes	lx8c-c
 read	prop	seed	
 read-activities	prop	seed	
 read-at	prop	seed	
@@ -677,11 +656,11 @@ read-turns	prop	seed
 reason	prop	seed	
 rebase	action	seed	
 recall	action	seed	
-recent	action	yes	lx8c-c
 recheck	action	seed	
 record	action	seed	
 redo	action	seed	
 ref	prop	seed	
+referrer	noun	seed	
 refresh	action	seed	
 refresh-turns	action	seed	
 refuse	action	seed	
@@ -689,6 +668,9 @@ register	action+noun	seed
 registers	prop	seed	
 registry	prop	seed	
 reject	action	seed	
+related	noun	seed	
+relation-kind	noun	yes	the declared rules of a relation kind (ochazuke.relation-kind)
+related-section	noun	seed	
 reload	action	seed	
 reminder	noun	seed	
 remote	prop	seed	
@@ -719,8 +701,6 @@ resolved	prop	seed
 restart	action	seed	
 restore	action	seed	
 restored	prop	seed	
-restructure	noun	yes	lx8c-c
-restructure-rebuild	noun	yes	lx8c-c
 result	prop	seed	
 resume	action	seed	
 retarget	action	seed	
@@ -802,7 +782,6 @@ sha	prop	seed
 shape	prop	seed	
 short_sha	prop	seed	
 show	action	seed	
-show-nested	action	yes	lx8c-c
 show-section	action	seed	
 show-tab	action	seed	
 shrink	action	seed	
@@ -852,7 +831,6 @@ switch	action	seed
 tab	action	seed	
 table	noun+prop	seed	
 tables	relation	seed	
-tabulate	action	yes	lx8c-c
 tag	action	seed	
 tags	prop	seed	
 target	prop	seed	
@@ -866,6 +844,7 @@ text-view	noun	seed
 theme	prop	seed	
 themes	noun	seed	plural
 thinking	noun	seed	
+thing	noun	ua11	the registered thing walk graph picker
 tier	prop	seed	
 time	prop	seed	
 timeline	noun	seed	
@@ -917,7 +896,6 @@ unstar	action	seed
 untag	action	seed	
 untracked	prop	seed	
 unwatch	action	seed	
-unwrap	action	yes	lx8c-c
 up	action	seed	
 updated	prop	seed	
 upspeed	prop	seed	
@@ -926,16 +904,10 @@ url	prop	seed
 url_hint	prop	seed	
 user-operation	noun	lx4	
 value	prop	seed	
-value-editor	noun	yes	lx8c-c
-value-field	noun	yes	lx8c-c
-value-input	noun	yes	lx8c-c
-value-text	noun	yes	lx8c-c
-values	action	yes	lx8c-c
 verb	noun+prop	seed	
 verbs	prop	seed	
 via	prop	seed	
 view	action+noun	seed	
-viewer	noun	yes	lx8c-c
 viewport	noun	lx4	
 vim	noun	seed	
 visual	action	seed	
@@ -943,6 +915,7 @@ vocabulary	prop	seed
 voice	noun	seed	
 wait	action	seed	
 waiting	action	seed	
+walk	action	ua11	follow a thing's values and relations in a picker
 watch	action	seed	
 watched	filter	seed	
 when	prop	seed	
@@ -952,14 +925,12 @@ why	prop	seed
 width	prop	seed	
 window	prop	seed	
 worktree	noun+prop	seed	
-wrap	action	yes	lx8c-c
 write	action	seed	
 write-all	action	seed	
 write-saved	action	seed	
 yank	action	seed	
 yank-history	noun	seed	
 yank-id	action	seed	
-yank-part	action	yes	lx8c-c
 yank-path	action	seed	
 yank-step	action	seed	
 yankHistory	prop	seed	
@@ -967,40 +938,72 @@ zoom	action	seed
 zoom-in	action	seed	
 zoom-out	action	seed	
 zoom-reset	action	seed	
-first	action	seed	ochazuke v0.110
-hide	action	seed	ochazuke v0.110
-last	action	seed	ochazuke v0.110
-move-down	action	seed	ochazuke v0.110
-move-up	action	seed	ochazuke v0.110
-referrer	noun	seed	ochazuke v0.110
-related	noun	seed	ochazuke v0.110
-related-section	noun	seed	ochazuke v0.110
-act	action	yes	focused actions, ochazuke v0.122
+# o-json's own words: the rows below are not in ochazuke's list (v0.124.0, copied above unchanged).
+add-key	action	yes	lx8c-c
 add-project	action	yes	relate a document to a host project
-columns	action	yes	ochazuke index columns
+anchor	action	yes	lx8c-c
+array	action	yes	lx8c-c
+at-edge	action	yes	lx8c-c
+bracket	action	yes	lx8c-c
+clipboard	noun	yes	lx8c-c
+comma	action	yes	lx8c-c
+data-table	noun	yes	lx8c-c
+dedent	action	yes	lx8c-c
+discard	action	yes	lx8c-c
+drop	action	yes	lx8c-c
+edit-leave	action	yes	lx8c-c
 edit-pane	action	yes	open the document in an editor pane
-form-item	noun	yes	ochazuke list form field
-form-read-only	noun	yes	ochazuke read-only form field
-group-fold	action	yes	fold a collection group
-item-add	action	yes	ochazuke list field rows
-item-delete	action	yes	ochazuke list field rows
-item-edit	action	yes	ochazuke list field rows
-item-first	action	yes	ochazuke list field rows
-item-last	action	yes	ochazuke list field rows
-item-move-down	action	yes	ochazuke list field rows
-item-move-up	action	yes	ochazuke list field rows
-item-next	action	yes	ochazuke list field rows
-item-previous	action	yes	ochazuke list field rows
-item-yank	action	yes	ochazuke list field rows
-next-scope	action	yes	ochazuke picker scopes
-noun-browser	noun	yes	ochazuke nouns page
-open-with	action	yes	typed path opener
-opener	noun	yes	ochazuke opener table
-previous-scope	action	yes	ochazuke picker scopes
+entries	action	yes	lx8c-c
+entry	noun	yes	lx8c-c
+export-map	action	yes	lx8c-c
+export-overwrite	action	yes	lx8c-c
+flatten	action	yes	lx8c-c
+function	action	yes	lx8c-c
+item	noun	yes	lx8c-c
+iterate	action	yes	lx8c-c
+jq	noun	yes	lx8c-c
+jq-input	noun	yes	lx8c-c
+jq-panel	noun	yes	lx8c-c
+jq-panel-text	noun	yes	lx8c-c
+jump	action	yes	lx8c-c
+key-by	action	yes	lx8c-c
+key-fields	action	yes	lx8c-c
+line	noun	yes	lx8c-c
+mapping	action	yes	lx8c-c
+needs-edit	action	yes	lx8c-c
+next-slot	action	yes	lx8c-c
+node	noun	yes	lx8c-c
+node-mark	noun	yes	lx8c-c
+object	action	yes	lx8c-c
+obtain	action	yes	lx8c-c
+one-way	action	yes	lx8c-c
+open-in	action	yes	lx8c-c
+operate	action	yes	lx8c-c
+overwrite	action	yes	lx8c-c
+overwrite-source	action	yes	lx8c-c
+patches	action	yes	lx8c-c
+pick-mode	action	yes	lx8c-c
+pipe	action	yes	lx8c-c
+previous-slot	action	yes	lx8c-c
+query-prompt	noun	yes	lx8c-c
+raw	action	yes	lx8c-c
+raw-edit	action	yes	lx8c-c
+recent	action	yes	lx8c-c
 relate	action	yes	relate two typed noun references
-relation-kind	noun	yes	ochazuke relation rules
+remap	action	yes	restructure a document by a mapping file
+restructure	noun	yes	lx8c-c
+restructure-rebuild	noun	yes	lx8c-c
 send-note	action	yes	send JSON to a host note
 send-pane	action	yes	send JSON to a host pane
-show-archived	action	yes	ochazuke archived-row filter
+show-nested	action	yes	lx8c-c
+tabulate	action	yes	lx8c-c
 unrelate	action	yes	remove a relation
-remap	action	yes	restructure a document by a mapping file
+unwrap	action	yes	lx8c-c
+value-editor	noun	yes	lx8c-c
+value-field	noun	yes	lx8c-c
+value-input	noun	yes	lx8c-c
+value-text	noun	yes	lx8c-c
+values	action	yes	lx8c-c
+viewer	noun	yes	lx8c-c
+wrap	action	yes	lx8c-c
+yank-part	action	yes	lx8c-c
