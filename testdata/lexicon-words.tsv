@@ -1003,3 +1003,4 @@ send-note	action	yes	send JSON to a host note
 send-pane	action	yes	send JSON to a host pane
 show-archived	action	yes	ochazuke archived-row filter
 unrelate	action	yes	remove a relation
+remap	action	yes	restructure a document by a mapping file

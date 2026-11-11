@@ -97,7 +97,7 @@ func (a *App) registerVerbs() {
 			a.Query, a.Kind = "", ""
 			return done(a.refilter())
 		}, "Clear the search and the type filter").When("viewer-original")
-	params("viewer.load", map[string]ochazuke.Parameter{"path": {Type: "string", Description: "the JSON file; - reads stdin"}})
+	params("viewer.load", map[string]ochazuke.Parameter{"path": {Type: ochazuke.PathParameterType, Description: "the JSON file; - reads stdin"}})
 	params("viewer.filter", map[string]ochazuke.Parameter{"query": {Type: "string", Description: "omit to be asked in a prompt"}})
 	params("viewer.type", map[string]ochazuke.Parameter{"kind": {Type: "string", Enum: []string{"string", "number", "bool", "null", "object", "array", ""}, Description: "omit to step to the next type"}})
 	params("viewer.show", map[string]ochazuke.Parameter{"steps": {Type: "integer", Description: "Number of applicable views to step; negative steps backward"}})

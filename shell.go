@@ -86,20 +86,87 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer, dataDir ...string) *ocl
 				return tableRows(t), nil
 			}).Then(func(ochazuke.Ctx, any, error) { r.Define("item").Columns(cols...) })
 		}, "doc tabulate's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc tabulate column; --format table, markdown and toon print them as a table").Quiet().Positional("file", "path").Rows("item").Fetch()
+	// The rest of the command line as verbs: query, remap and export are
+	// the top-level commands query, restructure and export (commands.go,
+	// export.go), which print text; these answer JSON and take every file
+	// as a typed path, so the palette, a host and MCP reach them. (The verb
+	// is remap: restructure is a noun, the viewer's page.)
+	r.Define("doc").
+		Verb("query", func(c ochazuke.Ctx) ochazuke.Result {
+			query := ochazuke.StringArg(c.Args, "query", ".")
+			return pending(c, func(d *Doc, _ string) (any, error) {
+				out := queryDoc(context.Background(), d.Root, query)
+				switch {
+				case out.Err != nil && out.Pos >= 0:
+					return nil, fmt.Errorf("jq: %v (at column %d)", out.Err, out.Pos+1)
+				case out.Err != nil:
+					return nil, fmt.Errorf("jq: %v", out.Err)
+				}
+				return out.Values, nil
+			})
+		}, "run a jq query (gojq) and answer its results as one array, keys in document order where the query is a path").Quiet().Positional("file", "query").Fetch().
+		Verb("remap", func(c ochazuke.Ctx) ochazuke.Result {
+			spec, as := ochazuke.StringArg(c.Args, "mapping", ""), ochazuke.StringArg(c.Args, "as", "document")
+			out, overwrite := ochazuke.StringArg(c.Args, "out", ""), c.Args["overwrite"] == true
+			return pending(c, func(d *Doc, _ string) (any, error) {
+				if spec == "" {
+					return nil, fmt.Errorf("a mapping file is required (mapping)")
+				}
+				m, err := readMappingFile(spec)
+				if err != nil {
+					return nil, err
+				}
+				isJSON := false
+				v, err := verbOut(out, overwrite, func(w io.Writer) (err error) {
+					isJSON, err = restructureTo(w, d, m, as)
+					return err
+				})
+				if text, ok := v.(string); ok && isJSON {
+					return json.RawMessage(text), err // the document or the mapping, not a string of it
+				}
+				return v, err
+			})
+		}, "restructure the document by a mapping file of shape paths (o-json restructure): answer the new document (or its jq program, or the complete mapping), or write it to out, a new file (an existing one only with overwrite)").Quiet().Positional("file", "mapping").
+		Verb("export", func(c ochazuke.Ctx) ochazuke.Result {
+			q := exportRequest{Map: ochazuke.StringArg(c.Args, "mapping", ""), Format: ochazuke.StringArg(c.Args, "as", ""), JQ: c.Args["jq"] == true, Out: ochazuke.StringArg(c.Args, "out", ""),
+				Options: ExportOptions{Of: ochazuke.StringArg(c.Args, "of", "."), Columns: splitColumns(ochazuke.StringArg(c.Args, "columns", "")),
+					Arrays: ochazuke.StringArg(c.Args, "arrays", arraysJoin), Join: ochazuke.StringArg(c.Args, "join", ";"), Null: ochazuke.StringArg(c.Args, "nulls", nullEmpty)}}
+			overwrite := c.Args["overwrite"] == true
+			return pending(c, func(d *Doc, _ string) (any, error) {
+				return verbOut(q.Out, overwrite, func(w io.Writer) error { return q.writeTo(w, d) })
+			})
+		}, "one array of the document (restructured by mapping first) as csv, tsv, jsonl or a markdown table: answer it as text, or write it to out, a new file (an existing one only with overwrite)").Quiet().Positional("file")
 	file := ochazuke.Parameter{Type: ochazuke.PropPath, Path: "file", Required: true, Description: "the JSON file; - reads stdin"}
+	mapFile := ochazuke.Parameter{Type: ochazuke.PropPath, Path: "file", Description: "the mapping file (SPEC.json) that restructures the document first"}
+	outFile := ochazuke.Parameter{Type: ochazuke.PropPath, Path: "file", New: true, Description: "write to this new file instead of answering the text"}
+	overwrite := ochazuke.Parameter{Type: "boolean", Description: "with out, replace an existing file"}
+	required := func(p ochazuke.Parameter) ochazuke.Parameter { p.Required = true; return p }
 	params := map[string]map[string]ochazuke.Parameter{
+		"doc.query": {"file": file, "query": {Type: "string", Required: true, Rest: true, Description: "the jq query, e.g. .items[] | .name (. is the whole document)"}},
+		"doc.remap": {"file": file, "mapping": required(mapFile), "out": outFile, "overwrite": overwrite, "as": {Type: "string", Enum: []string{"document", "jq", "mapping"}, Description: "what to answer: the new document (the default), the jq program that makes it, or the complete mapping"}},
+		"doc.export": {"file": file, "mapping": mapFile, "out": outFile, "overwrite": overwrite,
+			"of": {Type: "string", Description: "the array's structure path (default . , the document)"},
+			// as, not format: the shell's own --format says how rows print.
+			"as":      {Type: "string", Enum: exportFormatNames(), Description: "the format (default: out's extension, else csv)"},
+			"columns": {Type: "string", Description: "the columns to keep, in order, separated by commas"},
+			"arrays":  {Type: "string", Enum: []string{arraysJoin, arraysJSON, arraysRows}, Description: "an array in a cell: join, json or rows"},
+			"join":    {Type: "string", Description: "the separator for arrays join (default ;)"},
+			"nulls":   {Type: "string", Enum: []string{nullEmpty, nullNull}, Description: "null as an empty cell or the text null"},
+			"jq":      {Type: "boolean", Description: "answer the jq program that makes the csv or tsv instead"}},
 		"doc.structure": {"file": file},
 		"doc.tabulate":  {"file": file, "path": {Type: "string", Description: "the array: .items, or a [] path such as .items[].owner (default . , the root)"}},
 		"doc.rows":      {"file": file, "path": {Type: "string", Description: "the array: .items, or a [] path such as .items[].owner (default . , the root)"}},
 		"doc.get":       {"file": {Type: ochazuke.PropPath, Path: "file", Description: "the JSON file; - reads stdin"}, "id": documentSubject(), "path": {Type: "string", Description: "jq-style path: . .key [\"odd key\"] [0] [-1] [] (every item); omit id to read JSON instead of the document record"}},
 	}
-	results := map[string]string{"doc.structure": "shape", "doc.tabulate": "{path, columns, rows}", "doc.get": "value", "doc.rows": "row lines"}
+	results := map[string]string{"doc.structure": "shape", "doc.tabulate": "{path, columns, rows}", "doc.get": "value", "doc.rows": "row lines",
+		"doc.query": "values", "doc.remap": "the document, the jq program or the mapping; or {out, bytes}", "doc.export": "text, or {out, bytes}"}
 	for key, p := range params {
 		op := r.Operations.At(ochazuke.Key(r.CanonicalKey(key)))
 		op.Parameters = p
 		op.Result = results[key]
 		r.Operations.Set(op)
 	}
+	setHistory(r, ochazuke.HistoryChange, "doc.remap", "doc.export") // each may write its out file
 	documents = registerDocuments(r, nil, nil)
 	registerDocumentActions(r, documents, nil)
 	declareDocumentPage(r)
