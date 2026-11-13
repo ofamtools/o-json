@@ -197,10 +197,7 @@ func viewerArgs(state, source string) []string {
 }
 
 func sessionEnv() string {
-	if s := os.Getenv("MTM_SESSION"); s != "" {
-		return s
-	}
-	return os.Getenv("TUIOS_SESSION")
+	return paneEnv(os.Getenv, "SESSION")
 }
 
 func declareDocumentPage(r *ochazuke.Runtime) {
