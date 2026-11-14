@@ -1007,3 +1007,11 @@ values	action	yes	lx8c-c
 viewer	noun	yes	lx8c-c
 wrap	action	yes	lx8c-c
 yank-part	action	yes	lx8c-c
+bind-cancel	action	seed	
+bind-drop	action	seed	
+bind-finish	action	seed	
+bind-literal	action	seed	
+bind-start	action	seed	
+look	action	yes	och-rail-focus: ochazuke.rail.look sets the rail's look (rail.look: full or float)
+rail	noun	yes	och-rail-focus: the rail region beside a page's main area (ochazuke.rail)
+resize	action	yes	och-rail-focus: ochazuke.rail.resize sets the rail's width (rail.width)

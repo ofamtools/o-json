@@ -85,7 +85,7 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer, dataDir ...string) *ocl
 				cols = rowColumns(t)
 				return tableRows(t), nil
 			}).Then(func(ochazuke.Ctx, any, error) { r.Define("item").Columns(cols...) })
-		}, "doc tabulate's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc tabulate column; --format table, markdown and toon print them as a table").Quiet().Positional("file", "path").Rows("item").Fetch()
+		}, "doc tabulate's rows as JSON Lines {noun: item, id: PATH, data: ITEM, cells}, one cell per doc tabulate column; --format table, markdown and toon print them as a table").Quiet().Positional("file", "path").Rows("item").Fetch().Table()
 	// The rest of the command line as verbs: query, remap and export are
 	// the top-level commands query, restructure and export (commands.go,
 	// export.go), which print text; these answer JSON and take every file
@@ -179,7 +179,7 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer, dataDir ...string) *ocl
 			return tableRows(table), nil
 		})
 	}})
-	sh := ocli.New(r, "o-json", stdin, stdout, stderr)
+	sh := ocli.New(r, "o-json", stdin, stdout, stderr, ocli.Serves())
 	sh.Prepare = func(context.Context) error { r.EnsureHistory(); return nil }
 	sh.Usage = ocli.DefaultUsage("o-json")
 	return sh

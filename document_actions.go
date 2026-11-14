@@ -142,15 +142,17 @@ func registerDocumentActions(r *ochazuke.Runtime, d *documentStore, open func(st
 	}
 	session := func(c ochazuke.Ctx) string { return ochazuke.StringArg(c.Args, "session", sessionEnv()) }
 	r.Define("doc").Verb("edit-pane", func(c ochazuke.Ctx) ochazuke.Result {
+		sess := session(c) // read per call, on the loop, under the call's environment
 		return hostCall(c, func(ctx context.Context, host ocli.Host, t ochazuke.Thing) (any, error) {
 			argv := editorCommand(r)
 			file := t["file"].(string)
-			return host.Call(ctx, "pane", "open", ochazuke.Arguments{"session": session(c), "cwd": filepath.Dir(file), "name": t["name"], "command": append(argv, file)})
+			return host.Call(ctx, "pane", "open", ochazuke.Arguments{"session": sess, "cwd": filepath.Dir(file), "name": t["name"], "command": append(argv, file)})
 		})
 	}, "Open the source file in a new host pane with raw.editor, VISUAL, EDITOR, or nvim; editor writes are explicit source writes").
 		Verb("send-pane", func(c ochazuke.Ctx) ochazuke.Result {
+			sess := session(c)
 			return hostCall(c, func(ctx context.Context, host ocli.Host, t ochazuke.Thing) (any, error) {
-				return host.Call(ctx, "pane", "send-text", ochazuke.Arguments{"session": session(c), "window": c.Args["pane"], "text": t["content"], "paste": true, "submit": false})
+				return host.Call(ctx, "pane", "send-text", ochazuke.Arguments{"session": sess, "window": c.Args["pane"], "text": t["content"], "paste": true, "submit": false})
 			})
 		}, "Paste the document's JSON into a host pane without submitting it").Reciprocal("pane", "receive-json-doc", "doc").
 		Verb("send-note", func(c ochazuke.Ctx) ochazuke.Result {

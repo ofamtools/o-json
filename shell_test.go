@@ -202,3 +202,26 @@ func TestDocIsAThingNoun(t *testing.T) {
 		t.Fatal("doc get FILE PATH answered nothing")
 	}
 }
+
+// A command word, whole or abbreviated, wins over a file of that name in the
+// working directory (a host runs `catalog` with no terminal); ./NAME opens
+// the file.
+func TestCommandWordBeatsSameNamedFile(t *testing.T) {
+	abs, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ := os.ReadFile("testdata/sample.structure")
+	t.Chdir(t.TempDir())
+	for _, name := range []string{"catalog", "struct"} {
+		if err := os.WriteFile(name, []byte(`{"a": 1}`), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := run(t, "", "catalog"); !strings.HasPrefix(got, "{") {
+		t.Fatalf("catalog with a file named catalog: %.60q", got)
+	}
+	if got := run(t, "", "struct", abs+"/"+sample); got != string(want) {
+		t.Fatalf("struct with a file named struct:\n%s", got)
+	}
+}

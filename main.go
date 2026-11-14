@@ -74,7 +74,7 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	app := oden.New(appName(), args, oden.WithBuiltins(), oden.WithStdio(stdin, stdout, stderr),
 		oden.WithDefault(func(_ context.Context, args []string) error {
-			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !pathWord(args[0]) {
+			if len(args) > 0 && !strings.HasPrefix(args[0], "-") && !pathWord(args[0]) && !isFile(args[0]) {
 				return oden.ErrNotFound
 			}
 			return runTUI(tuiArgs(args), stdin, stdout, stderr)
@@ -89,9 +89,10 @@ func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	shell := newShell(stdin, stdout, stderr, dataDir)
 	ocli.Mount(app, shell)
 	defer shell.Runtime.Config().Flush()
-	if len(args) > 0 && (args[0] == "-" || isFile(args[0])) && !app.Catalog().Resolve(args[0]).Exact {
-		// "-" is stdin, a file word too: oden would resolve it as a
-		// command word and print the usage.
+	if len(args) > 0 && args[0] == "-" {
+		// "-" is stdin, a file word too: oden would read it as a command
+		// word and print the usage. A file named like a command is not
+		// special-cased: the command word wins (./NAME opens the file).
 		return runTUI(tuiArgs(args), stdin, stdout, stderr)
 	}
 	// Mount's help note says every result is JSON, which is true of the doc
