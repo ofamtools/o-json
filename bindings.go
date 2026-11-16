@@ -1,6 +1,10 @@
 package main
 
-import "embed"
+import (
+	"embed"
+
+	"ofam.dev/ochazuke"
+)
 
 // The key rows are bindings.json, the only place a default key is
 // written (loaded into the default layer, below the user's bindings.json).
@@ -34,4 +38,16 @@ func (a *App) bind() error {
 		a.r.SetAvailability(verb, "pane-split")
 	}
 	return a.r.LoadDefaultBindingsFS(bindingsFS, "bindings.json")
+}
+
+// documents-bindings.json holds the doc and note lists' key rows. Those
+// nouns and their page are declared by newShell (the catalog runtime a host
+// mounts), not by the viewer's runtime, so the rows are loaded there, after
+// declareDocumentPage, and not with the viewer's rows above.
+//
+//go:embed documents-bindings.json
+var documentBindingsFS embed.FS
+
+func loadDocumentBindings(r *ochazuke.Runtime) error {
+	return r.LoadDefaultBindingsFS(documentBindingsFS, "documents-bindings.json")
 }

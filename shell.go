@@ -170,6 +170,9 @@ func newShell(stdin io.Reader, stdout, stderr io.Writer, dataDir ...string) *ocl
 	documents = registerDocuments(r, nil, nil)
 	registerDocumentActions(r, documents, nil)
 	declareDocumentPage(r)
+	if err := loadDocumentBindings(r); err != nil {
+		panic(err)
+	}
 	r.DefineListFacts(ochazuke.ListFacts{Noun: "item", Rename: map[string]string{"data": "row-data"}, ListParams: map[string]ochazuke.Parameter{"file": file, "path": {Type: "string"}}, List: func(c ochazuke.Ctx) ochazuke.Result {
 		return pending(c, func(d *Doc, path string) (any, error) {
 			table, err := tableAt(d, path)

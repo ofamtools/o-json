@@ -1,0 +1,35 @@
+// o-json's default key rows for the doc and note lists (the catalog runtime, newShell) from the run-3 key picker (ochazuke bindings, JSONC), all hidden; a user's bindings.json overrides them.
+{
+  "bindings": [
+    {"context": "doc/normal", "bindings": [
+      {"key": "b", "action": "doc.add-project", "hidden": true},
+      {"key": "g n", "action": "doc.annotate", "hidden": true},
+      {"key": "c", "action": "doc.edit-pane", "hidden": true},
+      {"key": "e", "action": "doc.export", "hidden": true},
+      {"key": "M", "action": "doc.get", "hidden": true},
+      {"key": "U", "action": "doc.history", "hidden": true},
+      {"key": "f", "action": "doc.launch", "hidden": true},
+      {"key": "m", "action": "doc.list", "hidden": true},
+      {"key": "[", "action": "doc.move", "hidden": true},
+      {"key": "o", "action": "doc.query", "hidden": true},
+      {"key": "p", "action": "doc.remap", "hidden": true},
+      {"key": "s", "action": "doc.rename", "hidden": true},
+      {"key": "t", "action": "doc.rows", "hidden": true},
+      {"key": "w", "action": "doc.send-note", "hidden": true},
+      {"key": "x", "action": "doc.send-pane", "hidden": true},
+      {"key": "*", "action": "doc.set", "hidden": true},
+      {"key": "A", "action": "doc.structure", "hidden": true},
+      {"key": "B", "action": "doc.tabulate", "hidden": true},
+      {"key": "alt+j", "action": "doc.unrelate", "hidden": true}
+    ]},
+    {"context": "note/normal", "bindings": [
+      {"key": "g n", "action": "note.annotate", "hidden": true},
+      {"key": "H", "action": "note.follow", "hidden": true},
+      {"key": "M", "action": "note.get", "hidden": true},
+      {"key": "U", "action": "note.history", "hidden": true},
+      {"key": "m", "action": "note.list", "hidden": true},
+      {"key": "*", "action": "note.set", "hidden": true},
+      {"key": "alt+j", "action": "note.unrelate", "hidden": true}
+    ]}
+  ]
+}
