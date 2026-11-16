@@ -1,0 +1,86 @@
+# rulecheck hiddenkeys baseline: table (noun/mode or #instance/mode), key, operation with its arguments, count, reason (tab separated).
+# A row says: the hidden row on KEY in TABLE takes a key that, at some focus, already did something: without the hidden rows, a
+# visible row answered KEY there, at once or under a guard. A hidden row is meant to give a verb a key
+# nobody uses; one that shadows a motion or a standard key changes what that key does (v0.143.0: outline k opened an args form on a
+# tree's top row). Fix it by removing the row or moving it to a free key.
+# A row with a reason is a reviewed hidden row that takes the key on purpose; a row without one is debt that only shrinks
+# (RULECHECK_UPDATE=1 removes and lowers rows, never adds one; adding a row is a reviewed edit).
+data-table/normal	$	data-table.column {"to":"last"}	1	predates the key picker; not reviewed
+data-table/normal	0	data-table.column {"to":"first"}	1	predates the key picker; not reviewed
+data-table/normal	K	viewer.needs-edit	1	predates the key picker; not reviewed
+data-table/normal	^	data-table.column {"to":"first"}	1	predates the key picker; not reviewed
+data-table/normal	d d	viewer.needs-edit	1	predates the key picker; not reviewed
+data-table/normal	h	data-table.column {"delta":-1}	1	predates the key picker; not reviewed
+data-table/normal	i	value.edit	1	predates the key picker; not reviewed
+data-table/normal	l	data-table.column {"delta":1}	1	predates the key picker; not reviewed
+data-table/normal	left	data-table.column {"delta":-1}	1	predates the key picker; not reviewed
+data-table/normal	o	viewer.needs-edit	1	predates the key picker; not reviewed
+data-table/normal	p	viewer.needs-edit	1	predates the key picker; not reviewed
+data-table/normal	r	viewer.edit {"open":true}	1	predates the key picker; not reviewed
+data-table/normal	right	data-table.column {"delta":1}	1	predates the key picker; not reviewed
+data-table/normal	|	data-table.column	1	predates the key picker; not reviewed
+jq-input/insert	ctrl+p	jq.previous-slot	1	predates the key picker; not reviewed
+jq-input/insert	ctrl+p	search.next {"steps":-1}	1	predates the key picker; not reviewed
+jq-input/visual	{	jq.wrap {"open":"{"}	1	predates the key picker; not reviewed
+jq-panel-text/normal	/	ochazuke.key.ignore	1	predates the key picker; not reviewed
+line/flat	y p	line.yank-part {"part":"path"}	1	predates the key picker; not reviewed
+line/flat	y v	line.yank-part {"part":"value"}	1	predates the key picker; not reviewed
+line/json	y p	line.yank-part {"part":"path"}	1	predates the key picker; not reviewed
+line/search	y p	line.yank-part {"part":"path"}	1	predates the key picker; not reviewed
+node/count_pending	y	ochazuke.mode.enter {"mode":"operator_pending","op":"y"}	1	predates the key picker; not reviewed
+node/edit	d	ochazuke.mode.enter {"mode":"operator_pending","op":"d"}	1	predates the key picker; not reviewed
+node/jq	(	jq.open {"bracket":"("}	1	predates the key picker; not reviewed
+node/jq	)	jq.close	1	predates the key picker; not reviewed
+node/jq	esc	jq.switch {"to":"edit"}	1	predates the key picker; not reviewed
+node/jq	space	node.unmark	1	predates the key picker; not reviewed
+node/jq	{	jq.open {"bracket":"{"}	1	predates the key picker; not reviewed
+node/jq	}	jq.close	1	predates the key picker; not reviewed
+node/normal	< <	ochazuke.key.ignore	1	predates the key picker; not reviewed
+node/normal	> >	node.indent {"into":"previous"}	1	predates the key picker; not reviewed
+node/normal	> >	ochazuke.key.ignore	1	predates the key picker; not reviewed
+node/normal	> j	ochazuke.key.ignore	1	predates the key picker; not reviewed
+node/normal	> k	ochazuke.key.ignore	1	predates the key picker; not reviewed
+node/normal	space	node.unmark	1	predates the key picker; not reviewed
+node/shape	< <	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	> >	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	> j	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	> k	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	F	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	S	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	d	ochazuke.mode.enter {"mode":"operator_pending","op":"d"}	1	predates the key picker; not reviewed
+node/shape	d	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	g k	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	g p	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	g v	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	p	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	r	viewer.needs-edit	1	predates the key picker; not reviewed
+node/shape	t	viewer.needs-edit	1	predates the key picker; not reviewed
+node/visual-line	<	ochazuke.key.ignore	1	predates the key picker; not reviewed
+node/visual-line	<	restructure.at-edge	1	predates the key picker; not reviewed
+node/visual-line	>	ochazuke.key.ignore	1	predates the key picker; not reviewed
+node/visual-line	>	restructure.at-edge	1	predates the key picker; not reviewed
+node/visual-line	g >	ochazuke.key.ignore	1	predates the key picker; not reviewed
+node/visual-line	g >	restructure.at-edge	1	predates the key picker; not reviewed
+ochazuke.outline/jq	left	ochazuke.outline.collapse	1	predates the key picker; not reviewed
+ochazuke.outline/jq	right	ochazuke.outline.expand	1	predates the key picker; not reviewed
+ochazuke.outline/normal	J	ochazuke.outline.move {"delta":1}	1	predates the key picker; not reviewed
+ochazuke.outline/normal	K	ochazuke.outline.move {"delta":-1}	1	predates the key picker; not reviewed
+ochazuke.outline/normal	O	restructure.add-key {"where":"above"}	1	predates the key picker; not reviewed
+ochazuke.outline/normal	u	restructure.undo	1	predates the key picker; not reviewed
+ochazuke.outline/shape	O	viewer.needs-edit	1	predates the key picker; not reviewed
+ochazuke.outline/shape	o	viewer.needs-edit	1	predates the key picker; not reviewed
+restructure/normal	D	viewer.show	1	predates the key picker; not reviewed
+restructure/normal	Q	app.quit {"force":true}	1	predates the key picker; not reviewed
+restructure/normal	y m	restructure.mapping {"yank":true}	1	predates the key picker; not reviewed
+shape/jq	(	jq.open {"bracket":"("}	1	predates the key picker; not reviewed
+shape/jq	)	jq.close	1	predates the key picker; not reviewed
+shape/jq	esc	jq.switch {"to":"edit"}	1	predates the key picker; not reviewed
+shape/jq	{	jq.open {"bracket":"{"}	1	predates the key picker; not reviewed
+shape/jq	}	jq.close	1	predates the key picker; not reviewed
+viewer/normal	D	viewer.show	1	predates the key picker; not reviewed
+viewer/normal	N	search.next {"steps":-1}	1	predates the key picker; not reviewed
+viewer/normal	Q	app.quit {"force":true}	1	predates the key picker; not reviewed
+viewer/normal	W	restructure.write {"force":true}	1	predates the key picker; not reviewed
+viewer/normal	ctrl+r	restructure.redo	1	predates the key picker; not reviewed
+viewer/normal	n	search.next	1	predates the key picker; not reviewed
+node/jq	ctrl+r	jq.redo	1	predates the key picker; not reviewed

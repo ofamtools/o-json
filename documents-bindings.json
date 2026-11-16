@@ -24,11 +24,8 @@
     ]},
     {"context": "note/normal", "bindings": [
       {"key": "g n", "action": "note.annotate", "hidden": true},
-      {"key": "H", "action": "note.follow", "hidden": true},
       {"key": "M", "action": "note.get", "hidden": true},
       {"key": "U", "action": "note.history", "hidden": true},
-      {"key": "m", "action": "note.list", "hidden": true},
-      {"key": "*", "action": "note.set", "hidden": true},
       {"key": "alt+j", "action": "note.unrelate", "hidden": true}
     ]}
   ]
