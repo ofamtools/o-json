@@ -2,7 +2,6 @@
 # A row with a reason (E1..E5: rights, loses, failure, declaration, cancel) is a legitimate refusal that stays.
 # A row without one is debt that may only shrink: REFUSECHECK_UPDATE=1 removes rows and lowers counts, never adds.
 # Adding a row is a reviewed edit.
-app.go	declareToneSettings	K2	"Enum without Accept: <expr>"	1
 commands.go	badFormat	K2	"unknown format %q (one of %s)"	1
 commands.go	readArgs	K15	"unexpected %q"	1
 commands.go	tableAt	K15	"nothing at %s"	1
@@ -37,32 +36,25 @@ edit.go	App.registerEdit	K1	"When(\"edit-gated\") without Fallback"	1
 edit.go	App.registerEdit	K1	"When(\"edit-on\") without Fallback"	1
 export.go	App.export	K15	"Failed(…)"	3
 export.go	App.registerExportVerbs	K1	"When(\"viewer-document\") without Fallback"	2
-export.go	App.registerExportVerbs	K2	"Enum without Accept: <expr>"	1
 export.go	App.registerOpenIn	K1	"When(\"viewer-opens-in\") without Fallback"	1
 export.go	App.registerOpenIn	K15	"Failed(…)"	5
 export.go	App.registerOpenIn	K15	"no program to open the table in is on PATH (o-csv)"	1
-export.go	App.registerOpenIn	K2	"Enum without Accept: <expr>"	1
 export.go	App.shownRoot	K15	"no document to export: e opens a file, p pastes JSON"	1
 export.go	Export	K15	"no column %q at %s (columns: %s)"	1
 export.go	Export	K15	"nothing at %s"	1
 export.go	Export	K15	"unknown arrays mode %q (join, json or rows)"	1
 export.go	Export	K15	"unknown null mode %q (empty or null)"	1
-export.go	declareExportSettings	K2	"Enum without Accept: <expr>"	2
 export.go	exportCommand	K15	"--overwrite needs --out (the file to replace)"	1
 export.go	exportFormatOf	K15	"%s: no export format for its extension (one of %s; format names it)"	1
 export.go	exportJQ	K4	"%s has no jq form (csv and tsv do)"	1
 export.go	formatNamed	K15	"unknown export format %q (one of %s)"	1
-follow.go	declareFollowSettings	K2	"Enum without Accept: <expr>"	4
 hover.go	App.hoverColumn	K15	"not in a sub-table"	1
 hover.go	App.hoverColumn	K15	"to is first or last"	1
 hover.go	App.registerHover	K1	"When(\"rows-in-sub-table\") without Fallback"	3
 hover.go	App.registerHover	K15	"Failed(…)"	2
 hover.go	App.registerHover	K15	"no nested value here"	1
-hover.go	App.registerHover	K2	"Enum without Accept: <expr>"	2
-hover.go	declareHoverSettings	K2	"Enum without Accept: <expr>"	1
 inplace.go	App.clearRestructure	K15	"the restructure is already empty"	1
 inplace.go	App.flip	K1	"the viewer is read-only (structure.editable is off)"	1
-inplace.go	declareEditSettings	K2	"Enum without Accept: <expr>"	2
 inplace.go	rebuilder.cancel	K15	"superseded"	1
 input.go	ReadFrom	K14	"%s: %w"	1	failure
 input.go	openSource	K15	"no stdin to read"	1
@@ -74,8 +66,6 @@ jqpanel.go	App.openJQPanel	K1	"the jq panel is off (jq.panel)"	1
 jqpanel.go	App.registerJQPanel	K1	"When(\"jq-panel-on\") without Fallback"	2
 jqpanel.go	App.registerJQPanel	K1	"When(\"jq-panel-open\") without Fallback"	4
 jqpanel.go	App.registerJQPanel	K15	"view %q (jq or mapping)"	1
-jqpanel.go	App.registerJQPanel	K2	"Enum without Accept: <expr>"	1
-jqpanel.go	declareJQPanelSettings	K2	"Enum without Accept: <expr>"	1
 lines.go	App.foldLine	K15	"folds work in the JSON view (D or tab to it)"	1
 lines.go	App.foldLine	K15	"nothing to fold here: the shown value is the whole view"	1
 lines.go	App.jumpStructure	K15	"no structure path for %v"	1
@@ -86,7 +76,6 @@ lines.go	App.registerLineVerbs	K15	"% jumps between a bracket and its match"	1
 lines.go	App.registerLineVerbs	K15	"Failed(…)"	2
 lines.go	App.registerLineVerbs	K15	"no line here"	1
 lines.go	App.registerLineVerbs	K15	"part is line, path or value"	1
-lines.go	App.registerLineVerbs	K2	"Enum without Accept: <expr>"	2
 lines.go	App.registerLineVerbs	K4	"this line has no path"	2
 lines.go	App.registerLineVerbs	K4	"this line has no value"	1
 main.go	Main	K3	"--data requires a state directory"	1
@@ -112,7 +101,6 @@ open.go	App.registerOpenVerbs	K15	"Failed(…)"	1
 open.go	App.registerOpenVerbs	K3	"path is required"	1
 open.go	App.writeDoc	K15	"Failed(…)"	1
 open.go	App.writeDoc	K15	"no document to write: e opens a file, p pastes JSON"	1
-open.go	declareOpenSettings	K2	"Enum without Accept: <expr>"	2
 open.go	declareOpenerRows	K4	"ochazuke has no %s setting"	1
 operate.go	App.dataOperand	K15	"no array here"	1
 operate.go	App.dataOperand	K15	"no column here"	1
@@ -139,7 +127,6 @@ operate.go	App.operateSort	K15	"s: sort a table"	1
 operate.go	App.operateSort	K15	"s: values change on the edited view (T), with data.editable on"	1
 operate.go	App.operateYank	K15	"Failed(…)"	2
 operate.go	App.operateYank	K15	"subtree yanks preserve structure clipboard data; format must be json"	1
-operate.go	App.registerOperate	K2	"Enum without Accept: <expr>"	3
 operate.go	App.structureOperand	K15	"no key here"	1
 operate.go	App.structureOperand	K15	"no shape here"	1
 operate.go	noValues	K15	"%s: no %s here"	1
@@ -169,18 +156,15 @@ page.go	App.registerRestructureVerbs	K15	"no document"	1
 page.go	App.registerRestructureVerbs	K15	"no shape %s"	1
 page.go	App.registerRestructureVerbs	K15	"no shape to send"	1
 page.go	App.registerRestructureVerbs	K15	"wrap does not apply here"	1
-page.go	App.registerRestructureVerbs	K2	"Enum without Accept: <expr>"	6
 page.go	App.registerRestructureVerbs	K6	"the original side is read-only: d p on it pushes a shape here, d o here pulls one"	1
 page.go	App.write	K15	"Failed(…)"	3
 page.go	App.writeFileAsk	K15	"%s exists; o-json writes a new file"	1
 page.go	App.writeFileAsk	K15	"%s is the source; W (restructure.write {force: true}) overwrites it after a confirm"	1
 page.go	App.writeFileAsk	K15	"Failed(…)"	1
-page.go	declareSettings	K2	"Enum without Accept: <expr>"	2
 page.go	var errAtOldest	K15	"already at oldest change"	1
 panes.go	App.onlyPane	K15	"pane is structure, data, focused or none"	1
 panes.go	App.registerPaneVerbs	K1	"When(\"pane-only\") without Fallback"	1
 panes.go	App.registerPaneVerbs	K15	"Failed(…)"	1
-panes.go	App.registerPaneVerbs	K2	"Enum without Accept: <expr>"	2
 patch.go	Patch.steps	K15	"%s %s: \"value\" is a JSON value"	1
 patch.go	Patch.steps	K15	"%s: the path names a field or an item, not the document"	1
 patch.go	Patch.steps	K15	"add %s: \"after\" or \"before\", not both"	1
@@ -208,17 +192,14 @@ put.go	App.yankNodes	K15	"Failed(…)"	2
 put.go	App.yankNodes	K15	"the document node stays; y y and d d take the nodes in it"	1
 put.go	clipBlocks	K15	"the register holds no restructure nodes (y y or d d on a node fills it)"	1
 put.go	clipBlocks	K3	"the register is empty: y y or d d on a node fills it"	1
-put.go	declarePutSettings	K2	"Enum without Accept: <expr>"	4
 query.go	App.queryDone	K15	"Failed(…)"	1
 query.go	App.registerQuery	K1	"When(\"query-focused\") without Fallback"	1
 query.go	App.registerQuery	K1	"When(\"query-line\") without Fallback"	4
 query.go	App.registerQuery	K1	"When(\"query-selecting\") without Fallback"	1
 query.go	App.registerQuery	K15	"Failed(…)"	2
 query.go	App.registerQuery	K15	"no query to copy"	1
-query.go	App.registerQuery	K2	"Enum without Accept: <expr>"	1
 query.go	App.wrapSelection	K15	"no bracket %q: [, { or ("	1
 query.go	App.wrapSelection	K15	"no selection to wrap: ctrl+v selects"	1
-query.go	declareQuerySettings	K2	"Enum without Accept: <expr>"	1
 query.go	jqRunner.cancel	K15	"superseded"	1
 queryfunc.go	App.nextSlot	K15	"no empty slot"	1
 queryfunc.go	App.openFunctions	K15	"no jq builtins"	1
@@ -231,7 +212,6 @@ querymode.go	App.queryErase	K15	"nothing before the anchor"	1
 querymode.go	App.registerQueryMode	K1	"When(\"query-closable\") without Fallback"	1
 querymode.go	App.registerQueryMode	K1	"When(\"query-structure\") without Fallback"	10
 querymode.go	App.registerQueryMode	K15	"bracket is [, { or ("	1
-querymode.go	App.registerQueryMode	K2	"Enum without Accept: <expr>"	2
 raw.go	App.rawTarget	K15	"raw edits the edited document: T shows it"	1
 raw.go	App.rawTarget	K15	"raw: select rows, a value or the document"	1
 raw.go	App.rawTarget	K15	"raw: select rows, a value or the document (the structure's selection is shapes)"	1
@@ -240,7 +220,6 @@ raw.go	App.runRaw	K15	"raw: no editor (raw.editor, $VISUAL, $EDITOR)"	1
 raw.go	App.startRaw	K15	"Failed(…)"	4
 raw.go	rawSession.diff	K15	"the selection was %d rows; the text must stay an array of %d (nothing applied)"	1
 rawpane.go	App.attachRawPane	K15	"raw: mtm pane switch: %v"	1
-rawpane.go	App.registerRawPane	K2	"Enum without Accept: <expr>"	1
 rawpane.go	App.runMtm	K15	"errors.New(…)"	1
 rawpane.go	App.runRawPane	K15	"raw: mtm pane open answered no window_id"	1
 rawpane.go	App.runRawPane	K15	"raw: mtm pane open: %v"	1
@@ -264,11 +243,9 @@ reshape_app.go	App.registerReshapeVerbs	K1	"When(\"shape-marked\") without Fallb
 reshape_app.go	App.registerReshapeVerbs	K15	"Failed(…)"	3
 reshape_app.go	App.registerReshapeVerbs	K15	"no node to mark here"	1
 reshape_app.go	App.registerReshapeVerbs	K15	"nothing to flatten: space marks the fields"	1
-reshape_app.go	App.registerReshapeVerbs	K2	"Enum without Accept: <expr>"	3
 reshape_app.go	App.registerReshapeVerbs	K5	"nothing to pick away: every node is kept"	1
 reshape_app.go	App.reshapeFrom	K15	"no document"	1
 reshape_app.go	App.reshaped	K15	"Failed(…)"	4
-reshape_app.go	declareReshapeSettings	K2	"Enum without Accept: <expr>"	3
 restructure.go	MapEntry.UnmarshalJSON	K15	"\"from\" is a path string"	1
 restructure.go	MapEntry.UnmarshalJSON	K15	"\"order\" is \"document\" or empty"	1
 restructure.go	MapEntry.UnmarshalJSON	K15	"\"to\" is a path string or null"	1
@@ -299,13 +276,11 @@ search.go	App.registerSearch	K1	"When(\"query-line\") without Fallback"	2
 search.go	App.registerSearch	K1	"When(\"search-hits\") without Fallback"	1
 search.go	App.registerSearch	K1	"When(\"search-live\") without Fallback"	1
 search.go	App.registerSearch	K15	"Failed(…)"	1
-search.go	App.registerSearch	K2	"Enum without Accept: <expr>"	1
 search.go	App.stepHit	K15	"no hits"	1
 settings_layout.go	declareOwn	K4	"setting %s has no section in settingSections"	1
 shell.go	newShell	K15	"jq: %v"	1
 shell.go	newShell	K15	"jq: %v (at column %d)"	1
 shell.go	newShell	K15	"nothing at %s"	1
-shell.go	newShell	K2	"Enum without Accept: <expr>"	4
 shell.go	newShell	K3	"a file is required (- reads stdin)"	1
 shell.go	newShell	K3	"a mapping file is required (mapping)"	1
 stores.go	App.defineStores	K15	"no live row %q"	1
@@ -328,7 +303,6 @@ valuemodal.go	App.registerValueEditor	K1	"When(\"value-editor-more\") without Fa
 valuemodal.go	App.registerValueEditor	K1	"When(\"value-editor-open\") without Fallback"	2
 valuemodal.go	App.registerValueEditor	K15	"Failed(…)"	1
 valuemodal.go	App.setModal	K15	"no value is being edited"	1
-valuemodal.go	declareValueEditorSetting	K2	"Enum without Accept: <expr>"	2
 valuemodal.go	valueModal.move	K15	"no field there"	1
 values.go	App.accept	K15	"no value is being edited"	1
 values.go	App.registerValueVerbs	K1	"When(\"value-addable\") without Fallback"	1
@@ -342,7 +316,6 @@ values.go	App.registerValueVerbs	K15	"index is 1 to %d (value.patches lists them
 values.go	App.registerValueVerbs	K15	"no value to edit here (the edited view's data pane, data.editable)"	1
 values.go	App.registerValueVerbs	K15	"this object has a key %q already"	2
 values.go	App.yankValue	K15	"no value here"	1
-values.go	declareValueSettings	K2	"Enum without Accept: <expr>"	1
 values.go	yankedValue	K15	"the register holds restructure nodes (p on the structure pane puts them); y on a value fills it"	1
 values.go	yankedValue	K3	"the register is empty: y on a value fills it"	1
 verbs.go	App.copyAnswering	K15	"Failed(…)"	1
@@ -359,7 +332,6 @@ verbs.go	App.registerVerbs	K15	"no line here"	1
 verbs.go	App.registerVerbs	K15	"no table here"	1
 verbs.go	App.registerVerbs	K15	"no value here"	1
 verbs.go	App.registerVerbs	K15	"not a path"	1
-verbs.go	App.registerVerbs	K2	"Enum without Accept: <expr>"	2
 verbs.go	App.showView	K15	"Failed(…)"	1
 wrap.go	App.unwrapNodes	K15	"Failed(…)"	3
 wrap.go	App.unwrapNodes	K15	"the items would be %s-1, %s-2, ... and %s is there already: rename it, or set %s"	1
