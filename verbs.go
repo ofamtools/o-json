@@ -56,10 +56,13 @@ func (a *App) registerVerbs() {
 		Verb("load", func(c ochazuke.Ctx) ochazuke.Result {
 			p := ochazuke.StringArg(c.Args, "path", a.Path)
 			if p == "" {
-				return ochazuke.Failed(errors.New("no file to load: e (viewer.open) opens one"))
+				// A document of no file (the empty one, a paste) has
+				// nothing to read again: it stays as it is, and says so.
+				c.Info("no file to load: e (viewer.open) opens one")
+				return ochazuke.Done(a.state())
 			}
 			return a.readAsking(p)
-		}, "Read the current file again off the loop and show it (R); with path, that file, as viewer.open does (- is stdin). With restructure edits no write saved, it asks first (viewer.discard)").When("viewer-file").
+		}, "Read the current file again off the loop and show it (R); with path, that file, as viewer.open does (- is stdin). A document of no file, with no path, stays as it is (the status line says so). With restructure edits no write saved, it asks first (viewer.discard)").When("viewer-file").
 		Verb("filter", func(c ochazuke.Ctx) ochazuke.Result {
 			if q, ok := c.Args["query"].(string); ok {
 				return done(a.search(q))

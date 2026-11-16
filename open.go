@@ -756,7 +756,10 @@ func (a *App) doneState(err error) ochazuke.Result {
 // buffer.
 func (a *App) writeDoc(c ochazuke.Ctx, mode writeMode) ochazuke.Result {
 	if a.Doc == nil {
-		return ochazuke.Failed(errors.New("no document to write: e opens a file, p pastes JSON"))
+		// The empty document holds nothing to write: no file is made,
+		// and the status line says so.
+		c.Info("nothing to write: the document is empty (e opens a file, p pastes JSON)")
+		return ochazuke.Done(a.state())
 	}
 	doc := a.Doc
 	path := a.writePath(c)

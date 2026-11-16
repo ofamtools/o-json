@@ -217,8 +217,23 @@ func TestKeyByFieldChooserOffersScalarFields(t *testing.T) {
 	if a.onNode(t, ".title"); a.available("node", "key-by") {
 		t.Fatal("key-by on a string")
 	}
-	if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "key-by", Target: id, Args: ochazuke.Arguments{"field": "address"}}); err == nil {
-		t.Fatal("key-by took an object field")
+	// Asked by name with a field that is not a scalar one (an object
+	// field; any field on a string), key-by changes nothing and says so:
+	// no error, no reshape step, the same output.
+	sink := &ochazuke.RecordingSink{}
+	a.r.UI().Attach(sink)
+	before := output(t, a)
+	for _, run := range []struct{ path, field string }{{".people", "address"}, {".title", "id"}} {
+		target := a.onNode(t, run.path)
+		if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "key-by", Target: target, Args: ochazuke.Arguments{"field": run.field}}); err != nil {
+			t.Fatalf("key-by %s on %s: %v", run.field, run.path, err)
+		}
+		if got := output(t, a); got != before || len(a.Mapping().Then) != 0 {
+			t.Fatalf("key-by %s on %s changed the tree: %s (steps %+v)", run.field, run.path, got, a.Mapping().Then)
+		}
+		if e, info := sink.LastError(), sink.LastInfo(); e != "" || !strings.Contains(info, "nothing changed") {
+			t.Fatalf("key-by %s on %s: error %q info %q", run.field, run.path, e, info)
+		}
 	}
 }
 

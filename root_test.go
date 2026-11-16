@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -91,9 +92,10 @@ func TestRootIsTheDocument(t *testing.T) {
 	if nodes := a.rs.tree.Nodes(); len(nodes) != 1 || nodes[0].ID != rsRootID {
 		t.Fatalf("after d d, r, <: %+v", nodes)
 	}
-	// Through the verb: the root is skipped, nothing else selected, so it fails.
-	if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "delete", Target: rsRootID}); err == nil {
-		t.Fatal("node.delete on the root")
+	// Through the verb: the root is skipped, nothing else selected, so
+	// nothing is deleted (the status line says so; no error).
+	if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: "delete", Target: rsRootID}); err != nil || len(a.rs.tree.Nodes()) != 1 {
+		t.Fatalf("node.delete on the root: %v %+v", err, a.rs.tree.Nodes())
 	}
 	// O above the root is refused; o below it adds its first key.
 	Press(a.m, "O")
@@ -262,33 +264,76 @@ func TestForceWrite(t *testing.T) {
 	}
 }
 
+// treeRows is the restructured tree as id, parent and label per node.
+func treeRows(a *App) string {
+	var b strings.Builder
+	for _, n := range a.rs.tree.Nodes() {
+		b.WriteString(n.ID + "<" + n.Parent + ">" + n.Label + "\n")
+	}
+	return b.String()
+}
+
 // The document node is Fixed (rename, move, delete) and an array's item
-// refuses a rename, from every path: the palette's ochazuke.outline verbs
-// on the root are refused and change nothing, and their keys drop out.
-func TestFixedRootRefusesOutlineVerbs(t *testing.T) {
+// takes no rename. Their keys are not offered there (the verbs are
+// unavailable); asked by name (the palette, the CLI, MCP), no route
+// deletes, renames, indents or outdents them: the tree and the output stay
+// as they were. o-json's own node verbs say so in the status line, with
+// no error. (The ochazuke.outline verbs answer with the tree's own
+// reasons; that wording is ochazuke's.)
+func TestFixedRootStaysFromEveryRoute(t *testing.T) {
 	a := openPut(t)
 	onRoot(t, a)
-	before := output(t, a)
-	for _, verb := range []string{"delete", "edit", "indent", "outdent"} {
+	outline := []string{"delete", "edit", "indent", "outdent", "move"}
+	for _, verb := range outline {
 		if a.available("ochazuke.outline", verb) {
 			t.Errorf("ochazuke.outline.%s available on the root", verb)
 		}
-		if _, err := a.r.Execute(ochazuke.Request{Noun: "ochazuke.outline", Verb: verb, Target: rsRootID}); err == nil {
-			t.Errorf("ochazuke.outline.%s on the root was not refused", verb)
+	}
+	for _, verb := range []string{"delete", "rename", "indent", "dedent"} {
+		if a.available("node", verb) {
+			t.Errorf("node.%s available on the root", verb)
 		}
 	}
-	if got := output(t, a); got != before || len(a.rs.tree.Nodes()) == 0 {
-		t.Fatalf("the root changed: %s", got)
+	before, rows := output(t, a), treeRows(a)
+	kept := func(what string) {
+		t.Helper()
+		if got := output(t, a); got != before || treeRows(a) != rows {
+			t.Fatalf("%s changed the root: %s\n%s", what, got, treeRows(a))
+		}
 	}
-	if a.available("node", "delete") || a.available("node", "rename") {
-		t.Fatal("node.delete / node.rename available on the root")
+	for _, verb := range outline {
+		onRoot(t, a) // a refused outline.delete moves the focus (ochazuke)
+		_, _ = a.r.Execute(ochazuke.Request{Noun: "ochazuke.outline", Verb: verb, Target: rsRootID, Args: ochazuke.Arguments{"delta": 1}})
+		settle(a)
+		kept("ochazuke.outline." + verb)
 	}
-	// An array item refuses a rename.
+	sink := &ochazuke.RecordingSink{}
+	a.r.UI().Attach(sink)
+	for _, run := range []struct {
+		verb string
+		args ochazuke.Arguments
+	}{{"delete", nil}, {"rename", nil}, {"rename", ochazuke.Arguments{"key": "renamed"}}, {"indent", nil}, {"dedent", nil}} {
+		onRoot(t, a)
+		if _, err := a.r.Execute(ochazuke.Request{Noun: "node", Verb: run.verb, Target: rsRootID, Args: run.args}); err != nil {
+			t.Fatalf("node.%s %v on the root: %v", run.verb, run.args, err)
+		}
+		settle(a)
+		kept(fmt.Sprintf("node.%s %v", run.verb, run.args))
+		if e, info := sink.LastError(), sink.LastInfo(); e != "" || info == "" {
+			t.Fatalf("node.%s %v: error %q info %q", run.verb, run.args, e, info)
+		}
+	}
+	// An array item takes no rename either.
 	b := openRestructure(t, 120, 30)
 	sendPaths(t, b, ".items[].id")
 	press(t, b, "ctrl+a", "o")
 	selectIn(t, b, b.rs.tree, func(n ochazuke.TreeNode) bool { return b.rs.meta[n.ID].item })
+	item, _ := b.rs.tree.Selected()
 	if b.available("node", "rename") || b.available("ochazuke.outline", "edit") {
 		t.Fatal("an item can be renamed")
+	}
+	rows = treeRows(b)
+	if _, err := b.r.Execute(ochazuke.Request{Noun: "node", Verb: "rename", Target: item.ID, Args: ochazuke.Arguments{"key": "renamed"}}); err != nil || treeRows(b) != rows {
+		t.Fatalf("node.rename on an item: %v\n%s", err, treeRows(b))
 	}
 }

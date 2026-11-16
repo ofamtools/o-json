@@ -100,7 +100,6 @@ open.go	App.registerOpenVerbs	K1	"When(\"viewer-saveable\") without Fallback"	1
 open.go	App.registerOpenVerbs	K15	"Failed(…)"	1
 open.go	App.registerOpenVerbs	K3	"path is required"	1
 open.go	App.writeDoc	K15	"Failed(…)"	1
-open.go	App.writeDoc	K15	"no document to write: e opens a file, p pastes JSON"	1
 open.go	declareOpenerRows	K4	"ochazuke has no %s setting"	1
 operate.go	App.dataOperand	K15	"no array here"	1
 operate.go	App.dataOperand	K15	"no column here"	1
@@ -148,7 +147,7 @@ page.go	App.registerRestructureVerbs	K1	"When(\"restructure-tree\") without Fall
 page.go	App.registerRestructureVerbs	K1	"When(\"restructure-writable\") without Fallback"	1
 page.go	App.registerRestructureVerbs	K1	"When(\"shape-sendable\") without Fallback"	1
 page.go	App.registerRestructureVerbs	K1	"When(\"split-obtainable\") without Fallback"	1
-page.go	App.registerRestructureVerbs	K15	"%s does not apply here"	2
+page.go	App.registerRestructureVerbs	K15	"%s does not apply here"	1
 page.go	App.registerRestructureVerbs	K15	"Failed(…)"	14
 page.go	App.registerRestructureVerbs	K15	"a key does not go here: an array takes only its [] item"	1
 page.go	App.registerRestructureVerbs	K15	"as is %s or %s"	1
@@ -189,7 +188,6 @@ put.go	App.registerPutVerbs	K1	"When(\"node-puttable\") without Fallback"	1
 put.go	App.registerPutVerbs	K1	"When(\"node-yankable\") without Fallback"	1
 put.go	App.registerPutVerbs	K1	"When(\"restructure-selecting\") without Fallback"	3
 put.go	App.yankNodes	K15	"Failed(…)"	2
-put.go	App.yankNodes	K15	"the document node stays; y y and d d take the nodes in it"	1
 put.go	clipBlocks	K15	"the register holds no restructure nodes (y y or d d on a node fills it)"	1
 put.go	clipBlocks	K3	"the register is empty: y y or d d on a node fills it"	1
 query.go	App.queryDone	K15	"Failed(…)"	1
@@ -327,7 +325,6 @@ verbs.go	App.registerVerbs	K1	"When(\"viewer-file\") without Fallback"	1
 verbs.go	App.registerVerbs	K1	"When(\"viewer-original\") without Fallback"	5
 verbs.go	App.registerVerbs	K15	"Failed(…)"	2
 verbs.go	App.registerVerbs	K15	"motion is one of down, up, half-down, half-up, page-down, page-up, top, bottom"	1
-verbs.go	App.registerVerbs	K15	"no file to load: e (viewer.open) opens one"	1
 verbs.go	App.registerVerbs	K15	"no line here"	1
 verbs.go	App.registerVerbs	K15	"no table here"	1
 verbs.go	App.registerVerbs	K15	"no value here"	1

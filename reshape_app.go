@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 
 	"ofam.dev/ochazuke"
 )
@@ -334,6 +335,33 @@ func (a *App) keyFields(id string) []string {
 	return out
 }
 
+// keyBy is node.key-by: a reshape step keying the node's items by a
+// scalar field.
+func (a *App) keyBy(c ochazuke.Ctx) ochazuke.Result {
+	field := ochazuke.StringArg(c.Args, "field", "")
+	// Only a scalar field files items under keys (a value outside
+	// node.key-fields is accepted, no-refusals N2): any other
+	// leaves the tree as it is and names the fields that would.
+	if fields := a.keyFields(c.Instance.ID); !slices.Contains(fields, field) {
+		c.Info(keyByNote(field, fields))
+		return ochazuke.Done(a.Mapping())
+	}
+	s := a.r.Settings()
+	keep := s.Bool(settingKeyByKeep)
+	if v, ok := c.Args["keep"].(bool); ok {
+		keep = v
+	}
+	return a.reshape(c, Stage{Op: opKeyBy, Path: nodePaths(a.rs.tree.Nodes(), a.rs.meta)[c.Instance.ID], Field: field, Drop: !keep,
+		Duplicates: ochazuke.StringArg(c.Args, "duplicates", s.String(settingKeyByDup)),
+		Missing:    ochazuke.StringArg(c.Args, "missing", s.String(settingKeyByMissing))})
+}
+
+// keyByNote is the status line of a key-by whose field is not one of the
+// items' scalar fields: nothing changed, and what would key them.
+func keyByNote(field string, fields []string) string {
+	return fmt.Sprintf("key-by %q: nothing changed; the node's items have these scalar fields: [%s]", field, strings.Join(fields, ", "))
+}
+
 func (a *App) holdsObjects(id string) bool {
 	s := a.outShape(id)
 	return s != nil && s.Kinds[KObject] > 0
@@ -461,17 +489,7 @@ func (a *App) registerReshapeVerbs() {
 			"Flatten the node (or a V selection) as node-mark.flatten flattens the marks: a flat array of objects, one per item of the nearest common array").Many().When("node-reshapable").
 		Verb("pick", func(c ochazuke.Ctx) ochazuke.Result { return pick(c, subjectIDs(c)) },
 			"Keep only the node (or a V selection) as node-mark.pick keeps the marks").Many().When("node-reshapable").
-		Verb("key-by", func(c ochazuke.Ctx) ochazuke.Result {
-			field := ochazuke.StringArg(c.Args, "field", "")
-			s := a.r.Settings()
-			keep := s.Bool(settingKeyByKeep)
-			if v, ok := c.Args["keep"].(bool); ok {
-				keep = v
-			}
-			return a.reshape(c, Stage{Op: opKeyBy, Path: at(c), Field: field, Drop: !keep,
-				Duplicates: ochazuke.StringArg(c.Args, "duplicates", s.String(settingKeyByDup)),
-				Missing:    ochazuke.StringArg(c.Args, "missing", s.String(settingKeyByMissing))})
-		}, "Turn the array of objects into an object keyed by field (jq's INDEX(.[]; .FIELD)): the field stays in each value (key-by.keep-field); items sharing a key follow key-by.duplicates (rename, last, group); items without it go under key-by.missing, never dropped").When("node-keyable").
+		Verb("key-by", a.keyBy, "Turn the array of objects into an object keyed by field (jq's INDEX(.[]; .FIELD)): the field stays in each value (key-by.keep-field); items sharing a key follow key-by.duplicates (rename, last, group); items without it go under key-by.missing, never dropped").When("node-keyable").
 		Verb("key-fields", func(c ochazuke.Ctx) ochazuke.Result {
 			// Asked from the arguments form, the focus is the form's field:
 			// the node is the restructured tree's selection.

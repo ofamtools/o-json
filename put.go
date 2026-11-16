@@ -269,7 +269,10 @@ func (a *App) yankNodes(c ochazuke.Ctx, ids []string, deletion bool) ochazuke.Re
 	ids = slices.DeleteFunc(slices.Clone(ids), func(id string) bool { return e.parent(id) == "" })
 	text, blocks := clipOf(e, ids)
 	if blocks == 0 {
-		return ochazuke.Failed(errors.New("the document node stays; y y and d d take the nodes in it"))
+		// The document node alone: it stays, nothing is stored or
+		// removed, and the status line says so.
+		c.Info("the document node stays; y y and d d take the nodes in it")
+		return ochazuke.Done(a.Mapping())
 	}
 	where := a.registerName()
 	if err := a.r.StoreYank(ochazuke.Yank{Text: text, Shape: nodesShape}, "", deletion); err != nil {

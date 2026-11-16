@@ -988,6 +988,29 @@ func fixNodes(nodes []ochazuke.TreeNode, meta map[string]nodeMeta) []ochazuke.Tr
 	return nodes
 }
 
+// keepsKeyless runs h unless the node it acts on holds rename in its
+// Fixed (the document node, an array's item): then the tree stays as it
+// is and the status line says why, whatever route asked (key, palette,
+// CLI, MCP).
+func (a *App) keepsKeyless(h ochazuke.AppHandler) ochazuke.AppHandler {
+	return func(c ochazuke.Ctx) ochazuke.Result {
+		if id := c.Instance.ID; a.refuses(id, ochazuke.TreeRename) {
+			c.Info(renameNote(a.current().parent(id) == ""))
+			return ochazuke.Done(a.Mapping())
+		}
+		return h(c)
+	}
+}
+
+// renameNote is the status line of a rename of a node whose Fixed holds
+// rename: the document node has no key, an array's item its index.
+func renameNote(document bool) string {
+	if document {
+		return "the document node has no key to rename; it stays"
+	}
+	return "an array item's key is its index; it stays"
+}
+
 // refuses reports whether node id refuses the change op (its Fixed).
 func (a *App) refuses(id, op string) bool {
 	for _, n := range a.rs.tree.Nodes() {
@@ -1224,7 +1247,10 @@ func (a *App) registerRestructureVerbs() {
 		return func(c ochazuke.Ctx) ochazuke.Result {
 			e, n := fn(c, a.current())
 			if n == 0 {
-				return ochazuke.Failed(fmt.Errorf("%s does not apply here", name))
+				// Nothing to move (the document node, a node with no
+				// sibling to nest into): the tree stays, and says so.
+				c.Info(name + ": nothing moved here")
+				return ochazuke.Done(a.Mapping())
 			}
 			focus := c.Instance.ID
 			if err := a.commit(name, focus, e); err != nil {
@@ -1248,7 +1274,7 @@ func (a *App) registerRestructureVerbs() {
 			}
 			return e, n
 		}), "Move the node out to its parent's level, just before the parent (the parent stays, an empty object once nothing is left in it); out of an array item it collects the values into an array placed just before the array's key (.items[].id becomes .id[])").Many().When("node-dedent").
-		Verb("rename", func(c ochazuke.Ctx) ochazuke.Result {
+		Verb("rename", a.keepsKeyless(func(c ochazuke.Ctx) ochazuke.Result {
 			id := c.Instance.ID
 			key, ok := c.Args["key"].(string)
 			if !ok {
@@ -1265,7 +1291,7 @@ func (a *App) registerRestructureVerbs() {
 				return ochazuke.Failed(err)
 			}
 			return ochazuke.Done(a.Mapping())
-		}, "Rename the node's key: in place, or to key").When("node-renamable")
+		}), "Rename the node's key: in place, or to key").When("node-renamable")
 	// node.delete, node.yank, node.put and the selection's delete and
 	// yank: put.go.
 	a.registerPutVerbs()

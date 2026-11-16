@@ -42,11 +42,32 @@ func TestNoFileStartsEmpty(t *testing.T) {
 			t.Fatalf("no %q\n%s", want, frame)
 		}
 	}
-	// Nothing to reload or write: those keys are not available.
-	for _, verb := range []string{"load", "write"} {
-		if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: verb, Target: pageID, Args: ochazuke.Arguments{"path": "x.json"}}); err == nil {
-			t.Fatalf("viewer.%s ran on the empty document", verb)
+	// Nothing to reload or write: those keys are not offered, and asked
+	// by name (the palette, the CLI) each leaves the empty document as it
+	// is and says so in the status line, with no error and no file made.
+	sink := &ochazuke.RecordingSink{}
+	a.r.UI().Attach(sink)
+	out := filepath.Join(t.TempDir(), "x.json")
+	for _, run := range []struct {
+		verb string
+		args ochazuke.Arguments
+	}{{"load", nil}, {"write", ochazuke.Arguments{"path": out}}} {
+		if a.available("viewer", run.verb) {
+			t.Fatalf("viewer.%s offered on the empty document", run.verb)
 		}
+		if _, err := a.r.Execute(ochazuke.Request{Noun: "viewer", Verb: run.verb, Target: pageID, Args: run.args}); err != nil {
+			t.Fatalf("viewer.%s: %v", run.verb, err)
+		}
+		settle(a)
+		if a.Doc != nil || a.Path != "" || !strings.Contains(view(a), "[no file]") {
+			t.Fatalf("viewer.%s changed the empty document: path %q\n%s", run.verb, a.Path, view(a))
+		}
+		if e, info := sink.LastError(), sink.LastInfo(); e != "" || info == "" {
+			t.Fatalf("viewer.%s: error %q info %q", run.verb, e, info)
+		}
+	}
+	if _, err := os.Stat(out); !os.IsNotExist(err) {
+		t.Fatalf("viewer.write made %s: %v", out, err)
 	}
 	// The restructure page opens on it too.
 	press(t, a, "M")
