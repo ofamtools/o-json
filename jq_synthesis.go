@@ -167,6 +167,16 @@ func (g *jqGen) op(op Operation) string {
 	case "object-array":
 		g.use("entries")
 		return "entries(" + jqStr(op.Name) + ")"
+	case "wrap-object":
+		return "{" + jqKey(op.Name) + ": .}"
+	case "wrap-array":
+		return "[.]"
+	case "object-values":
+		g.use("need")
+		return `need("object"; "object-values") | [.[]]`
+	case "object-keys":
+		g.use("need")
+		return `need("object"; "object-keys") | keys_unsorted`
 	case "group":
 		g.use("need")
 		by := "need(\"array\"; \"group\") | group_by(" + col(op.Field) + ")"

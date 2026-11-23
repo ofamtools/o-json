@@ -683,6 +683,13 @@ func (a *App) windowNode(i int, g geom) ui.ViewNode {
 		body = textLine("no text", "muted")
 		if w.ed != nil {
 			body = w.ed.View(id)
+			if len(w.rawFolds) > 0 {
+				folded, cur := foldRawView(w.ed.Value(), w.ed.Cursor(), w.rawFolds)
+				body.Props["value"] = folded
+				body.Props["cursor"] = cur
+				body.CacheKey = 0 // folded display overrides raw cache key
+				title += fmt.Sprintf(" · %d folded", len(w.rawFolds))
+			}
 		}
 		body.ID, body.Box = id, fillBox()
 	}

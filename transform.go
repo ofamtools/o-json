@@ -56,6 +56,11 @@ func normalize(op Operation) (Operation, error) {
 		if op.Name == "" {
 			op.Name = "key"
 		}
+	case "wrap-object":
+		if op.Name == "" {
+			op.Name = "value"
+		}
+	case "wrap-array", "object-values", "object-keys":
 	case "group":
 		if op.Name == "" {
 			op.Name = "rows"
@@ -159,6 +164,14 @@ func applyOp(v any, op Operation) (any, error) {
 		return arrayToObject(v, MustPath(op.Field))
 	case "object-array":
 		return objectToArray(v, op.Name)
+	case "wrap-object":
+		return Object{{op.Name, v}}, nil
+	case "wrap-array":
+		return []any{v}, nil
+	case "object-values":
+		return objectValues(v)
+	case "object-keys":
+		return objectKeys(v)
 	case "group":
 		return group(v, op)
 	case "rename", "drop":
@@ -810,6 +823,30 @@ func objectToArray(v any, name string) (any, error) {
 			row = append(row, Field{"value", f.Value})
 		}
 		out = append(out, row)
+	}
+	return out, nil
+}
+
+func objectValues(v any) (any, error) {
+	o, ok := v.(Object)
+	if !ok {
+		return nil, fmt.Errorf("object-values needs an object, got %s", typeName(v))
+	}
+	out := make([]any, len(o))
+	for i, f := range o {
+		out[i] = f.Value
+	}
+	return out, nil
+}
+
+func objectKeys(v any) (any, error) {
+	o, ok := v.(Object)
+	if !ok {
+		return nil, fmt.Errorf("object-keys needs an object, got %s", typeName(v))
+	}
+	out := make([]any, len(o))
+	for i, f := range o {
+		out[i] = f.Key
 	}
 	return out, nil
 }

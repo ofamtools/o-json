@@ -44,10 +44,11 @@ type window struct {
 	edBuf        int
 	edPath       string
 	edAt, edLen  int // byte range of the edited subtree in the buffer text
+	rawFolds     map[int]bool
 }
 
 func newWindow(buf, view int) *window {
-	return &window{buf: buf, view: view, anchor: -1, open: map[string]bool{}, edBuf: -1}
+	return &window{buf: buf, view: view, anchor: -1, open: map[string]bool{}, edBuf: -1, rawFolds: map[int]bool{}}
 }
 
 func (w *window) nestedOpen(p string, d int) bool {
@@ -86,10 +87,12 @@ type prompt struct {
 }
 
 type pickModal struct {
-	kind  string // palette, buffers, grain
-	m     *picker.Model
-	paths []Path
-	op    Operation
+	kind   string // palette, buffers, grain, format, convert
+	m      *picker.Model
+	paths  []Path
+	op     Operation
+	target Path
+	field  string
 }
 
 type helpModal struct {
@@ -399,6 +402,14 @@ func (a *App) editorKey(s core.State, c core.Command) (core.State, []core.Effect
 	}
 	if after != before {
 		a.writeBack(w, b, after)
+		clear(w.rawFolds)
+	} else if w.ed.Mode() == input.ModeInsert && len(w.rawFolds) > 0 {
+		line := cursorLine(after, w.ed.Cursor())
+		for _, blk := range findJSONBlocks(after) {
+			if line >= blk.openLine && line <= blk.closeLine {
+				delete(w.rawFolds, blk.openLine)
+			}
+		}
 	}
 	return s, nil
 }
@@ -594,6 +605,7 @@ var cmdTable = [...][4]string{
 	{"flatten.inner", "I", "", "Toggle inner join for flatten: drop parents whose arrays are empty"},
 	{"shape.keyby", "K", "", "Array to object, keyed by the focused field"},
 	{"shape.entries", "E", "", "Object to array of entries, its keys in a column you name (key by default)"},
+	{"shape.convert", "C", "", "Convert shape: key by field, wrap in object/array, or object to entries/values/keys"},
 	{"shape.group", "G", "", "Group rows by the focused column (g in the table)"},
 	{"column.rename", "r", "", "Rename the focused column"},
 	{"column.drop", "x", "", "Drop the focused column"},
@@ -622,6 +634,11 @@ var cmdTable = [...][4]string{
 	{"window.only", "ctrl+w o", "ctrl+w o", "Close the other window"},
 	{"raw.format", "=", "=", "Raw view: pretty, minified, as typed"},
 	{"raw.scope", "ctrl+t", "ctrl+t", "Raw view: whole document or focused subtree"},
+	{"raw.fold.toggle", "", "z a", "Raw view: toggle fold on enclosing JSON block"},
+	{"raw.fold.close", "", "z c", "Raw view: fold enclosing JSON block"},
+	{"raw.fold.open", "", "z o", "Raw view: unfold enclosing JSON block"},
+	{"raw.fold.all", "", "z M", "Raw view: fold all nested JSON blocks"},
+	{"raw.fold.none", "", "z R", "Raw view: unfold all JSON blocks"},
 	{"nested.visual", "v", "", "Nested view: start or stop selecting rows"},
 	{"palette.open", ":", ":", "Commands (also :w :q :bn :bp :b :e PATH :enew :vs)"},
 	{"help.open", "?", "", "Keys active here"},
@@ -643,6 +660,7 @@ func commandSpecs() []core.CommandSpec {
 	for _, id := range internalCmds {
 		out = append(out, core.CommandSpec{ID: id, Description: id})
 	}
+	out = append(out, input.ReadlineSpecs()...)
 	return out
 }
 
@@ -672,7 +690,7 @@ func defaultBindings() []core.Binding {
 		for _, k := range strings.Split(c[2], "|") {
 			if k != "" {
 				bd := keyBind("vim", k, c[0], when, nil)
-				if k == ":" || k == "=" {
+				if k == ":" || k == "=" || strings.HasPrefix(k, "z ") {
 					bd.When = vimNormal
 				}
 				bd.Hint = c[3]
@@ -713,6 +731,22 @@ func defaultBindings() []core.Binding {
 		keyBind("files", "left", pathpicker.CmdParent, "", nil), keyBind("files", "ctrl+s", pathpicker.CmdSelectCurrent, "", nil),
 		keyBind("files", "ctrl+t", pathpicker.CmdHiddenToggle, "", nil), keyBind("files", "tab", pathpicker.CmdModeCycle, "", nil),
 		keyBind("help", "esc", "help.close", "", nil), keyBind("help", "q", "help.close", "", nil), keyBind("help", "?", "help.close", "", nil))
+	for _, m := range []string{"pick", "files"} {
+		taken := map[string]bool{}
+		for _, b := range out {
+			if b.Mode == m && len(b.Keys) > 0 {
+				taken[strings.Join(b.Keys, " ")] = true
+			}
+		}
+		for _, rb := range input.ReadlineBindings(m, "") {
+			k := strings.Join(rb.Keys, " ")
+			if taken[k] {
+				continue
+			}
+			taken[k] = true
+			out = append(out, rb)
+		}
+	}
 	return append(out, core.StandardBindings("help")...)
 }
 
@@ -778,14 +812,17 @@ func (a *App) engine() *core.Engine {
 	for id, f := range map[string]hfn{
 		"pane.toggle": a.paneToggle, "pane.enter": a.paneEnter, "select.toggle": a.selectToggle, "select.clear": a.selectClear,
 		"select.project": a.project, "flatten": a.flatten, "flatten.inner": a.innerToggle, "shape.keyby": a.shape, "shape.entries": a.shape,
-		"shape.group": a.shape, "column.rename": a.shape, "column.drop": a.shape, "sort.cycle": a.sortCycle,
+		"shape.convert": a.shapeConvert, "shape.group": a.shape, "column.rename": a.shape, "column.drop": a.shape, "sort.cycle": a.sortCycle,
 		"filter.all": a.filterOpen, "filter.field": a.filterOpen, "filter.mode": a.modeCycle, "jq.open": a.jqOpen, "jq.chip": a.jqChip,
 		"jq.result": a.jqResult, "yank.jq": a.yank, "yank.path": a.yank, "yank.value": a.yank, "clipboard.done": a.clipDone,
 		"history.undo": a.history, "history.redo": a.history, "edit.toggle": a.editToggle, "file.save": a.save, "file.saveas": a.save,
 		"file.write": a.write, "file.open": a.filesOpen, "file.load": a.load, "buffer.new": a.bufferCmd, "buffer.next": a.bufferCmd,
 		"buffer.prev": a.bufferCmd, "buffer.alt": a.bufferCmd, "buffer.switch": a.bufferCmd, "buffer.pick": a.bufferPick,
 		"window.split": a.windowCmd, "window.next": a.windowCmd, "window.close": a.windowCmd, "window.only": a.windowCmd,
-		"raw.format": a.rawCmd, "raw.scope": a.rawCmd, "nested.visual": a.visual, "palette.open": a.paletteOpen, "help.open": a.helpOpen,
+		"raw.format": a.rawCmd, "raw.scope": a.rawCmd,
+		"raw.fold.toggle": a.rawFoldCmd, "raw.fold.close": a.rawFoldCmd, "raw.fold.open": a.rawFoldCmd,
+		"raw.fold.all": a.rawFoldCmd, "raw.fold.none": a.rawFoldCmd,
+		"nested.visual": a.visual, "palette.open": a.paletteOpen, "help.open": a.helpOpen,
 		"help.close":  func(s core.State, c core.Command) (core.State, []core.Effect) { return closeModal(s, modalHelp), nil },
 		"theme.cycle": a.themeCycle, "density.cycle": a.themeCycle, "app.close": a.quit,
 		"app.quit": func(s core.State, c core.Command) (core.State, []core.Effect) {
@@ -795,10 +832,10 @@ func (a *App) engine() *core.Engine {
 	} {
 		h(id, f)
 	}
-	for _, id := range []string{"pick.insert", "pick.backspace", "pick.close", picker.CmdConfirm, picker.CmdModeCycle} {
+	for _, id := range append([]string{"pick.insert", "pick.backspace", "pick.close", picker.CmdConfirm, picker.CmdModeCycle}, input.ReadlineCommandIDs()...) {
 		e.HandleScope("pick", id, a.wrap(a.pickCmd))
 	}
-	for _, id := range []string{"files.insert", "files.backspace", "files.close", pathpicker.CmdOpen, pathpicker.CmdParent, pathpicker.CmdHiddenToggle, pathpicker.CmdSelectCurrent, pathpicker.CmdModeCycle} {
+	for _, id := range append([]string{"files.insert", "files.backspace", "files.close", pathpicker.CmdOpen, pathpicker.CmdParent, pathpicker.CmdHiddenToggle, pathpicker.CmdSelectCurrent, pathpicker.CmdModeCycle}, input.ReadlineCommandIDs()...) {
 		e.HandleScope("files", id, a.wrap(a.filesCmd))
 	}
 	return e
@@ -1295,6 +1332,56 @@ func (a *App) shape(s core.State, c core.Command) (core.State, []core.Effect) {
 	return s, nil
 }
 
+func (a *App) shapeConvert(s core.State, c core.Command) (core.State, []core.Effect) {
+	target := a.curUI().focus
+	if a.pane == 0 {
+		target, _ = a.treePath()
+	}
+	root, field, hasField := a.fieldCtx()
+	val, ok := AtPath(a.display(a.cur()), target)
+	if !ok {
+		target = nil
+		val = a.display(a.cur())
+	}
+	var items []picker.Item
+	switch val.(type) {
+	case []any:
+		if hasField && root.String() == target.String() {
+			items = append(items, picker.Item{ID: "keyby", Title: "Key array by " + field, Subtitle: "Array of objects -> object keyed by ." + field})
+		} else if hasField {
+			items = append(items, picker.Item{ID: "keyby", Title: "Key parent array by " + field, Subtitle: "Array at " + root.String() + " -> object keyed by ." + field})
+		}
+		items = append(items,
+			picker.Item{ID: "wrap-object", Title: "Wrap under object key", Subtitle: `{ "<key>": [...] }`},
+			picker.Item{ID: "wrap-array", Title: "Wrap in array", Subtitle: `[ [...] ]`},
+		)
+	case Object:
+		items = append(items,
+			picker.Item{ID: "entries", Title: "Entries array", Subtitle: `[{"key": k, ...}] · keep keys as a column`},
+			picker.Item{ID: "object-values", Title: "Values array", Subtitle: `[v1, v2, ...] · drop keys`},
+			picker.Item{ID: "object-keys", Title: "Keys array", Subtitle: `["k1", "k2", ...] · keys only`},
+			picker.Item{ID: "wrap-object", Title: "Wrap under object key", Subtitle: `{ "<key>": {...} }`},
+			picker.Item{ID: "wrap-array", Title: "Wrap in array", Subtitle: `[ {...} ]`},
+		)
+	default:
+		if hasField {
+			items = append(items, picker.Item{ID: "keyby", Title: "Key array by " + field, Subtitle: "Array at " + root.String() + " -> object keyed by ." + field})
+		}
+		items = append(items,
+			picker.Item{ID: "wrap-object", Title: "Wrap under object key", Subtitle: `{ "<key>": value }`},
+			picker.Item{ID: "wrap-array", Title: "Wrap in array", Subtitle: `[ value ]`},
+		)
+	}
+	m := picker.New("Convert "+target.String(), items)
+	m.Scope, m.Placeholder = "pick", "choose shape conversion"
+	pm := &pickModal{kind: "convert", m: m, target: target}
+	if hasField {
+		pm.field = field
+		pm.paths = []Path{root}
+	}
+	return openModal(s, modalPick, "pick", pm), nil
+}
+
 func isList(v any) bool { _, ok := v.([]any); return ok }
 
 func (a *App) sortCycle(s core.State, c core.Command) (core.State, []core.Effect) {
@@ -1443,6 +1530,11 @@ func (a *App) promptAccept(s core.State, c core.Command) (core.State, []core.Eff
 		if !a.applyAt(p.root, Operation{Kind: "object-array", Name: text}) {
 			a.prompt = p // keep the form open to pick another name
 		}
+	case "wrap-object":
+		if text == "" {
+			text = "value"
+		}
+		a.applyAt(p.root, Operation{Kind: "wrap-object", Name: text})
 	case "saveas":
 		return a.write(s, core.Command{Args: map[string]any{"path": text, "format": a.saveFormat}})
 	case "jq":
@@ -1981,6 +2073,65 @@ func (a *App) rawCmd(s core.State, c core.Command) (core.State, []core.Effect) {
 	return s, nil
 }
 
+func (a *App) rawFoldCmd(s core.State, c core.Command) (core.State, []core.Effect) {
+	w := a.active()
+	if w.view != viewRaw {
+		a.info("raw view only (4)")
+		return s, nil
+	}
+	b := a.buf(w.buf)
+	a.ensureEditor(w, b)
+	if w.rawFolds == nil {
+		w.rawFolds = map[int]bool{}
+	}
+	text := w.ed.Value()
+	blocks := findJSONBlocks(text)
+	if len(blocks) == 0 {
+		a.info("no multi-line JSON blocks to fold (press = to pretty-print)")
+		return s, nil
+	}
+	switch c.ID {
+	case "raw.fold.all":
+		n := 0
+		for _, blk := range blocks {
+			if blk.depth >= 1 {
+				w.rawFolds[blk.openLine] = true
+				n++
+			}
+		}
+		if n == 0 {
+			for _, blk := range blocks {
+				w.rawFolds[blk.openLine] = true
+				n++
+			}
+		}
+		a.info(fmt.Sprintf("folded %d JSON blocks · zR unfolds all", n))
+	case "raw.fold.none":
+		clear(w.rawFolds)
+		a.info("unfolded all JSON blocks")
+	default:
+		line := cursorLine(text, w.ed.Cursor())
+		blk, ok := enclosingBlock(blocks, line)
+		if !ok {
+			a.info("no enclosing JSON block on this line")
+			return s, nil
+		}
+		switch c.ID {
+		case "raw.fold.close":
+			w.rawFolds[blk.openLine] = true
+		case "raw.fold.open":
+			delete(w.rawFolds, blk.openLine)
+		case "raw.fold.toggle":
+			if w.rawFolds[blk.openLine] {
+				delete(w.rawFolds, blk.openLine)
+			} else {
+				w.rawFolds[blk.openLine] = true
+			}
+		}
+	}
+	return s, nil
+}
+
 // --- palette, pickers, help ----------------------------------------------------------------
 
 // exCommand reads a palette query as a vim command line.
@@ -2066,6 +2217,33 @@ func (a *App) pickCmd(s core.State, c core.Command) (core.State, []core.Effect) 
 				op.Grain = pm.paths[i]
 			}
 			a.doFlatten(op)
+		case "convert":
+			switch picked.ID {
+			case "keyby":
+				root := pm.target
+				if len(pm.paths) > 0 {
+					root = pm.paths[0]
+				}
+				a.applyAt(root, Operation{Kind: "array-object", Field: pm.field})
+			case "entries":
+				a.openPrompt("entries", "entries of "+pm.target.String()+" · key column name", "key", pm.target, "")
+			case "object-values":
+				a.applyAt(pm.target, Operation{Kind: "object-values"})
+			case "object-keys":
+				a.applyAt(pm.target, Operation{Kind: "object-keys"})
+			case "wrap-object":
+				def := "data"
+				if v, ok := AtPath(a.display(a.cur()), pm.target); ok {
+					if _, isArr := v.([]any); isArr {
+						def = "items"
+					} else if _, isObj := v.(Object); !isObj {
+						def = "value"
+					}
+				}
+				a.openPrompt("wrap-object", "wrap "+pm.target.String()+" under object key", def, pm.target, "")
+			case "wrap-array":
+				a.applyAt(pm.target, Operation{Kind: "wrap-array"})
+			}
 		}
 	}
 	return s, nil
