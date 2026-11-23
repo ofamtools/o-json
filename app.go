@@ -606,7 +606,7 @@ var cmdTable = [...][4]string{
 	{"shape.keyby", "K", "", "Array to object, keyed by the focused field"},
 	{"shape.entries", "E", "", "Object to array of entries, its keys in a column you name (key by default)"},
 	{"shape.convert", "C", "", "Convert shape: key by field, wrap in object/array, or object to entries/values/keys"},
-	{"shape.group", "G", "", "Group rows by the focused column (g in the table)"},
+	{"shape.group", "G", "", "Group rows by the focused column"},
 	{"column.rename", "r", "", "Rename the focused column"},
 	{"column.drop", "x", "", "Drop the focused column"},
 	{"sort.cycle", "s", "", "Sort rows by the focused column: ascending, descending, off"},
@@ -703,12 +703,7 @@ func defaultBindings() []core.Binding {
 			out = append(out, sb)
 		}
 	}
-	// In the table a bare g groups; g g, g G and the other g keys still
-	// work, and g alone fires when the prefix times out or the next key
-	// breaks it.
-	group := keyBind("normal", "g", "shape.group", "", nil)
-	group.Scope, group.Hint = "table", "Group rows by the column under the cursor"
-	out = append(out, group, keyBind("normal", "g G", "motion.bottom", "", nil), keyBind("normal", "end", "motion.bottom", "", nil), keyBind("normal", "home", "motion.top", "", nil),
+	out = append(out, keyBind("normal", "g G", "motion.bottom", "", nil), keyBind("normal", "end", "motion.bottom", "", nil), keyBind("normal", "home", "motion.top", "", nil),
 		keyBind("normal", "down", "motion.down", "", nil), keyBind("normal", "up", "motion.up", "", nil),
 		keyBind("normal", "left", "motion.left", "", nil), keyBind("normal", "right", "motion.right", "", nil),
 		keyBind("vim", "tab", "pane.toggle", vimNormal, nil), keyBind("vim", "esc", "pane.toggle", vimNormal, nil),

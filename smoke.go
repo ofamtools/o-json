@@ -451,12 +451,10 @@ func runSmoke(w io.Writer, path string) error {
 		k.check(tc.key+" adds a "+tc.kind+" step scoped to orders", ok && kept && len(b.Pipeline) == 0, ops, " ", tc.path, "=", valueText(v))
 		k.undoAll()
 	}
-	// In the table a bare g groups by the column under the cursor once the
-	// g prefix times out; g g still goes to the top.
+	// In the table G groups by the column under the cursor; g g goes to the top.
 	k.treeTo("order_id")
-	d.keys("1", "tab", "g")
-	d.send(core.TimeoutEvent{Token: d.sh.State.Input.Seq})
-	k.check("g in the table groups by the column under the cursor", strings.Join(k.pipeline(), ",") == "scope,group,scope", k.pipeline())
+	d.keys("1", "tab", "G")
+	k.check("G in the table groups by the column under the cursor", strings.Join(k.pipeline(), ",") == "scope,group,scope", k.pipeline())
 	k.undoAll()
 	d.keys("j", "g", "g")
 	k.check("g g in the table still goes to the top", len(b.Pipeline) == 0 && k.focus() == "orders[0].order_id", k.focus())

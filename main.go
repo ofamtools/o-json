@@ -5,27 +5,128 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"ofam.dev/ochazuke/cli"
+	"ofam.dev/ochazuke/core"
+	"ofam.dev/oden"
 )
+
+// Version is the o-json application version.
+const Version = "2.0.0-next"
 
 func main() { os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr)) }
 
-// run dispatches a subcommand only when the first word is exactly its name;
-// ./structure opens a file of that name.
+// run dispatches through the uniform Oden v2 / Ochazuke v2 CLI shell while
+// preserving positional FILE opening, stdin piping, and the structure,
+// flatten, and query subcommands.
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	if len(args) > 0 {
-		if _, ok := subUsage[args[0]]; ok {
-			return subcommand(args[0], args[1:], stdin, stdout, stderr)
+	app := newOdenApp(args, stdin, stdout, stderr)
+	return oden.Report(stderr, progName(), app.Run(context.Background()))
+}
+
+func progName() string {
+	if parent := os.Getenv("ODEN_PARENT"); parent != "" {
+		return parent + " json"
+	}
+	return "o-json"
+}
+
+func newOdenApp(args []string, stdin io.Reader, stdout, stderr io.Writer) *oden.App {
+	info := cli.AppInfo{
+		Name:     "o-json",
+		Version:  Version,
+		Summary:  "Terminal JSON workspace: structure tree, table/nested/pretty/raw views, relational flatten, live jq",
+		Modes:    func() []core.Mode { return modes },
+		Bindings: func() []core.Binding { return defaultBindings() },
+		Specs:    func() []core.CommandSpec { return commandSpecs() },
+		RunTUI: func(_ context.Context, tuiArgs []string) error {
+			if code := interactive(tuiArgs, stdin, stdout, stderr); code != 0 {
+				return &oden.ExitError{Code: code}
+			}
+			return nil
+		},
+		RunSmoke: func(out io.Writer, _ bool) error {
+			return runSmoke(out, "")
+		},
+	}
+
+	app := cli.NewApp(info, args, oden.WithStdio(stdin, stdout, stderr))
+
+	subCmd := func(name, summary, usage string) oden.Command {
+		return oden.Command{
+			Name:    name,
+			Summary: summary,
+			Usage:   usage,
+			Run: func(_ context.Context, subArgs []string) error {
+				if code := subcommand(name, subArgs, stdin, stdout, stderr); code != 0 {
+					return &oden.ExitError{Code: code}
+				}
+				return nil
+			},
 		}
 	}
-	return interactive(args, stdin, stdout, stderr)
+
+	app.Add(
+		subCmd("structure", "inspect merged JSON schema structure", "FILE|- [--format text|json]"),
+		subCmd("flatten", "flatten nested JSON into tabular rows or jq", "FILE|- [--select PATH,PATH] [--field PATH]... [--grain PATH] [--inner] [--cross] [--format csv|json|table|tsv|jsonl] [--jq]"),
+		subCmd("query", "run a jq expression against JSON input", "FILE|- [--compact] [--] EXPR"),
+		oden.Command{
+			Name:     "capabilities",
+			Audience: oden.AudienceMachine,
+			Summary:  "print application capabilities (--json for JSON)",
+			Usage:    "[--json|--format json|table]",
+			Handle: func(c *oden.Ctx) error {
+				p, err := c.Parse(nil)
+				if err != nil {
+					return err
+				}
+				entries := app.Catalog().Entries
+				cmds := make([]string, 0, len(entries))
+				for _, e := range entries {
+					cmds = append(cmds, e.Name)
+				}
+				out := oden.Capabilities{
+					Name:         "o-json",
+					Version:      Version,
+					Summary:      info.Summary,
+					Capabilities: []string{"tui", "jq", "flatten", "structure"},
+					Commands:     cmds,
+				}
+				if p.Format() == "json" {
+					return c.WriteJSON(out)
+				}
+				rows := [][]string{
+					{"name", out.Name},
+					{"version", out.Version},
+					{"summary", out.Summary},
+					{"capabilities", strings.Join(out.Capabilities, ", ")},
+					{"commands", strings.Join(out.Commands, ", ")},
+				}
+				return c.WriteTable([]string{"field", "value"}, rows)
+			},
+		},
+	)
+
+	// Preserve positional FILE opening (`o-json data.json`), `--edit`, `--config`,
+	// and stdin piping (`cat data.json | o-json` or `o-json -`).
+	app.Default = func(_ context.Context, rootArgs []string) error {
+		if code := interactive(rootArgs, stdin, stdout, stderr); code != 0 {
+			return &oden.ExitError{Code: code}
+		}
+		return nil
+	}
+
+	app.HelpText = fmt.Sprintf(usage, subUsage["structure"], subUsage["flatten"], subUsage["query"])
+	return app
 }
 
 const usage = `usage: o-json [--edit] [--config DIR] [FILE|-]
