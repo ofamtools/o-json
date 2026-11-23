@@ -79,6 +79,7 @@ func newOdenApp(args []string, stdin io.Reader, stdout, stderr io.Writer) *oden.
 		subCmd("structure", "inspect merged JSON schema structure", "FILE|- [--format text|json]"),
 		subCmd("flatten", "flatten nested JSON into tabular rows or jq", "FILE|- [--select PATH,PATH] [--field PATH]... [--grain PATH] [--inner] [--cross] [--format csv|json|table|tsv|jsonl] [--jq]"),
 		subCmd("query", "run a jq expression against JSON input", "FILE|- [--compact] [--] EXPR"),
+		tutorialCommand(stdout, stderr),
 		oden.Command{
 			Name:     "capabilities",
 			Audience: oden.AudienceMachine,

@@ -1,0 +1,107 @@
+{
+  "store": {
+    "name": "Kuroshio Tea & Roasters",
+    "region": "us-west",
+    "currency": "USD"
+  },
+  "orders": [
+    {
+      "order_id": "ORD-101",
+      "status": "shipped",
+      "amount": 148.5,
+      "priority": "high",
+      "customer": {
+        "name": "Maya Lin",
+        "tier": "gold",
+        "email": "maya.lin@example.com"
+      },
+      "items": [
+        {"sku": "TEA-GYO", "title": "Gyokuro Reserve", "qty": 2, "price": 54.0},
+        {"sku": "POT-KYU", "title": "Tokoname Kyusu", "qty": 1, "price": 40.5}
+      ],
+      "tags": ["wholesale", "gift"],
+      "coupon": "AUTUMN15",
+      "notes": "Deliver to the loading dock before 17:00 and include tasting cards"
+    },
+    {
+      "order_id": "ORD-102",
+      "status": "pending",
+      "amount": 64.0,
+      "priority": "normal",
+      "customer": {
+        "name": "Jonas Berg",
+        "tier": "silver",
+        "email": null
+      },
+      "items": [
+        {"sku": "TEA-SEN", "title": "Uji Sencha", "qty": 2, "price": 32.0}
+      ],
+      "tags": ["recurring"],
+      "coupon": null
+    },
+    {
+      "order_id": "ORD-103",
+      "status": "shipped",
+      "amount": 215.0,
+      "priority": "high",
+      "customer": {
+        "name": "Priya Nair",
+        "tier": "gold",
+        "email": "priya.nair@example.com"
+      },
+      "items": [
+        {"sku": "TEA-MAT", "title": "Ceremonial Matcha", "qty": 3, "price": 45.0},
+        {"sku": "WHS-CHA", "title": "Bamboo Chasen", "qty": 2, "price": 40.0}
+      ],
+      "tags": ["vip", "express"],
+      "coupon": "GOLD20",
+      "notes": "Signature required upon arrival"
+    },
+    {
+      "order_id": "ORD-104",
+      "status": "cancelled",
+      "amount": 28.0,
+      "priority": "low",
+      "customer": {
+        "name": "Elena Costa",
+        "tier": "bronze",
+        "email": "elena.costa@example.com"
+      },
+      "items": [],
+      "tags": ["refunded"]
+    },
+    {
+      "order_id": "ORD-105",
+      "status": "pending",
+      "amount": 112.0,
+      "priority": "normal",
+      "customer": {
+        "name": "Kenji Sato",
+        "tier": "silver",
+        "email": "kenji.sato@example.com"
+      },
+      "items": [
+        {"sku": "TEA-HOJ", "title": "Roasted Hojicha", "qty": 4, "price": 28.0}
+      ],
+      "tags": ["gift", "express"],
+      "coupon": null,
+      "notes": "Gift wrap with handwritten card"
+    },
+    {
+      "order_id": "ORD-106",
+      "status": "shipped",
+      "amount": 89.0,
+      "priority": "low",
+      "customer": {
+        "name": "Liam O'Connor",
+        "tier": "bronze",
+        "email": null
+      },
+      "items": [
+        {"sku": "TEA-GEN", "title": "Genmaicha Matcha-iri", "qty": 1, "price": 24.0},
+        {"sku": "CUP-YUN", "title": "Hagi Yunomi Pair", "qty": 1, "price": 65.0}
+      ],
+      "tags": ["retail"]
+    }
+  ]
+}
