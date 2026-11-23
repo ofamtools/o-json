@@ -130,6 +130,60 @@ func resolvePath(v any, p Path) Path {
 	return out
 }
 
+// collectWild collects every value matching p (which may contain wildcard
+// array steps) together with its concrete path in v.
+func collectWild(v any, p Path) ([]any, []Path) {
+	var vals []any
+	var paths []Path
+	var walk func(cur any, rest Path, acc Path)
+	walk = func(cur any, rest Path, acc Path) {
+		if len(rest) == 0 {
+			vals = append(vals, cur)
+			paths = append(paths, append(Path{}, acc...))
+			return
+		}
+		s := rest[0]
+		if isWildPart(s) {
+			arr, _ := cur.([]any)
+			for i, e := range arr {
+				walk(e, rest[1:], append(acc, pathIdx(i)))
+			}
+			return
+		}
+		next, ok := step(cur, s)
+		if !ok {
+			return
+		}
+		walk(next, rest[1:], append(acc, s))
+	}
+	walk(v, p, nil)
+	if vals == nil {
+		vals = []any{}
+	}
+	return vals, paths
+}
+
+// deepArrayFor reports whether schema path tp refers to an array nested inside
+// one or more outer arrays (e.g. orders[].items, orders[].items[],
+// orders[].items[].sku, orders[].tags[]). It returns the wildcard array path
+// and its element collection path.
+func deepArrayFor(s *Schema, tp Path) (arrRoot, elemPath Path, ok bool) {
+	if s != nil && hasWild(tp) {
+		if n := s.Find(tp); n != nil && (n.Type == "array" || n.Types["array"] > 0) {
+			return slices.Clone(tp), tp.Child(wildPart), true
+		}
+	}
+	for k := len(tp) - 1; k >= 0; k-- {
+		if isWildPart(tp[k]) {
+			if hasWild(tp[:k]) {
+				return slices.Clone(tp[:k]), slices.Clone(tp[:k+1]), true
+			}
+			return nil, nil, false
+		}
+	}
+	return nil, nil, false
+}
+
 // columnName joins the key steps of p with dots, the flattened column name.
 func columnName(p Path) string {
 	var parts []string
@@ -507,7 +561,7 @@ func (a *App) geometry() geom {
 	if a.prompt != nil {
 		body--
 		if a.prompt.kind == "jq" {
-			body--
+			body -= 2
 		}
 	}
 	g := geom{w: w, bodyH: max(body, 4), treeW: int(float64(w) * treeRatio)}
@@ -545,7 +599,7 @@ func (a *App) view(s core.State) ui.ViewNode {
 		n.Title, n.Scope = p.label, "prompt"
 		kids = append(kids, n)
 		if p.kind == "jq" {
-			kids = append(kids, a.chipLine())
+			kids = append(kids, a.chipLines(g)...)
 		}
 	}
 	kids = append(kids, a.infoLine(s, g), a.statusLine(g))
@@ -654,21 +708,40 @@ func (a *App) windowNode(i int, g geom) ui.ViewNode {
 		m, title = a.tableModel(w, b, inner, g.rows())
 		body = m.View(id)
 	case viewNested:
-		if focus := a.bufUI(b).focus; w.seen != focus.String() {
-			for n := range focus {
-				w.open[focus[:n].String()] = true
+		if vals, ep, deep := a.deepTreePreview(b); deep {
+			rows, nodes := a.nestedRowsLabeled(w, vals, ep.String())
+			body = ui.ViewNode{ID: id, Kind: ui.KindTree, Props: map[string]any{"nodes": nodes, "selected": min(0, max(len(rows)-1, 0))}}
+			title = fmt.Sprintf("2 Nested · %s · %s · %d items", bufName(b), ep.String(), len(vals))
+		} else {
+			if focus := a.bufUI(b).focus; w.seen != focus.String() {
+				for n := range focus {
+					w.open[focus[:n].String()] = true
+				}
+				w.seen = focus.String()
 			}
-			w.seen = focus.String()
-		}
-		rows, nodes := a.nestedRows(w, a.display(b))
-		body = ui.ViewNode{ID: id, Kind: ui.KindTree, Props: map[string]any{"nodes": nodes, "selected": a.nestedCursor(w, b, rows)}}
-		if w.anchor >= 0 {
-			title += fmt.Sprintf(" · VISUAL %d rows (h folds, l unfolds)", absInt(a.nestedCursor(w, b, rows)-w.anchor)+1)
+			rows, nodes := a.nestedRows(w, a.display(b))
+			body = ui.ViewNode{ID: id, Kind: ui.KindTree, Props: map[string]any{"nodes": nodes, "selected": a.nestedCursor(w, b, rows)}}
+			if w.anchor >= 0 {
+				title += fmt.Sprintf(" · VISUAL %d rows (h folds, l unfolds)", absInt(a.nestedCursor(w, b, rows)-w.anchor)+1)
+			}
 		}
 	case viewPretty:
-		body = a.prettyNode(w, b, id, inner, g.rows(), i == a.win && a.pane == 1)
-		if w.kv {
-			title = fmt.Sprintf("%d KV · %s", w.view, bufName(b))
+		if vals, ep, deep := a.deepTreePreview(b); deep {
+			doc := prettyDoc(vals)
+			if w.kv {
+				doc = kvDoc(vals)
+			}
+			body = a.renderTextDoc(doc, w, id, inner, g.rows(), i == a.win && a.pane == 1, Path{})
+			if w.kv {
+				title = fmt.Sprintf("3 KV · %s · %s · %d items", bufName(b), ep.String(), len(vals))
+			} else {
+				title = fmt.Sprintf("3 Pretty · %s · %s · %d items", bufName(b), ep.String(), len(vals))
+			}
+		} else {
+			body = a.prettyNode(w, b, id, inner, g.rows(), i == a.win && a.pane == 1)
+			if w.kv {
+				title = fmt.Sprintf("%d KV · %s", w.view, bufName(b))
+			}
 		}
 	case viewRaw:
 		scope := "whole document"
@@ -706,17 +779,45 @@ func bufName(b *Buffer) string {
 
 func absInt(n int) int { return max(n, -n) }
 
+// deepTreePreview returns all collected elements when the structure tree
+// cursor focuses a nested array at depth 2+ (such as orders[].items[] or
+// orders[].items[].sku).
+func (a *App) deepTreePreview(b *Buffer) ([]any, Path, bool) {
+	if a.pane != 0 || b.ID != a.cur().ID {
+		return nil, nil, false
+	}
+	tp, ok := a.treePath()
+	if !ok {
+		return nil, nil, false
+	}
+	v := a.display(b)
+	_, ep, deep := deepArrayFor(InferSchema(v), tp)
+	if !deep {
+		return nil, nil, false
+	}
+	vals, _ := collectWild(v, ep)
+	return vals, ep, true
+}
+
 // nestedRows walks the displayed value: the visible rows in order, and the
 // ui tree nodes (a collapsed container gets one placeholder child so its
 // marker shows).
 func (a *App) nestedRows(w *window, v any) ([]Path, []any) {
+	return a.nestedRowsLabeled(w, v, "$")
+}
+
+func (a *App) nestedRowsLabeled(w *window, v any, rootLabel string) ([]Path, []any) {
 	var rows []Path
 	var walk func(v any, p Path, name string, d int) map[string]any
 	walk = func(v any, p Path, name string, d int) map[string]any {
 		rows = append(rows, p)
 		n := map[string]any{"label": name + nodeSummary(v), "tone": valueTone(v)}
 		if childCount(v) > 0 {
-			open := w.nestedOpen(p.String(), d)
+			openKey := p.String()
+			if rootLabel != "$" {
+				openKey = rootLabel + ":" + openKey
+			}
+			open := w.nestedOpen(openKey, d)
 			kids := []any{map[string]any{"label": ""}}
 			if open {
 				kids = kids[:0]
@@ -726,7 +827,7 @@ func (a *App) nestedRows(w *window, v any) ([]Path, []any) {
 		}
 		return n
 	}
-	return rows, []any{walk(v, Path{}, "$", 0)}
+	return rows, []any{walk(v, Path{}, rootLabel, 0)}
 }
 
 // nestedCursor is the row of the deepest visible ancestor of the focus.
@@ -742,8 +843,10 @@ func (a *App) nestedCursor(w *window, b *Buffer, rows []Path) int {
 }
 
 func (a *App) prettyNode(w *window, b *Buffer, id string, width, h int, focused bool) ui.ViewNode {
-	d := a.textDoc(b, w.kv)
-	focus := a.bufUI(b).focus
+	return a.renderTextDoc(a.textDoc(b, w.kv), w, id, width, h, focused, a.bufUI(b).focus)
+}
+
+func (a *App) renderTextDoc(d *textDoc, w *window, id string, width, h int, focused bool, focus Path) ui.ViewNode {
 	lo, hi, ok := d.focusLines(focus)
 	if w.seen != focus.String() {
 		w.line, w.seen = lo, focus.String()
@@ -840,22 +943,90 @@ func objectField(o Object, key string) any {
 }
 
 // relation returns the table relation for window w, cached on the display.
+// When focused on a nested array inside one or more outer arrays (e.g.
+// orders[].items[]), it collects all elements across every parent.
 func (a *App) relation(w *window, b *Buffer) (Relation, Path) {
 	v := a.display(b)
-	root := tableRoot(v, a.bufUI(b).focus)
-	key := a.bufUI(b).dispKey + "|" + root.String()
+	u := a.bufUI(b)
+	var root, elem Path
+	deep := false
+	tp := wildPath(u.focus)
+	if a.pane == 0 && b.ID == a.cur().ID {
+		if p, ok := a.treePath(); ok {
+			tp = p
+		}
+	}
+	if ar, ep, ok := deepArrayFor(InferSchema(v), tp); ok {
+		root, elem, deep = ar, ep, true
+	} else {
+		root = tableRoot(v, u.focus)
+	}
+	key := u.dispKey + "|" + root.String() + "|" + strconv.FormatBool(deep)
 	if w.relKey != key {
-		x, _ := AtPath(v, root)
-		w.rel, w.relKey = TableRelation(x), key
+		if deep {
+			vals, paths := collectWild(v, elem)
+			w.rel, w.relPaths, w.relKey = TableRelation(vals), paths, key
+		} else {
+			x, _ := AtPath(v, root)
+			w.rel, w.relPaths, w.relKey = TableRelation(x), nil, key
+		}
 	}
 	return w.rel, root
+}
+
+func (a *App) tablePosFor(w *window, b *Buffer, root Path, cols []string) (row, col int) {
+	v := a.display(b)
+	focus := a.bufUI(b).focus
+	if len(w.relPaths) > 0 && hasWild(root) {
+		best, bestLen := 0, -1
+		for i, p := range w.relPaths {
+			if len(p) > bestLen && pathHasPrefix(focus, p) {
+				best, bestLen = i, len(p)
+			}
+		}
+		row = best
+		var rest Path
+		if bestLen >= 0 && len(focus) > bestLen {
+			rest = focus[bestLen:]
+		} else if a.pane == 0 && b.ID == a.cur().ID {
+			if tp, ok := a.treePath(); ok && len(tp) > len(root)+1 && pathHasPrefix(tp, root) {
+				rest = tp[len(root)+1:]
+			}
+		}
+		col = -1
+		for k := len(rest); k > 0 && col < 0; k-- {
+			col = slices.Index(cols, columnName(rest[:k]))
+		}
+		return row, col
+	}
+	return tablePos(v, root, focus, cols)
+}
+
+func (a *App) cellPathFor(w *window, v any, root Path, row int, col string) Path {
+	if len(w.relPaths) > 0 && hasWild(root) {
+		if row < 0 || row >= len(w.relPaths) {
+			return resolvePath(v, root)
+		}
+		base := w.relPaths[row]
+		if col == "" {
+			return base
+		}
+		if p := pathJoin(base, pathKey(col)); func() bool { _, ok := AtPath(v, p); return ok }() {
+			return p
+		}
+		if q, err := ParsePath(col); err == nil {
+			return pathJoin(base, q...)
+		}
+		return pathJoin(base, pathKey(col))
+	}
+	return cellPath(v, root, row, col)
 }
 
 // tableModel builds the table widget for window w: the column window that
 // keeps the active column visible, with that column at its full width.
 func (a *App) tableModel(w *window, b *Buffer, width, h int) (table.Model, string) {
 	rel, root := a.relation(w, b)
-	row, col := tablePos(a.display(b), root, a.bufUI(b).focus, rel.Columns)
+	row, col := a.tablePosFor(w, b, root, rel.Columns)
 	col = max(col, 0)
 	n := len(rel.Columns)
 	widths := make([]int, n)
@@ -891,7 +1062,11 @@ func (a *App) tableModel(w *window, b *Buffer, width, h int) (table.Model, strin
 	}
 	m.Focused()
 	w.tOff = m.Offset
-	title := fmt.Sprintf("1 Table · %s · %s · %d rows × %d cols", bufName(b), root.String(), len(rel.Rows), n)
+	rootLabel := root.String()
+	if hasWild(root) {
+		rootLabel = root.Child(wildPart).String()
+	}
+	title := fmt.Sprintf("1 Table · %s · %s · %d rows × %d cols", bufName(b), rootLabel, len(rel.Rows), n)
 	if off > 0 || end < n {
 		title += fmt.Sprintf(" · cols %d-%d", off+1, end)
 	}
@@ -928,11 +1103,7 @@ func colWindow(widths []int, col, from, width int) (int, int) {
 
 // --- lines ----------------------------------------------------------------------------
 
-func (a *App) chipLine() ui.ViewNode {
-	var parts []string
-	for _, c := range jqChips {
-		parts = append(parts, c.key+" + "+c.name)
-	}
+func (a *App) chipLines(g geom) []ui.ViewNode {
 	state, tone := "", "muted"
 	switch {
 	case a.jq.running:
@@ -940,9 +1111,15 @@ func (a *App) chipLine() ui.ViewNode {
 	case a.jq.err != "":
 		state, tone = a.jq.err+" · ", "warning"
 	case a.jq.ready:
-		state = "ready · enter opens the result · "
+		state = "ready · enter opens buffer · "
 	}
-	return textLine(" "+state+"chips: "+strings.Join(parts, " · ")+" · esc closes", tone)
+	line1 := textLine(clipText(" "+state+"Tab/ctrl+b stage picker · esc closes", g.w), tone)
+	var parts []string
+	for _, c := range jqChips {
+		parts = append(parts, c.key+" "+c.short)
+	}
+	line2 := textLine(clipText(" "+strings.Join(parts, "  "), g.w), "info")
+	return []ui.ViewNode{line1, line2}
 }
 
 func (a *App) infoLine(s core.State, g geom) ui.ViewNode {

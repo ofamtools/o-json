@@ -434,29 +434,34 @@ func runSmoke(w io.Writer, path string) error {
 	// Steps on a field under orders[] run scoped to orders and then scope
 	// back to the document: the enclosing object stays, the step's result
 	// lives at orders, and one u takes the whole step back.
-	for _, tc := range []struct{ key, field, path, want, gone, kind string }{
-		{"K", "order_id", "orders.A1.total", "50", "orders[0]", "array-object"},
-		{"x", "total", "orders[0].memo", "", "orders[0].total", "drop"},
-		{"G", "order_id", "orders[0].rows[0].memo", "", "", "group"},
-		{"s", "total", "orders[0].order_id", "A2", "", "sort"},
+	for _, tc := range []struct {
+		keys                          []string
+		field, path, want, gone, kind string
+	}{
+		{[]string{"K"}, "order_id", "orders.A1.total", "50", "orders[0]", "array-object"},
+		{[]string{"x"}, "total", "orders[0].memo", "", "orders[0].total", "drop"},
+		{[]string{"g", "b"}, "order_id", "orders[0].rows[0].memo", "", "", "group"},
+		{[]string{"s"}, "total", "orders[0].order_id", "A2", "", "sort"},
 	} {
 		k.treeTo(tc.field)
-		d.keys(tc.key)
+		d.keys(tc.keys...)
 		v, found := k.at(tc.path)
 		_, stays := k.at(tc.gone)
 		ops := k.pipeline()
 		ok := strings.Join(ops, ",") == "scope,"+tc.kind+",scope" && found && (tc.want == "" || valueText(v) == tc.want) && (tc.gone == "" || !stays)
 		_, kept := k.at("customer.name")
 		d.keys("u")
-		k.check(tc.key+" adds a "+tc.kind+" step scoped to orders", ok && kept && len(b.Pipeline) == 0, ops, " ", tc.path, "=", valueText(v))
+		k.check(strings.Join(tc.keys, " ")+" adds a "+tc.kind+" step scoped to orders", ok && kept && len(b.Pipeline) == 0, ops, " ", tc.path, "=", valueText(v))
 		k.undoAll()
 	}
-	// In the table G groups by the column under the cursor; g g goes to the top.
+	// In the table g b groups by the column under the cursor; G goes to bottom and g g goes to top.
 	k.treeTo("order_id")
-	d.keys("1", "tab", "G")
-	k.check("G in the table groups by the column under the cursor", strings.Join(k.pipeline(), ",") == "scope,group,scope", k.pipeline())
+	d.keys("1", "tab", "g", "b")
+	k.check("g b in the table groups by the column under the cursor", strings.Join(k.pipeline(), ",") == "scope,group,scope", k.pipeline())
 	k.undoAll()
-	d.keys("j", "g", "g")
+	d.keys("G")
+	k.check("G in the table jumps to the bottom row", len(b.Pipeline) == 0 && k.focus() == "orders[1].order_id", k.focus())
+	d.keys("g", "g")
 	k.check("g g in the table still goes to the top", len(b.Pipeline) == 0 && k.focus() == "orders[0].order_id", k.focus())
 	k.treeTo("total")
 	d.keys("r")

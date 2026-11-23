@@ -1,15 +1,15 @@
 {
   "tool": "o-json",
   "title": "o-json Interactive Workspace Tutorial",
-  "description": "Explore nested JSON with the merged structure tree, filter and sort tables, run live jq queries, flatten relational rows, convert shapes, fold raw JSON closures, and yank values.",
+  "description": "Drive nested JSON exploration from the structure pane, preview deep arrays across parents, mark and flatten with leaf names, hoist/splat/nest trees, transfer across splits, filter/sort/group, build live jq queries, and fold raw JSON.",
   "command": "o-json docs/tutorials/fixtures/orders.json",
   "width": 120,
   "height": 36,
   "sections": [
     {
       "id": "navigate",
-      "title": "Open & Navigate Nested JSON",
-      "goal": "Inspect an unfamiliar nested document using the merged structure tree, jump into the table pane, and switch between synchronized views.",
+      "title": "Explore Deep Nested JSON from the Structure Pane",
+      "goal": "Use G to jump in the structure tree, expand orders[], and preview all level-3 line items across every parent order in Table and Pretty views.",
       "steps": [
         {
           "caption": "Open orders.json to inspect the merged structure tree on the left and nested data on the right.",
@@ -17,42 +17,184 @@
           "pauseMs": 1400
         },
         {
-          "caption": "Jump to the orders element node and unfold its schema to inspect nested, mixed, and optional fields.",
+          "caption": "Press G to jump to the orders element node and l to unfold its schema.",
           "command": "motion.bottom",
           "keys": ["l"],
           "expect": ["order_id", "status", "amount", "customer", "items"],
           "pauseMs": 1300
         },
         {
-          "caption": "Switch the right pane to Table view to display every order as a structured row.",
-          "command": "view.table",
-          "expect": ["ORD-101", "ORD-102", "ORD-106", "shipped"],
+          "caption": "Walk down to the nested items array so the right pane collects all 8 line items across all 6 orders.",
+          "keys": ["j", "j", "j", "j", "j", "j"],
+          "expect": ["orders[].items[]", "8 items"],
           "pauseMs": 1300
         },
         {
-          "caption": "Jump into the table pane and move to the last column so long notes expand automatically under the cursor.",
-          "command": "pane.toggle",
-          "keys": ["$"],
-          "expect": ["Deliver to the loading dock before 17:00 and include tasting cards"],
+          "caption": "Switch to Table view to display every line item from every order in one unified table.",
+          "command": "view.table",
+          "expect": ["orders[].items[]", "8 rows", "TEA-GYO", "CUP-YUN"],
           "pauseMs": 1400
         },
         {
-          "caption": "Switch to Pretty JSON view to inspect the focused record with syntax structure preserved.",
+          "caption": "Switch to Pretty view to inspect the collected line items as formatted JSON.",
           "command": "view.pretty",
-          "expect": ["ORD-101", "Deliver to the loading dock"],
+          "expect": ["orders[].items[]", "TEA-GYO", "Gyokuro Reserve"],
           "pauseMs": 1300
         }
       ]
     },
     {
-      "id": "filter",
-      "title": "Search & Multi-Condition Filtering",
-      "goal": "Filter orders live across every column, stack a numeric column predicate, and clear both filters cleanly.",
+      "id": "flatten",
+      "title": "Multi-Depth Mark & Flatten with Leaf Names",
+      "goal": "Mark fields across depths with Space and press F to build a flat Table view preserving original leaf key names.",
       "steps": [
         {
-          "caption": "Return to Table view and jump back to the first column.",
-          "command": "view.table",
-          "keys": ["0"],
+          "caption": "Move up to order_id and mark it with Space.",
+          "keys": ["k", "k", "k", "k", "k", "space"],
+          "expect": ["1 selected", "1 field(s) selected"],
+          "pauseMs": 1100
+        },
+        {
+          "caption": "Expand customer and mark email at depth 3.",
+          "keys": ["j", "j", "j", "j", "l", "j", "j", "j", "space"],
+          "expect": ["2 selected", "email"],
+          "pauseMs": 1100
+        },
+        {
+          "caption": "Expand items[] and mark sku and qty at depth 4.",
+          "keys": ["j", "j", "l", "j", "l", "j", "space", "j", "j", "space"],
+          "expect": ["4 selected", "sku", "qty"],
+          "pauseMs": 1200
+        },
+        {
+          "caption": "Press F to flatten the marked fields into Table view using clean original leaf names.",
+          "command": "flatten",
+          "expect": ["flatten added", "order_id", "email", "sku", "qty", "TEA-GYO"],
+          "pauseMs": 1500
+        },
+        {
+          "caption": "Undo flatten with u to return to the original nested structure.",
+          "command": "history.undo",
+          "expect": ["orders.json", "store"],
+          "pauseMs": 900,
+          "capture": false
+        }
+      ]
+    },
+    {
+      "id": "reshape",
+      "title": "Hoist, Splat, Nest & Convert Tree Shapes",
+      "goal": "Lift a level-4 field and splat an object with <, push a field into an existing sibling object with >, and convert shapes with C.",
+      "steps": [
+        {
+          "caption": "Expand orders[].customer.address and focus city at level 4.",
+          "keys": ["g", "g", "j", "j", "j", "j", "j", "j", "j", "j", "j", "j", "j", "j", "j", "j", "j", "l", "j"],
+          "expect": ["city", "zip"],
+          "pauseMs": 900,
+          "capture": false
+        },
+        {
+          "caption": "Press < to hoist city up one level from address directly into customer across every order.",
+          "command": "shape.hoist",
+          "expect": ["hoist added", "city"],
+          "pauseMs": 1400
+        },
+        {
+          "caption": "Press < on the address object to splat its remaining keys into customer and drop the empty wrapper.",
+          "command": "shape.hoist",
+          "expect": ["hoist added", "zip"],
+          "pauseMs": 1400
+        },
+        {
+          "caption": "Move up from customer onto priority.",
+          "command": "motion.up",
+          "expect": ["priority"],
+          "pauseMs": 600,
+          "capture": false
+        },
+        {
+          "caption": "Press > on priority to open the Nest picker listing sibling object customer.",
+          "command": "shape.nest",
+          "expect": ["Nest priority into", "customer", "New nested object"],
+          "pauseMs": 1400
+        },
+        {
+          "caption": "Press Enter to move priority directly into the existing customer object across every order.",
+          "keys": ["enter"],
+          "expect": ["nest added"],
+          "pauseMs": 1300
+        },
+        {
+          "caption": "Undo the nest, splat, and hoist steps cleanly with u.",
+          "command": "history.undo",
+          "keys": ["u", "u"],
+          "expect": ["orders.json"],
+          "pauseMs": 800,
+          "capture": false
+        },
+        {
+          "caption": "Focus store in the structure tree.",
+          "keys": ["g", "g", "j"],
+          "expect": ["store", "region"],
+          "pauseMs": 600,
+          "capture": false
+        },
+        {
+          "caption": "Open the Convert Shape picker with C on store.",
+          "command": "shape.convert",
+          "expect": ["Convert store", "Entries array", "Values array", "Keys array"],
+          "pauseMs": 1400
+        },
+        {
+          "caption": "Convert store into an entries array so keys and values appear as rows.",
+          "keys": ["enter", "enter"],
+          "expect": ["object-array added", "Kuroshio"],
+          "pauseMs": 1300
+        },
+        {
+          "caption": "Undo the store conversion.",
+          "command": "history.undo",
+          "expect": ["orders.json"],
+          "pauseMs": 700,
+          "capture": false
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "title": "Side-by-Side Split Transfer",
+      "goal": "Transfer focused fields into a side-by-side target buffer with M, switch windows with ctrl+w w, and undo inside the target buffer.",
+      "steps": [
+        {
+          "caption": "Press M on store to open a side-by-side split and transfer store into reshaped.json.",
+          "command": "shape.transfer",
+          "expect": ["transferred store to reshaped.json", "reshaped.json", "Kuroshio"],
+          "pauseMs": 1500
+        },
+        {
+          "caption": "Switch to the right-hand reshaped.json window with ctrl+w w.",
+          "command": "window.next",
+          "expect": ["reshaped.json", "Kuroshio"],
+          "pauseMs": 1200
+        },
+        {
+          "caption": "Undo the transfer inside reshaped.json, then close the split with ctrl+w o.",
+          "command": "history.undo",
+          "keys": ["ctrl+w", "w", "ctrl+w", "o", "tab"],
+          "expect": ["orders.json"],
+          "pauseMs": 1000,
+          "capture": false
+        }
+      ]
+    },
+    {
+      "id": "filter-sort-group",
+      "title": "Filter, Sort & Group Rows",
+      "goal": "Filter orders globally with / and by column with f, sort ascending and descending with s, and group buckets with g b.",
+      "steps": [
+        {
+          "caption": "Focus orders in Table view and jump into the table pane.",
+          "keys": ["g", "g", "j", "j", "j", "j", "j", "1", "tab", "0"],
           "expect": ["ORD-101", "ORD-106"],
           "pauseMs": 900,
           "capture": false
@@ -65,7 +207,7 @@
           "pauseMs": 1400
         },
         {
-          "caption": "Move onto the amount column before adding a field-level predicate.",
+          "caption": "Move onto the amount column before adding a field filter.",
           "command": "motion.right",
           "keys": ["l"],
           "expect": ["148.5", "215"],
@@ -73,61 +215,44 @@
           "capture": false
         },
         {
-          "caption": "Stack a field filter on amount (>100) to narrow shipped orders to high-value purchases.",
+          "caption": "Stack a numeric field filter (>100) on amount with f.",
           "command": "filter.field",
           "keys": [">100", "enter"],
           "expect": ["ORD-101", "ORD-103", "filter added"],
           "pauseMs": 1400
         },
         {
-          "caption": "Undo both filter steps cleanly to restore all six orders.",
+          "caption": "Undo both filters to restore all six orders.",
           "command": "history.undo",
           "keys": ["u"],
           "expect": ["ORD-101", "ORD-102", "ORD-104", "ORD-106"],
-          "pauseMs": 1200
-        }
-      ]
-    },
-    {
-      "id": "sort-group",
-      "title": "Multi-Key Sorting & Grouping",
-      "goal": "Cycle ascending and descending sorts, stack a secondary sort key, and group rows by status.",
-      "steps": [
-        {
-          "caption": "Sort orders by amount ascending so the smallest order moves to the top.",
-          "command": "sort.cycle",
-          "expect": ["ORD-104", "sort added"],
-          "pauseMs": 1300
+          "pauseMs": 1000,
+          "capture": false
         },
         {
-          "caption": "Press s again on amount to flip the sort order to descending.",
+          "caption": "Press s twice on amount to sort ascending and then flip to descending.",
           "command": "sort.cycle",
+          "keys": ["s"],
           "expect": ["ORD-103", "sort added"],
           "pauseMs": 1300
         },
         {
-          "caption": "Move left to the status column for multi-key sorting.",
+          "caption": "Move left onto the status column.",
           "command": "motion.left",
           "expect": ["shipped", "pending"],
-          "pauseMs": 700,
+          "pauseMs": 600,
           "capture": false
         },
         {
-          "caption": "Stack a sort by status while preserving amount descending within each status group.",
-          "command": "sort.cycle",
-          "expect": ["ORD-104", "ORD-105", "ORD-103", "sort added"],
-          "pauseMs": 1300
-        },
-        {
-          "caption": "Group orders by status to aggregate matching records into nested row buckets.",
+          "caption": "Group rows by status into buckets with g b.",
           "command": "shape.group",
           "expect": ["cancelled", "pending", "shipped", "group added"],
           "pauseMs": 1400
         },
         {
-          "caption": "Undo the grouping and sort steps to return to the original dataset.",
+          "caption": "Undo the grouping and sort steps to restore original order.",
           "command": "history.undo",
-          "keys": ["u", "u"],
+          "keys": ["u"],
           "expect": ["ORD-101", "ORD-106"],
           "pauseMs": 800,
           "capture": false
@@ -135,171 +260,96 @@
       ]
     },
     {
-      "id": "jq-bar",
-      "title": "Live jq Expression Bar",
-      "goal": "Run a real jq expression with live preview and open the reshaped result in its own buffer.",
+      "id": "jq-builder",
+      "title": "Interactive jq Builder & Live Preview",
+      "goal": "Open the jq bar with J, inspect builder chips and the Tab stage picker, preview live results, and open the output in a new buffer.",
       "steps": [
         {
-          "caption": "Open the live jq bar and reshape high-value orders into compact summary objects.",
+          "caption": "Open the live jq bar with J and type | .orders to target the orders array.",
           "command": "jq.open",
-          "keys": [" | .orders | map(select(.amount > 100) | {id: .order_id, total: .amount})"],
-          "expect": ["jq result", "ORD-101", "ORD-103", "ORD-105"],
-          "pauseMs": 1600
-        },
-        {
-          "caption": "Press Enter to open the live jq result in a new editable buffer.",
-          "keys": ["enter"],
-          "expect": ["jq:", "ORD-101", "ORD-103", "ORD-105"],
+          "keys": [" | .orders"],
+          "expect": ["Tab/ctrl+b stage picker", "alt+f filter", "alt+c count", "jq result"],
           "pauseMs": 1400
         },
         {
-          "caption": "Switch back to the original orders.json buffer with [ b.",
-          "command": "buffer.prev",
-          "expect": ["buffer 1 of 2", "orders.json", "store"],
-          "pauseMs": 1200
+          "caption": "Press Tab inside the jq bar to open the interactive stage picker with descriptions and snippets.",
+          "keys": ["tab"],
+          "expect": ["jq Builder", "filter", "sort_by", "unique_by", "count/length"],
+          "pauseMs": 1500
+        },
+        {
+          "caption": "Select count/length from the stage picker to append | length and preview the live count.",
+          "keys": ["count", "enter"],
+          "expect": ["jq result: 6"],
+          "pauseMs": 1400
+        },
+        {
+          "caption": "Press Enter to open the jq result in a new editable buffer, then return with [ b.",
+          "keys": ["enter"],
+          "expect": ["jq:", "opened the jq result"],
+          "pauseMs": 1300
+        },
+        {
+          "caption": "Switch back to orders.json with ctrl+6.",
+          "command": "buffer.alt",
+          "expect": ["orders.json", "store"],
+          "pauseMs": 1100
         }
       ]
     },
     {
-      "id": "shape-and-raw",
-      "title": "Shape Conversion, Relational Flatten & Raw JSON Folding",
-      "goal": "Convert an object's shape with C, flatten nested line items with F, and fold closures in Raw JSON view.",
+      "id": "raw-visual-yank",
+      "title": "Raw Folding, Visual Selection & Yanking",
+      "goal": "Fold JSON closures in Raw view, batch-unfold rows with Visual selection, yank values and paths, and explore ? and :.",
       "steps": [
         {
-          "caption": "Jump back to the structure tree and focus the store object.",
-          "command": "pane.toggle",
-          "keys": ["g", "g", "j"],
-          "expect": ["store", "region"],
-          "pauseMs": 700,
-          "capture": false
-        },
-        {
-          "caption": "Open the Convert Shape picker with C to inspect structural transformations for store.",
-          "command": "shape.convert",
-          "expect": ["Convert store", "Entries array", "Values array", "Keys array"],
-          "pauseMs": 1400
-        },
-        {
-          "caption": "Convert store into an entries array so keys and values appear as table columns.",
-          "keys": ["enter", "enter"],
-          "expect": ["object-array added", "Kuroshio"],
-          "pauseMs": 1400
-        },
-        {
-          "caption": "Undo the conversion and focus the document root before flattening.",
-          "command": "history.undo",
-          "keys": ["g", "g"],
-          "expect": ["orders.json"],
-          "pauseMs": 700,
-          "capture": false
-        },
-        {
-          "caption": "Press F to flatten nested orders and choose the row grain when sibling arrays exist.",
-          "command": "flatten",
-          "expect": ["Row grain", "orders[].items[]", "orders[].tags[]"],
-          "pauseMs": 1400
-        },
-        {
-          "caption": "Confirm orders[].items[] as the row grain to flatten line items into a relational table.",
-          "keys": ["enter"],
-          "expect": ["flatten added", "ORD-101", "ORD-104"],
-          "pauseMs": 1500
-        },
-        {
-          "caption": "Undo flatten before switching to Raw JSON view.",
-          "command": "history.undo",
-          "expect": ["orders.json"],
-          "pauseMs": 700,
-          "capture": false
-        },
-        {
-          "caption": "Open Raw JSON view and focus the Vim editor pane to inspect the source text.",
+          "caption": "Open Raw JSON view and focus the Vim source editor.",
           "command": "view.raw",
-          "keys": ["tab"],
           "expect": ["Kuroshio Tea & Roasters", "ORD-101"],
-          "pauseMs": 1300
-        },
-        {
-          "caption": "Fold all nested JSON closures at once with zM to get a compact top-level outline.",
-          "command": "raw.fold.all",
-          "mode": "vim",
-          "expect": ["folded", "lines"],
-          "pauseMs": 1400
-        },
-        {
-          "caption": "Unfold every JSON closure back to full text with zR.",
-          "command": "raw.fold.none",
-          "mode": "vim",
-          "expect": ["unfolded all JSON blocks", "Kuroshio Tea & Roasters"],
           "pauseMs": 1200
         },
         {
-          "caption": "Move the raw editor cursor onto the store block.",
-          "keys": ["j"],
-          "expect": ["Kuroshio Tea & Roasters"],
-          "pauseMs": 600,
-          "capture": false
+          "caption": "Fold all nested JSON closures at once with zM.",
+          "command": "raw.fold.all",
+          "mode": "vim",
+          "expect": ["folded", "lines"],
+          "pauseMs": 1300
         },
         {
-          "caption": "Toggle folding on just the enclosing store object with za while keeping orders expanded.",
-          "command": "raw.fold.toggle",
+          "caption": "Unfold all closures with zR, then toggle just the store object with j and za.",
+          "command": "raw.fold.none",
           "mode": "vim",
+          "keys": ["j", "z", "a"],
           "expect": ["lines },", "ORD-101"],
           "pauseMs": 1400
         },
         {
-          "caption": "Unfold store and return focus to the structure tree.",
+          "caption": "Unfold store, switch to Nested view, and focus the collapsed order rows.",
           "command": "raw.fold.none",
           "mode": "vim",
-          "keys": ["tab"],
-          "expect": ["orders.json"],
-          "pauseMs": 700,
-          "capture": false
-        }
-      ]
-    },
-    {
-      "id": "select-yank-help",
-      "title": "Visual Selection, Yanking & Discovery",
-      "goal": "Visually select nested rows to batch-unfold them, yank paths and JSON values, and open key help and the command palette.",
-      "steps": [
-        {
-          "caption": "Switch to Nested view, focus the data pane, and expand the orders list.",
-          "command": "view.nested",
-          "keys": ["tab", "g", "g", "j", "j", "l", "j"],
+          "keys": ["tab", "2", "tab", "g", "g", "j", "j", "j", "h"],
           "expect": ["[0]", "[1]", "[2]"],
           "pauseMs": 900,
           "capture": false
         },
         {
-          "caption": "Start visual selection with v and extend across three order nodes.",
+          "caption": "Select three orders in Visual mode with v and batch-unfold them with l.",
           "command": "nested.visual",
-          "keys": ["j", "j"],
-          "expect": ["VISUAL"],
-          "pauseMs": 1300
-        },
-        {
-          "caption": "Press l to unfold all three visually selected orders in one action.",
-          "command": "motion.right",
+          "keys": ["j", "j", "l"],
           "expect": ["unfolded 3 of the 3 selected rows", "ORD-102", "ORD-103"],
           "pauseMs": 1400
         },
         {
-          "caption": "Yank the focused JSON value directly to the clipboard with y y.",
+          "caption": "Yank the focused JSON value with y y and its exact path with y p.",
           "command": "yank.value",
-          "expect": ["yanked the value at"],
-          "pauseMs": 1300
-        },
-        {
-          "caption": "Yank the exact JSON path of the focused node with y p.",
-          "command": "yank.path",
+          "keys": ["y", "p"],
           "expect": ["yanked the path"],
           "pauseMs": 1300
         },
         {
-          "caption": "Open context-aware key help with ? to inspect every binding active here.",
+          "caption": "Open context-aware key help with ? to review active bindings.",
           "command": "help.open",
-          "expect": ["view.table", "shape.convert"],
+          "expect": ["view.table", "shape.hoist", "shape.nest", "shape.transfer"],
           "pauseMs": 1400
         },
         {

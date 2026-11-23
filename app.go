@@ -38,6 +38,7 @@ type window struct {
 	seen         string
 	colOff, tOff int
 	rel          Relation
+	relPaths     []Path
 	relKey       string
 	ed           *input.Model
 	edRaw        string // the buffer text the editor last matched
@@ -80,19 +81,21 @@ func (u *bufUI) schemaOpen(s *Schema, d int) bool {
 }
 
 type prompt struct {
-	kind, label string // filter, field, rename, jq, saveas
+	kind, label string // filter, field, rename, entries, wrap-object, nest, jq, saveas
 	ed          *input.Model
 	root        Path
 	field       string
+	fields      []string
 }
 
 type pickModal struct {
-	kind   string // palette, buffers, grain, format, convert
+	kind   string // palette, buffers, grain, format, convert, nest, jqbuilder
 	m      *picker.Model
 	paths  []Path
 	op     Operation
 	target Path
 	field  string
+	fields []string
 }
 
 type helpModal struct {
@@ -606,7 +609,10 @@ var cmdTable = [...][4]string{
 	{"shape.keyby", "K", "", "Array to object, keyed by the focused field"},
 	{"shape.entries", "E", "", "Object to array of entries, its keys in a column you name (key by default)"},
 	{"shape.convert", "C", "", "Convert shape: key by field, wrap in object/array, or object to entries/values/keys"},
-	{"shape.group", "G", "", "Group rows by the focused column"},
+	{"shape.group", "g b", "", "Group rows by the focused column"},
+	{"shape.hoist", "<", "", "Hoist focused/marked fields up one level, or splat an object into its parent"},
+	{"shape.nest", ">", "", "Move focused/marked fields into an existing sibling object or a new nested object"},
+	{"shape.transfer", "M", "", "Transfer focused/marked fields or subtree into the other split window"},
 	{"column.rename", "r", "", "Rename the focused column"},
 	{"column.drop", "x", "", "Drop the focused column"},
 	{"sort.cycle", "s", "", "Sort rows by the focused column: ascending, descending, off"},
@@ -627,7 +633,7 @@ var cmdTable = [...][4]string{
 	{"buffer.next", "] b", "", "Next buffer"},
 	{"buffer.prev", "[ b", "", "Previous buffer"},
 	{"buffer.alt", "ctrl+6|ctrl+^", "ctrl+6|ctrl+^", "Alternate buffer"},
-	{"buffer.pick", "g b", "", "Pick a buffer"},
+	{"buffer.pick", "g B", "", "Pick a buffer"},
 	{"window.split", "ctrl+w v", "ctrl+w v", "Split: a second window side by side"},
 	{"window.next", "ctrl+w w|ctrl+w l|ctrl+w h", "ctrl+w w|ctrl+w l|ctrl+w h", "Next window"},
 	{"window.close", "ctrl+w q|ctrl+w c", "ctrl+w q|ctrl+w c", "Close the window"},
@@ -647,7 +653,7 @@ var cmdTable = [...][4]string{
 	{"app.close", "q|ctrl+c", "ctrl+c", "Quit (asks again with unsaved edits)"},
 }
 
-var internalCmds = []string{"editor.key", "prompt.key", "prompt.accept", "prompt.cancel", "jq.chip", "jq.result", "clipboard.done",
+var internalCmds = []string{"editor.key", "prompt.key", "prompt.accept", "prompt.cancel", "jq.chip", "jq.builder", "jq.result", "clipboard.done",
 	"pick.insert", "pick.backspace", "pick.close", picker.CmdConfirm, picker.CmdModeCycle,
 	"files.insert", "files.backspace", "files.close", pathpicker.CmdOpen, pathpicker.CmdParent, pathpicker.CmdHiddenToggle,
 	pathpicker.CmdSelectCurrent, pathpicker.CmdModeCycle, "help.close", "file.write", "file.load", "buffer.switch", "app.quit"}
@@ -683,9 +689,11 @@ func defaultBindings() []core.Binding {
 			when = "count == null"
 		}
 		for _, k := range strings.Split(c[1], "|") {
-			bd := keyBind("normal", k, c[0], when, nil)
-			bd.Hint = c[3]
-			out = append(out, bd)
+			if k != "" {
+				bd := keyBind("normal", k, c[0], when, nil)
+				bd.Hint = c[3]
+				out = append(out, bd)
+			}
 		}
 		for _, k := range strings.Split(c[2], "|") {
 			if k != "" {
@@ -699,18 +707,19 @@ func defaultBindings() []core.Binding {
 		}
 	}
 	for _, sb := range core.StandardBindings("normal") {
-		if !slices.Contains([]string{"motion.word.next", "motion.word.prev", "motion.word.end", "motion.group.next", "motion.group.prev", "motion.block.next", "motion.block.prev", "motion.bottom"}, sb.Command) {
+		if !slices.Contains([]string{"motion.word.next", "motion.word.prev", "motion.word.end", "motion.group.next", "motion.group.prev", "motion.block.next", "motion.block.prev"}, sb.Command) {
 			out = append(out, sb)
 		}
 	}
-	out = append(out, keyBind("normal", "g G", "motion.bottom", "", nil), keyBind("normal", "end", "motion.bottom", "", nil), keyBind("normal", "home", "motion.top", "", nil),
+	out = append(out, keyBind("normal", "end", "motion.bottom", "", nil), keyBind("normal", "home", "motion.top", "", nil),
 		keyBind("normal", "down", "motion.down", "", nil), keyBind("normal", "up", "motion.up", "", nil),
 		keyBind("normal", "left", "motion.left", "", nil), keyBind("normal", "right", "motion.right", "", nil),
 		keyBind("vim", "tab", "pane.toggle", vimNormal, nil), keyBind("vim", "esc", "pane.toggle", vimNormal, nil),
 		classBind("vim", core.ClassAny, "editor.key"),
 
 		keyBind("prompt", "enter", "prompt.accept", "", nil), keyBind("prompt", "esc", "prompt.cancel", "", nil), keyBind("prompt", "ctrl+c", "prompt.cancel", "", nil),
-		keyBind("prompt", "ctrl+m", "filter.mode", "", nil), keyBind("prompt", "alt+m", "filter.mode", "", nil))
+		keyBind("prompt", "ctrl+m", "filter.mode", "", nil), keyBind("prompt", "alt+m", "filter.mode", "", nil),
+		keyBind("prompt", "tab", "jq.builder", "", nil), keyBind("prompt", "ctrl+b", "jq.builder", "", nil))
 	for _, ch := range jqChips {
 		out = append(out, keyBind("prompt", ch.key, "jq.chip", "", map[string]any{"chip": ch.name}))
 	}
@@ -807,8 +816,9 @@ func (a *App) engine() *core.Engine {
 	for id, f := range map[string]hfn{
 		"pane.toggle": a.paneToggle, "pane.enter": a.paneEnter, "select.toggle": a.selectToggle, "select.clear": a.selectClear,
 		"select.project": a.project, "flatten": a.flatten, "flatten.inner": a.innerToggle, "shape.keyby": a.shape, "shape.entries": a.shape,
-		"shape.convert": a.shapeConvert, "shape.group": a.shape, "column.rename": a.shape, "column.drop": a.shape, "sort.cycle": a.sortCycle,
-		"filter.all": a.filterOpen, "filter.field": a.filterOpen, "filter.mode": a.modeCycle, "jq.open": a.jqOpen, "jq.chip": a.jqChip,
+		"shape.convert": a.shapeConvert, "shape.group": a.shape, "shape.hoist": a.shapeHoist, "shape.nest": a.shapeNest, "shape.transfer": a.shapeTransfer,
+		"column.rename": a.shape, "column.drop": a.shape, "sort.cycle": a.sortCycle,
+		"filter.all": a.filterOpen, "filter.field": a.filterOpen, "filter.mode": a.modeCycle, "jq.open": a.jqOpen, "jq.chip": a.jqChip, "jq.builder": a.jqBuilder,
 		"jq.result": a.jqResult, "yank.jq": a.yank, "yank.path": a.yank, "yank.value": a.yank, "clipboard.done": a.clipDone,
 		"history.undo": a.history, "history.redo": a.history, "edit.toggle": a.editToggle, "file.save": a.save, "file.saveas": a.save,
 		"file.write": a.write, "file.open": a.filesOpen, "file.load": a.load, "buffer.new": a.bufferCmd, "buffer.next": a.bufferCmd,
@@ -1001,7 +1011,7 @@ func (a *App) tableMotion(s core.State, c core.Command) (core.State, []core.Effe
 	u := a.bufUI(b)
 	rel, root := a.relation(w, b)
 	v := a.display(b)
-	row, col := tablePos(v, root, u.focus, rel.Columns)
+	row, col := a.tablePosFor(w, b, root, rel.Columns)
 	col = max(col, 0)
 	switch c.ID {
 	case "motion.left":
@@ -1019,7 +1029,7 @@ func (a *App) tableMotion(s core.State, c core.Command) (core.State, []core.Effe
 	if n := len(rel.Columns); n > 0 {
 		name = rel.Columns[min(max(col, 0), n-1)]
 	}
-	u.focus = cellPath(v, root, row, name)
+	u.focus = a.cellPathFor(w, v, root, row, name)
 	return s, nil
 }
 
@@ -1251,14 +1261,25 @@ func (a *App) flatten(s core.State, c core.Command) (core.State, []core.Effect) 
 func (a *App) doFlatten(op Operation) {
 	u := a.curUI()
 	u.sel, u.focus = nil, Path{}
-	a.applyAt(nil, op)
-	a.active().view = viewTable
+	if a.applyAt(nil, op) {
+		a.active().view = viewTable
+	}
 }
 
 func (a *App) innerToggle(s core.State, c core.Command) (core.State, []core.Effect) {
 	a.inner = !a.inner
 	a.info(map[bool]string{true: "flatten: inner join (parents with empty arrays are dropped)", false: "flatten: left join (empty arrays keep the parent row)"}[a.inner])
 	return s, nil
+}
+
+// parentScope strips a trailing wildcard array step so scoped operations on
+// elements of an array (orders[]) target the array itself (orders), keeping
+// synthesized jq clean and matching eachRow semantics.
+func parentScope(parent Path) Path {
+	if len(parent) > 0 && isWildPart(parent[len(parent)-1]) {
+		return slices.Clone(parent[:len(parent)-1])
+	}
+	return slices.Clone(parent)
 }
 
 // fieldCtx names the focused field: the array (or object) holding it and
@@ -1273,7 +1294,7 @@ func (a *App) fieldCtx() (Path, string, bool) {
 		}
 	} else if w := a.active(); w.view == viewTable {
 		rel, root := a.relation(w, b)
-		_, col := tablePos(a.display(b), root, p, rel.Columns)
+		_, col := a.tablePosFor(w, b, root, rel.Columns)
 		if col < 0 {
 			return root, "", false
 		}
@@ -1290,8 +1311,29 @@ func (a *App) fieldCtx() (Path, string, bool) {
 	return p[:len(p)-1], columnName(p[len(p)-1:]), true
 }
 
+// ownerFieldCtx names the immediate owning object (or array of objects) and
+// literal key of the focused field, so rename and drop work at any nesting
+// depth (e.g. orders[].customer.email -> scope orders[].customer, field email).
+func (a *App) ownerFieldCtx() (Path, string, bool) {
+	if a.pane == 1 && a.active().view == viewTable {
+		return a.fieldCtx()
+	}
+	var p Path
+	if a.pane == 0 {
+		var ok bool
+		if p, ok = a.treePath(); !ok {
+			return nil, "", false
+		}
+	} else {
+		p = a.curUI().focus
+	}
+	if len(p) == 0 || !isKeyPart(p[len(p)-1]) {
+		return nil, "", false
+	}
+	return parentScope(p[:len(p)-1]), p[len(p)-1].Key, true
+}
+
 func (a *App) shape(s core.State, c core.Command) (core.State, []core.Effect) {
-	root, field, ok := a.fieldCtx()
 	if c.ID == "shape.entries" {
 		target := a.curUI().focus
 		if a.pane == 0 {
@@ -1310,6 +1352,20 @@ func (a *App) shape(s core.State, c core.Command) (core.State, []core.Effect) {
 		a.openPrompt("entries", "entries of "+target.String()+" · key column name", "key", target, "")
 		return s, nil
 	}
+	if c.ID == "column.drop" || c.ID == "column.rename" {
+		root, field, ok := a.ownerFieldCtx()
+		if !ok {
+			a.warn("focus a field first (a column in the table, a field in the tree)")
+			return s, nil
+		}
+		if c.ID == "column.drop" {
+			a.applyAt(root, Operation{Kind: "drop", Field: field})
+		} else {
+			a.openPrompt("rename", "rename "+field+" to", field, root, field)
+		}
+		return s, nil
+	}
+	root, field, ok := a.fieldCtx()
 	if !ok {
 		a.warn("focus a field first (a column in the table, a field in the tree)")
 		return s, nil
@@ -1319,11 +1375,327 @@ func (a *App) shape(s core.State, c core.Command) (core.State, []core.Effect) {
 		a.applyAt(root, Operation{Kind: "array-object", Field: field})
 	case "shape.group":
 		a.applyAt(root, Operation{Kind: "group", Field: field, Name: "rows"})
-	case "column.drop":
-		a.applyAt(root, Operation{Kind: "drop", Field: field})
-	case "column.rename":
-		a.openPrompt("rename", "rename "+field+" to", field, root, field)
 	}
+	return s, nil
+}
+
+// activeTargets returns the Space-marked schema paths if any, else the single
+// focused schema path from either the structure tree or the active data view.
+func (a *App) activeTargets() []Path {
+	u := a.curUI()
+	if len(u.sel) > 0 {
+		return slices.Clone(u.sel)
+	}
+	if a.pane == 0 {
+		if p, ok := a.treePath(); ok {
+			return []Path{p}
+		}
+		return nil
+	}
+	return []Path{wildPath(u.focus)}
+}
+
+// shapeHoist (<) lifts focused/marked fields up one level into their parent
+// object, or splats an object node's keys directly into its parent object.
+func (a *App) shapeHoist(s core.State, c core.Command) (core.State, []core.Effect) {
+	b := a.cur()
+	u := a.bufUI(b)
+	v := a.preview(b)
+	sch := InferSchema(v)
+	targets := a.activeTargets()
+	if len(targets) == 0 {
+		a.warn("focus a nested field or object to hoist")
+		return s, nil
+	}
+	type hoistGroup struct {
+		scope    Path
+		childKey string
+		fields   []string
+		splat    bool
+	}
+	var groups []hoistGroup
+	byKey := map[string]int{}
+	for _, p := range targets {
+		if len(p) == 0 || !isKeyPart(p[len(p)-1]) {
+			a.warn("hoist needs a field inside a nested object (or an object node to splat)")
+			return s, nil
+		}
+		node := sch.Find(p)
+		isObj := node != nil && node.Type == "object"
+		if !isObj {
+			if val, ok := AtPath(v, p); ok {
+				_, isObj = val.(Object)
+			}
+		}
+		if isObj {
+			parent := p[:len(p)-1]
+			pn := sch.Find(parent)
+			if pn == nil || (pn.Type != "object" && pn.Types["object"] == 0) {
+				a.warn("cannot splat " + p.String() + ": parent is not an object")
+				return s, nil
+			}
+			sc := parentScope(parent)
+			ck := p[len(p)-1].Key
+			gk := sc.String() + "\x00" + ck + "\x00splat"
+			if _, dup := byKey[gk]; !dup {
+				byKey[gk] = len(groups)
+				groups = append(groups, hoistGroup{scope: sc, childKey: ck, splat: true})
+			}
+			continue
+		}
+		if len(p) < 2 || !isKeyPart(p[len(p)-2]) {
+			a.warn("cannot hoist " + p.String() + ": already at top level of its parent object")
+			return s, nil
+		}
+		grand := p[:len(p)-2]
+		gn := sch.Find(grand)
+		if gn == nil || (gn.Type != "object" && gn.Types["object"] == 0) {
+			a.warn("cannot hoist " + p.String() + ": grandparent is not an object")
+			return s, nil
+		}
+		sc := parentScope(grand)
+		ck := p[len(p)-2].Key
+		fk := p[len(p)-1].Key
+		gk := sc.String() + "\x00" + ck
+		if idx, exists := byKey[gk]; exists {
+			if !slices.Contains(groups[idx].fields, fk) {
+				groups[idx].fields = append(groups[idx].fields, fk)
+			}
+		} else {
+			byKey[gk] = len(groups)
+			groups = append(groups, hoistGroup{scope: sc, childKey: ck, fields: []string{fk}})
+		}
+	}
+	var steps []Operation
+	sim := slices.Clone(b.Pipeline)
+	for _, g := range groups {
+		op := Operation{Kind: "hoist", Field: g.childKey, Fields: g.fields}
+		st := scopedSteps(sim, g.scope, op)
+		steps = append(steps, st...)
+		sim = append(sim, st...)
+	}
+	if err := b.ApplySteps(steps...); err != nil {
+		a.fail("hoist: " + err.Error())
+		return s, nil
+	}
+	u.sel = nil
+	a.touch(b)
+	a.follow = true
+	a.note("hoist added · u undoes · jq: " + SynthesizeJQ(b.Pipeline))
+	return s, nil
+}
+
+// shapeNest (>) opens a picker listing existing sibling object keys at the
+// same parent level plus "New nested object..." to move focused/marked fields
+// into an existing or brand-new child object.
+func (a *App) shapeNest(s core.State, c core.Command) (core.State, []core.Effect) {
+	b := a.cur()
+	v := a.preview(b)
+	sch := InferSchema(v)
+	targets := a.activeTargets()
+	if len(targets) == 0 {
+		a.warn("focus or mark fields to nest")
+		return s, nil
+	}
+	var parent Path
+	var fields []string
+	for i, p := range targets {
+		if len(p) == 0 || !isKeyPart(p[len(p)-1]) {
+			a.warn("nest needs object field(s) (focus a field in the tree or table)")
+			return s, nil
+		}
+		par := p[:len(p)-1]
+		if i == 0 {
+			parent = par
+		} else if par.String() != parent.String() {
+			a.warn("select sibling fields at the same level to nest together")
+			return s, nil
+		}
+		k := p[len(p)-1].Key
+		if !slices.Contains(fields, k) {
+			fields = append(fields, k)
+		}
+	}
+	pn := sch.Find(parent)
+	if pn == nil || (pn.Type != "object" && pn.Types["object"] == 0) {
+		a.warn("nest needs fields inside an object")
+		return s, nil
+	}
+	var items []picker.Item
+	for _, sib := range pn.Children {
+		if (sib.Type == "object" || sib.Types["object"] > 0) && !slices.Contains(fields, sib.Name) {
+			items = append(items, picker.Item{
+				ID:       "into:" + sib.Name,
+				Title:    sib.Name,
+				Subtitle: "move " + strings.Join(fields, ", ") + " into existing object " + sib.Name + " {...}",
+			})
+		}
+	}
+	items = append(items, picker.Item{
+		ID:       "new",
+		Title:    "New nested object...",
+		Subtitle: "wrap " + strings.Join(fields, ", ") + " under a new key",
+	})
+	m := picker.New("Nest "+strings.Join(fields, ", ")+" into", items)
+	m.Scope, m.Placeholder = "pick", "pick sibling object or type a new key name"
+	return openModal(s, modalPick, "pick", &pickModal{kind: "nest", m: m, target: parentScope(parent), fields: fields}), nil
+}
+
+// shapeTransfer (M) copies the focused field, Space-marked fields, or focused
+// subtree into the other split window's buffer (opening a right-hand scratch
+// split if only one window is open), with full u undo in the target buffer.
+func (a *App) shapeTransfer(s core.State, c core.Command) (core.State, []core.Effect) {
+	srcBuf := a.cur()
+	srcUI := a.bufUI(srcBuf)
+	srcVal := a.display(srcBuf)
+	if srcVal == nil {
+		a.warn("nothing to transfer: buffer is empty")
+		return s, nil
+	}
+
+	var transferred []Field
+	var unnamed any
+	hasUnnamed := false
+	var summary string
+
+	if len(srcUI.sel) > 0 {
+		cols := columnNames(srcUI.sel)
+		sch := InferSchema(srcVal)
+		for i, p := range srcUI.sel {
+			var val any
+			if hasWild(p) {
+				ep := p
+				if n := sch.Find(p); n != nil && (n.Type == "array" || n.Types["array"] > 0) {
+					ep = p.Child(wildPart)
+				}
+				val = selectPath(srcVal, ep)
+			} else {
+				val, _ = AtPath(srcVal, p)
+			}
+			transferred = append(transferred, Field{Key: cols[i], Value: val})
+		}
+		summary = fmt.Sprintf("%d field(s) (%s)", len(transferred), strings.Join(cols, ", "))
+		srcUI.sel = nil
+	} else {
+		var p Path
+		if a.pane == 0 {
+			p, _ = a.treePath()
+		} else {
+			p = srcUI.focus
+		}
+		sch := InferSchema(srcVal)
+		var val any
+		if hasWild(p) {
+			ep := p
+			if n := sch.Find(p); n != nil && (n.Type == "array" || n.Types["array"] > 0) {
+				ep = p.Child(wildPart)
+			}
+			val = selectPath(srcVal, ep)
+		} else {
+			val, _ = AtPath(srcVal, p)
+		}
+		key := ""
+		for k := len(p) - 1; k >= 0; k-- {
+			if isKeyPart(p[k]) {
+				key = p[k].Key
+				break
+			}
+		}
+		if key != "" && (len(p) == 0 || !p[len(p)-1].Indexed) {
+			transferred = []Field{{Key: key, Value: val}}
+			summary = key
+		} else {
+			unnamed, hasUnnamed = val, true
+			summary = p.String()
+		}
+	}
+
+	// Ensure a second window with a distinct target buffer exists.
+	var dstWin *window
+	var dstBuf *Buffer
+	if len(a.wins) < 2 {
+		dstBuf = NewScratch()
+		dstBuf.Name = "reshaped.json"
+		a.ring.Add(dstBuf)
+		a.ring.Switch(srcBuf.ID)
+		dstWin = newWindow(dstBuf.ID, viewPretty)
+		a.wins = append(a.wins, dstWin)
+	} else {
+		dstWin = a.wins[1-a.win]
+		if dstWin.buf == srcBuf.ID {
+			dstBuf = NewScratch()
+			dstBuf.Name = "reshaped.json"
+			a.ring.Add(dstBuf)
+			a.ring.Switch(srcBuf.ID)
+			dstWin.buf = dstBuf.ID
+		} else {
+			dstBuf = a.buf(dstWin.buf)
+		}
+	}
+
+	dstVal := a.preview(dstBuf)
+	var merged any
+	switch cur := dstVal.(type) {
+	case nil:
+		if hasUnnamed {
+			merged = unnamed
+		} else {
+			merged = Object(transferred)
+		}
+	case Object:
+		out := append(Object{}, cur...)
+		if hasUnnamed {
+			if uo, ok := unnamed.(Object); ok {
+				for _, f := range uo {
+					out = out.set(f.Key, f.Value)
+				}
+			} else {
+				out = out.set("value", unnamed)
+			}
+		} else {
+			for _, f := range transferred {
+				out = out.set(f.Key, f.Value)
+			}
+		}
+		merged = out
+	case []any:
+		out := append([]any{}, cur...)
+		if hasUnnamed {
+			out = append(out, unnamed)
+		} else {
+			out = append(out, Object(transferred))
+		}
+		merged = out
+	default:
+		out := Object{{"value", cur}}
+		if hasUnnamed {
+			out = out.set("transferred", unnamed)
+		} else {
+			for _, f := range transferred {
+				out = out.set(f.Key, f.Value)
+			}
+		}
+		merged = out
+	}
+
+	formatted, err := FormatJSON(merged, true)
+	if err != nil {
+		a.fail("transfer: " + err.Error())
+		return s, nil
+	}
+	dstBuf.BreakUndo()
+	if len(dstBuf.Pipeline) > 0 {
+		dstBuf.push()
+		dstBuf.Redo = nil
+		dstBuf.Pipeline = nil
+		dstBuf.parse(string(formatted))
+	} else {
+		dstBuf.SetRaw(string(formatted))
+	}
+	dstBuf.BreakUndo()
+	dstWin.ed, dstWin.relKey, dstWin.seen = nil, "", ""
+	a.touch(dstBuf)
+	a.note(fmt.Sprintf("transferred %s to %s · ctrl+w w switches · u undoes", summary, bufName(dstBuf)))
 	return s, nil
 }
 
@@ -1433,8 +1805,31 @@ func (a *App) openPrompt(kind, label, text string, root Path, field string) {
 
 func (a *App) filterOpen(s core.State, c core.Command) (core.State, []core.Effect) {
 	if c.ID == "filter.all" {
-		v := a.display(a.cur())
-		a.openPrompt("filter", "/ ["+a.match+"]", "", tableRoot(v, a.curUI().focus), "")
+		b := a.cur()
+		v := a.display(b)
+		var root Path
+		if a.pane == 0 {
+			if tp, ok := a.treePath(); ok {
+				if ar, _, deep := deepArrayFor(InferSchema(v), tp); deep {
+					root = ar
+				} else if n := InferSchema(v).Find(tp); n != nil && (n.Type == "array" || n.Types["array"] > 0) {
+					root = slices.Clone(tp)
+				} else {
+					for k := len(tp) - 1; k >= 0; k-- {
+						if isWildPart(tp[k]) {
+							root = slices.Clone(tp[:k])
+							break
+						}
+					}
+				}
+			}
+		} else if w := a.active(); w.view == viewTable {
+			_, root = a.relation(w, b)
+		}
+		if root == nil {
+			root = tableRoot(v, a.curUI().focus)
+		}
+		a.openPrompt("filter", "/ ["+a.match+"]", "", root, "")
 		return s, nil
 	}
 	root, field, ok := a.fieldCtx()
@@ -1530,6 +1925,12 @@ func (a *App) promptAccept(s core.State, c core.Command) (core.State, []core.Eff
 			text = "value"
 		}
 		a.applyAt(p.root, Operation{Kind: "wrap-object", Name: text})
+	case "nest":
+		if text == "" {
+			text = "group"
+		}
+		a.curUI().sel = nil
+		a.applyAt(p.root, Operation{Kind: "nest", Name: text, Fields: p.fields})
 	case "saveas":
 		return a.write(s, core.Command{Args: map[string]any{"path": text, "format": a.saveFormat}})
 	case "jq":
@@ -1561,14 +1962,54 @@ func (a *App) promptAccept(s core.State, c core.Command) (core.State, []core.Eff
 	return s, nil
 }
 
-// jqChips are the builder steps the jq bar can append for the focused
-// field: %[1]s is the field's jq path, %[2]s its name as a jq string.
-var jqChips = []struct{ key, name, tmpl string }{
-	{"alt+f", "filter", " | map(select(%[1]s != null))"},
-	{"alt+s", "select", " | map({%[2]s: %[1]s})"},
-	{"alt+l", "flatten", " | [.[] | %[1]s] | flatten"},
-	{"alt+o", "sort_by", " | sort_by(%[1]s)"},
-	{"alt+g", "group_by", " | group_by(%[1]s)"},
+// jqChips are the interactive builder stages the jq bar can append via shortcut
+// or the Tab/ctrl+b stage picker. %[1]s is the focused field's jq path, %[2]s
+// its name as a jq string.
+type jqChipDef struct {
+	key, name, short, label, desc, tmpl string
+}
+
+var jqChips = []jqChipDef{
+	{"alt+f", "filter", "filter", "filter", "Keep elements where the focused field is non-null", " | map(select(%[1]s != null))"},
+	{"alt+s", "select", "select", "project/select", "Keep only the focused or marked fields on each element", " | map({%[2]s: %[1]s})"},
+	{"alt+l", "flatten", "flatten", "flatten", "Extract and flatten the focused nested array across elements", " | [.[] | %[1]s] | flatten"},
+	{"alt+o", "sort_by", "sort_by", "sort_by", "Sort elements ascending by the focused field", " | sort_by(%[1]s)"},
+	{"alt+g", "group_by", "group_by", "group_by", "Group elements sharing the same focused field value", " | group_by(%[1]s)"},
+	{"alt+k", "keys", "keys", "keys", "List the object keys of the current result", " | keys"},
+	{"alt+u", "unique_by", "unique_by", "unique_by", "Keep one element per distinct value of the focused field", " | unique_by(%[1]s)"},
+	{"alt+c", "count", "count", "count/length", "Count the elements or keys in the current result", " | length"},
+}
+
+// jqStageSnippet builds the jq snippet for stage ch using the focused field
+// (or all Space-marked fields for project/select).
+func (a *App) jqStageSnippet(ch jqChipDef) string {
+	switch ch.name {
+	case "keys", "count":
+		return ch.tmpl
+	case "select":
+		u := a.curUI()
+		if len(u.sel) > 0 {
+			cols := columnNames(u.sel)
+			parts := make([]string, len(u.sel))
+			for i, p := range u.sel {
+				rel := p
+				for k := len(p) - 1; k >= 0; k-- {
+					if isWildPart(p[k]) {
+						rel = p[k+1:]
+						break
+					}
+				}
+				if len(rel) == 0 {
+					parts[i] = jqKey(cols[i]) + ": ."
+				} else {
+					parts[i] = jqKey(cols[i]) + ": " + jqPath(rel)
+				}
+			}
+			return " | map({" + strings.Join(parts, ", ") + "})"
+		}
+	}
+	field, jp := a.chipField()
+	return fmt.Sprintf(ch.tmpl, jp, jqStr(field))
 }
 
 // chipPath is the jq path of a field fieldCtx named: a table column is one
@@ -1627,14 +2068,34 @@ func (a *App) jqChip(s core.State, c core.Command) (core.State, []core.Effect) {
 	if p == nil || p.kind != "jq" {
 		return s, nil
 	}
-	field, jp := a.chipField()
 	for _, ch := range jqChips {
 		if ch.name == c.Arg("chip") {
-			p.ed = input.New(p.ed.Value()+fmt.Sprintf(ch.tmpl, jp, jqStr(field)), false)
+			p.ed = input.New(p.ed.Value()+a.jqStageSnippet(ch), false)
 			p.ed.HandleKey("A")
+			break
 		}
 	}
 	return s, []core.Effect{a.jqEffect(p.ed.Value())}
+}
+
+func (a *App) jqBuilder(s core.State, c core.Command) (core.State, []core.Effect) {
+	p := a.prompt
+	if p == nil || p.kind != "jq" {
+		return s, nil
+	}
+	var items []picker.Item
+	for _, ch := range jqChips {
+		snip := a.jqStageSnippet(ch)
+		items = append(items, picker.Item{
+			ID:       ch.name,
+			Title:    fmt.Sprintf("%s (%s)  %s", ch.label, ch.key, strings.TrimSpace(snip)),
+			Subtitle: ch.desc,
+			Keywords: []string{ch.name, ch.label, ch.key, ch.desc, snip},
+		})
+	}
+	m := picker.New("jq Builder · append stage", items)
+	m.Scope, m.Placeholder = "pick", "filter stages by name or jq snippet"
+	return openModal(s, modalPick, "pick", &pickModal{kind: "jqbuilder", m: m}), nil
 }
 
 // chipField is the focused field's name and jq path, read with the prompt
@@ -2193,6 +2654,13 @@ func (a *App) pickCmd(s core.State, c core.Command) (core.State, []core.Effect) 
 		pm.m.PageSize = max(a.h*70/100-4, 1)
 		picked, _ := pm.m.HandleCommand(c)
 		if picked == nil {
+			if c.ID == picker.CmdConfirm && pm.kind == "nest" {
+				if name := strings.TrimSpace(pm.m.Query); name != "" {
+					s = closeModal(s, modalPick)
+					a.curUI().sel = nil
+					a.applyAt(pm.target, Operation{Kind: "nest", Name: name, Fields: pm.fields})
+				}
+			}
 			return s, nil
 		}
 		s = closeModal(s, modalPick)
@@ -2212,6 +2680,24 @@ func (a *App) pickCmd(s core.State, c core.Command) (core.State, []core.Effect) 
 				op.Grain = pm.paths[i]
 			}
 			a.doFlatten(op)
+		case "nest":
+			if name, ok := strings.CutPrefix(picked.ID, "into:"); ok {
+				a.curUI().sel = nil
+				a.applyAt(pm.target, Operation{Kind: "nest", Name: name, Fields: pm.fields})
+			} else {
+				a.openPrompt("nest", "new nested object key for "+strings.Join(pm.fields, ", "), "", pm.target, "")
+				a.prompt.fields = pm.fields
+			}
+		case "jqbuilder":
+			if p := a.prompt; p != nil && p.kind == "jq" {
+				for _, ch := range jqChips {
+					if ch.name == picked.ID {
+						p.ed = input.New(p.ed.Value()+a.jqStageSnippet(ch), false)
+						p.ed.HandleKey("A")
+						return s, []core.Effect{a.jqEffect(p.ed.Value())}
+					}
+				}
+			}
 		case "convert":
 			switch picked.ID {
 			case "keyby":

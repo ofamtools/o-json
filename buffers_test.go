@@ -175,7 +175,7 @@ func TestCLI(t *testing.T) {
 		code       int
 		out, inErr string
 	}{
-		{[]string{"flatten", "-", "--field", "orders[].id"}, `{"orders":[{"id":1},{"id":2}]}`, 0, "orders.id\n1\n2\n", ""},
+		{[]string{"flatten", "-", "--field", "orders[].id"}, `{"orders":[{"id":1},{"id":2}]}`, 0, "id\n1\n2\n", ""},
 		{[]string{"flatten", "-", "--field", "a[].x", "--field", "b[].y"}, `{"a":[{"x":1}],"b":[{"y":2}]}`, 2, "", "--grain"},
 		{[]string{"structure", "--format", "json", "-"}, `{"a":1}`, 0, `"type": "object"`, ""},
 		{[]string{"structure", "-", "extra"}, `{}`, 2, "", "expected 1"},

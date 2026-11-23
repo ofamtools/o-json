@@ -61,9 +61,9 @@ func TestFlattenGrainDepth(t *testing.T) {
 		t.Fatalf("deeper array is no tie: %v", got)
 	}
 	r, err = Flatten(nested, rqPaths("id", "orders[].id", "orders[].items[].sku"), nil, false, false)
-	if err != nil || len(r.Rows) != 40 || rqJSON(t, r.Rows[0]) != `{"id":1,"orders.id":null,"orders.items.sku":null}` ||
-		rqJSON(t, r.Rows[1]) != `{"id":2,"orders.id":"o2-0","orders.items.sku":"whisk"}` ||
-		rqJSON(t, r.Rows[2]) != `{"id":2,"orders.id":"o2-0","orders.items.sku":"kettle"}` {
+	if err != nil || len(r.Rows) != 40 || rqJSON(t, r.Rows[0]) != `{"id":1,"orders.id":null,"sku":null}` ||
+		rqJSON(t, r.Rows[1]) != `{"id":2,"orders.id":"o2-0","sku":"whisk"}` ||
+		rqJSON(t, r.Rows[2]) != `{"id":2,"orders.id":"o2-0","sku":"kettle"}` {
 		t.Fatalf("relative oracle: %v %v", r.Rows[:3], err)
 	}
 	r, err = Flatten(nested, rqPaths("$[].orders[].items[].sku"), nil, false, false)
@@ -71,7 +71,7 @@ func TestFlattenGrainDepth(t *testing.T) {
 		t.Fatalf("deep field only keeps the empty parent: %v %v", len(r.Rows), err)
 	}
 	r, err = Flatten(rqVal(t, `{"orders":[]}`), rqPaths("orders[].id"), nil, false, false)
-	if err != nil || rqJSON(t, r.Value()) != `[{"orders.id":null}]` {
+	if err != nil || rqJSON(t, r.Value()) != `[{"id":null}]` {
 		t.Fatalf("root object keeps one row: %v %v", r.Rows, err)
 	}
 	walk := rqDoc(t, "walk.json")

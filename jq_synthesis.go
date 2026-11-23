@@ -177,6 +177,37 @@ func (g *jqGen) op(op Operation) string {
 	case "object-keys":
 		g.use("need")
 		return `need("object"; "object-keys") | keys_unsorted`
+	case "hoist":
+		g.use("rows")
+		ck := jqStr(op.Field)
+		if len(op.Fields) == 0 {
+			return "rows(if has(" + ck + ") and (.[" + ck + "] | type == \"object\") then (.[" + ck + "] as $c | del(.[" + ck + "]) + $c) else . end)"
+		}
+		var dels, adds []string
+		for _, f := range op.Fields {
+			fk := jqStr(f)
+			dels = append(dels, ".["+fk+"]")
+			adds = append(adds, "(if $c | has("+fk+") then {"+jqKey(f)+": $c["+fk+"]} else {} end)")
+		}
+		return "rows(if has(" + ck + ") and (.[" + ck + "] | type == \"object\") then (.[" + ck + "] as $c | (.[" + ck + "] |= del(" + strings.Join(dels, ", ") + ")) | (if .[" + ck + "] == {} then del(.[" + ck + "]) else . end) + (" + strings.Join(adds, " + ") + ")) else . end)"
+	case "nest":
+		g.use("rows")
+		tk := jqStr(op.Name)
+		selfMoved := false
+		var dels, adds []string
+		for _, f := range op.Fields {
+			if f == op.Name {
+				selfMoved = true
+			}
+			fk := jqStr(f)
+			dels = append(dels, ".["+fk+"]")
+			adds = append(adds, "(if $o | has("+fk+") then {"+jqKey(f)+": $o["+fk+"]} else {} end)")
+		}
+		base := "{}"
+		if !selfMoved {
+			base = `(if ($o | has(` + tk + `)) and ($o[` + tk + `] != null) then if ($o[` + tk + `] | type) == "object" then $o[` + tk + `] else error("nest: target " + ` + tk + ` + " is " + ($o[` + tk + `] | type) + ", not an object") end else {} end)`
+		}
+		return "rows(. as $o | " + base + " as $base | del(" + strings.Join(dels, ", ") + ") | .[" + tk + "] = ($base + " + strings.Join(adds, " + ") + "))"
 	case "group":
 		g.use("need")
 		by := "need(\"array\"; \"group\") | group_by(" + col(op.Field) + ")"

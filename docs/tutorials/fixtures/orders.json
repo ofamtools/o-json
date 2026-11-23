@@ -13,7 +13,11 @@
       "customer": {
         "name": "Maya Lin",
         "tier": "gold",
-        "email": "maya.lin@example.com"
+        "email": "maya.lin@example.com",
+        "address": {
+          "city": "Seattle",
+          "zip": "98101"
+        }
       },
       "items": [
         {"sku": "TEA-GYO", "title": "Gyokuro Reserve", "qty": 2, "price": 54.0},
@@ -31,7 +35,11 @@
       "customer": {
         "name": "Jonas Berg",
         "tier": "silver",
-        "email": null
+        "email": null,
+        "address": {
+          "city": "Portland",
+          "zip": "97204"
+        }
       },
       "items": [
         {"sku": "TEA-SEN", "title": "Uji Sencha", "qty": 2, "price": 32.0}
@@ -47,7 +55,11 @@
       "customer": {
         "name": "Priya Nair",
         "tier": "gold",
-        "email": "priya.nair@example.com"
+        "email": "priya.nair@example.com",
+        "address": {
+          "city": "San Francisco",
+          "zip": "94107"
+        }
       },
       "items": [
         {"sku": "TEA-MAT", "title": "Ceremonial Matcha", "qty": 3, "price": 45.0},
@@ -65,7 +77,11 @@
       "customer": {
         "name": "Elena Costa",
         "tier": "bronze",
-        "email": "elena.costa@example.com"
+        "email": "elena.costa@example.com",
+        "address": {
+          "city": "Tacoma",
+          "zip": "98402"
+        }
       },
       "items": [],
       "tags": ["refunded"]
@@ -78,7 +94,11 @@
       "customer": {
         "name": "Kenji Sato",
         "tier": "silver",
-        "email": "kenji.sato@example.com"
+        "email": "kenji.sato@example.com",
+        "address": {
+          "city": "Bellevue",
+          "zip": "98004"
+        }
       },
       "items": [
         {"sku": "TEA-HOJ", "title": "Roasted Hojicha", "qty": 4, "price": 28.0}
@@ -95,7 +115,11 @@
       "customer": {
         "name": "Liam O'Connor",
         "tier": "bronze",
-        "email": null
+        "email": null,
+        "address": {
+          "city": "Eugene",
+          "zip": "97401"
+        }
       },
       "items": [
         {"sku": "TEA-GEN", "title": "Genmaicha Matcha-iri", "qty": 1, "price": 24.0},

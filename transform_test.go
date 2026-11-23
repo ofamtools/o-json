@@ -145,7 +145,7 @@ func TestFlatten(t *testing.T) {
 	walk := loadDoc(t, "walk.json")
 	f := paths("$[].id", "$[].orders[].sku", "$[].orders[].lines[].qty")
 	r, err := Flatten(walk, f, nil, false, false)
-	if got := rel(t, r, err); got != `id,orders.sku,orders.lines.qty [{"id":1,"orders.sku":"a1","orders.lines.qty":2},{"id":2,"orders.sku":"b2","orders.lines.qty":1},{"id":2,"orders.sku":"b3","orders.lines.qty":null}]` {
+	if got := rel(t, r, err); got != `id,sku,qty [{"id":1,"sku":"a1","qty":2},{"id":2,"sku":"b2","qty":1},{"id":2,"sku":"b3","qty":null}]` {
 		t.Fatalf("left join: %s", got)
 	}
 	r, err = Flatten(walk, f, nil, false, true)
@@ -156,7 +156,7 @@ func TestFlatten(t *testing.T) {
 	// unrelated tags column is omitted (owner rule: deeper wins, a tie asks).
 	withTags := append(f, MustPath("$[].tags[]"))
 	r, err = Flatten(walk, withTags, nil, false, false)
-	if got := rel(t, r, err); got != `id,orders.sku,orders.lines.qty [{"id":1,"orders.sku":"a1","orders.lines.qty":2},{"id":2,"orders.sku":"b2","orders.lines.qty":1},{"id":2,"orders.sku":"b3","orders.lines.qty":null}]` {
+	if got := rel(t, r, err); got != `id,sku,qty [{"id":1,"sku":"a1","qty":2},{"id":2,"sku":"b2","qty":1},{"id":2,"sku":"b3","qty":null}]` {
 		t.Fatalf("deeper grain wins: %s", got)
 	}
 	if got := SiblingArrays(walk, withTags); got != nil {
@@ -174,12 +174,16 @@ func TestFlatten(t *testing.T) {
 		t.Fatalf("chosen grain omits the other branch: %s", got)
 	}
 	r, err = Flatten(walk, withTags, nil, true, false)
-	if got := rel(t, r, err); len(r.Rows) != 4 || !strings.HasPrefix(got, `id,orders.sku,orders.lines.qty,tags [{"id":1,"orders.sku":"a1","orders.lines.qty":2,"tags":"eu"},`) {
+	if got := rel(t, r, err); len(r.Rows) != 4 || !strings.HasPrefix(got, `id,sku,qty,tags [{"id":1,"sku":"a1","qty":2,"tags":"eu"},`) {
 		t.Fatalf("cross join: %s", got)
 	}
 	r, err = Flatten(MustParse(`{"a.b":1,"a":{"b":2}}`), nil, nil, false, false)
-	if got := rel(t, r, err); got != `$["a.b"],a.b [{"$[\"a.b\"]":1,"a.b":2}]` {
-		t.Fatalf("collision: %s", got)
+	if got := rel(t, r, err); got != `a.b,b [{"a.b":1,"b":2}]` {
+		t.Fatalf("distinct leaf names: %s", got)
+	}
+	r, err = Flatten(MustParse(`{"a.b":1,"a":{"b":2},"c":{"b":3}}`), nil, nil, false, false)
+	if got := rel(t, r, err); got != `$["a.b"],a.b,c.b [{"$[\"a.b\"]":1,"a.b":2,"c.b":3}]` {
+		t.Fatalf("collision fallback: %s", got)
 	}
 	r, err = Flatten(MustParse(`[]`), paths("$[].id"), nil, false, false)
 	if len(r.Rows) != 0 || err != nil {
@@ -214,7 +218,7 @@ func TestResolveStep(t *testing.T) {
 		t.Fatalf("scoped flatten: %v %v", op.Paths, err)
 	}
 	v, err := ApplyPipeline(doc, append(scope, op))
-	if err != nil || !strings.Contains(compact(t, v), `"people":[{"id":"p1","name":"Ann","address.city":"Oslo","address.zip":"0150","tags":"a"},`) {
+	if err != nil || !strings.Contains(compact(t, v), `"people":[{"id":"p1","name":"Ann","city":"Oslo","zip":"0150","tags":"a"},`) {
 		t.Fatalf("scoped flatten result: %s %v", compact(t, v), err)
 	}
 	_, err = ApplyPipeline(doc, []Operation{{Kind: "filter", Mode: "regex", Query: "(a"}})
@@ -260,7 +264,7 @@ func TestJQParity(t *testing.T) {
 		{"flatten empties", "reshape.json", []Operation{resolve("reshape.json", Operation{Kind: "flatten"})}, false},
 		{"flatten odd shapes", "restructure.json", []Operation{{Kind: "flatten", Paths: paths("items[].id", "items[].tags[].t", "items[].owner.name")}}, false},
 		{"flatten then group", "walk.json", []Operation{{Kind: "flatten", Paths: walkF[:3]}, {Kind: "group", Field: "id"}}, false},
-		{"flatten then group object", "walk.json", []Operation{{Kind: "flatten", Paths: walkF[:3]}, {Kind: "group", Field: "orders.sku", Mode: "object", Name: "lines"}}, false},
+		{"flatten then group object", "walk.json", []Operation{{Kind: "flatten", Paths: walkF[:3]}, {Kind: "group", Field: "sku", Mode: "object", Name: "lines"}}, false},
 		{"array-object scoped", "tutorial-reshape.json", []Operation{sc("records"), {Kind: "array-object", Field: "id"}}, false},
 		{"array-object round trip", "tutorial-reshape.json", []Operation{sc("records"), {Kind: "array-object", Field: "id"}, {Kind: "object-array", Name: "code"}}, false},
 		{"array-object duplicate", "reshape.json", []Operation{sc("people"), {Kind: "array-object", Field: "id"}}, true},

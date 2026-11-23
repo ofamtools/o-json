@@ -12,12 +12,14 @@ import (
 )
 
 // Operation is one step of a pipeline. Kinds: project, flatten,
-// array-object, object-array, group, rename, drop, sort, filter, scope.
+// array-object, object-array, wrap-object, wrap-array, object-values,
+// object-keys, hoist, nest, group, rename, drop, sort, filter, scope.
 type Operation struct {
 	Kind                     string
 	Paths                    []Path
 	Path                     Path
 	Grain                    Path
+	Fields                   []string
 	Cross, Inner, Desc       bool
 	Field, Name, Mode, Query string
 }
@@ -61,6 +63,12 @@ func normalize(op Operation) (Operation, error) {
 			op.Name = "value"
 		}
 	case "wrap-array", "object-values", "object-keys":
+	case "hoist":
+		err = need(op.Field, "a nested object key")
+	case "nest":
+		if err = need(op.Name, "a target object key"); err == nil && len(op.Fields) == 0 {
+			err = fmt.Errorf("nest needs at least one field")
+		}
 	case "group":
 		if op.Name == "" {
 			op.Name = "rows"
@@ -172,6 +180,10 @@ func applyOp(v any, op Operation) (any, error) {
 		return objectValues(v)
 	case "object-keys":
 		return objectKeys(v)
+	case "hoist":
+		return hoistFields(v, op.Field, op.Fields)
+	case "nest":
+		return nestFields(v, op.Name, op.Fields)
 	case "group":
 		return group(v, op)
 	case "rename", "drop":
@@ -598,29 +610,56 @@ func flattenPlan(op Operation) (*selNode, error) {
 	return buildTree(paths, cols), nil
 }
 
-// columnNames joins keys with dots, skipping wildcards (no prefix for a root
-// array). Names that collide fall back to the canonical path, then a counter.
+// columnNames preserves each field's original leaf key name whenever unique
+// across the selected paths, expanding with the minimal parent prefix only for
+// colliding leaf names. Remaining collisions fall back to the canonical path,
+// then a counter.
 func columnNames(paths []Path) []string {
-	names := make([]string, len(paths))
-	count := map[string]int{}
+	tokens := make([][]string, len(paths))
+	depth := make([]int, len(paths))
 	for i, p := range paths {
-		var b strings.Builder
+		var segs []string
 		for _, s := range p {
 			switch {
 			case s.Indexed:
-				fmt.Fprintf(&b, "[%d]", s.Index)
-			case !s.Array:
-				if b.Len() > 0 {
-					b.WriteByte('.')
+				idx := fmt.Sprintf("[%d]", s.Index)
+				if len(segs) > 0 {
+					segs[len(segs)-1] += idx
+				} else {
+					segs = append(segs, idx)
 				}
-				b.WriteString(s.Key)
+			case !s.Array:
+				segs = append(segs, s.Key)
 			}
 		}
-		names[i] = b.String()
-		if names[i] == "" {
-			names[i] = "value"
+		if len(segs) == 0 {
+			segs = []string{"value"}
 		}
-		count[names[i]]++
+		tokens[i] = segs
+		depth[i] = 1
+	}
+	names := make([]string, len(paths))
+	for {
+		count := map[string]int{}
+		for i, segs := range tokens {
+			start := max(len(segs)-depth[i], 0)
+			names[i] = strings.Join(segs[start:], ".")
+			count[names[i]]++
+		}
+		expanded := false
+		for i, segs := range tokens {
+			if count[names[i]] > 1 && depth[i] < len(segs) {
+				depth[i]++
+				expanded = true
+			}
+		}
+		if !expanded {
+			break
+		}
+	}
+	count := map[string]int{}
+	for _, n := range names {
+		count[n]++
 	}
 	used := map[string]bool{}
 	for i, p := range paths {
@@ -849,6 +888,84 @@ func objectKeys(v any) (any, error) {
 		out[i] = f.Key
 	}
 	return out, nil
+}
+
+// hoistFields lifts keys out of the nested object at childKey into its parent
+// object. When fields is empty, every key of childKey is splatted into the
+// parent and childKey is removed.
+func hoistFields(v any, childKey string, fields []string) (any, error) {
+	return eachRow(v, func(o Object) (Object, error) {
+		ci := o.index(childKey)
+		if ci < 0 {
+			return o, nil
+		}
+		child, ok := o[ci].Value.(Object)
+		if !ok {
+			return o, nil
+		}
+		if len(fields) == 0 {
+			out := append(append(Object{}, o[:ci]...), o[ci+1:]...)
+			for _, f := range child {
+				out = out.set(f.Key, f.Value)
+			}
+			return out, nil
+		}
+		lift := map[string]bool{}
+		for _, k := range fields {
+			lift[k] = true
+		}
+		rem := Object{}
+		for _, f := range child {
+			if !lift[f.Key] {
+				rem = append(rem, f)
+			}
+		}
+		out := append(Object{}, o...)
+		if len(rem) == 0 {
+			out = append(out[:ci], out[ci+1:]...)
+		} else {
+			out[ci].Value = rem
+		}
+		for _, k := range fields {
+			if val, exists := child.Get(k); exists {
+				out = out.set(k, val)
+			}
+		}
+		return out, nil
+	})
+}
+
+// nestFields moves the named keys of an object into a child object at
+// targetKey, merging into an existing sibling object or creating a new one.
+func nestFields(v any, targetKey string, fields []string) (any, error) {
+	moveSet := map[string]bool{}
+	for _, k := range fields {
+		moveSet[k] = true
+	}
+	return eachRow(v, func(o Object) (Object, error) {
+		base := Object{}
+		if !moveSet[targetKey] {
+			if existing, exists := o.Get(targetKey); exists && existing != nil {
+				obj, ok := existing.(Object)
+				if !ok {
+					return nil, fmt.Errorf("nest: target %q is %s, not an object", targetKey, typeName(existing))
+				}
+				base = append(Object{}, obj...)
+			}
+		}
+		for _, k := range fields {
+			if val, exists := o.Get(k); exists {
+				base = base.set(k, val)
+			}
+		}
+		out := Object{}
+		for _, f := range o {
+			if !moveSet[f.Key] {
+				out = append(out, f)
+			}
+		}
+		return out.set(targetKey, base), nil
+	})
 }
 
 // cell is a row's value for a flat column; missing reads as null.

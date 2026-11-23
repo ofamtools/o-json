@@ -18,8 +18,8 @@ func TestTutorialSpec(t *testing.T) {
 	if spec.Tool != "o-json" {
 		t.Fatalf("spec.Tool = %q, want o-json", spec.Tool)
 	}
-	if len(spec.Sections) < 6 {
-		t.Fatalf("expected at least 6 sections, got %d", len(spec.Sections))
+	if len(spec.Sections) < 7 {
+		t.Fatalf("expected at least 7 sections, got %d", len(spec.Sections))
 	}
 
 	res, err := runTutorialSpec(spec, ".")
@@ -37,9 +37,11 @@ func TestTutorialSpec(t *testing.T) {
 		"<!DOCTYPE html>",
 		spec.Title,
 		"o-json.mp4",
-		"Open &amp; Navigate Nested JSON",
-		"Live jq Expression Bar",
-		"Shape Conversion",
+		"Explore Deep Nested JSON from the Structure Pane",
+		"Multi-Depth Mark &amp; Flatten with Leaf Names",
+		"Hoist, Splat, Nest &amp; Convert Tree Shapes",
+		"Side-by-Side Split Transfer",
+		"Interactive jq Builder &amp; Live Preview",
 		"pre class=\"term\"",
 	} {
 		if !strings.Contains(htmlDoc, want) {
@@ -51,8 +53,8 @@ func TestTutorialSpec(t *testing.T) {
 	for _, want := range []string{
 		"Output o-json.mp4",
 		`Type "o-json docs/tutorials/fixtures/orders.json"`,
-		"# Section: Open & Navigate Nested JSON",
-		"# Section: Live jq Expression Bar",
+		"# Section: Explore Deep Nested JSON from the Structure Pane",
+		"# Section: Interactive jq Builder & Live Preview",
 	} {
 		if !strings.Contains(tape, want) {
 			t.Errorf("RenderTape missing %q", want)

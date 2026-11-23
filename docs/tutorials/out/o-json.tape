@@ -13,32 +13,173 @@ Enter
 Sleep 1500ms
 Show
 
-# Section: Open & Navigate Nested JSON
+# Section: Explore Deep Nested JSON from the Structure Pane
 # Open orders.json to inspect the merged structure tree on the left and nested data on the right.
 Sleep 1400ms
 
-# Jump to the orders element node and unfold its schema to inspect nested, mixed, and optional fields.
-Type "g"
+# Press G to jump to the orders element node and l to unfold its schema.
 Type "G"
 Type "l"
 Sleep 1300ms
 
-# Switch the right pane to Table view to display every order as a structured row.
-Type "1"
+# Walk down to the nested items array so the right pane collects all 8 line items across all 6 orders.
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
 Sleep 1300ms
 
-# Jump into the table pane and move to the last column so long notes expand automatically under the cursor.
-Tab
-Type "$"
+# Switch to Table view to display every line item from every order in one unified table.
+Type "1"
 Sleep 1400ms
 
-# Switch to Pretty JSON view to inspect the focused record with syntax structure preserved.
+# Switch to Pretty view to inspect the collected line items as formatted JSON.
 Type "3"
 Sleep 1300ms
 
-# Section: Search & Multi-Condition Filtering
-# Return to Table view and jump back to the first column.
+# Section: Multi-Depth Mark & Flatten with Leaf Names
+# Move up to order_id and mark it with Space.
+Type "k"
+Type "k"
+Type "k"
+Type "k"
+Type "k"
+Space
+Sleep 1100ms
+
+# Expand customer and mark email at depth 3.
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "l"
+Type "j"
+Type "j"
+Type "j"
+Space
+Sleep 1100ms
+
+# Expand items[] and mark sku and qty at depth 4.
+Type "j"
+Type "j"
+Type "l"
+Type "j"
+Type "l"
+Type "j"
+Space
+Type "j"
+Type "j"
+Space
+Sleep 1200ms
+
+# Press F to flatten the marked fields into Table view using clean original leaf names.
+Type "F"
+Sleep 1500ms
+
+# Undo flatten with u to return to the original nested structure.
+Type "u"
+Sleep 900ms
+
+# Section: Hoist, Splat, Nest & Convert Tree Shapes
+# Expand orders[].customer.address and focus city at level 4.
+Type "g"
+Type "g"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "l"
+Type "j"
+Sleep 900ms
+
+# Press < to hoist city up one level from address directly into customer across every order.
+Type "<"
+Sleep 1400ms
+
+# Press < on the address object to splat its remaining keys into customer and drop the empty wrapper.
+Type "<"
+Sleep 1400ms
+
+# Move up from customer onto priority.
+Type "k"
+Sleep 600ms
+
+# Press > on priority to open the Nest picker listing sibling object customer.
+Type ">"
+Sleep 1400ms
+
+# Press Enter to move priority directly into the existing customer object across every order.
+Enter
+Sleep 1300ms
+
+# Undo the nest, splat, and hoist steps cleanly with u.
+Type "u"
+Type "u"
+Type "u"
+Sleep 800ms
+
+# Focus store in the structure tree.
+Type "g"
+Type "g"
+Type "j"
+Sleep 600ms
+
+# Open the Convert Shape picker with C on store.
+Type "C"
+Sleep 1400ms
+
+# Convert store into an entries array so keys and values appear as rows.
+Enter
+Enter
+Sleep 1300ms
+
+# Undo the store conversion.
+Type "u"
+Sleep 700ms
+
+# Section: Side-by-Side Split Transfer
+# Press M on store to open a side-by-side split and transfer store into reshaped.json.
+Type "M"
+Sleep 1500ms
+
+# Switch to the right-hand reshaped.json window with ctrl+w w.
+Ctrl+W
+Type "w"
+Sleep 1200ms
+
+# Undo the transfer inside reshaped.json, then close the split with ctrl+w o.
+Type "u"
+Ctrl+W
+Type "w"
+Ctrl+W
+Type "o"
+Tab
+Sleep 1000ms
+
+# Section: Filter, Sort & Group Rows
+# Focus orders in Table view and jump into the table pane.
+Type "g"
+Type "g"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
+Type "j"
 Type "1"
+Tab
 Type "0"
 Sleep 900ms
 
@@ -48,162 +189,111 @@ Type "shipped"
 Enter
 Sleep 1400ms
 
-# Move onto the amount column before adding a field-level predicate.
+# Move onto the amount column before adding a field filter.
 Type "l"
 Type "l"
 Sleep 700ms
 
-# Stack a field filter on amount (>100) to narrow shipped orders to high-value purchases.
+# Stack a numeric field filter (>100) on amount with f.
 Type "f"
 Type ">100"
 Enter
 Sleep 1400ms
 
-# Undo both filter steps cleanly to restore all six orders.
+# Undo both filters to restore all six orders.
 Type "u"
 Type "u"
-Sleep 1200ms
+Sleep 1000ms
 
-# Section: Multi-Key Sorting & Grouping
-# Sort orders by amount ascending so the smallest order moves to the top.
+# Press s twice on amount to sort ascending and then flip to descending.
+Type "s"
 Type "s"
 Sleep 1300ms
 
-# Press s again on amount to flip the sort order to descending.
-Type "s"
-Sleep 1300ms
-
-# Move left to the status column for multi-key sorting.
+# Move left onto the status column.
 Type "h"
-Sleep 700ms
+Sleep 600ms
 
-# Stack a sort by status while preserving amount descending within each status group.
-Type "s"
-Sleep 1300ms
-
-# Group orders by status to aggregate matching records into nested row buckets.
-Type "G"
+# Group rows by status into buckets with g b.
+Type "g"
+Type "b"
 Sleep 1400ms
 
-# Undo the grouping and sort steps to return to the original dataset.
-Type "u"
+# Undo the grouping and sort steps to restore original order.
 Type "u"
 Type "u"
 Sleep 800ms
 
-# Section: Live jq Expression Bar
-# Open the live jq bar and reshape high-value orders into compact summary objects.
+# Section: Interactive jq Builder & Live Preview
+# Open the live jq bar with J and type | .orders to target the orders array.
 Type "J"
-Type " | .orders | map(select(.amount > 100) | {id: .order_id, total: .amount})"
-Sleep 1600ms
-
-# Press Enter to open the live jq result in a new editable buffer.
-Enter
+Type " | .orders"
 Sleep 1400ms
 
-# Switch back to the original orders.json buffer with [ b.
-Type "["
-Type "b"
-Sleep 1200ms
-
-# Section: Shape Conversion, Relational Flatten & Raw JSON Folding
-# Jump back to the structure tree and focus the store object.
+# Press Tab inside the jq bar to open the interactive stage picker with descriptions and snippets.
 Tab
-Type "g"
-Type "g"
-Type "j"
-Sleep 700ms
-
-# Open the Convert Shape picker with C to inspect structural transformations for store.
-Type "C"
-Sleep 1400ms
-
-# Convert store into an entries array so keys and values appear as table columns.
-Enter
-Enter
-Sleep 1400ms
-
-# Undo the conversion and focus the document root before flattening.
-Type "u"
-Type "g"
-Type "g"
-Sleep 700ms
-
-# Press F to flatten nested orders and choose the row grain when sibling arrays exist.
-Type "F"
-Sleep 1400ms
-
-# Confirm orders[].items[] as the row grain to flatten line items into a relational table.
-Enter
 Sleep 1500ms
 
-# Undo flatten before switching to Raw JSON view.
-Type "u"
-Sleep 700ms
-
-# Open Raw JSON view and focus the Vim editor pane to inspect the source text.
-Type "4"
-Tab
-Sleep 1300ms
-
-# Fold all nested JSON closures at once with zM to get a compact top-level outline.
-Type "z"
-Type "M"
+# Select count/length from the stage picker to append | length and preview the live count.
+Type "count"
+Enter
 Sleep 1400ms
 
-# Unfold every JSON closure back to full text with zR.
-Type "z"
-Type "R"
+# Press Enter to open the jq result in a new editable buffer, then return with [ b.
+Enter
+Sleep 1300ms
+
+# Switch back to orders.json with ctrl+6.
+Ctrl+6
+Sleep 1100ms
+
+# Section: Raw Folding, Visual Selection & Yanking
+# Open Raw JSON view and focus the Vim source editor.
+Type "4"
 Sleep 1200ms
 
-# Move the raw editor cursor onto the store block.
-Type "j"
-Sleep 600ms
+# Fold all nested JSON closures at once with zM.
+Type "z"
+Type "M"
+Sleep 1300ms
 
-# Toggle folding on just the enclosing store object with za while keeping orders expanded.
+# Unfold all closures with zR, then toggle just the store object with j and za.
+Type "z"
+Type "R"
+Type "j"
 Type "z"
 Type "a"
 Sleep 1400ms
 
-# Unfold store and return focus to the structure tree.
+# Unfold store, switch to Nested view, and focus the collapsed order rows.
 Type "z"
 Type "R"
 Tab
-Sleep 700ms
-
-# Section: Visual Selection, Yanking & Discovery
-# Switch to Nested view, focus the data pane, and expand the orders list.
 Type "2"
 Tab
 Type "g"
 Type "g"
 Type "j"
 Type "j"
-Type "l"
 Type "j"
+Type "h"
 Sleep 900ms
 
-# Start visual selection with v and extend across three order nodes.
+# Select three orders in Visual mode with v and batch-unfold them with l.
 Type "v"
 Type "j"
 Type "j"
-Sleep 1300ms
-
-# Press l to unfold all three visually selected orders in one action.
 Type "l"
 Sleep 1400ms
 
-# Yank the focused JSON value directly to the clipboard with y y.
+# Yank the focused JSON value with y y and its exact path with y p.
 Type "y"
 Type "y"
-Sleep 1300ms
-
-# Yank the exact JSON path of the focused node with y p.
 Type "y"
 Type "p"
 Sleep 1300ms
 
-# Open context-aware key help with ? to inspect every binding active here.
+# Open context-aware key help with ? to review active bindings.
 Type "?"
 Sleep 1400ms
 

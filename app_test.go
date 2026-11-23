@@ -24,7 +24,7 @@ func TestSmoke(t *testing.T) {
 	}
 	header := s[strings.Index(s, "with header ")+len("with header "):]
 	header = header[:strings.IndexByte(header, '\n')]
-	if !strings.Contains(header, "orders.items.sku") || strings.Contains(header, "tags") {
+	if !strings.Contains(header, ",sku,qty,") || !strings.Contains(header, "orders.id") || strings.Contains(header, "tags") {
 		t.Fatalf("csv header %q", header)
 	}
 	if !strings.Contains(s, "csv   row 1: 1,Ada A,") {
