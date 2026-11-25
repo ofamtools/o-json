@@ -339,6 +339,25 @@ type PathPart struct {
 // Path addresses values in a document. The empty path is the whole document.
 type Path []PathPart
 
+// MarshalJSON encodes p as its canonical path string (e.g. "orders[].id").
+func (p Path) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.String())
+}
+
+// UnmarshalJSON decodes p from a canonical path string.
+func (p *Path) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	parsed, err := ParsePath(s)
+	if err != nil {
+		return err
+	}
+	*p = parsed
+	return nil
+}
+
 func isIdent(k string) bool {
 	if k == "" {
 		return false

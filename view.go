@@ -29,16 +29,17 @@ const (
 	treeRatio  = 0.3
 )
 
-// The four data views.
+// The five data views (1-4 raw JSON views + 5 declarative Reader/Timeline view).
 const (
 	viewTable  = 1
 	viewNested = 2
 	viewPretty = 3
 	viewRaw    = 4
+	viewReader = 5
 )
 
-var viewNames = [...]string{"", "Table", "Nested", "Pretty", "Raw"}
-var viewScopes = [...]string{"", "table", "nested", "pretty", "raw"}
+var viewNames = [...]string{"", "Table", "Nested", "Pretty", "Raw", "Timeline"}
+var viewScopes = [...]string{"", "table", "nested", "pretty", "raw", "reader"}
 
 func winNode(i int) string { return "win" + strconv.Itoa(i) }
 
@@ -765,6 +766,8 @@ func (a *App) windowNode(i int, g geom) ui.ViewNode {
 			}
 		}
 		body.ID, body.Box = id, fillBox()
+	case viewReader:
+		body, title = a.readerNode(w, b, id, inner, g.rows(), i == a.win && a.pane == 1)
 	}
 	body.Focusable, body.Scope = true, viewScopes[w.view]
 	return ui.ViewNode{Kind: ui.KindPanel, Border: true, Title: title, Box: fillBox(), Children: []ui.ViewNode{body}}
@@ -1135,6 +1138,9 @@ func (a *App) infoLine(s core.State, g geom) ui.ViewNode {
 	}
 	if a.inner {
 		parts = append(parts, "inner join")
+	}
+	if a.reader != nil {
+		parts = append(parts, "reader "+a.reader.Name)
 	}
 	parts = append(parts, "match "+a.match)
 	tone := "muted"

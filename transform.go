@@ -13,15 +13,22 @@ import (
 
 // Operation is one step of a pipeline. Kinds: project, flatten,
 // array-object, object-array, wrap-object, wrap-array, object-values,
-// object-keys, hoist, nest, group, rename, drop, sort, filter, scope.
+// object-keys, hoist, nest, group, rename, drop, sort, filter, scope,
+// coalesce, cast, dedupe, unwind, redact, pivot, unpivot.
 type Operation struct {
-	Kind                     string
-	Paths                    []Path
-	Path                     Path
-	Grain                    Path
-	Fields                   []string
-	Cross, Inner, Desc       bool
-	Field, Name, Mode, Query string
+	Kind          string   `json:"kind"`
+	Paths         []Path   `json:"paths,omitempty"`
+	Path          Path     `json:"path,omitempty"`
+	Grain         Path     `json:"grain,omitempty"`
+	Fields        []string `json:"fields,omitempty"`
+	Cross         bool     `json:"cross,omitempty"`
+	Inner         bool     `json:"inner,omitempty"`
+	Desc          bool     `json:"desc,omitempty"`
+	PreserveEmpty bool     `json:"preserveEmpty,omitempty"`
+	Field         string   `json:"field,omitempty"`
+	Name          string   `json:"name,omitempty"`
+	Mode          string   `json:"mode,omitempty"`
+	Query         string   `json:"query,omitempty"`
 }
 
 // FilterModes lists the filter modes in cycle order.
@@ -112,6 +119,9 @@ func normalize(op Operation) (Operation, error) {
 			err = fmt.Errorf("scope mode %q is not select", op.Mode)
 		}
 	default:
+		if norm, handled, rerr := normalizeRestructure(op); handled {
+			return norm, rerr
+		}
 		err = fmt.Errorf("unknown operation %q", op.Kind)
 	}
 	return op, err
@@ -209,6 +219,10 @@ func applyOp(v any, op Operation) (any, error) {
 		return sortRows(a, op.Field, op.Desc), nil
 	case "filter":
 		return filterRows(v, op)
+	default:
+		if out, handled, err := applyRestructure(v, op); handled {
+			return out, err
+		}
 	}
 	return v, nil
 }

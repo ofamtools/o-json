@@ -76,9 +76,13 @@ func newOdenApp(args []string, stdin io.Reader, stdout, stderr io.Writer) *oden.
 	}
 
 	app.Add(
-		subCmd("structure", "inspect merged JSON schema structure", "FILE|- [--format text|json]"),
-		subCmd("flatten", "flatten nested JSON into tabular rows or jq", "FILE|- [--select PATH,PATH] [--field PATH]... [--grain PATH] [--inner] [--cross] [--format csv|json|table|tsv|jsonl] [--jq]"),
+		subCmd("structure", "inspect merged JSON schema structure", "FILE|- [--from FMT] [--format text|json]"),
+		subCmd("flatten", "flatten nested JSON into tabular rows or jq", "FILE|- [--from FMT] [--select PATH,PATH] [--field PATH]... [--grain PATH] [--inner] [--cross] [--format csv|json|table|tsv|jsonl] [--jq]"),
 		subCmd("query", "run a jq expression against JSON input", "FILE|- [--compact] [--] EXPR"),
+		subCmd("convert", "convert between json, jsonl, jsonc, yaml, toml, csv, tsv and md", "FILE|- [--from FMT] [--to FMT] [--compact|--pretty] [--timeline]"),
+		subCmd("run", "replay a saved JSON transform recipe deterministically", "FILE|- --recipe PATH [--from FMT] [--to FMT] [--compact]"),
+		subCmd("reader", "list installed declarative readers", "list [--format text|json] [--config DIR]"),
+		subCmd("timeline", "project and filter records through a declarative reader", "FILE|- [--reader ai-session] [--from FMT] [--hide-thinking] [--hide-tools] [--tools PATTERN] [--export text|md|jsonl|json]"),
 		tutorialCommand(stdout, stderr),
 		oden.Command{
 			Name:     "capabilities",
@@ -99,7 +103,7 @@ func newOdenApp(args []string, stdin io.Reader, stdout, stderr io.Writer) *oden.
 					Name:         "o-json",
 					Version:      Version,
 					Summary:      info.Summary,
-					Capabilities: []string{"tui", "jq", "flatten", "structure"},
+					Capabilities: []string{"tui", "jq", "flatten", "structure", "convert", "recipes", "readers", "timeline"},
 					Commands:     cmds,
 				}
 				if p.Format() == "json" {
@@ -126,12 +130,16 @@ func newOdenApp(args []string, stdin io.Reader, stdout, stderr io.Writer) *oden.
 		return nil
 	}
 
-	app.HelpText = fmt.Sprintf(usage, subUsage["structure"], subUsage["flatten"], subUsage["query"])
+	app.HelpText = fmt.Sprintf(usage, subUsage["structure"], subUsage["flatten"], subUsage["query"], subUsage["convert"], subUsage["run"], subUsage["reader"], subUsage["timeline"])
 	return app
 }
 
-const usage = `usage: o-json [--edit] [--config DIR] [FILE|-]
+const usage = `usage: o-json [--edit] [--format FMT] [--reader NAME] [--config DIR] [FILE|-]
        o-json --smoke [FILE]
+       %s
+       %s
+       %s
+       %s
        %s
        %s
        %s
@@ -149,9 +157,11 @@ func interactive(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fl.SetOutput(stderr)
 	edit := fl.Bool("edit", false, "open FILE or stdin editable")
 	smoke := fl.Bool("smoke", false, "run the scripted session without a TTY, print the frame and checks")
-	cfg := fl.String("config", configDir(), "directory holding bindings.json, themes.json and settings.json")
+	format := fl.String("format", "", "explicit input format: json, jsonl, jsonc, yaml, toml, csv, tsv (default: auto json/jsonl)")
+	readerName := fl.String("reader", "", "declarative reader to activate on open (e.g. ai-session)")
+	cfg := fl.String("config", configDir(), "directory holding bindings.json, themes.json, settings.json and readers/")
 	fl.Usage = func() {
-		fmt.Fprintf(stderr, usage, subUsage["structure"], subUsage["flatten"], subUsage["query"])
+		fmt.Fprintf(stderr, usage, subUsage["structure"], subUsage["flatten"], subUsage["query"], subUsage["convert"], subUsage["run"], subUsage["reader"], subUsage["timeline"])
 		fl.PrintDefaults()
 	}
 	pos, err := parseArgs(fl, args)
@@ -176,6 +186,12 @@ func interactive(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		return 0
 	}
+	inFmt := NormalizeFormat(*format)
+	if inFmt == "" && *readerName != "" {
+		if r, ok, _ := FindReader(*readerName, *cfg); ok && r.DefaultFormat != "" {
+			inFmt = r.DefaultFormat
+		}
+	}
 	var b *Buffer
 	auto := file == "" && piped(stdin)
 	if auto || file == "-" {
@@ -187,7 +203,7 @@ func interactive(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		if auto && len(raw) == 0 {
 			file = ""
 		} else {
-			b, _ = NewBuffer("", string(raw), *edit)
+			b, _ = NewBufferWithFormat("", string(raw), inFmt, *edit)
 			b.Name = "[stdin]"
 		}
 	}
@@ -196,13 +212,13 @@ func interactive(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	case file == "":
 		b = NewScratch()
 	default:
-		if b, err = OpenBuffer(file, *edit); err != nil {
+		if b, err = OpenBufferWithFormat(file, inFmt, *edit); err != nil {
 			fmt.Fprintln(stderr, "o-json:", err)
 			return 1
 		}
 	}
 	// With piped stdin, Bubble Tea reads keys from the controlling TTY.
-	if _, err := tea.NewProgram(newShell(b, *cfg)).Run(); err != nil {
+	if _, err := tea.NewProgram(newShellWithReader(b, *cfg, *readerName)).Run(); err != nil {
 		fmt.Fprintln(stderr, "o-json:", err)
 		return 1
 	}

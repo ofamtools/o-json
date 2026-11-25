@@ -20,7 +20,7 @@ var (
 )
 
 // SaveFormats lists every format Save writes, in the order a picker shows them.
-var SaveFormats = []string{"pretty", "minified", "jsonl", "csv", "tsv"}
+var SaveFormats = []string{"pretty", "minified", "jsonl", "csv", "tsv", "yaml", "toml", "md"}
 
 const maxUndo = 100
 
@@ -34,19 +34,20 @@ type Snapshot struct {
 // parsed, so a half-typed edit keeps the structure on screen while ParseErr
 // says what is wrong. Pipeline is the transform recipe shown by Preview.
 type Buffer struct {
-	ID        int
-	Path      string // where Save writes by default; "" for scratch and stdin
-	Name      string
-	Dirty     bool // RawText differs from what was read or last saved
-	Editable  bool
-	RawText   string
-	ParseErr  error
-	Value     any
-	Structure *Schema
-	JSONL     bool // the text holds several top-level values
-	Pipeline  []Operation
-	Undo      []Snapshot
-	Redo      []Snapshot
+	ID           int
+	Path         string // where Save writes by default; "" for scratch and stdin
+	Name         string
+	Dirty        bool // RawText differs from what was read or last saved
+	Editable     bool
+	RawText      string
+	ParseErr     error
+	Value        any
+	Structure    *Schema
+	JSONL        bool   // the text holds several top-level values
+	SourceFormat string // explicit input format ("" = auto JSON/JSONL)
+	Pipeline     []Operation
+	Undo         []Snapshot
+	Redo         []Snapshot
 
 	origin  string // the file a read-only buffer protects
 	saved   string
@@ -61,7 +62,20 @@ type Buffer struct {
 // paste). It always returns a usable buffer; the error is the parse error,
 // for the caller to report.
 func NewBuffer(path, raw string, editable bool) (*Buffer, error) {
-	b := &Buffer{Path: path, origin: path, Name: "[No Name]", Editable: editable, saved: raw}
+	return NewBufferWithFormat(path, raw, "", editable)
+}
+
+// NewBufferWithFormat makes a buffer using an explicit input format (or "" for
+// default auto JSON/JSONL parsing).
+func NewBufferWithFormat(path, raw, format string, editable bool) (*Buffer, error) {
+	b := &Buffer{
+		Path:         path,
+		origin:       path,
+		Name:         "[No Name]",
+		Editable:     editable,
+		SourceFormat: NormalizeFormat(format),
+		saved:        raw,
+	}
 	if path != "" {
 		b.Name = filepath.Base(path)
 	}
@@ -80,15 +94,21 @@ func NewScratch() *Buffer {
 // opens as a new empty editable buffer of that name, as in vim. A file that
 // does not parse still opens; its ParseErr says why.
 func OpenBuffer(path string, editable bool) (*Buffer, error) {
+	return OpenBufferWithFormat(path, "", editable)
+}
+
+// OpenBufferWithFormat reads path into a new buffer using an explicit format
+// ("" preserves auto JSON/JSONL handling).
+func OpenBufferWithFormat(path, format string, editable bool) (*Buffer, error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		b, _ := NewBuffer(path, "", true)
+		b, _ := NewBufferWithFormat(path, "", format, true)
 		return b, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	b, _ := NewBuffer(path, string(data), editable)
+	b, _ := NewBufferWithFormat(path, string(data), format, editable)
 	return b, nil
 }
 
@@ -210,20 +230,10 @@ func (b *Buffer) parse(raw string) {
 		b.Value, b.Structure, b.ParseErr, b.JSONL = nil, nil, nil, false
 		return
 	}
-	v, err := ParseJSON(raw)
-	jsonl := false
+	v, jsonl, err := ParseFormat(raw, b.SourceFormat)
 	if err != nil {
-		w, derr := ParseDocument(raw)
-		if derr != nil {
-			// Report whichever parse got further: the single value for a
-			// half-typed document, the line for broken JSONL.
-			if errOffset(derr, raw) > errOffset(err, raw) {
-				err = derr
-			}
-			b.ParseErr = err
-			return
-		}
-		v, jsonl = w, true
+		b.ParseErr = err
+		return
 	}
 	b.Value, b.Structure, b.ParseErr, b.JSONL = v, InferSchema(v), nil, jsonl
 }
@@ -289,8 +299,8 @@ func (b *Buffer) Label() string {
 	return s
 }
 
-// FormatForPath is the format a file name implies: csv, tsv, jsonl, or ""
-// for JSON.
+// FormatForPath is the format a file name implies: csv, tsv, jsonl, yaml,
+// toml, md, or "" for JSON.
 func FormatForPath(path string) string {
 	switch strings.ToLower(filepath.Ext(path)) {
 	case ".csv":
@@ -299,6 +309,12 @@ func FormatForPath(path string) string {
 		return "tsv"
 	case ".jsonl", ".ndjson":
 		return "jsonl"
+	case ".yaml", ".yml":
+		return "yaml"
+	case ".toml":
+		return "toml"
+	case ".md", ".markdown":
+		return "md"
 	}
 	return ""
 }
@@ -367,7 +383,7 @@ func (b *Buffer) Save(path, format string) error {
 	if err := atomicWrite(path, data); err != nil {
 		return err
 	}
-	if !b.Editable || len(b.Pipeline) > 0 || format == "csv" || format == "tsv" {
+	if !b.Editable || len(b.Pipeline) > 0 || format == "csv" || format == "tsv" || format == "yaml" || format == "toml" || format == "md" {
 		return nil
 	}
 	b.Path, b.origin, b.Name = path, path, filepath.Base(path)
@@ -447,6 +463,18 @@ func encode(v any, format string) ([]byte, error) {
 			export = ExportTSV
 		}
 		if err := export(&buf, r); err != nil {
+			return nil, err
+		}
+	case "yaml":
+		return EncodeYAML(v)
+	case "toml":
+		return EncodeTOML(v)
+	case "md":
+		r := TableRelation(v)
+		if len(r.Columns) == 0 {
+			return nil, fmt.Errorf("md needs rows: flatten (F) or pick a table first")
+		}
+		if err := ExportMarkdownTable(&buf, r); err != nil {
 			return nil, err
 		}
 	default:

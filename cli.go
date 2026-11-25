@@ -17,9 +17,13 @@ import (
 )
 
 var subUsage = map[string]string{
-	"structure": "o-json structure FILE|- [--format text|json]",
-	"flatten":   "o-json flatten FILE|- [--select PATH,PATH] [--field PATH]... [--grain PATH] [--inner] [--cross] [--format csv|json|table|tsv|jsonl] [--jq]",
+	"structure": "o-json structure FILE|- [--from FMT] [--format text|json]",
+	"flatten":   "o-json flatten FILE|- [--from FMT] [--select PATH,PATH] [--field PATH]... [--grain PATH] [--inner] [--cross] [--format csv|json|table|tsv|jsonl] [--jq]",
 	"query":     "o-json query FILE|- [--compact] [--] EXPR",
+	"convert":   "o-json convert FILE|- [--from FMT] [--to FMT] [--compact|--pretty] [--timeline]",
+	"run":       "o-json run FILE|- --recipe PATH [--from FMT] [--to FMT] [--compact]",
+	"reader":    "o-json reader list [--format text|json] [--config DIR]",
+	"timeline":  "o-json timeline FILE|- [--reader ai-session] [--from FMT] [--hide-thinking] [--hide-tools] [--tools PATTERN] [--export text|md|jsonl|json] [--config DIR]",
 }
 
 type multiFlag []string
@@ -70,21 +74,33 @@ func readSource(name string, stdin io.Reader) (string, error) {
 	return string(data), err
 }
 
-// subcommand runs structure, flatten or query and prints only on success.
+// subcommand runs structure, flatten, query, convert, run, reader or timeline.
 func subcommand(name string, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	switch name {
+	case "convert":
+		return convertCmd(args, stdin, stdout, stderr)
+	case "run":
+		return runRecipeCmd(args, stdin, stdout, stderr)
+	case "reader":
+		return readerCmd(args, stdin, stdout, stderr)
+	case "timeline":
+		return timelineCmd(args, stdin, stdout, stderr)
+	}
 	usage := "usage: " + subUsage[name]
 	fs := flag.NewFlagSet("o-json "+name, flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { fmt.Fprintln(stderr, usage); fs.PrintDefaults() }
-	var format *string
+	var format, from *string
 	var fields multiFlag
 	var selects *string
 	var grain *string
 	var inner, cross, showJQ, compact *bool
 	switch name {
 	case "structure":
+		from = fs.String("from", "", "input format: json, jsonl, jsonc, yaml, toml, csv, tsv (default: auto)")
 		format = fs.String("format", "text", "output format: text or json")
 	case "flatten":
+		from = fs.String("from", "", "input format: json, jsonl, jsonc, yaml, toml, csv, tsv (default: auto)")
 		format = fs.String("format", "csv", "output format: csv, tsv, json, jsonl or table")
 		selects = fs.String("select", "", "comma-separated PATHs to include; commas inside [\"quoted\"] keys are kept")
 		fs.Var(&fields, "field", "PATH to include, e.g. orders[].id (repeatable; none means every field)")
@@ -139,7 +155,11 @@ func subcommand(name string, args []string, stdin io.Reader, stdout, stderr io.W
 		}
 		return 0
 	}
-	v, err := ParseDocument(raw)
+	inFmt := ""
+	if from != nil {
+		inFmt = *from
+	}
+	v, _, err := ParseFormat(raw, inFmt)
 	if err != nil {
 		return fail(1, fmt.Errorf("%s: %w", pos[0], err))
 	}

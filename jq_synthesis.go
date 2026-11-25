@@ -235,6 +235,21 @@ func (g *jqGen) op(op Operation) string {
 	case "filter":
 		g.use("need")
 		return "need(\"array\"; \"filter\") | map(select(" + g.predicate(op) + "))"
+	case "coalesce":
+		g.use("rows", "get")
+		parts := make([]string, len(op.Fields))
+		for i, f := range op.Fields {
+			parts[i] = "get(" + jqPath(MustPath(f)) + ")"
+		}
+		return "rows((first(" + strings.Join(parts, ", ") + " | select(. != null and . != \"\" and . != [] and . != {})) // null) as $v | .[" + jqStr(op.Name) + "] = $v)"
+	case "dedupe":
+		g.use("need")
+		keyExpr := "."
+		if op.Field != "" {
+			g.use("get")
+			keyExpr = "get(" + jqPath(MustPath(op.Field)) + ")"
+		}
+		return "need(\"array\"; \"dedupe\") | reduce .[] as $e ({seen:{}, out:[]}; ($e | " + keyExpr + " | tojson) as $k | if .seen[$k] then . else .seen[$k] = true | .out += [$e] end) | .out"
 	}
 	return "."
 }

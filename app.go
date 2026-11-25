@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -29,23 +30,24 @@ import (
 // window is one data pane: which buffer it shows, its view and the view's
 // own position. Scroll offsets are derived while drawing.
 type window struct {
-	buf, view    int
-	kv, sub      bool   // pretty: key: value lines; raw: focused subtree only
-	format       string // raw: "", "pretty" or "minified"
-	open         map[string]bool
-	anchor       int // nested visual selection anchor row, -1 when off
-	line, off    int // pretty cursor line and scroll
-	seen         string
-	colOff, tOff int
-	rel          Relation
-	relPaths     []Path
-	relKey       string
-	ed           *input.Model
-	edRaw        string // the buffer text the editor last matched
-	edBuf        int
-	edPath       string
-	edAt, edLen  int // byte range of the edited subtree in the buffer text
-	rawFolds     map[int]bool
+	buf, view            int
+	kv, sub              bool   // pretty: key: value lines; raw: focused subtree only
+	format               string // raw: "", "pretty" or "minified"
+	open                 map[string]bool
+	anchor               int // nested visual selection anchor row, -1 when off
+	line, off            int // pretty cursor line and scroll
+	seen                 string
+	colOff, tOff         int
+	rel                  Relation
+	relPaths             []Path
+	relKey               string
+	ed                   *input.Model
+	edRaw                string // the buffer text the editor last matched
+	edBuf                int
+	edPath               string
+	edAt, edLen          int // byte range of the edited subtree in the buffer text
+	rawFolds             map[int]bool
+	readerIdx, readerOff int
 }
 
 func newWindow(buf, view int) *window {
@@ -129,15 +131,18 @@ type App struct {
 	confirm     string
 	prevConfirm string
 
-	km       *core.Keymap
-	bindings []core.Binding
-	specs    []core.CommandSpec
-	theme    ui.Theme
-	help     *bindings.Model
-	copy     func(string) error
-	fs       pathpicker.FS
-	cwd      string
-	notes    []string
+	km          *core.Keymap
+	bindings    []core.Binding
+	specs       []core.CommandSpec
+	theme       ui.Theme
+	help        *bindings.Model
+	copy        func(string) error
+	fs          pathpicker.FS
+	cwd         string
+	cfgDir      string
+	reader      *Reader
+	readerState ReaderState
+	notes       []string
 }
 
 func (a *App) note(m string) { a.status, a.tone = m, "success" }
@@ -436,13 +441,15 @@ func (a *App) writeBack(w *window, b *Buffer, text string) {
 
 // Config is what newShell (or a test) supplies to build an App.
 type Config struct {
-	Bindings []core.Binding
-	Theme    *ui.Theme
-	Settings *config.Settings
-	Copy     func(string) error
-	FS       pathpicker.FS
-	Cwd      string
-	Notes    []string
+	Bindings  []core.Binding
+	Theme     *ui.Theme
+	Settings  *config.Settings
+	Copy      func(string) error
+	FS        pathpicker.FS
+	Cwd       string
+	ConfigDir string
+	Reader    string
+	Notes     []string
 }
 
 // defaultSettings are the settings.json keys and their defaults.
@@ -527,8 +534,15 @@ func systemCopier() func(string) error {
 // newShell opens b with the configuration in configPath (a directory holding
 // bindings.json, themes.json and settings.json; "" uses the defaults).
 func newShell(b *Buffer, configPath string) *otea.Shell {
+	return newShellWithReader(b, configPath, "")
+}
+
+// newShellWithReader opens b with configPath and an optional declarative reader.
+func newShellWithReader(b *Buffer, configPath, readerName string) *otea.Shell {
 	cfg := loadConfig(configPath)
 	cfg.Cwd, _ = os.Getwd()
+	cfg.ConfigDir = configPath
+	cfg.Reader = readerName
 	if cfg.Settings.Bool("clipboard", true) {
 		cfg.Copy = systemCopier()
 	}
@@ -538,7 +552,7 @@ func newShell(b *Buffer, configPath string) *otea.Shell {
 var modes = []core.Mode{{Name: "normal"}, {Name: "vim"}, {Name: "prompt"}, {Name: "pick"}, {Name: "files"}, {Name: "help"}}
 
 func newApp(cfg Config, b *Buffer) *App {
-	a := &App{ring: &BufferRing{}, uis: map[int]*bufUI{}, copy: cfg.Copy, fs: cfg.FS, cwd: cfg.Cwd, notes: cfg.Notes, theme: ui.DefaultDarkTheme()}
+	a := &App{ring: &BufferRing{}, uis: map[int]*bufUI{}, copy: cfg.Copy, fs: cfg.FS, cwd: cfg.Cwd, cfgDir: cfg.ConfigDir, notes: cfg.Notes, theme: ui.DefaultDarkTheme()}
 	if a.fs == nil {
 		a.fs = pathpicker.OSFS{}
 	}
@@ -572,6 +586,9 @@ func newApp(cfg Config, b *Buffer) *App {
 	if _, arr := b.Value.([]any); arr {
 		a.active().view = viewTable
 	}
+	if cfg.Reader != "" {
+		a.activateReader(cfg.Reader)
+	}
 	if b.Editable && b.Path == "" && strings.TrimSpace(b.RawText) == "" {
 		a.startScratch(b)
 	}
@@ -599,6 +616,12 @@ var cmdTable = [...][4]string{
 	{"view.nested", "2", "alt+2", "Nested data browser (h/l fold, v selects rows to fold)"},
 	{"view.pretty", "3", "alt+3", "Pretty JSON at the focused path (again: key: value lines)"},
 	{"view.raw", "4", "alt+4", "Raw text in a vim editor (again: the focused subtree only)"},
+	{"view.reader", "5", "alt+5", "Declarative reader / timeline view (switch back to raw JSON with 1-4)"},
+	{"reader.select", "g r", "", "Select a declarative reader (e.g. ai-session) or turn off"},
+	{"reader.toggle.thinking", "T", "", "Reader: toggle thinking blocks"},
+	{"reader.toggle.tools", "O", "", "Reader: toggle tool call/result blocks"},
+	{"reader.filter.tools", "P", "", "Reader: filter tool calls by regex/substring pattern"},
+	{"recipe.save", "", "", "Save the current pipeline as a reusable JSON recipe file"},
 	{"pane.toggle", "tab", "", "Switch between the structure tree and the data window"},
 	{"pane.enter", "enter", "", "Open the data window from the tree, or fold the nested row"},
 	{"select.toggle", "space", "", "Select or unselect the field under the tree cursor (any depth)"},
@@ -656,7 +679,7 @@ var cmdTable = [...][4]string{
 var internalCmds = []string{"editor.key", "prompt.key", "prompt.accept", "prompt.cancel", "jq.chip", "jq.builder", "jq.result", "clipboard.done",
 	"pick.insert", "pick.backspace", "pick.close", picker.CmdConfirm, picker.CmdModeCycle,
 	"files.insert", "files.backspace", "files.close", pathpicker.CmdOpen, pathpicker.CmdParent, pathpicker.CmdHiddenToggle,
-	pathpicker.CmdSelectCurrent, pathpicker.CmdModeCycle, "help.close", "file.write", "file.load", "buffer.switch", "app.quit"}
+	pathpicker.CmdSelectCurrent, pathpicker.CmdModeCycle, "help.close", "file.write", "file.load", "buffer.switch", "app.quit", "recipe.load", "reader.set"}
 
 func commandSpecs() []core.CommandSpec {
 	var out []core.CommandSpec
@@ -806,14 +829,21 @@ func (a *App) engine() *core.Engine {
 	e := core.NewEngine(a.km)
 	h := func(id string, f hfn) { e.Handle(id, a.wrap(f)) }
 	for _, id := range motionIDs {
-		for scope, f := range map[string]hfn{"tree": a.treeMotion, "table": a.tableMotion, "nested": a.nestedMotion, "pretty": a.prettyMotion, "pick": a.pickCmd, "files": a.filesCmd, "help": a.helpScroll} {
+		for scope, f := range map[string]hfn{"tree": a.treeMotion, "table": a.tableMotion, "nested": a.nestedMotion, "pretty": a.prettyMotion, "reader": a.readerMotion, "pick": a.pickCmd, "files": a.filesCmd, "help": a.helpScroll} {
 			e.HandleScope(scope, id, a.wrap(f))
 		}
 	}
-	for i, id := range []string{"view.table", "view.nested", "view.pretty", "view.raw"} {
+	for i, id := range []string{"view.table", "view.nested", "view.pretty", "view.raw", "view.reader"} {
 		h(id, a.setView(i+1))
 	}
 	for id, f := range map[string]hfn{
+		"reader.select": a.readerSelect, "reader.toggle.thinking": a.readerToggleBool("thinking"),
+		"reader.toggle.tools": a.readerToggleBool("tools"), "reader.filter.tools": a.readerFilterOpen,
+		"reader.set": func(s core.State, c core.Command) (core.State, []core.Effect) {
+			a.activateReader(c.Arg("name"))
+			return s, nil
+		},
+		"recipe.save": a.recipeSave, "recipe.load": a.recipeLoad,
 		"pane.toggle": a.paneToggle, "pane.enter": a.paneEnter, "select.toggle": a.selectToggle, "select.clear": a.selectClear,
 		"select.project": a.project, "flatten": a.flatten, "flatten.inner": a.innerToggle, "shape.keyby": a.shape, "shape.entries": a.shape,
 		"shape.convert": a.shapeConvert, "shape.group": a.shape, "shape.hoist": a.shapeHoist, "shape.nest": a.shapeNest, "shape.transfer": a.shapeTransfer,
@@ -1933,6 +1963,22 @@ func (a *App) promptAccept(s core.State, c core.Command) (core.State, []core.Eff
 		a.applyAt(p.root, Operation{Kind: "nest", Name: text, Fields: p.fields})
 	case "saveas":
 		return a.write(s, core.Command{Args: map[string]any{"path": text, "format": a.saveFormat}})
+	case "reader-tool-filter":
+		if a.reader != nil {
+			a.readerState.Patterns[p.field] = text
+			w := a.active()
+			w.readerIdx, w.readerOff = 0, 0
+			a.syncReaderFocus(w, a.buf(w.buf), a.readerEntries(a.buf(w.buf)))
+			if text == "" {
+				a.info("tool filter cleared")
+			} else {
+				a.info("tool filter: /" + text + "/")
+			}
+		}
+	case "recipe-save":
+		if text != "" {
+			return a.recipeSave(s, core.Command{Args: map[string]any{"path": text}})
+		}
 	case "jq":
 		if !a.jq.ready || !a.jq.ok {
 			a.prompt = p
@@ -2261,6 +2307,9 @@ func (a *App) formatPick(s core.State) (core.State, []core.Effect) {
 		"jsonl":    "one JSON value per line (.jsonl)",
 		"csv":      "comma-separated, " + rows,
 		"tsv":      "tab-separated, " + rows,
+		"yaml":     "YAML document (.yaml)",
+		"toml":     "TOML document (.toml)",
+		"md":       "Markdown table or timeline (.md)",
 	}
 	var items []picker.Item
 	for _, f := range SaveFormats {
@@ -2277,7 +2326,7 @@ func (a *App) formatPick(s core.State) (core.State, []core.Effect) {
 // formatExt is the file extension a save format writes.
 func formatExt(format string) string {
 	switch format {
-	case "jsonl", "csv", "tsv":
+	case "jsonl", "csv", "tsv", "yaml", "toml", "md":
 		return "." + format
 	}
 	return ".json"
@@ -2309,6 +2358,14 @@ func (a *App) write(s core.State, c core.Command) (core.State, []core.Effect) {
 	if rel, root, ok := a.tableShown(); ok && (format == "csv" || format == "tsv") {
 		err = b.ExportRelation(path, format, rel)
 		what = fmt.Sprintf(" · the table at %s, %d rows", root.String(), len(rel.Rows))
+	} else if format == "md" && a.active().view == viewReader && a.reader != nil {
+		entries := a.readerEntries(b)
+		var buf bytes.Buffer
+		err = ExportMarkdownTimeline(&buf, entries, &a.reader.Timeline)
+		if err == nil {
+			err = atomicWrite(path, buf.Bytes())
+		}
+		what = fmt.Sprintf(" · %s timeline, %d items", a.reader.Name, len(entries))
 	} else {
 		err = b.Save(path, format)
 	}
@@ -2619,6 +2676,19 @@ func exCommand(q string) (string, map[string]any, bool) {
 		return "buffer.new", nil, true
 	case "vs", "vsplit":
 		return "window.split", nil, true
+	case "reader":
+		if arg == "" {
+			return "reader.select", nil, true
+		}
+		return "reader.set", map[string]any{"name": arg}, true
+	case "recipe":
+		if len(f) >= 2 && f[1] == "save" {
+			return "recipe.save", map[string]any{"path": strings.Join(f[2:], " ")}, true
+		}
+		if len(f) >= 2 && f[1] == "load" {
+			return "recipe.load", map[string]any{"path": strings.Join(f[2:], " ")}, true
+		}
+		return "recipe.save", map[string]any{"path": arg}, true
 	}
 	return "", nil, false
 }
@@ -2672,6 +2742,8 @@ func (a *App) pickCmd(s core.State, c core.Command) (core.State, []core.Effect) 
 		case "format":
 			a.saveFormat = picked.ID
 			return a.saveDir(s)
+		case "reader":
+			a.activateReader(picked.ID)
 		case "grain":
 			op := pm.op
 			if picked.ID == "cross" {

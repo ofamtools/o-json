@@ -1,0 +1,506 @@
+{
+  "name": "ai-session",
+  "description": "Unified declarative timeline for AI coding agent session logs (Claude Code, OMP, Antigravity, Codex, Pi, OpenCode)",
+  "defaultFormat": "jsonl",
+  "toggles": [
+    {
+      "id": "thinking",
+      "label": "Thinking",
+      "kind": "bool",
+      "default": true,
+      "matchKind": ["thinking"],
+      "key": "T"
+    },
+    {
+      "id": "tools",
+      "label": "Tools",
+      "kind": "bool",
+      "default": true,
+      "matchKind": ["tool_call", "tool_result"],
+      "key": "O"
+    },
+    {
+      "id": "toolPattern",
+      "label": "Tool filter",
+      "kind": "pattern",
+      "default": "",
+      "matchKind": ["tool_call", "tool_result"],
+      "matchField": "toolName",
+      "key": "P"
+    }
+  ],
+  "timeline": {
+    "roles": {
+      "user": { "icon": "❯", "label": "USER", "tone": "info" },
+      "assistant": { "icon": "✦", "label": "ASSISTANT", "tone": "success" },
+      "tool": { "icon": "⚙", "label": "TOOL", "tone": "warning" },
+      "system": { "icon": "◆", "label": "SYSTEM", "tone": "muted" },
+      "developer": { "icon": "◆", "label": "DEV", "tone": "muted" }
+    },
+    "kinds": {
+      "message": { "icon": "💬", "label": "message", "tone": "text" },
+      "thinking": { "icon": "💭", "label": "thinking", "tone": "muted" },
+      "tool_call": { "icon": "⚡", "label": "tool call", "tone": "warning" },
+      "tool_result": { "icon": "↩", "label": "tool result", "tone": "info" },
+      "system": { "icon": "◆", "label": "system", "tone": "muted" }
+    }
+  },
+  "adapters": [
+    {
+      "name": "antigravity-planner",
+      "match": [
+        { "path": "step_index", "exists": true },
+        { "path": "type", "equals": "PLANNER_RESPONSE" }
+      ],
+      "emit": [
+        {
+          "requireAny": ["thinking"],
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=thinking"],
+            "timestamp": ["created_at"],
+            "thinking": ["thinking"],
+            "model": ["model"]
+          }
+        },
+        {
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=message"],
+            "timestamp": ["created_at"],
+            "text": ["content", "text"],
+            "model": ["model"]
+          }
+        },
+        {
+          "forEach": "tool_calls",
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=tool_call"],
+            "timestamp": ["$parent.created_at"],
+            "toolName": ["name", "tool"],
+            "toolInput": ["args", "arguments", "input"],
+            "model": ["$parent.model"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "antigravity-user",
+      "match": [
+        { "path": "step_index", "exists": true },
+        { "path": "type", "equals": "USER_INPUT" }
+      ],
+      "emit": [
+        {
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["=user"],
+            "kind": ["=message"],
+            "timestamp": ["created_at"],
+            "text": ["content", "text"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "antigravity-system",
+      "match": [
+        { "path": "step_index", "exists": true },
+        { "path": "type", "equals": "SYSTEM_MESSAGE" }
+      ],
+      "emit": [
+        {
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["=system"],
+            "kind": ["=system"],
+            "timestamp": ["created_at"],
+            "text": ["content", "text"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "antigravity-tool-result",
+      "match": [
+        { "path": "step_index", "exists": true },
+        { "path": "type", "equals": "GENERIC" }
+      ],
+      "emit": [
+        {
+          "requireAny": ["toolOutput", "text"],
+          "extract": {
+            "role": ["=tool"],
+            "kind": ["=tool_result"],
+            "timestamp": ["created_at"],
+            "toolName": ["tool_name", "name", "source", "=tool"],
+            "toolOutput": ["content", "error"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "codex-message",
+      "match": [
+        { "path": "type", "equals": "response_item" },
+        { "path": "payload.type", "equals": "message" }
+      ],
+      "emit": [
+        {
+          "forEach": "payload.content",
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["$parent.payload.role", "=assistant"],
+            "kind": ["=message"],
+            "timestamp": ["$parent.timestamp"],
+            "text": ["text", "content"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "codex-reasoning",
+      "match": [
+        { "path": "type", "equals": "response_item" },
+        { "path": "payload.type", "equals": "reasoning" }
+      ],
+      "emit": [
+        {
+          "requireAny": ["thinking"],
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=thinking"],
+            "timestamp": ["timestamp"],
+            "thinking": ["payload.summary", "payload.content", "payload.text"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "codex-tool-call",
+      "match": [
+        { "path": "type", "equals": "response_item" },
+        { "path": "payload.type", "in": ["function_call", "custom_tool_call"] }
+      ],
+      "emit": [
+        {
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=tool_call"],
+            "timestamp": ["timestamp"],
+            "toolCallId": ["payload.call_id", "payload.id"],
+            "toolName": ["payload.name"],
+            "toolInput": ["payload.arguments", "payload.input"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "codex-tool-output",
+      "match": [
+        { "path": "type", "equals": "response_item" },
+        { "path": "payload.type", "in": ["function_call_output", "custom_tool_call_output"] }
+      ],
+      "emit": [
+        {
+          "extract": {
+            "role": ["=tool"],
+            "kind": ["=tool_result"],
+            "timestamp": ["timestamp"],
+            "toolCallId": ["payload.call_id", "payload.id"],
+            "toolName": ["payload.name"],
+            "toolOutput": ["payload.output"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "codex-event-msg",
+      "match": [
+        { "path": "type", "equals": "event_msg" },
+        { "path": "payload.type", "in": ["user_message", "agent_message", "agent_reasoning"] }
+      ],
+      "emit": [
+        {
+          "match": [{ "path": "payload.type", "equals": "user_message" }],
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["=user"],
+            "kind": ["=message"],
+            "timestamp": ["timestamp"],
+            "text": ["payload.message", "payload.text"]
+          }
+        },
+        {
+          "match": [{ "path": "payload.type", "equals": "agent_message" }],
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=message"],
+            "timestamp": ["timestamp"],
+            "text": ["payload.message", "payload.text"]
+          }
+        },
+        {
+          "match": [{ "path": "payload.type", "equals": "agent_reasoning" }],
+          "requireAny": ["thinking"],
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=thinking"],
+            "timestamp": ["timestamp"],
+            "thinking": ["payload.text", "payload.message"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omp-pi-bash",
+      "match": [
+        { "path": "type", "equals": "message" },
+        { "path": "message.role", "equals": "bashExecution" }
+      ],
+      "emit": [
+        {
+          "extract": {
+            "role": ["=tool"],
+            "kind": ["=tool_call"],
+            "timestamp": ["timestamp", "message.timestamp"],
+            "toolName": ["=bash"],
+            "toolInput": ["message.command"],
+            "toolOutput": ["message.output"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "omp-pi-tool-result",
+      "match": [
+        { "path": "type", "equals": "message" },
+        { "path": "message.role", "equals": "toolResult" }
+      ],
+      "emit": [
+        {
+          "extract": {
+            "role": ["=tool"],
+            "kind": ["=tool_result"],
+            "timestamp": ["timestamp", "message.timestamp"],
+            "toolName": ["message.toolName", "toolName", "message.toolCallId", "=tool"],
+            "toolOutput": ["message.content"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "claude-omp-pi-blocks",
+      "match": [
+        { "path": "type", "in": ["user", "assistant", "message", "api-request-blob"] },
+        { "path": "message.content", "isArray": true }
+      ],
+      "emit": [
+        {
+          "forEach": "message.content",
+          "match": [{ "path": "type", "equals": "thinking" }],
+          "requireAny": ["thinking"],
+          "extract": {
+            "role": ["$parent.message.role", "$parent.type", "=assistant"],
+            "kind": ["=thinking"],
+            "timestamp": ["$parent.timestamp", "$parent.message.timestamp"],
+            "thinking": ["thinking", "summary", "text"],
+            "model": ["$parent.message.model"]
+          }
+        },
+        {
+          "forEach": "message.content",
+          "match": [{ "path": "type", "equals": "text" }],
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["$parent.message.role", "$parent.type", "=assistant"],
+            "kind": ["=message"],
+            "timestamp": ["$parent.timestamp", "$parent.message.timestamp"],
+            "text": ["text"],
+            "model": ["$parent.message.model"]
+          }
+        },
+        {
+          "forEach": "message.content",
+          "match": [{ "path": "type", "in": ["tool_use", "toolCall"] }],
+          "extract": {
+            "role": ["$parent.message.role", "=assistant"],
+            "kind": ["=tool_call"],
+            "timestamp": ["$parent.timestamp", "$parent.message.timestamp"],
+            "toolCallId": ["id"],
+            "toolName": ["name", "customWireName"],
+            "toolInput": ["input", "arguments"],
+            "model": ["$parent.message.model"]
+          }
+        },
+        {
+          "forEach": "message.content",
+          "match": [{ "path": "type", "equals": "tool_result" }],
+          "extract": {
+            "role": ["=tool"],
+            "kind": ["=tool_result"],
+            "timestamp": ["$parent.timestamp", "$parent.message.timestamp"],
+            "toolCallId": ["tool_use_id", "id"],
+            "toolName": ["name", "tool_name"],
+            "toolOutput": ["content"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "claude-omp-pi-string-message",
+      "match": [
+        { "path": "type", "in": ["user", "assistant", "message", "system"] },
+        { "path": "message.content", "exists": true }
+      ],
+      "emit": [
+        {
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["message.role", "type"],
+            "kind": ["=message"],
+            "timestamp": ["timestamp", "message.timestamp"],
+            "text": ["message.content"],
+            "model": ["message.model"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "opencode-tool-part",
+      "match": [
+        { "path": "type", "equals": "tool" },
+        { "path": "tool", "exists": true }
+      ],
+      "emit": [
+        {
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=tool_call"],
+            "timestamp": ["time.start", "state.time.start", "timestamp"],
+            "toolName": ["tool"],
+            "toolInput": ["state.input", "input"],
+            "toolOutput": ["state.output", "state.error", "output"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "opencode-reasoning-part",
+      "match": [
+        { "path": "type", "equals": "reasoning" },
+        { "path": "text", "exists": true }
+      ],
+      "emit": [
+        {
+          "requireAny": ["thinking"],
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=thinking"],
+            "timestamp": ["time.start", "timestamp"],
+            "thinking": ["text"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "opencode-text-part",
+      "match": [
+        { "path": "type", "equals": "text" },
+        { "path": "sessionID", "exists": true }
+      ],
+      "emit": [
+        {
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["role", "=assistant"],
+            "kind": ["=message"],
+            "timestamp": ["time.start", "timestamp"],
+            "text": ["text"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "opencode-bundle",
+      "match": [
+        { "path": "parts", "isArray": true }
+      ],
+      "emit": [
+        {
+          "forEach": "parts",
+          "match": [{ "path": "type", "equals": "reasoning" }],
+          "requireAny": ["thinking"],
+          "extract": {
+            "role": ["$parent.info.role", "$parent.role", "=assistant"],
+            "kind": ["=thinking"],
+            "timestamp": ["time.start", "$parent.info.time.created"],
+            "thinking": ["text"]
+          }
+        },
+        {
+          "forEach": "parts",
+          "match": [{ "path": "type", "equals": "text" }],
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["$parent.info.role", "$parent.role", "=assistant"],
+            "kind": ["=message"],
+            "timestamp": ["time.start", "$parent.info.time.created"],
+            "text": ["text"]
+          }
+        },
+        {
+          "forEach": "parts",
+          "match": [{ "path": "type", "equals": "tool" }],
+          "extract": {
+            "role": ["=assistant"],
+            "kind": ["=tool_call"],
+            "timestamp": ["time.start", "state.time.start", "$parent.info.time.created"],
+            "toolName": ["tool", "name"],
+            "toolInput": ["state.input", "input"],
+            "toolOutput": ["state.output", "state.error", "output"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "generic-chat",
+      "match": [
+        { "path": "role", "exists": true }
+      ],
+      "emit": [
+        {
+          "requireAny": ["thinking"],
+          "extract": {
+            "role": ["role"],
+            "kind": ["=thinking"],
+            "timestamp": ["timestamp", "created_at", "time.created"],
+            "thinking": ["thinking", "reasoning"]
+          }
+        },
+        {
+          "requireAny": ["text"],
+          "extract": {
+            "role": ["role"],
+            "kind": ["=message"],
+            "timestamp": ["timestamp", "created_at", "time.created"],
+            "text": ["content", "text", "message"]
+          }
+        },
+        {
+          "forEach": "tool_calls",
+          "extract": {
+            "role": ["$parent.role", "=assistant"],
+            "kind": ["=tool_call"],
+            "timestamp": ["$parent.timestamp", "$parent.created_at"],
+            "toolName": ["function.name", "name"],
+            "toolInput": ["function.arguments", "args", "input"]
+          }
+        }
+      ]
+    }
+  ]
+}
